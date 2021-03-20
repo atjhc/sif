@@ -19,14 +19,13 @@
 HT_AST_NAMESPACE_BEGIN
 
 void Script::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	for (auto handler : _handlers) {
+	for (auto handler : handlers) {
      	handler->prettyPrint(out, context);
 	}
 }
 
-
 void Handler::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	switch (_kind) {
+	switch (kind) {
 	case HandlerKind:
 		out << context.indentString() << "on ";
 		break;
@@ -35,17 +34,17 @@ void Handler::prettyPrint(std::ostream &out, PrettyPrintContext &context) const 
 		break;	
 	}
 	
-	_messageKey->prettyPrint(out, context);
-	if (_arguments) {
+	messageKey->prettyPrint(out, context);
+	if (arguments) {
 		out << " ";
-		_arguments->prettyPrint(out, context);
+		arguments->prettyPrint(out, context);
 	}
 	out << std::endl;
-	if (_statements) {
-		_statements->prettyPrint(out, context);
+	if (statements) {
+		statements->prettyPrint(out, context);
 	}
 	out << context.indentString() << "end ";
-	_messageKey->prettyPrint(out, context);
+	messageKey->prettyPrint(out, context);
 	out << std::endl;
 }
 

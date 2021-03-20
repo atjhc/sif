@@ -30,7 +30,7 @@ struct Expression: Node {
 };
 
 struct ExpressionList: Node {
-	std::vector<Expression *> _expressions;
+	std::vector<Expression *> expressions;
 
 	ExpressionList() {}
 
@@ -39,26 +39,26 @@ struct ExpressionList: Node {
 	}
 
 	void add(Expression *expression) {
-		_expressions.push_back(expression);
+		expressions.push_back(expression);
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct Identifier: Expression {
-	std::string _name;
+	std::string name;
 
-	Identifier(const std::string &name) : _name(name) {}
+	Identifier(const std::string &_name) : name(_name) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct FunctionCall: Expression {
-	Identifier *_identifier;
-	ExpressionList *_arguments;
+	Identifier *identifier;
+	ExpressionList *arguments;
 
-	FunctionCall(Identifier *identifier, ExpressionList *arguments) :
-		_identifier(identifier), _arguments(arguments) {}
+	FunctionCall(Identifier *_identifier, ExpressionList *_arguments) :
+		identifier(_identifier), arguments(_arguments) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -81,43 +81,43 @@ struct BinaryOp: Expression {
 		Divide
 	};
 
-	Operator _operator;
-	Expression *_left, *_right;
+	Operator op;
+	Expression *left, *right;
 
-	BinaryOp(Operator op, Expression *left, Expression *right)
-		: _operator(op), _left(left), _right(right) {}
+	BinaryOp(Operator _op, Expression *_left, Expression *_right)
+		: op(_op), left(_left), right(_right) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct Not: Expression {
-	Expression *_expression;
+	Expression *expression;
 
-	Not(Expression *expression) : _expression(expression) {}
+	Not(Expression *_expression) : expression(_expression) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct FloatLiteral: Expression {
-	float _value;
+	float value;
 
-	FloatLiteral(float value) : _value(value) {}
+	FloatLiteral(float _value) : value(_value) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct IntLiteral: Expression {
-	int _value;
+	int value;
 
-	IntLiteral(int value) : _value(value) {}
+	IntLiteral(int _value) : value(_value) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct StringLiteral: Expression {
-	std::string _value;
+	std::string value;
 
-	StringLiteral(const std::string &value) : _value(value) {}
+	StringLiteral(const std::string &_value) : value(_value) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

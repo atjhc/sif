@@ -29,12 +29,12 @@ struct Statement: Node {
 };
 
 struct If: Statement {
-	Expression *_condition;
-	StatementList *_ifStatements;
-	StatementList *_elseStatements;
+	Expression *condition;
+	StatementList *ifStatements;
+	StatementList *elseStatements;
 
-	If(Expression *condition, StatementList *ifStatements, StatementList *elseStatements) 
-		: _condition(condition), _ifStatements(ifStatements), _elseStatements(elseStatements) {}
+	If(Expression *_condition, StatementList *_ifStatements, StatementList *_elseStatements) 
+		: condition(_condition), ifStatements(_ifStatements), elseStatements(_elseStatements) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -48,94 +48,92 @@ struct NextRepeat: Statement {
 };
 
 struct Exit: Statement {
-	Identifier *_messageKey;
+	Identifier *messageKey;
 
-	Exit(Identifier *messageKey) : _messageKey(messageKey) {}
+	Exit(Identifier *_messageKey) : messageKey(_messageKey) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct Pass: Statement {
-	Identifier *_messageKey;
+	Identifier *messageKey;
 
-	Pass(Identifier *messageKey) : _messageKey(messageKey) {}
+	Pass(Identifier *_messageKey) : messageKey(_messageKey) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct Global: Statement {
-	IdentifierList *_variables;
+	IdentifierList *variables;
 
-	Global(IdentifierList *variables) : _variables(variables) {}
+	Global(IdentifierList *_variables) : variables(_variables) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct Return: Statement {
-	Expression *_expression;
+	Expression *expression;
 
-	Return(Expression *expression) : _expression(expression) {}
+	Return(Expression *_expression) : expression(_expression) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 
 };
 
 struct Put: Statement {
-	Expression *_expression;
-	Identifier *_target;
+	Expression *expression;
+	Identifier *target;
 
-	Put(Expression *expression, Identifier *target)
-		: _expression(expression), _target(target) {}
+	Put(Expression *_expression, Identifier *_target)
+		: expression(_expression), target(_target) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct Get: Statement {
-	Expression *_expression;
+	Expression *expression;
 
-	Get(Expression *expression)
-		: _expression(expression) {}
+	Get(Expression *_expression) : expression(_expression) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct Repeat: Statement {
-	StatementList *_repeatBlock;
+	StatementList *statements;
 
-	Repeat(StatementList *repeatBlock)
-		: _repeatBlock(repeatBlock) {}
+	Repeat(StatementList *_statements) : statements(_statements) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 	virtual void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const {}
 };
 
 struct RepeatCount: Repeat {
-	Expression *_countExpression;
+	Expression *countExpression;
 
-	RepeatCount(Expression *countExpression, StatementList *repeatBlock)
-		: _countExpression(countExpression), Repeat(repeatBlock) {}
+	RepeatCount(Expression *_countExpression, StatementList *_statements)
+		: countExpression(_countExpression), Repeat(_statements) {}
 
 	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct RepeatRange: Repeat {
-	Identifier *_variable;
-	Expression *_startExpression;
-	Expression *_endExpression;
-	bool _ascending;
+	Identifier *variable;
+	Expression *startExpression;
+	Expression *endExpression;
+	bool ascending;
 
-	RepeatRange(Identifier *variable, Expression *startExpression, Expression *endExpression, bool ascending, StatementList *repeatBlock)
-		: Repeat(repeatBlock), _variable(variable), _startExpression(startExpression), _endExpression(endExpression), _ascending(ascending) {}
+	RepeatRange(Identifier *_variable, Expression *_startExpression, Expression *_endExpression, bool _ascending, StatementList *_statements)
+		: variable(_variable), startExpression(_startExpression), endExpression(_endExpression), ascending(_ascending), Repeat(_statements) {}
 
 	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct RepeatCondition: Repeat {
-	Expression *_condition;
-	bool _conditionValue;
+	Expression *condition;
+	bool conditionValue;
 
-	RepeatCondition(Expression *condition, bool conditionValue, StatementList *repeatBlock)
-		: Repeat(repeatBlock), _condition(condition), _conditionValue(conditionValue) {}
+	RepeatCondition(Expression *_condition, bool _conditionValue, StatementList *_statements)
+		: condition(_condition), conditionValue(_conditionValue), Repeat(_statements) {}
 
 	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };

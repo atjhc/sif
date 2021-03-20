@@ -20,8 +20,8 @@ HT_AST_NAMESPACE_BEGIN
 
 void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << "(";
-	_left->prettyPrint(out, context);
-	switch (_operator) {
+	left->prettyPrint(out, context);
+	switch (op) {
 	case Equal:
 		out << " = ";
 		break;
@@ -65,52 +65,54 @@ void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const
 		out << " and ";
 		break;
 	}
-	_right->prettyPrint(out, context);
+	right->prettyPrint(out, context);
 	out << ")";
 }
 
 void FunctionCall::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	_identifier->prettyPrint(out, context);
+	identifier->prettyPrint(out, context);
 	out << "(";
-	if (_arguments) {
-		_arguments->prettyPrint(out, context);
+	if (arguments) {
+		arguments->prettyPrint(out, context);
 	}
 	out << ")";
 }
 
 void FloatLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
-	out << _value;
+	out << value;
 }
 
 void IntLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
-	out << _value;
+	out << value;
 }
 
 void StringLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
-	out << _value;
+	out << value;
 }
 
 void Identifier::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
-	out << _name;
+	out << name;
 }
 
 void IdentifierList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	auto i = _identifiers.begin();
-	while (i != _identifiers.end()) {
+	auto i = identifiers.begin();
+	while (i != identifiers.end()) {
 		(*i)->prettyPrint(out, context);
+
 		i++;
-		if (i != _identifiers.end()) {
+		if (i != identifiers.end()) {
 			out << ", ";
 		}
 	}
 }
 
 void ExpressionList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	auto i = _expressions.begin();
-	while (i < _expressions.end()) {
+	auto i = expressions.begin();
+	while (i < expressions.end()) {
 		(*i)->prettyPrint(out, context);
+		
 		i++;
-		if (i != _expressions.end()) {
+		if (i != expressions.end()) {
 			out << ", ";
 		}
 	}

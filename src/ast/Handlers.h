@@ -32,15 +32,15 @@ struct IdentifierList;
 struct Identifier;
 
 struct Script: Node {
-	std::vector<Handler*> _handlers;
+	std::vector<Handler*> handlers;
 
 	Script() {}
 
-	Script(const std::vector<Handler*> handlers) 
-		: _handlers(handlers) {}
+	Script(const std::vector<Handler*> &_handlers) 
+		: handlers(_handlers) {}
 
 	void add(Handler *handler) {
-		_handlers.push_back(handler);
+		handlers.push_back(handler);
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
@@ -53,19 +53,19 @@ struct Handler: Node {
 		FunctionKind
 	};
 
-	Kind _kind;
-	Identifier *_messageKey;
-	IdentifierList *_arguments;
-	StatementList *_statements;
+	Kind kind;
+	Identifier *messageKey;
+	IdentifierList *arguments;
+	StatementList *statements;
 
-	Handler(Kind kind, Identifier *messageKey, IdentifierList *arguments, StatementList *statements) 
-		: _kind(kind), _messageKey(messageKey), _arguments(arguments), _statements(statements) {}
+	Handler(Kind _kind, Identifier *_messageKey, IdentifierList *_arguments, StatementList *_statements) 
+		: kind(_kind), messageKey(_messageKey), arguments(_arguments), statements(_statements) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct StatementList: Node {
-	std::vector<Statement*> _statements;
+	std::vector<Statement*> statements;
 
 	StatementList() {}
 
@@ -74,19 +74,19 @@ struct StatementList: Node {
 	}
 
 	void add(Statement *statement) {
-		_statements.push_back(statement);
+		statements.push_back(statement);
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct IdentifierList: Node {
-	std::vector<Identifier *> _identifiers;
+	std::vector<Identifier *> identifiers;
 
 	IdentifierList() {}
 
 	void add(Identifier *identifier) {
-		_identifiers.push_back(identifier);
+		identifiers.push_back(identifier);
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;

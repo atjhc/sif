@@ -134,7 +134,7 @@ handler
     : ON messageKey identifierList EOL
         statementList
       END messageKey {
-        if ($2->_name == $7->_name) {
+        if ($2->name == $7->name) {
             $$ = new Handler(Handler::HandlerKind, $2, $3, $5);
         } else {
             $$ = nullptr;
@@ -143,7 +143,7 @@ handler
     | FUNCTION messageKey identifierList EOL
         statementList
       END messageKey {
-        if ($2->_name == $7->_name) {
+        if ($2->name == $7->name) {
             $$ = new Handler(Handler::FunctionKind, $2, $3, $5);
         } else {
             $$ = nullptr;
