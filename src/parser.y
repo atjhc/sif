@@ -64,7 +64,7 @@ int yyerror(yyscan_t, const ParserContext&, const char *);
 %token LPAREN RPAREN PLUS MINUS MULT DIVIDE LT GT LTE GTE NEQ
 
 %left OR AND
-%left IS NEQ /* IS NOT */
+%left IS EQ NEQ /* IS NOT */
 %left CONTAINS /* IS IN */
 %left LT GT LTE GTE 
 %left CONCAT CONCAT_SPACE
@@ -85,11 +85,15 @@ int yyerror(yyscan_t, const ParserContext&, const char *);
 %nterm <identifierList> identifierList
 %nterm <statementList> statementList elseBlock
 %nterm <statement> statement ifBlock keywordStatement commandStatement
+%nterm <statement> repeatBlock repeatForever repeatCount repeatCondition repeatRange
 %nterm <expression> expression condition functionCall
 %nterm <expressionList> expressionList
 
 %destructor { delete $$; } IDENTIFIER
 %start start
+
+// TODO: Remove this once the existing conflicts are resolved.
+%expect 28
 
 %%
 
@@ -221,6 +225,9 @@ keywordStatement
     | ifBlock { 
         $$ = $1
     }
+    | repeatBlock {
+        $$ = $1
+    }
 ;
 
 commandStatement
@@ -280,6 +287,93 @@ elseBlock
     }
 ;
 
+repeatBlock
+    : repeatForever {
+        $$ = $1
+    }
+    | repeatCount {
+        $$ = $1
+    }
+    | repeatCondition {
+        $$ = $1
+    }
+    | repeatRange {
+        $$ = $1
+    }
+;
+
+repeatForever
+    : REPEAT maybeForever EOL 
+        statementList 
+      END REPEAT {
+        $$ = new Repeat($4)
+    }
+;
+
+repeatCount
+    : REPEAT expression maybeTimes EOL 
+        statementList 
+      END REPEAT {
+        if ($2) {
+            $$ = new RepeatCount($2, $5);
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+repeatCondition
+    : REPEAT WHILE expression EOL 
+        statementList 
+      END REPEAT {
+        if ($3) {
+            $$ = new RepeatCondition($3, true, $5);
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | REPEAT UNTIL expression EOL 
+        statementList 
+      END REPEAT {
+        if ($3) {
+            $$ = new RepeatCondition($3, false, $5);
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+repeatRange
+    : REPEAT WITH IDENTIFIER EQ expression TO expression EOL
+        statementList
+      END REPEAT {
+        if ($5 && $7) {
+            $$ = new RepeatRange($3, $5, $7, true, $9);
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | REPEAT WITH IDENTIFIER EQ expression DOWN TO expression EOL
+        statementList
+      END REPEAT {
+        if ($5 && $8) {
+            $$ = new RepeatRange($3, $5, $8, false, $10);
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+maybeForever
+    : /* empty */
+    | FOREVER
+;
+
+maybeTimes
+    : /* empty */
+    | TIMES
+;
+
 condition
     : expression {
         $$ = $1
@@ -303,6 +397,9 @@ expression
         $$ = new BinaryOp(BinaryOp::Divide, $1, $3)
     } 
     | expression IS expression {
+        $$ = new BinaryOp(BinaryOp::Equal, $1, $3)
+    }
+    | expression EQ expression {
         $$ = new BinaryOp(BinaryOp::Equal, $1, $3)
     }
     // TODO: Fix shift/reduce conflict

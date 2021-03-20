@@ -99,4 +99,45 @@ struct Get: Statement {
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
+struct Repeat: Statement {
+	StatementList *_repeatBlock;
+
+	Repeat(StatementList *repeatBlock)
+		: _repeatBlock(repeatBlock) {}
+
+	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+	virtual void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const {}
+};
+
+struct RepeatCount: Repeat {
+	Expression *_countExpression;
+
+	RepeatCount(Expression *countExpression, StatementList *repeatBlock)
+		: _countExpression(countExpression), Repeat(repeatBlock) {}
+
+	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct RepeatRange: Repeat {
+	Identifier *_variable;
+	Expression *_startExpression;
+	Expression *_endExpression;
+	bool _ascending;
+
+	RepeatRange(Identifier *variable, Expression *startExpression, Expression *endExpression, bool ascending, StatementList *repeatBlock)
+		: Repeat(repeatBlock), _variable(variable), _startExpression(startExpression), _endExpression(endExpression), _ascending(ascending) {}
+
+	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct RepeatCondition: Repeat {
+	Expression *_condition;
+	bool _conditionValue;
+
+	RepeatCondition(Expression *condition, bool conditionValue, StatementList *repeatBlock)
+		: Repeat(repeatBlock), _condition(condition), _conditionValue(conditionValue) {}
+
+	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+};
+
 HT_AST_NAMESPACE_END

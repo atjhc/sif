@@ -73,18 +73,21 @@ using namespace hypertalk::ast;
 [cC][oO][nN][tT][aA][iI][nN][sS] {
 	LEX_RETURN(CONTAINS);
 }
+[fF][oO][rR][eE][vV][eE][rR] {
+	LEX_RETURN(FOREVER);
+}
+[tT][iI][mM][eE][sS]		LEX_RETURN(TIMES);
+[uU][nN][tT][iI][lL]		LEX_RETURN(UNTIL);
+[wW][iI][tT][hH]			LEX_RETURN(WITH);
+[dD][oO][wW][nN]			LEX_RETURN(DOWN);
+[iI][sS]					LEX_RETURN(IS);
 
 do							LEX_RETURN(DO);
 next						LEX_RETURN(NEXT);
 send						LEX_RETURN(SEND);
 window						LEX_RETURN(WINDOW);
 program						LEX_RETURN(PROGRAM);
-forever						LEX_RETURN(FOREVER);
-with						LEX_RETURN(WITH);
-until 						LEX_RETURN(UNTIL);
 for 						LEX_RETURN(FOR);
-down 						LEX_RETURN(DOWN);
-times						LEX_RETURN(TIMES);
 an 							LEX_RETURN(AN);
 no 							LEX_RETURN(NO);
 in 							LEX_RETURN(IN);
@@ -106,9 +109,9 @@ up 							LEX_RETURN(UP);
 "/"							LEX_RETURN(DIV);
 "<"							LEX_RETURN(LT);
 ">"							LEX_RETURN(GT);
+"="							LEX_RETURN(EQ);
 "<="|"≤"					LEX_RETURN(LTE);
 ">="|"≥"					LEX_RETURN(GTE);
-"="|[iI][sS]				LEX_RETURN(IS);
 "≠"|"<>"					LEX_RETURN(NEQ);
 
 

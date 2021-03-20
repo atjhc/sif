@@ -40,6 +40,41 @@ void If::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << context.indentString() << "end if";
 }
 
+void Repeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	out << "repeat";
+	prettyPrintCondition(out, context);
+	out << std::endl;
+	_repeatBlock->prettyPrint(out, context);
+	out << context.indentString() << "end repeat";
+}
+
+void RepeatRange::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
+	out << " with ";
+	_variable->prettyPrint(out, context);
+	out << " = ";
+	_startExpression->prettyPrint(out, context);
+	if (_ascending) {
+		out << " to ";
+	} else {
+		out << " down to ";
+	}
+	_endExpression->prettyPrint(out, context);
+}
+
+void RepeatCount::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
+	out << " ";
+	_countExpression->prettyPrint(out, context);
+}
+
+void RepeatCondition::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
+	if (_conditionValue) {
+		out << " while ";
+	} else {
+		out << " until ";
+	}
+	_condition->prettyPrint(out, context);
+}
+
 void NextRepeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << "next repeat";
 }
