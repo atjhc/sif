@@ -1,0 +1,61 @@
+on begin
+	if true then pass begin1
+
+	if true then
+		pass begin1
+		pass begin1 
+	end if
+
+	if true then pass begin1 else pass begin1
+
+	if true then
+		pass begin1
+		pass begin1 
+	else pass begin1
+
+	if true then pass begin1 else
+		pass begin1
+		pass begin1
+	end if
+
+	if true then 
+		pass begin1
+		pass begin1
+	else
+		pass begin1
+		pass begin1
+	end if
+
+	if true 
+	then pass begin1
+
+	if true 
+	then
+		pass begin1
+		pass begin1 
+	end if
+
+	if true 
+	then pass begin1 else pass begin1
+
+	if true 
+	then
+		pass begin1
+		pass begin1 
+	else pass begin1
+
+	if true 
+	then pass begin1 else
+		pass begin1
+		pass begin1
+	end if
+
+	if true 
+	then 
+		pass begin1
+		pass begin1
+	else
+		pass begin1
+		pass begin1
+	end if
+end begin
