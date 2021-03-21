@@ -51,12 +51,15 @@ using namespace hypertalk::ast;
     IdentifierList  *identifierList;
     Expression      *expression;
     ExpressionList  *expressionList;
+    Preposition     *preposition;
+    Chunk           *chunk;
+    Chunk::Type      chunkType;
 }
 
 %{
 
 int yylex(YYSTYPE*, yyscan_t, ParserContext&);
-int yyerror(yyscan_t, const ParserContext&, const char *);
+int yyerror(yyscan_t, ParserContext&, const char *);
 
 %}
 
@@ -65,8 +68,12 @@ int yyerror(yyscan_t, const ParserContext&, const char *);
 %token INTO BEFORE AFTER
 %token LPAREN RPAREN PLUS MINUS MULT DIVIDE LT GT LTE GTE NEQ
 
+%token FIRST SECOND THIRD FOURTH FIFTH SIXTH SEVENTH EIGHTH NINTH TENTH LAST MIDDLE ANY
+%token CHAR WORD LINE ITEM
+
 %left OR AND
 %left IS EQ NEQ /* IS NOT */
+%left NOT
 %left CONTAINS /* IS IN */
 %left LT GT LTE GTE 
 %left CONCAT CONCAT_SPACE
@@ -88,14 +95,17 @@ int yyerror(yyscan_t, const ParserContext&, const char *);
 %nterm <statementList> statementList elseBlock
 %nterm <statement> statement ifBlock keywordStatement commandStatement
 %nterm <statement> repeatBlock repeatForever repeatCount repeatCondition repeatRange
-%nterm <expression> expression condition functionCall
+%nterm <expression> expression condition functionCall ordinal
+%nterm <chunk> chunk
+%nterm <chunkType> chunkType
 %nterm <expressionList> expressionList
+%nterm <preposition> preposition
 
 %destructor { delete $$; } IDENTIFIER
 %start start
 
 // TODO: Remove this once the existing conflicts are resolved.
-%expect 28
+//%expect 28
 
 %%
 
@@ -212,6 +222,9 @@ keywordStatement
     : EXIT REPEAT { 
         $$ = new ExitRepeat()
     }
+    | NEXT REPEAT { 
+        $$ = new NextRepeat()
+    }
     | EXIT messageKey {
         $$ = new Exit($2)
     }
@@ -234,11 +247,11 @@ keywordStatement
 
 commandStatement
     : PUT expression {
-        $$ = new Put($2, nullptr)
+        $$ = new Put($2, nullptr, nullptr)
     }
     // TODO: container support
     | PUT expression preposition IDENTIFIER {
-        $$ = new Put($2, $4)
+        $$ = new Put($2, $3, $4)
     }
     | GET expression {
         $$ = new Get($2)
@@ -404,8 +417,10 @@ expression
     | expression EQ expression {
         $$ = new BinaryOp(BinaryOp::Equal, $1, $3)
     }
-    // TODO: Fix shift/reduce conflict
-    | expression notEqualTo expression {
+    | expression MOD expression {
+        $$ = new BinaryOp(BinaryOp::Mod, $1, $3)
+    }
+    | expression notEqualTo expression %prec AND {
         $$ = new BinaryOp(BinaryOp::NotEqual, $1, $3)
     }
     | expression OR expression {
@@ -414,8 +429,7 @@ expression
     | expression AND expression {
         $$ = new BinaryOp(BinaryOp::And, $1, $3)
     }
-    // TODO: Fix shift/reduce conflict
-    | expression IS IN expression {
+    | expression IS IN expression %prec AND {
         $$ = new BinaryOp(BinaryOp::IsIn, $1, $4)
     }
     | expression CONTAINS expression {
@@ -432,6 +446,12 @@ expression
     }
     | expression GTE expression {
         $$ = new BinaryOp(BinaryOp::GreaterThanOrEqual, $1, $3)
+    }
+    | chunk OF expression {
+        $$ = $1;
+        if ($1) {
+            $1->expression = $3;
+        }
     }
     | functionCall {
         $$ = $1
@@ -482,14 +502,94 @@ expressionList
 ;
 
 preposition
-    : INTO
-    | BEFORE
-    | AFTER
+    : INTO {
+        $$ = new Preposition(Preposition::Into)
+    }
+    | BEFORE {
+        $$ = new Preposition(Preposition::Before)
+    }
+    | AFTER {
+        $$ = new Preposition(Preposition::After)
+    }
+;
+
+chunk
+    : maybeThe ordinal chunkType {
+        $$ = new RangeChunk($3, $2, nullptr)
+    }
+    | chunkType expression {
+        $$ = new RangeChunk($1, $2, nullptr)
+    }
+    | chunkType expression TO expression {
+        $$ = new RangeChunk($1, $2, $4)
+    }
+    | ANY chunkType {
+        $$ = new AnyChunk($2)
+    }
+    | maybeThe MIDDLE chunkType {
+        $$ = new MiddleChunk($3)
+    }
+    | maybeThe LAST chunkType {
+        $$ = new LastChunk($3)
+    }
+;
+
+chunkType
+    : CHAR {
+        $$ = Chunk::Char
+    }
+    | WORD {
+        $$ = Chunk::Word
+    }
+    | ITEM {
+        $$ = Chunk::Item
+    }
+    | LINE {
+        $$ = Chunk::Line
+    }
+;
+
+ordinal
+    : FIRST {
+        $$ = new IntLiteral(1)
+    }
+    | SECOND {
+        $$ = new IntLiteral(2)
+    }
+    | THIRD {
+        $$ = new IntLiteral(3)
+    }
+    | FOURTH {
+        $$ = new IntLiteral(4)
+    }
+    | FIFTH {
+        $$ = new IntLiteral(5)
+    }
+    | SIXTH {
+        $$ = new IntLiteral(6)
+    }
+    | SEVENTH {
+        $$ = new IntLiteral(7)
+    }
+    | EIGHTH {
+        $$ = new IntLiteral(8)
+    }
+    | NINTH {
+        $$ = new IntLiteral(9)
+    }
+    | TENTH {
+        $$ = new IntLiteral(10)
+    }
+;
+
+maybeThe
+    : /* empty */
+    | THE
 ;
 
 notEqualTo
     : NEQ
-    | IS NOT
+    | IS NOT %prec NEQ
 ;
 
 maybeEOL
@@ -504,10 +604,7 @@ maybeEOL
 using namespace hypertalk;
 using namespace hypertalk::ast;
 
-int yyerror(yyscan_t scanner, const ParserContext &context, const char *msg) {
-    auto lineNumber = context.currentLocation.lineNumber;
-    auto position = context.currentLocation.position;
-    context.err << context.fileName << ":" << lineNumber << ":" << position << ": ";
-    context.err << msg << std::endl;
+int yyerror(yyscan_t scanner, ParserContext &context, const char *msg) {
+    context.error(msg);
     return 0;
 }

@@ -63,6 +63,8 @@ using namespace hypertalk::ast;
 [pP][uU][tT]				LEX_RETURN(PUT);
 [gG][eE][tT] 				LEX_RETURN(GET);
 [iI][nN][tT][oO]			LEX_RETURN(INTO);
+[aA][fF][tT][eE][rR]		LEX_RETURN(AFTER);
+[bB][eE][fF][oO][rR][eE]	LEX_RETURN(BEFORE);
 [wW][hH][iI][lL][eE] 		LEX_RETURN(WHILE);
 [gG][lL][oO][bB][aA][lL]	LEX_RETURN(GLOBAL);
 [rR][eE][tT][uU][rR][nN]	LEX_RETURN(RETURN);
@@ -84,6 +86,26 @@ using namespace hypertalk::ast;
 [wW][iI][tT][hH]			LEX_RETURN(WITH);
 [dD][oO][wW][nN]			LEX_RETURN(DOWN);
 [iI][sS]					LEX_RETURN(IS);
+
+[fF][iI][rR][sS][tT]		LEX_RETURN(FIRST);
+[sS][eE][cC][oO][nN][dD]	LEX_RETURN(SECOND);
+[tT][hH][iI][rR][dD]		LEX_RETURN(THIRD);
+[fF][oO][uU][rR][tT][hH]	LEX_RETURN(FOURTH);
+[fF][iI][fF][tT][hH]		LEX_RETURN(FIFTH);
+[sS][iI][xX][tT][hH]		LEX_RETURN(SIXTH);
+[sS][eE][vV][eE][nN][tT][hH] LEX_RETURN(SEVENTH);
+[eE][iI][gG][hH][tT][hH]	LEX_RETURN(EIGHTH);
+[nN][iI][nN][tT][hH]		LEX_RETURN(NINTH);
+[tT][eE][nN][tT][hH]		LEX_RETURN(TENTH);
+[lL][aA][sS][tT]			LEX_RETURN(LAST);
+[mM][iI][dD]				LEX_RETURN(MIDDLE);
+[mM][iI][dD][dD][lL][eE]	LEX_RETURN(MIDDLE);
+[aA][nN][yY]				LEX_RETURN(ANY);
+
+[cC][hH][aA][rR]			LEX_RETURN(CHAR);
+[wW][oO][rR][dD]			LEX_RETURN(WORD);
+[lL][iI][nN][eE]			LEX_RETURN(LINE);
+[iI][tT][eE][mM]			LEX_RETURN(ITEM);
 
 do							LEX_RETURN(DO);
 next						LEX_RETURN(NEXT);

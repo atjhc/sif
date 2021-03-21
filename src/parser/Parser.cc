@@ -22,12 +22,43 @@ using namespace hypertalk::ast;
 #include "yyScanner.h"
 // clang-format on
 
+#include <sstream>
+
 extern int yyparse(yyscan_t scanner, hypertalk::ParserContext &);
 
 HT_NAMESPACE_BEGIN
 
+ParserContext::ParserContext(const ParserConfig &config, const std::string &source)
+	: fileName(config.fileName), err(config.err) {
+
+    auto ss = std::stringstream(source);
+    std::string line;
+    while (std::getline(ss, line, '\n')) {
+        sourceLines.push_back(line);
+    }
+}
+
+void ParserContext::error(const char *msg) {
+    numberOfErrors++;
+    auto lineNumber = currentLocation.lineNumber;
+    auto position = currentLocation.position;
+    
+    err << fileName << ":" << lineNumber << ":" << position << ": error: ";
+    err << msg << std::endl;
+
+    auto lineString = sourceLines[lineNumber - 1];
+    err << lineString << std::endl;
+
+    std::string indentString;
+    for (int i = 0; i < position; i++) {
+    	if (lineString.at(i) == '\t') indentString += '\t';
+    	else indentString += ' ';
+    }
+    err << indentString << "^" << std::endl;
+}
+
 std::unique_ptr<ast::Script> Parser::parse(const ParserConfig &config, const std::string &source) {
-    ParserContext context(config);
+    ParserContext context(config, source);
 
     if (yylex_init(&context.scanner)) {
         return nullptr;
@@ -37,12 +68,17 @@ std::unique_ptr<ast::Script> Parser::parse(const ParserConfig &config, const std
 
     // There seems to be a bug with Flex 2.5.35 where yylineno is uninitialized.
     yyset_lineno(1, context.scanner);
-
-    if (yyparse((yyscan_t)context.scanner, context)) {
-        return nullptr;
-    }
+    yyparse((yyscan_t)context.scanner, context);
     yy_delete_buffer(buf, context.scanner);
     yylex_destroy(context.scanner);
+
+    if (context.numberOfErrors > 0) {
+    	context.err 
+    		<< context.numberOfErrors 
+    		<< (context.numberOfErrors > 1 ? " errors " : " error ")
+    		<< "generated." << std::endl
+    	;
+    }
 
     return std::unique_ptr<ast::Script>(context.script);
 }

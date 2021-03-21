@@ -108,8 +108,27 @@ void Return::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 void Put::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << "put ";
 	expression->prettyPrint(out, context);
+	if (preposition) {
+		out << " ";
+		preposition->prettyPrint(out, context);
+	}
 	if (target) {
+		out << " ";
 		target->prettyPrint(out, context);
+	}
+}
+
+void Preposition::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	switch (type) {
+	case Before:
+		out << "before";
+		break;
+	case Into:
+		out << "into";
+		break;
+	case After:
+		out << "after";
+		break;
 	}
 }
 

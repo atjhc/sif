@@ -33,13 +33,16 @@ struct ParserContext {
 	ast::Script *script = nullptr;
 
 	std::string fileName;
+	std::vector<std::string> sourceLines;
 	std::ostream &err;
 
+	unsigned int numberOfErrors = 0;
 	ast::Location currentLocation;
 	ast::Location lookAheadLocation;
 
-	ParserContext(const ParserConfig &config)
-		: fileName(config.fileName), err(config.err) {}
+	ParserContext(const ParserConfig &config, const std::string &s);
+
+	void error(const char *msg);
 };
 
 class Parser {

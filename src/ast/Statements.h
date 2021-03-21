@@ -30,6 +30,7 @@ struct StatementList;
 struct Identifier;
 struct IdentifierList;
 struct Expression;
+struct Preposition;
 
 struct Statement: Node {
 	virtual ~Statement() = default;
@@ -89,10 +90,25 @@ struct Return: Statement {
 
 struct Put: Statement {
 	std::unique_ptr<Expression> expression;
+	std::unique_ptr<Preposition> preposition;
 	std::unique_ptr<Identifier> target;
 
-	Put(Expression *_expression, Identifier *_target)
-		: expression(_expression), target(_target) {}
+	Put(Expression *_expression, Preposition *_preposition, Identifier *_target)
+		: expression(_expression), preposition(_preposition), target(_target) {}
+
+	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct Preposition: Node {
+	enum PrepositionType {
+		Before,
+		Into,
+		After
+	};
+
+	PrepositionType type;
+
+	Preposition(PrepositionType _type) : type(_type) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
