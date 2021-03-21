@@ -19,19 +19,26 @@
 #include "Defines.h"
 #include "Base.h"
 #include "Expressions.h"
+#include "Handlers.h"
 
 #include <vector>
 #include <ostream>
 
 HT_AST_NAMESPACE_BEGIN
 
+struct StatementList;
+struct Identifier;
+struct IdentifierList;
+struct Expression;
+
 struct Statement: Node {
+	virtual ~Statement() = default;
 };
 
 struct If: Statement {
-	Expression *condition;
-	StatementList *ifStatements;
-	StatementList *elseStatements;
+	std::unique_ptr<Expression> condition;
+	std::unique_ptr<StatementList> ifStatements;
+	std::unique_ptr<StatementList> elseStatements;
 
 	If(Expression *_condition, StatementList *_ifStatements, StatementList *_elseStatements) 
 		: condition(_condition), ifStatements(_ifStatements), elseStatements(_elseStatements) {}
@@ -48,7 +55,7 @@ struct NextRepeat: Statement {
 };
 
 struct Exit: Statement {
-	Identifier *messageKey;
+	std::unique_ptr<Identifier> messageKey;
 
 	Exit(Identifier *_messageKey) : messageKey(_messageKey) {}
 
@@ -56,7 +63,7 @@ struct Exit: Statement {
 };
 
 struct Pass: Statement {
-	Identifier *messageKey;
+	std::unique_ptr<Identifier> messageKey;
 
 	Pass(Identifier *_messageKey) : messageKey(_messageKey) {}
 
@@ -64,7 +71,7 @@ struct Pass: Statement {
 };
 
 struct Global: Statement {
-	IdentifierList *variables;
+	std::unique_ptr<IdentifierList> variables;
 
 	Global(IdentifierList *_variables) : variables(_variables) {}
 
@@ -72,7 +79,7 @@ struct Global: Statement {
 };
 
 struct Return: Statement {
-	Expression *expression;
+	std::unique_ptr<Expression> expression;
 
 	Return(Expression *_expression) : expression(_expression) {}
 
@@ -81,8 +88,8 @@ struct Return: Statement {
 };
 
 struct Put: Statement {
-	Expression *expression;
-	Identifier *target;
+	std::unique_ptr<Expression> expression;
+	std::unique_ptr<Identifier> target;
 
 	Put(Expression *_expression, Identifier *_target)
 		: expression(_expression), target(_target) {}
@@ -91,7 +98,7 @@ struct Put: Statement {
 };
 
 struct Get: Statement {
-	Expression *expression;
+	std::unique_ptr<Expression> expression;
 
 	Get(Expression *_expression) : expression(_expression) {}
 
@@ -99,7 +106,7 @@ struct Get: Statement {
 };
 
 struct Repeat: Statement {
-	StatementList *statements;
+	std::unique_ptr<StatementList> statements;
 
 	Repeat(StatementList *_statements) : statements(_statements) {}
 
@@ -108,7 +115,7 @@ struct Repeat: Statement {
 };
 
 struct RepeatCount: Repeat {
-	Expression *countExpression;
+	std::unique_ptr<Expression> countExpression;
 
 	RepeatCount(Expression *_countExpression, StatementList *_statements)
 		: countExpression(_countExpression), Repeat(_statements) {}
@@ -117,9 +124,9 @@ struct RepeatCount: Repeat {
 };
 
 struct RepeatRange: Repeat {
-	Identifier *variable;
-	Expression *startExpression;
-	Expression *endExpression;
+	std::unique_ptr<Identifier> variable;
+	std::unique_ptr<Expression> startExpression;
+	std::unique_ptr<Expression> endExpression;
 	bool ascending;
 
 	RepeatRange(Identifier *_variable, Expression *_startExpression, Expression *_endExpression, bool _ascending, StatementList *_statements)
@@ -129,7 +136,7 @@ struct RepeatRange: Repeat {
 };
 
 struct RepeatCondition: Repeat {
-	Expression *condition;
+	std::unique_ptr<Expression> condition;
 	bool conditionValue;
 
 	RepeatCondition(Expression *_condition, bool _conditionValue, StatementList *_statements)

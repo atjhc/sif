@@ -19,6 +19,7 @@
 #include "Defines.h"
 #include "Base.h"
 #include "Expressions.h"
+#include "Statements.h"
 
 #include <vector>
 #include <ostream>
@@ -30,17 +31,15 @@ struct Statement;
 struct StatementList;
 struct IdentifierList;
 struct Identifier;
+struct Expression;
 
 struct Script: Node {
-	std::vector<Handler*> handlers;
+	std::vector<std::unique_ptr<Handler>> handlers;
 
 	Script() {}
 
-	Script(const std::vector<Handler*> &_handlers) 
-		: handlers(_handlers) {}
-
 	void add(Handler *handler) {
-		handlers.push_back(handler);
+		handlers.push_back(std::unique_ptr<Handler>(handler));
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
@@ -54,9 +53,10 @@ struct Handler: Node {
 	};
 
 	Kind kind;
-	Identifier *messageKey;
-	IdentifierList *arguments;
-	StatementList *statements;
+
+	std::unique_ptr<Identifier> messageKey;
+	std::unique_ptr<IdentifierList> arguments;
+	std::unique_ptr<StatementList> statements;
 
 	Handler(Kind _kind, Identifier *_messageKey, IdentifierList *_arguments, StatementList *_statements) 
 		: kind(_kind), messageKey(_messageKey), arguments(_arguments), statements(_statements) {}
@@ -65,7 +65,7 @@ struct Handler: Node {
 };
 
 struct StatementList: Node {
-	std::vector<Statement*> statements;
+	std::vector<std::unique_ptr<Statement>> statements;
 
 	StatementList() {}
 
@@ -74,19 +74,19 @@ struct StatementList: Node {
 	}
 
 	void add(Statement *statement) {
-		statements.push_back(statement);
+		statements.push_back(std::unique_ptr<Statement>(statement));
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct IdentifierList: Node {
-	std::vector<Identifier *> identifiers;
+	std::vector<std::unique_ptr<Identifier>> identifiers;
 
 	IdentifierList() {}
 
 	void add(Identifier *identifier) {
-		identifiers.push_back(identifier);
+		identifiers.push_back(std::unique_ptr<Identifier>(identifier));
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;

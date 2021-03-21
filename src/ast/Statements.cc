@@ -20,7 +20,7 @@ HT_AST_NAMESPACE_BEGIN
 
 void StatementList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	context.indentLevel += 1;
-	for (auto statement : statements) {
+	for (auto& statement : statements) {
 		out << context.indentString();
 		statement->prettyPrint(out, context);
 		out << std::endl;

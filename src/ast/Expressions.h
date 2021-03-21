@@ -26,11 +26,11 @@
 HT_AST_NAMESPACE_BEGIN
 
 struct Expression: Node {
-
+	virtual ~Expression() = default;
 };
 
 struct ExpressionList: Node {
-	std::vector<Expression *> expressions;
+	std::vector<std::unique_ptr<Expression>> expressions;
 
 	ExpressionList() {}
 
@@ -39,7 +39,7 @@ struct ExpressionList: Node {
 	}
 
 	void add(Expression *expression) {
-		expressions.push_back(expression);
+		expressions.push_back(std::unique_ptr<Expression>(expression));
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
@@ -54,8 +54,8 @@ struct Identifier: Expression {
 };
 
 struct FunctionCall: Expression {
-	Identifier *identifier;
-	ExpressionList *arguments;
+	std::unique_ptr<Identifier> identifier;
+	std::unique_ptr<ExpressionList> arguments;
 
 	FunctionCall(Identifier *_identifier, ExpressionList *_arguments) :
 		identifier(_identifier), arguments(_arguments) {}
@@ -82,7 +82,7 @@ struct BinaryOp: Expression {
 	};
 
 	Operator op;
-	Expression *left, *right;
+	std::unique_ptr<Expression> left, right;
 
 	BinaryOp(Operator _op, Expression *_left, Expression *_right)
 		: op(_op), left(_left), right(_right) {}
@@ -91,7 +91,7 @@ struct BinaryOp: Expression {
 };
 
 struct Not: Expression {
-	Expression *expression;
+	std::unique_ptr<Expression> expression;
 
 	Not(Expression *_expression) : expression(_expression) {}
 

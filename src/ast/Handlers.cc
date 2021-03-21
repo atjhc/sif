@@ -19,7 +19,7 @@
 HT_AST_NAMESPACE_BEGIN
 
 void Script::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	for (auto handler : handlers) {
+	for (auto& handler : handlers) {
      	handler->prettyPrint(out, context);
 	}
 }
@@ -46,6 +46,18 @@ void Handler::prettyPrint(std::ostream &out, PrettyPrintContext &context) const 
 	out << context.indentString() << "end ";
 	messageKey->prettyPrint(out, context);
 	out << std::endl;
+}
+
+void IdentifierList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	auto i = identifiers.begin();
+	while (i != identifiers.end()) {
+		(*i)->prettyPrint(out, context);
+
+		i++;
+		if (i != identifiers.end()) {
+			out << ", ";
+		}
+	}
 }
 
 HT_AST_NAMESPACE_END

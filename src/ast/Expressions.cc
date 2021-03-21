@@ -94,23 +94,11 @@ void Identifier::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
 	out << name;
 }
 
-void IdentifierList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	auto i = identifiers.begin();
-	while (i != identifiers.end()) {
-		(*i)->prettyPrint(out, context);
-
-		i++;
-		if (i != identifiers.end()) {
-			out << ", ";
-		}
-	}
-}
-
 void ExpressionList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	auto i = expressions.begin();
 	while (i < expressions.end()) {
 		(*i)->prettyPrint(out, context);
-		
+
 		i++;
 		if (i != expressions.end()) {
 			out << ", ";
