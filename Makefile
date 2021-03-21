@@ -1,10 +1,11 @@
 CC := clang++
-LIBNAME := hypertalk.a
+LIBNAME := chatter.a
+TOOLNAME := chatter
 
 DSTROOT := build
 SRCROOT := src
 
-TOOLS := $(SRCROOT)/hypertalk.cc $(SRCROOT)/tests.cc
+TOOLS := $(SRCROOT)/chatter.cc $(SRCROOT)/tests.cc
 CODEGEN := $(DSTROOT)/yyParser.cc $(DSTROOT)/yyScanner.cc
 
 # Find all .cc files under the SRCROOT directory.
@@ -26,7 +27,7 @@ VPATH := $(SRCROOT)
 
 CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -std=c++14 -g -Wno-deprecated-register
 
-all: $(DSTROOT)/$(LIBNAME) $(DSTROOT)/hypertalk
+all: $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 
 format:
 	find src -name '*.cc' -exec clang-format -i --style=file {} \;
@@ -35,26 +36,25 @@ format:
 test: $(DSTROOT)/test
 	$(DSTROOT)/test $(SRCROOT)/tests
 
-$(DSTROOT):
-	mkdir -p $(DSTROOT)
-
 $(DSTROOT)/test: tests.cc $(DSTROOT)/$(LIBNAME)
 	$(CC) $(CPPFLAGS) -o $(DSTROOT)/test $< $(DSTROOT)/$(LIBNAME)
 
-$(DSTROOT)/hypertalk: $(SRCROOT)/hypertalk.cc $(DSTROOT)/$(LIBNAME)
-	$(CC) $(CPPFLAGS) -o $(DSTROOT)/hypertalk $< $(DSTROOT)/$(LIBNAME)
+$(DSTROOT)/$(TOOLNAME): $(SRCROOT)/chatter.cc $(DSTROOT)/$(LIBNAME)
+	$(CC) $(CPPFLAGS) -o $(DSTROOT)/$(TOOLNAME) $< $(DSTROOT)/$(LIBNAME)
 
-$(DSTROOT)/$(LIBNAME): $(DSTROOT) $(OBJ)
+$(DSTROOT)/$(LIBNAME): $(OBJ)
 	ar rc $(DSTROOT)/$(LIBNAME) $(OBJ)
 	ranlib $(DSTROOT)/$(LIBNAME)
 
-$(DSTROOT)/yyScanner.cc: $(DSTROOT) $(SRCROOT)/parser/scanner.l
+$(DSTROOT)/yyScanner.cc: $(SRCROOT)/parser/scanner.l
+	mkdir -p $(dir $@)
 	flex --outfile=$(DSTROOT)/yyScanner.cc --header-file=$(DSTROOT)/yyScanner.h $(SRCROOT)/parser/scanner.l
 
-$(DSTROOT)/yyParser.cc: $(DSTROOT) $(SRCROOT)/parser/parser.y
+$(DSTROOT)/yyParser.cc: $(SRCROOT)/parser/parser.y
+	mkdir -p $(dir $@)
 	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(SRCROOT)/parser/parser.y
 
-$(DSTROOT)/%.o: %.cc %.h $(DSTROOT)
+$(DSTROOT)/%.o: %.cc %.h
 	mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 
