@@ -26,12 +26,14 @@
 #include <cstdlib>
 
 #include "ast/ast.h"
+#include "parser/Parser.h"
 
 #ifndef YY_TYPEDEF_YY_SCANNER_T
     #define YY_TYPEDEF_YY_SCANNER_T
     typedef void* yyscan_t;
 #endif
 
+using namespace hypertalk;
 using namespace hypertalk::ast;
 
 %}
@@ -499,12 +501,13 @@ maybeEOL
 
 #define YYDEBUG 1
 
+using namespace hypertalk;
 using namespace hypertalk::ast;
 
 int yyerror(yyscan_t scanner, const ParserContext &context, const char *msg) {
     auto lineNumber = context.currentLocation.lineNumber;
     auto position = context.currentLocation.position;
-    std::cout << context.fileName << ":" << lineNumber << ":" << position << ": ";
-    std::cout << msg << std::endl;
+    context.err << context.fileName << ":" << lineNumber << ":" << position << ": ";
+    context.err << msg << std::endl;
     return 0;
 }

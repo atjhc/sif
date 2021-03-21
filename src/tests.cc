@@ -21,49 +21,27 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include "ast/ast.h"
+#include "parser/Parser.h"
+
+using namespace hypertalk;
 using namespace hypertalk::ast;
-
-// clang-format off
-#include "Parser.h"
-#include "Scanner.h"
-// clang-format on
-
-int yyparse(yyscan_t scanner, ParserContext &);
 
 static int parseTest(const std::string &path) {
     assert(!path.empty());
 
     std::string source;
     std::ifstream file(path);
-    if (file) {
-        std::ostringstream ss;
-        ss << file.rdbuf();
-        source = ss.str();
-    } else {
-        std::cerr << "Could not open file at path: " << path << std::endl;
-        return -1;
-    }
 
-    ParserContext context;
-    context.scanner = NULL;
-    context.fileName = path;
+    assert(file);
 
-    if (yylex_init(&context.scanner)) {
-        return -1;
-    }
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    source = ss.str();
 
-    YY_BUFFER_STATE buf = yy_scan_string(source.c_str(), context.scanner);
-    // There seems to be a bug with Flex 2.5.35 where yylineno is uninitialized.
-    yyset_lineno(1, context.scanner);
+    ParserConfig config;
+    config.fileName = path;
 
-    if (yyparse((yyscan_t)context.scanner, context)) {
-        return -1;
-    }
-    yy_delete_buffer(buf, context.scanner);
-    yylex_destroy(context.scanner);
-
-    return (context.script == nullptr);
+    return (Parser().parse(config, source) == nullptr);
 }
 
 static int runTests(const std::string &path) {

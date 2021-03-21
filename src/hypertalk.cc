@@ -18,20 +18,17 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+
 #include <getopt.h>
+#include <libgen.h>
 
-#include "ast/ast.h"
+#include "parser/Parser.h"
+
+using namespace hypertalk;
 using namespace hypertalk::ast;
-
-// clang-format off
-#include "Parser.h"
-#include "Scanner.h"
-// clang-format on
 
 extern int yydebug;
 static int prettyPrint = 0;
-
-int yyparse(yyscan_t scanner, ParserContext &);
 
 static int run(const std::string &fileName) {
     std::string source;
@@ -49,60 +46,61 @@ static int run(const std::string &fileName) {
         source = ss.str();
     }
 
-    ParserContext context;
-    context.scanner = NULL;
-    context.fileName = (fileName.empty() ? "<stdin>" : fileName);
+    ParserConfig config;
+    config.fileName = fileName;
 
-    if (yylex_init(&context.scanner)) {
+    Parser parser;
+
+    std::unique_ptr<Script> result;
+    if ((result = Parser().parse(config, source)) == nullptr) {
         return -1;
     }
 
-    YY_BUFFER_STATE buf = yy_scan_string(source.c_str(), context.scanner);
-    // There seems to be a bug with Flex 2.5.35 where yylineno is uninitialized.
-    yyset_lineno(1, context.scanner);
-
-    if (yyparse((yyscan_t)context.scanner, context)) {
-        return -1;
-    }
-    yy_delete_buffer(buf, context.scanner);
-    yylex_destroy(context.scanner);
-
-    if (prettyPrint && context.script != nullptr) {
+    if (prettyPrint) {
         auto prettyPrintContext = PrettyPrintContext();
-        context.script->prettyPrint(std::cout, prettyPrintContext);
+        result->prettyPrint(std::cout, prettyPrintContext);
     }
 
     return 0;
 }
 
+int usage(int argc, char *argv[]) {
+    std::cout 
+        << "Usage: " << basename(argv[0]) << " [options...] [file]" << std::endl
+        << "     --trace-parse"     << "\t Output trace parsing logging"            << std::endl
+        << " -p, --pretty-print"    << "\t Pretty print the abstract syntax tree"   << std::endl
+        << " -h, --help"            << "\t Print out this help and exit"            << std::endl
+    ;
+    return -1;
+}
+
 int main(int argc, char *argv[]) {
     static struct option long_options[] = {
-        {"trace-parse", no_argument, &yydebug, 1},
-        {"pretty", no_argument, &prettyPrint, 'p'},
-        // {"file", required_argument, 0, 'f'},
+        {"trace-parse",     no_argument, &yydebug,       1},
+        {"pretty-print",    no_argument, &prettyPrint, 'p'},
+        {"help",            no_argument, &prettyPrint, 'h'},
         {0, 0, 0, 0}
     };
-
-    std::cout << "debug: " << yydebug << std::endl;
 
     int c, option_index = 0;
     while ((c = getopt_long(argc, argv, "p", long_options, &option_index)) != -1) {
         switch (c) {
-        // case 'd':
-        // std::cout << "debug flag enabled" << std::endl;
-        //     yydebug = 1;
-        //     break;
         case 'p':
             prettyPrint = 1;
             break;
+        case 'h':
+            return usage(argc, argv);
         default:
             break;
         }
     }
 
     std::string fileName;
+    
     if (optind < argc) {
         fileName = argv[optind];
+    } else {
+        return usage(argc, argv);
     }
 
     return run(fileName);

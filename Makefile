@@ -1,46 +1,64 @@
-CC = clang++
-LIBNAME = hypertalk.a
+CC := clang++
+LIBNAME := hypertalk.a
 
-BUILD = build
-SRC = src
-OBJECTS =  Parser.o Scanner.o ast/Expressions.o ast/Statements.o ast/Handlers.o
+DSTROOT := build
+SRCROOT := src
 
-VPATH = src
-OFILES = $(OBJECTS:%.o=$(BUILD)/%.o)
-CPPFLAGS = -I$(BUILD) -I./ -I$(SRC) -std=c++11 -g -Wno-deprecated-register
+TOOLS := $(SRCROOT)/hypertalk.cc $(SRCROOT)/tests.cc
+CODEGEN := $(DSTROOT)/yyParser.cc $(DSTROOT)/yyScanner.cc
 
-all: $(BUILD)/$(LIBNAME) $(BUILD)/tests $(BUILD)/hypertalk
+# Find all .cc files under the SRCROOT directory.
+SRC := $(shell find src -name '*.cc' | xargs)
+
+# Filter out tools from the framework.
+SRC := $(filter-out $(TOOLS),$(SRC))
+
+# Add the code generation files.
+SRC := $(CODEGEN) $(SRC)
+
+# Generate the .o files for the framework.
+OBJ := $(patsubst $(SRCROOT)/%.cc,$(DSTROOT)/%.o,$(SRC))
+OBJ := $(patsubst $(DSTROOT)/%.cc,$(DSTROOT)/%.o,$(OBJ))
+
+# TODO: I want to get rid of this, but I don't yet know how to
+# create a build rule that matches target sub directories.
+VPATH := $(SRCROOT)
+
+CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -std=c++14 -g -Wno-deprecated-register
+
+all: $(DSTROOT)/$(LIBNAME) $(DSTROOT)/hypertalk
 
 format:
-	clang-format -i --style=file *.c *.h
+	find src -name '*.cc' -exec clang-format -i --style=file {} \;
+	find src -name '*.h' -exec clang-format -i --style=file {} \;
 
-tests: $(BUILD)/tests
-	$(BUILD)/tests $(SRC)/tests
+test: $(DSTROOT)/test
+	$(DSTROOT)/test $(SRCROOT)/tests
 
-$(BUILD):
-	mkdir -p $(BUILD)
+$(DSTROOT):
+	mkdir -p $(DSTROOT)
 
-$(BUILD)/tests: tests.cc $(BUILD)/$(LIBNAME)
-	$(CC) $(CPPFLAGS) -o $(BUILD)/tests $< $(BUILD)/$(LIBNAME)
+$(DSTROOT)/test: tests.cc $(DSTROOT)/$(LIBNAME)
+	$(CC) $(CPPFLAGS) -o $(DSTROOT)/test $< $(DSTROOT)/$(LIBNAME)
 
-$(BUILD)/hypertalk: hypertalk.cc $(BUILD)/$(LIBNAME)
-	$(CC) $(CPPFLAGS) -o $(BUILD)/hypertalk $< $(BUILD)/$(LIBNAME)
+$(DSTROOT)/hypertalk: $(SRCROOT)/hypertalk.cc $(DSTROOT)/$(LIBNAME)
+	$(CC) $(CPPFLAGS) -o $(DSTROOT)/hypertalk $< $(DSTROOT)/$(LIBNAME)
 
-$(BUILD)/$(LIBNAME): $(BUILD) $(OFILES)
-	ar rc $(BUILD)/$(LIBNAME) $(OFILES)
-	ranlib $(BUILD)/$(LIBNAME)
+$(DSTROOT)/$(LIBNAME): $(DSTROOT) $(OBJ)
+	ar rc $(DSTROOT)/$(LIBNAME) $(OBJ)
+	ranlib $(DSTROOT)/$(LIBNAME)
 
-$(BUILD)/Scanner.cc: $(BUILD) $(SRC)/scanner.l
-	flex --outfile=$(BUILD)/Scanner.cc --header-file=$(BUILD)/Scanner.h $(SRC)/scanner.l
+$(DSTROOT)/yyScanner.cc: $(DSTROOT) $(SRCROOT)/parser/scanner.l
+	flex --outfile=$(DSTROOT)/yyScanner.cc --header-file=$(DSTROOT)/yyScanner.h $(SRCROOT)/parser/scanner.l
 
-$(BUILD)/Parser.cc: $(BUILD) $(SRC)/parser.y
-	bison --output-file=$(BUILD)/Parser.cc --defines=$(BUILD)/Parser.h $(SRC)/parser.y
+$(DSTROOT)/yyParser.cc: $(DSTROOT) $(SRCROOT)/parser/parser.y
+	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(SRCROOT)/parser/parser.y
 
-$(BUILD)/%.o: %.cc %.h $(BUILD)
+$(DSTROOT)/%.o: %.cc %.h $(DSTROOT)
 	mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(DSTROOT)
 
-.PHONY: all format clean
+.PHONY: all format test clean

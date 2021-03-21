@@ -20,9 +20,12 @@
 #include <iostream>
 
 #include "ast/ast.h"
+#include "parser/Parser.h"
+
+using namespace hypertalk;
 using namespace hypertalk::ast;
 
-#include "Parser.h"
+#include "yyParser.h"
 
 #define YY_DECL int yylex(YYSTYPE *yylval_param, void *yyscanner, ParserContext &context)
 

@@ -17,35 +17,34 @@
 #pragma once
 
 #include "Defines.h"
+#include "ast/ast.h"
 
-#include <ostream>
+#include <iostream>
 
-HT_AST_NAMESPACE_BEGIN
+HT_NAMESPACE_BEGIN
 
-struct Script;
-
-struct Location {
-	unsigned int position = 1;
-	unsigned int lineNumber = 1;
+struct ParserConfig {
+	std::string fileName = "<stdin>";
+	std::ostream &err = std::cerr;
 };
 
-struct PrettyPrintConfig {
-	unsigned int tabSize = 2;
+struct ParserContext {
+	void *scanner = nullptr;
+	ast::Script *script = nullptr;
+
+	std::string fileName;
+	std::ostream &err;
+
+	ast::Location currentLocation;
+	ast::Location lookAheadLocation;
+
+	ParserContext(const ParserConfig &config)
+		: fileName(config.fileName), err(config.err) {}
 };
 
-struct PrettyPrintContext {
-	PrettyPrintConfig config = PrettyPrintConfig();
-	unsigned int indentLevel = 0;
-
-	std::string indentString() {
-		return std::string(indentLevel * config.tabSize, ' ');
-	}
+class Parser {
+public:
+	std::unique_ptr<ast::Script> parse(const ParserConfig &config, const std::string &source);
 };
 
-struct Node {
-	Location location;
-
-	virtual void prettyPrint(std::ostream &, PrettyPrintContext &) const = 0;
-};
-
-HT_AST_NAMESPACE_END
+HT_NAMESPACE_END
