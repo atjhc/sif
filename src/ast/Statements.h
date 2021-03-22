@@ -134,7 +134,7 @@ struct RepeatCount: Repeat {
 	std::unique_ptr<Expression> countExpression;
 
 	RepeatCount(Expression *_countExpression, StatementList *_statements)
-		: countExpression(_countExpression), Repeat(_statements) {}
+		: Repeat(_statements), countExpression(_countExpression) {}
 
 	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -146,7 +146,7 @@ struct RepeatRange: Repeat {
 	bool ascending;
 
 	RepeatRange(Identifier *_variable, Expression *_startExpression, Expression *_endExpression, bool _ascending, StatementList *_statements)
-		: variable(_variable), startExpression(_startExpression), endExpression(_endExpression), ascending(_ascending), Repeat(_statements) {}
+		: Repeat(_statements), variable(_variable), startExpression(_startExpression), endExpression(_endExpression), ascending(_ascending) {}
 
 	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -156,7 +156,7 @@ struct RepeatCondition: Repeat {
 	bool conditionValue;
 
 	RepeatCondition(Expression *_condition, bool _conditionValue, StatementList *_statements)
-		: condition(_condition), conditionValue(_conditionValue), Repeat(_statements) {}
+		: Repeat(_statements), condition(_condition), conditionValue(_conditionValue) {}
 
 	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };

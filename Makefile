@@ -25,7 +25,12 @@ OBJ := $(patsubst $(DSTROOT)/%.cc,$(DSTROOT)/%.o,$(OBJ))
 # create a build rule that matches target sub directories.
 VPATH := $(SRCROOT)
 
-CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -std=c++14 -g -Wno-deprecated-register
+# TODO: Remove exceptions for implicit-function-declaration and unused-function
+# I need these for the time being because they flag generated code.
+WNO := -Wno-unneeded-internal-declaration
+WNO := $(WNO) -Wno-unused-function
+
+CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++14 -g -Wno-deprecated-register
 
 all: $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 

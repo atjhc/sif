@@ -49,8 +49,6 @@ static int run(const std::string &fileName) {
     ParserConfig config;
     config.fileName = fileName;
 
-    Parser parser;
-
     std::unique_ptr<Script> result;
     if ((result = Parser().parse(config, source)) == nullptr) {
         return -1;

@@ -58,7 +58,7 @@ struct FunctionCall: Expression {
 	std::unique_ptr<ExpressionList> arguments;
 
 	FunctionCall(Identifier *_identifier, ExpressionList *_arguments) :
-		identifier(_identifier), arguments(_arguments) {}
+		identifier(_identifier), arguments(std::unique_ptr<ExpressionList>(_arguments)) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -148,7 +148,7 @@ struct RangeChunk: Chunk {
 	Expression *end;
 
 	RangeChunk(Type _type, Expression *_start, Expression *_end, Expression *_expression = nullptr)
-		: start(_start), end(_end), Chunk(_type, _expression) {}
+		: Chunk(_type, _expression), start(_start), end(_end) {}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

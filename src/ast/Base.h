@@ -45,6 +45,8 @@ struct PrettyPrintContext {
 struct Node {
 	Location location;
 
+	virtual ~Node() = default;
+	
 	virtual void prettyPrint(std::ostream &, PrettyPrintContext &) const = 0;
 };
 
