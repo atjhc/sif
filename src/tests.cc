@@ -23,8 +23,8 @@
 
 #include "parser/Parser.h"
 
-using namespace hypertalk;
-using namespace hypertalk::ast;
+using namespace chatter;
+using namespace chatter::ast;
 
 static int parseTest(const std::string &path) {
     assert(!path.empty());

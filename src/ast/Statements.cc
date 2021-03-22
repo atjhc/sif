@@ -16,7 +16,7 @@
 
 #include "Statements.h"
 
-HT_AST_NAMESPACE_BEGIN
+CH_AST_NAMESPACE_BEGIN
 
 void StatementList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	context.indentLevel += 1;
@@ -38,49 +38,6 @@ void If::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 		elseStatements->prettyPrint(out, context);
 	}
 	out << context.indentString() << "end if";
-}
-
-void Repeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "repeat";
-	prettyPrintCondition(out, context);
-	out << std::endl;
-	statements->prettyPrint(out, context);
-	out << context.indentString() << "end repeat";
-}
-
-void RepeatRange::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-	out << " with ";
-	variable->prettyPrint(out, context);
-	out << " = ";
-	startExpression->prettyPrint(out, context);
-	if (ascending) {
-		out << " to ";
-	} else {
-		out << " down to ";
-	}
-	endExpression->prettyPrint(out, context);
-}
-
-void RepeatCount::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-	out << " ";
-	countExpression->prettyPrint(out, context);
-}
-
-void RepeatCondition::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-	if (conditionValue) {
-		out << " while ";
-	} else {
-		out << " until ";
-	}
-	condition->prettyPrint(out, context);
-}
-
-void NextRepeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "next repeat";
-}
-
-void ExitRepeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out <<  "exit repeat";
 }
 
 void Exit::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
@@ -105,36 +62,4 @@ void Return::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	}
 }
 
-void Put::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "put ";
-	expression->prettyPrint(out, context);
-	if (preposition) {
-		out << " ";
-		preposition->prettyPrint(out, context);
-	}
-	if (target) {
-		out << " ";
-		target->prettyPrint(out, context);
-	}
-}
-
-void Preposition::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	switch (type) {
-	case Before:
-		out << "before";
-		break;
-	case Into:
-		out << "into";
-		break;
-	case After:
-		out << "after";
-		break;
-	}
-}
-
-void Get::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "get ";
-	expression->prettyPrint(out, context);
-}
-
-HT_AST_NAMESPACE_END
+CH_AST_NAMESPACE_END

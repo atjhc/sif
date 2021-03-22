@@ -16,8 +16,31 @@
 
 #pragma once
 
-#define HT_NAMESPACE_BEGIN 	namespace hypertalk {
-#define HT_NAMESPACE_END 	}
+#include "Common.h"
 
-#define HT_AST_NAMESPACE_BEGIN 	namespace hypertalk { namespace ast {
-#define HT_AST_NAMESPACE_END 	}}
+#include <string>
+#include <vector>
+#include <ostream>
+
+CH_NAMESPACE_BEGIN
+
+static inline std::string lowercase(const std::string &string) {
+    auto result = string;
+    transform(result.begin(), result.end(), result.begin(), ::tolower);
+    return result;
+}
+
+static inline std::ostream& operator<<(std::ostream& out, const std::vector<std::string> &v) {
+    auto i = v.begin();
+    while (i != v.end()) {
+        out << *i;
+
+        i++;
+        if (i != v.end()) {
+            out << ", ";
+        }
+    }
+    return out;
+}
+
+CH_NAMESPACE_END

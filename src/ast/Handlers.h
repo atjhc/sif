@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "Defines.h"
+#include "Common.h"
 #include "Base.h"
 #include "Expressions.h"
 #include "Statements.h"
@@ -24,7 +24,7 @@
 #include <vector>
 #include <ostream>
 
-HT_AST_NAMESPACE_BEGIN
+CH_AST_NAMESPACE_BEGIN
 
 struct Handler;
 struct Statement;
@@ -92,4 +92,4 @@ struct IdentifierList: Node {
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-HT_AST_NAMESPACE_END
+CH_AST_NAMESPACE_END

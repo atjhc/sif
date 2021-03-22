@@ -23,7 +23,7 @@ make
 ```
 This will produce artifacts in the `build` directory. To run tests:
 ```
-make tests
+make test
 ```
 To run the parser:
 ```

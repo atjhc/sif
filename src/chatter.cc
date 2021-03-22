@@ -14,6 +14,9 @@
 //  limitations under the License.
 //
 
+#include "parser/Parser.h"
+#include "runtime/Runtime.h"
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -22,15 +25,13 @@
 #include <getopt.h>
 #include <libgen.h>
 
-#include "parser/Parser.h"
-
-using namespace hypertalk;
-using namespace hypertalk::ast;
+using namespace chatter;
+using namespace chatter::ast;
 
 extern int yydebug;
 static int prettyPrint = 0;
 
-static int run(const std::string &fileName) {
+static int run(const std::string &fileName, const std::string &messageName, const std::vector<std::string> &arguments) {
     std::string source;
 
     if (!fileName.empty()) {
@@ -57,7 +58,16 @@ static int run(const std::string &fileName) {
     if (prettyPrint) {
         auto prettyPrintContext = PrettyPrintContext();
         result->prettyPrint(std::cout, prettyPrintContext);
+        return 0;
     }
+
+    std::vector<chatter::Value> values;
+    for (auto &argument : arguments) {
+        values.push_back(chatter::Value(argument));
+    }
+
+    Runtime runtime(result);
+    runtime.run(messageName, values);
 
     return 0;
 }
@@ -66,6 +76,7 @@ int usage(int argc, char *argv[]) {
     std::cout 
         << "Usage: " << basename(argv[0]) << " [options...] [file]" << std::endl
         << "     --trace-parse"     << "\t Output trace parsing logging"            << std::endl
+        << " -m, --message-name"    << "\t Run the specified message name (default is \"begin\")"   << std::endl
         << " -p, --pretty-print"    << "\t Pretty print the abstract syntax tree"   << std::endl
         << " -h, --help"            << "\t Print out this help and exit"            << std::endl
     ;
@@ -75,16 +86,22 @@ int usage(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     static struct option long_options[] = {
         {"trace-parse",     no_argument, &yydebug,       1},
+        {"message-name",    required_argument, 0, 'm'},
         {"pretty-print",    no_argument, &prettyPrint, 'p'},
         {"help",            no_argument, &prettyPrint, 'h'},
         {0, 0, 0, 0}
     };
 
+    std::string messageName = "begin";
+
     int c, option_index = 0;
-    while ((c = getopt_long(argc, argv, "p", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "mp", long_options, &option_index)) != -1) {
         switch (c) {
         case 'p':
             prettyPrint = 1;
+            break;
+        case 'm':
+            messageName = optarg;
             break;
         case 'h':
             return usage(argc, argv);
@@ -101,5 +118,10 @@ int main(int argc, char *argv[]) {
         return usage(argc, argv);
     }
 
-    return run(fileName);
+    std::vector<std::string> arguments;
+    for (int i = optind + 1; i < argc; i++) {
+        arguments.push_back(argv[i]);
+    }
+
+    return run(fileName, messageName, arguments);
 }

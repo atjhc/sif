@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "Defines.h"
+#include "Common.h"
 #include "Base.h"
 #include "Expressions.h"
 #include "Handlers.h"
@@ -24,16 +24,49 @@
 #include <vector>
 #include <ostream>
 
-HT_AST_NAMESPACE_BEGIN
+CH_AST_NAMESPACE_BEGIN
 
 struct StatementList;
 struct Identifier;
 struct IdentifierList;
 struct Expression;
 struct Preposition;
+struct If;
+struct Repeat;
+struct RepeatCount;
+struct RepeatRange;
+struct RepeatCondition;
+struct ExitRepeat;
+struct NextRepeat;
+struct Exit;
+struct Pass;
+struct Global;
+struct Return;
+struct Put;
+struct Get;
+struct Ask;
+
+class StatementVisitor {
+public:
+	virtual void visit(const If &) = 0;
+	virtual void visit(const Repeat &) = 0;
+	virtual void visit(const RepeatCount &) = 0;
+	virtual void visit(const RepeatRange &) = 0;
+	virtual void visit(const RepeatCondition &) = 0;
+	virtual void visit(const ExitRepeat &) = 0;
+	virtual void visit(const NextRepeat &) = 0;
+	virtual void visit(const Exit &) = 0;
+	virtual void visit(const Pass &) = 0;
+	virtual void visit(const Global &) = 0;
+	virtual void visit(const Return &) = 0;
+	virtual void visit(const Put &) = 0;
+	virtual void visit(const Get &) = 0;
+	virtual void visit(const Ask &) = 0;
+};
 
 struct Statement: Node {
 	virtual ~Statement() = default;
+	virtual void accept(StatementVisitor &visitor) const = 0;
 };
 
 struct If: Statement {
@@ -44,14 +77,10 @@ struct If: Statement {
 	If(Expression *_condition, StatementList *_ifStatements, StatementList *_elseStatements) 
 		: condition(_condition), ifStatements(_ifStatements), elseStatements(_elseStatements) {}
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-};
+	void accept(StatementVisitor &visitor) const override {
+		visitor.visit(*this);
+	}
 
-struct ExitRepeat: Statement {
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-};
-
-struct NextRepeat: Statement {
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
@@ -59,6 +88,10 @@ struct Exit: Statement {
 	std::unique_ptr<Identifier> messageKey;
 
 	Exit(Identifier *_messageKey) : messageKey(_messageKey) {}
+
+	void accept(StatementVisitor &visitor) const override {
+		visitor.visit(*this);
+	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -68,6 +101,10 @@ struct Pass: Statement {
 
 	Pass(Identifier *_messageKey) : messageKey(_messageKey) {}
 
+	void accept(StatementVisitor &visitor) const override {
+		visitor.visit(*this);
+	}
+
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
@@ -75,6 +112,10 @@ struct Global: Statement {
 	std::unique_ptr<IdentifierList> variables;
 
 	Global(IdentifierList *_variables) : variables(_variables) {}
+
+	void accept(StatementVisitor &visitor) const override {
+		visitor.visit(*this);
+	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -84,81 +125,11 @@ struct Return: Statement {
 
 	Return(Expression *_expression) : expression(_expression) {}
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-
-};
-
-struct Put: Statement {
-	std::unique_ptr<Expression> expression;
-	std::unique_ptr<Preposition> preposition;
-	std::unique_ptr<Identifier> target;
-
-	Put(Expression *_expression, Preposition *_preposition, Identifier *_target)
-		: expression(_expression), preposition(_preposition), target(_target) {}
+	void accept(StatementVisitor &visitor) const override {
+		visitor.visit(*this);
+	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Preposition: Node {
-	enum PrepositionType {
-		Before,
-		Into,
-		After
-	};
-
-	PrepositionType type;
-
-	Preposition(PrepositionType _type) : type(_type) {}
-
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-};
-
-struct Get: Statement {
-	std::unique_ptr<Expression> expression;
-
-	Get(Expression *_expression) : expression(_expression) {}
-
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-};
-
-struct Repeat: Statement {
-	std::unique_ptr<StatementList> statements;
-
-	Repeat(StatementList *_statements) : statements(_statements) {}
-
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-	virtual void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const {}
-};
-
-struct RepeatCount: Repeat {
-	std::unique_ptr<Expression> countExpression;
-
-	RepeatCount(Expression *_countExpression, StatementList *_statements)
-		: Repeat(_statements), countExpression(_countExpression) {}
-
-	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
-};
-
-struct RepeatRange: Repeat {
-	std::unique_ptr<Identifier> variable;
-	std::unique_ptr<Expression> startExpression;
-	std::unique_ptr<Expression> endExpression;
-	bool ascending;
-
-	RepeatRange(Identifier *_variable, Expression *_startExpression, Expression *_endExpression, bool _ascending, StatementList *_statements)
-		: Repeat(_statements), variable(_variable), startExpression(_startExpression), endExpression(_endExpression), ascending(_ascending) {}
-
-	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
-};
-
-struct RepeatCondition: Repeat {
-	std::unique_ptr<Expression> condition;
-	bool conditionValue;
-
-	RepeatCondition(Expression *_condition, bool _conditionValue, StatementList *_statements)
-		: Repeat(_statements), condition(_condition), conditionValue(_conditionValue) {}
-
-	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
-};
-
-HT_AST_NAMESPACE_END
+CH_AST_NAMESPACE_END

@@ -16,12 +16,12 @@
 
 #pragma once
 
-#include "Defines.h"
+#include "Common.h"
 #include "ast/ast.h"
 
 #include <iostream>
 
-HT_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 struct ParserConfig {
 	std::string fileName = "<stdin>";
@@ -50,4 +50,4 @@ public:
 	std::unique_ptr<ast::Script> parse(const ParserConfig &config, const std::string &source);
 };
 
-HT_NAMESPACE_END
+CH_NAMESPACE_END

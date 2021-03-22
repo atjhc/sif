@@ -16,7 +16,7 @@
 
 #include "Expressions.h"
 
-HT_AST_NAMESPACE_BEGIN
+CH_AST_NAMESPACE_BEGIN
 
 void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << "(";
@@ -67,8 +67,20 @@ void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const
 	case Mod:
 		out << " mod ";
 		break;
+	case Concat:
+		out << " & ";
+		break;
+	case ConcatWithSpace:
+		out << " && ";
+		break;
 	}
 	right->prettyPrint(out, context);
+	out << ")";
+}
+
+void Minus::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	out << "-(";
+	expression->prettyPrint(out, context);
 	out << ")";
 }
 
@@ -109,43 +121,4 @@ void ExpressionList::prettyPrint(std::ostream &out, PrettyPrintContext &context)
 	}
 }
 
-std::string Chunk::ordinalName() const {
-	switch (type) {
-	case Char: return "char";
-	case Word: return "word";
-	case Item: return "item";
-	case Line: return "line";
-	}
-}
-
-void Chunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << " of ";
-	expression->prettyPrint(out, context);
-}
-
-void RangeChunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << ordinalName() << " ";
-	start->prettyPrint(out, context);
-	if (end) {
-		out << " to ";
-		end->prettyPrint(out, context);
-	}
-	Chunk::prettyPrint(out, context);
-}
-
-void LastChunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "the last " << ordinalName();
-	Chunk::prettyPrint(out, context);
-}
-
-void MiddleChunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "the middle " << ordinalName();
-	Chunk::prettyPrint(out, context);
-}
-
-void AnyChunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "any " << ordinalName();
-	Chunk::prettyPrint(out, context);
-}
-
-HT_AST_NAMESPACE_END
+CH_AST_NAMESPACE_END

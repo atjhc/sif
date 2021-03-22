@@ -1,0 +1,9 @@
+on begin
+end begin
+
+function fn1
+end function fn1
+
+function fn2
+	return "fn2"
+end function

@@ -17,16 +17,16 @@
 #include "Parser.h"
 
 // clang-format off
-using namespace hypertalk::ast;
+using namespace chatter::ast;
 #include "yyParser.h"
 #include "yyScanner.h"
 // clang-format on
 
 #include <sstream>
 
-extern int yyparse(yyscan_t scanner, hypertalk::ParserContext &);
+extern int yyparse(yyscan_t scanner, chatter::ParserContext &);
 
-HT_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 ParserContext::ParserContext(const ParserConfig &config, const std::string &source)
 	: fileName(config.fileName), err(config.err) {
@@ -83,4 +83,4 @@ std::unique_ptr<ast::Script> Parser::parse(const ParserConfig &config, const std
     return std::unique_ptr<ast::Script>(context.script);
 }
 
-HT_NAMESPACE_END
+CH_NAMESPACE_END

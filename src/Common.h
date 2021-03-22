@@ -16,38 +16,10 @@
 
 #pragma once
 
-#include "Common.h"
+#include <string>
 
-#include <ostream>
+#define CH_NAMESPACE_BEGIN 	namespace chatter {
+#define CH_NAMESPACE_END 	}
 
-CH_AST_NAMESPACE_BEGIN
-
-struct Script;
-
-struct Location {
-	unsigned int position = 1;
-	unsigned int lineNumber = 1;
-};
-
-struct PrettyPrintConfig {
-	unsigned int tabSize = 2;
-};
-
-struct PrettyPrintContext {
-	PrettyPrintConfig config = PrettyPrintConfig();
-	unsigned int indentLevel = 0;
-
-	std::string indentString() {
-		return std::string(indentLevel * config.tabSize, ' ');
-	}
-};
-
-struct Node {
-	Location location;
-
-	virtual ~Node() = default;
-	
-	virtual void prettyPrint(std::ostream &, PrettyPrintContext &) const = 0;
-};
-
-CH_AST_NAMESPACE_END
+#define CH_AST_NAMESPACE_BEGIN 	namespace chatter { namespace ast {
+#define CH_AST_NAMESPACE_END 	}}

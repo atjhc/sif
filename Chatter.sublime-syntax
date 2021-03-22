@@ -1,0 +1,35 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+file_extensions:
+  - talk
+  - chatter
+scope: source.chatter
+contexts:
+  main:
+    - match: '"'
+      scope: punctuation.definition.string.begin.chatter
+      push: double_quoted_string
+
+    - match: '--'
+      scope: punctuation.definition.comment.chatter
+      push: line_comment
+
+    - match: '\b(if|else|then|repeat|end|on|function|pass|exit|return|next|put|get)\b'
+      scope: keyword.control.c
+      
+    - match: '\b(-)?[0-9.]+\b'
+      scope: constant.numeric.c
+
+  double_quoted_string:
+    - meta_scope: string.quoted.double.chatter
+    - match: '\\.'
+      scope: constant.character.escape.chatter
+    - match: '"'
+      scope: punctuation.definition.string.end.chatter
+      pop: true
+
+  line_comment:
+    - meta_scope: comment.line.chatter
+    - match: $
+      pop: true

@@ -16,7 +16,7 @@
 
 #include "Handlers.h"
 
-HT_AST_NAMESPACE_BEGIN
+CH_AST_NAMESPACE_BEGIN
 
 void Script::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	for (auto& handler : handlers) {
@@ -60,4 +60,4 @@ void IdentifierList::prettyPrint(std::ostream &out, PrettyPrintContext &context)
 	}
 }
 
-HT_AST_NAMESPACE_END
+CH_AST_NAMESPACE_END

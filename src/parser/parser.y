@@ -33,8 +33,8 @@
     typedef void* yyscan_t;
 #endif
 
-using namespace hypertalk;
-using namespace hypertalk::ast;
+using namespace chatter;
+using namespace chatter::ast;
 
 %}
 
@@ -64,7 +64,7 @@ int yyerror(yyscan_t, ParserContext&, const char *);
 %}
 
 %token THE ON END FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN SEND WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES NOT AN NO OR CONTAINS IS IN WITHIN OF EMPTY FALSE FORM_FEED LINE_FEED PI QUOTE SPACE TAB TRUE UP ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN AND EOL
-%token PUT GET
+%token PUT GET ASK
 %token INTO BEFORE AFTER
 %token LPAREN RPAREN PLUS MINUS MULT DIVIDE LT GT LTE GTE NEQ
 
@@ -111,19 +111,19 @@ int yyerror(yyscan_t, ParserContext&, const char *);
 
 start
     : scriptList { 
-        context.script = $1 
+        context.script = $1;
     }
 ;
 
 scriptList
     : script maybeEOL { 
-        $$ = $1 
+        $$ = $1;
     }
     | EOL script maybeEOL {
-        $$ = $2
+        $$ = $2;
     }
     | EOL {
-        $$ = nullptr
+        $$ = nullptr;
     }
 ;
 
@@ -166,7 +166,7 @@ handler
 // TODO: I'm a little suspect of this.
 identifierList
     : /* empty */ {
-        $$ = nullptr
+        $$ = nullptr;
     } 
     | IDENTIFIER {
         $$ = new IdentifierList();
@@ -199,62 +199,65 @@ statementList
         }
     }
     | statementList EOL {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
 statement
     : keywordStatement { 
-        $$ = $1
+        $$ = $1;
     } 
     | commandStatement {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
 messageKey
     : IDENTIFIER {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
 keywordStatement
     : EXIT REPEAT { 
-        $$ = new ExitRepeat()
+        $$ = new ExitRepeat();
     }
     | NEXT REPEAT { 
-        $$ = new NextRepeat()
+        $$ = new NextRepeat();
     }
     | EXIT messageKey {
-        $$ = new Exit($2)
+        $$ = new Exit($2);
     }
     | PASS messageKey { 
-        $$ = new Pass($2)
+        $$ = new Pass($2);
     }
     | GLOBAL identifierList {
-        $$ = new Global($2)
+        $$ = new Global($2);
     }
     | RETURN expression {
-        $$ = new Return($2)
+        $$ = new Return($2);
     }
     | ifBlock { 
-        $$ = $1
+        $$ = $1;
     }
     | repeatBlock {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
 commandStatement
     : PUT expression {
-        $$ = new Put($2, nullptr, nullptr)
+        $$ = new Put($2, nullptr, nullptr);
     }
     // TODO: container support
     | PUT expression preposition IDENTIFIER {
-        $$ = new Put($2, $3, $4)
+        $$ = new Put($2, $3, $4);
     }
     | GET expression {
-        $$ = new Get($2)
+        $$ = new Get($2);
+    }
+    | ASK expression {
+        $$ = new Ask($2);
     }
 ;
 
@@ -273,6 +276,9 @@ ifBlock
             $$ = nullptr;
         }
     }
+    // TODO: Add missing IF/ELSE construct:
+    //   if condition then statement
+    //   else statement
     | IF condition maybeEOL THEN statement elseBlock {
         if ($2 && $5 && $6) {
             $$ = new If($2, new StatementList($5), $6);
@@ -298,22 +304,22 @@ elseBlock
         }
     }
     | ELSE EOL statementList END IF {
-        $$ = $3
+        $$ = $3;
     }
 ;
 
 repeatBlock
     : repeatForever {
-        $$ = $1
+        $$ = $1;
     }
     | repeatCount {
-        $$ = $1
+        $$ = $1;
     }
     | repeatCondition {
-        $$ = $1
+        $$ = $1;
     }
     | repeatRange {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
@@ -321,7 +327,7 @@ repeatForever
     : REPEAT maybeForever EOL 
         statementList 
       END REPEAT {
-        $$ = new Repeat($4)
+        $$ = new Repeat($4);
     }
 ;
 
@@ -391,61 +397,67 @@ maybeTimes
 
 condition
     : expression {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
 expression
     : LPAREN expression RPAREN {
-        $$ = $2
+        $$ = $2;
     }
     | expression PLUS expression {
-        $$ = new BinaryOp(BinaryOp::Plus, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Plus, $1, $3);
     }
     | expression MINUS expression {
-        $$ = new BinaryOp(BinaryOp::Minus, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Minus, $1, $3);
     }
     | expression MULT expression {
-        $$ = new BinaryOp(BinaryOp::Multiply, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Multiply, $1, $3);
     }
     | expression DIV expression {
-        $$ = new BinaryOp(BinaryOp::Divide, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Divide, $1, $3);
     } 
     | expression IS expression {
-        $$ = new BinaryOp(BinaryOp::Equal, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
     }
     | expression EQ expression {
-        $$ = new BinaryOp(BinaryOp::Equal, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
     }
     | expression MOD expression {
-        $$ = new BinaryOp(BinaryOp::Mod, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Mod, $1, $3);
     }
     | expression notEqualTo expression %prec AND {
-        $$ = new BinaryOp(BinaryOp::NotEqual, $1, $3)
+        $$ = new BinaryOp(BinaryOp::NotEqual, $1, $3);
     }
     | expression OR expression {
-        $$ = new BinaryOp(BinaryOp::Or, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Or, $1, $3);
     }
     | expression AND expression {
-        $$ = new BinaryOp(BinaryOp::And, $1, $3)
+        $$ = new BinaryOp(BinaryOp::And, $1, $3);
     }
     | expression IS IN expression %prec AND {
-        $$ = new BinaryOp(BinaryOp::IsIn, $1, $4)
+        $$ = new BinaryOp(BinaryOp::IsIn, $1, $4);
     }
     | expression CONTAINS expression {
-        $$ = new BinaryOp(BinaryOp::Contains, $1, $3)
+        $$ = new BinaryOp(BinaryOp::Contains, $1, $3);
     }
     | expression LT expression {
-        $$ = new BinaryOp(BinaryOp::LessThan, $1, $3)
+        $$ = new BinaryOp(BinaryOp::LessThan, $1, $3);
     }
     | expression GT expression {
-        $$ = new BinaryOp(BinaryOp::GreaterThan, $1, $3)
+        $$ = new BinaryOp(BinaryOp::GreaterThan, $1, $3);
     } 
     | expression LTE expression {
-        $$ = new BinaryOp(BinaryOp::LessThanOrEqual, $1, $3)
+        $$ = new BinaryOp(BinaryOp::LessThanOrEqual, $1, $3);
     }
     | expression GTE expression {
-        $$ = new BinaryOp(BinaryOp::GreaterThanOrEqual, $1, $3)
+        $$ = new BinaryOp(BinaryOp::GreaterThanOrEqual, $1, $3);
+    }
+    | expression CONCAT expression {
+        $$ = new BinaryOp(BinaryOp::Concat, $1, $3);
+    }
+    | expression CONCAT_SPACE expression {
+        $$ = new BinaryOp(BinaryOp::ConcatWithSpace, $1, $3);
     }
     | chunk OF expression {
         $$ = $1;
@@ -454,35 +466,38 @@ expression
         }
     }
     | functionCall {
-        $$ = $1
+        $$ = $1;
+    } 
+    | MINUS expression {
+        $$ = new Minus($2);
     } 
     | IDENTIFIER {
-        $$ = $1
+        $$ = $1;
     }
     | INT_LITERAL {
-        $$ = $1
+        $$ = $1;
     }
     | FLOAT_LITERAL {
-        $$ = $1
+        $$ = $1;
     }
     | STRING_LITERAL {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
 functionCall
     : THE IDENTIFIER {
-        $$ = new FunctionCall($2, nullptr)
+        $$ = new FunctionCall($2, nullptr);
     }
     | THE IDENTIFIER OF expression {
-        $$ = new FunctionCall($2, new ExpressionList($4))
+        $$ = new FunctionCall($2, new ExpressionList($4));
     }
     | IDENTIFIER LPAREN expressionList RPAREN {
-        $$ = new FunctionCall($1, $3)
+        $$ = new FunctionCall($1, $3);
     }
     // TODO: Not positive if I need this.
     | IDENTIFIER LPAREN RPAREN {
-        $$ = new FunctionCall($1, nullptr)
+        $$ = new FunctionCall($1, nullptr);
     }
 ;
 
@@ -503,82 +518,82 @@ expressionList
 
 preposition
     : INTO {
-        $$ = new Preposition(Preposition::Into)
+        $$ = new Preposition(Preposition::Into);
     }
     | BEFORE {
-        $$ = new Preposition(Preposition::Before)
+        $$ = new Preposition(Preposition::Before);
     }
     | AFTER {
-        $$ = new Preposition(Preposition::After)
+        $$ = new Preposition(Preposition::After);
     }
 ;
 
 chunk
     : maybeThe ordinal chunkType {
-        $$ = new RangeChunk($3, $2, nullptr)
+        $$ = new RangeChunk($3, $2, nullptr);
     }
     | chunkType expression {
-        $$ = new RangeChunk($1, $2, nullptr)
+        $$ = new RangeChunk($1, $2, nullptr);
     }
     | chunkType expression TO expression {
-        $$ = new RangeChunk($1, $2, $4)
+        $$ = new RangeChunk($1, $2, $4);
     }
     | ANY chunkType {
-        $$ = new AnyChunk($2)
+        $$ = new AnyChunk($2);
     }
     | maybeThe MIDDLE chunkType {
-        $$ = new MiddleChunk($3)
+        $$ = new MiddleChunk($3);
     }
     | maybeThe LAST chunkType {
-        $$ = new LastChunk($3)
+        $$ = new LastChunk($3);
     }
 ;
 
 chunkType
     : CHAR {
-        $$ = Chunk::Char
+        $$ = Chunk::Char;
     }
     | WORD {
-        $$ = Chunk::Word
+        $$ = Chunk::Word;
     }
     | ITEM {
-        $$ = Chunk::Item
+        $$ = Chunk::Item;
     }
     | LINE {
-        $$ = Chunk::Line
+        $$ = Chunk::Line;
     }
 ;
 
 ordinal
     : FIRST {
-        $$ = new IntLiteral(1)
+        $$ = new IntLiteral(1);
     }
     | SECOND {
-        $$ = new IntLiteral(2)
+        $$ = new IntLiteral(2);
     }
     | THIRD {
-        $$ = new IntLiteral(3)
+        $$ = new IntLiteral(3);
     }
     | FOURTH {
-        $$ = new IntLiteral(4)
+        $$ = new IntLiteral(4);
     }
     | FIFTH {
-        $$ = new IntLiteral(5)
+        $$ = new IntLiteral(5);
     }
     | SIXTH {
-        $$ = new IntLiteral(6)
+        $$ = new IntLiteral(6);
     }
     | SEVENTH {
-        $$ = new IntLiteral(7)
+        $$ = new IntLiteral(7);
     }
     | EIGHTH {
-        $$ = new IntLiteral(8)
+        $$ = new IntLiteral(8);
     }
     | NINTH {
-        $$ = new IntLiteral(9)
+        $$ = new IntLiteral(9);
     }
     | TENTH {
-        $$ = new IntLiteral(10)
+        $$ = new IntLiteral(10);
     }
 ;
 
@@ -601,8 +616,8 @@ maybeEOL
 
 #define YYDEBUG 1
 
-using namespace hypertalk;
-using namespace hypertalk::ast;
+using namespace chatter;
+using namespace chatter::ast;
 
 int yyerror(yyscan_t scanner, ParserContext &context, const char *msg) {
     context.error(msg);

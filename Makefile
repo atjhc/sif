@@ -30,16 +30,19 @@ VPATH := $(SRCROOT)
 WNO := -Wno-unneeded-internal-declaration
 WNO := $(WNO) -Wno-unused-function
 
-CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++14 -g -Wno-deprecated-register
+CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++17 -g -Wno-register
 
-all: $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
+all: dstroot $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 
 format:
 	find src -name '*.cc' -exec clang-format -i --style=file {} \;
 	find src -name '*.h' -exec clang-format -i --style=file {} \;
 
 test: $(DSTROOT)/test
-	$(DSTROOT)/test $(SRCROOT)/tests
+	$(DSTROOT)/test $(SRCROOT)/tests/parser
+
+dstroot:
+	mkdir -p $(DSTROOT)
 
 $(DSTROOT)/test: tests.cc $(DSTROOT)/$(LIBNAME)
 	$(CC) $(CPPFLAGS) -o $(DSTROOT)/test $< $(DSTROOT)/$(LIBNAME)
@@ -52,18 +55,18 @@ $(DSTROOT)/$(LIBNAME): $(OBJ)
 	ranlib $(DSTROOT)/$(LIBNAME)
 
 $(DSTROOT)/yyScanner.cc: $(SRCROOT)/parser/scanner.l
-	mkdir -p $(dir $@)
+	@mkdir -p $(dir $@)
 	flex --outfile=$(DSTROOT)/yyScanner.cc --header-file=$(DSTROOT)/yyScanner.h $(SRCROOT)/parser/scanner.l
 
 $(DSTROOT)/yyParser.cc: $(SRCROOT)/parser/parser.y
-	mkdir -p $(dir $@)
+	@mkdir -p $(dir $@)
 	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(SRCROOT)/parser/parser.y
 
 $(DSTROOT)/%.o: %.cc %.h
-	mkdir -p $(dir $@)
+	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 
 clean:
 	rm -rf $(DSTROOT)
 
-.PHONY: all format test clean
+.PHONY: all format test clean dstroot

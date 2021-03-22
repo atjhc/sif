@@ -22,8 +22,8 @@
 #include "ast/ast.h"
 #include "parser/Parser.h"
 
-using namespace hypertalk;
-using namespace hypertalk::ast;
+using namespace chatter;
+using namespace chatter::ast;
 
 #include "yyParser.h"
 
@@ -62,6 +62,7 @@ using namespace hypertalk::ast;
 [oO][fF] 					LEX_RETURN(OF);
 [pP][uU][tT]				LEX_RETURN(PUT);
 [gG][eE][tT] 				LEX_RETURN(GET);
+[aA][sS][kK] 				LEX_RETURN(ASK);
 [iI][nN][tT][oO]			LEX_RETURN(INTO);
 [aA][fF][tT][eE][rR]		LEX_RETURN(AFTER);
 [bB][eE][fF][oO][rR][eE]	LEX_RETURN(BEFORE);
@@ -152,7 +153,8 @@ up 							LEX_RETURN(UP);
 };
 
 \"([^\\\"]|\\.)*\" {
-	yylval->expression = new StringLiteral(std::string(yytext)); 
+	auto value = std::string(yytext);
+	yylval->expression = new StringLiteral(value.substr(1, value.length() - 2)); 
 	LEX_RETURN(STRING_LITERAL);
 };
 
