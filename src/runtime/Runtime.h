@@ -34,6 +34,7 @@ using namespace ast;
 
 struct RuntimeError: std::runtime_error {
     Location where;
+
     RuntimeError(const std::string &_what, const Location &_where)
         : std::runtime_error(_what), where(_where) {}
 };
@@ -45,9 +46,11 @@ struct RuntimeConfig {
 };
 
 struct RuntimeStackFrame {
-    std::string messageKey;
+    using StringSet = std::unordered_set<std::string>;
+
+    std::string name;
     Variables variables;
-    std::unordered_set<std::string> globals;
+    StringSet globals;
     Value returningValue;
 
     bool skippingRepeat = false;
@@ -56,14 +59,15 @@ struct RuntimeStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    RuntimeStackFrame(const std::string &_messageKey) 
-        : messageKey(_messageKey) {}
+    RuntimeStackFrame(const std::string &_name) 
+        : name(_name) {}
 };
 
 class Runtime: StatementVisitor, ExpressionVisitor {
     using HandlerMap = std::unordered_map<std::string, std::reference_wrapper<std::unique_ptr<Handler>>>;
 
     RuntimeConfig config;
+    std::string name;
 
     // AST
     std::unique_ptr<Script> script;
@@ -76,7 +80,7 @@ class Runtime: StatementVisitor, ExpressionVisitor {
 
 public:
 
-    Runtime(std::unique_ptr<Script> &s);
+    Runtime(const std::string &name, std::unique_ptr<Script> &s);
 
     void send(const std::string &name, const std::vector<Value> &arguments = {});
     Value call(const std::string &name, const std::vector<Value> &arguments = {});
@@ -88,6 +92,8 @@ private:
 
     void execute(const std::unique_ptr<ast::Handler> &handler, const std::vector<Value> &arguments);
     void execute(const std::unique_ptr<ast::StatementList> &statements);
+
+    void report(const RuntimeError &error);
 
 #pragma mark - StatementVisitor
 

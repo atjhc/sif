@@ -259,6 +259,9 @@ commandStatement
     | ASK expression {
         $$ = new Ask($2);
     }
+    | IDENTIFIER {
+        $$ = new Message($1, nullptr);
+    }
     | IDENTIFIER expressionList {
         $$ = new Message($1, $2);
     }

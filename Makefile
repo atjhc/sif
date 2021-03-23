@@ -30,9 +30,12 @@ VPATH := $(SRCROOT)
 WNO := -Wno-unneeded-internal-declaration
 WNO := $(WNO) -Wno-unused-function
 
-CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++17 -g -Wno-register
+CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++17 -Wno-register
 
 all: dstroot $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
+
+debug: CPPFLAGS += -g
+debug: all
 
 format:
 	find src -name '*.cc' -exec clang-format -i --style=file {} \;

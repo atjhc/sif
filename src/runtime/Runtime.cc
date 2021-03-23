@@ -16,12 +16,10 @@
 
 #include "Runtime.h"
 
-#include <iomanip>
-
 CH_NAMESPACE_BEGIN
 
-Runtime::Runtime(std::unique_ptr<Script> &s)
-    : script(std::move(s)) {
+Runtime::Runtime(const std::string &n, std::unique_ptr<Script> &s)
+    : name(n), script(std::move(s)) {
 
     for (auto& handler : script->handlers) {
         auto& name = handler->messageKey->name;
@@ -33,7 +31,7 @@ Runtime::Runtime(std::unique_ptr<Script> &s)
 
         auto i = map->find(name);
         if (i != map->end()) {
-            // TODO: error redefinition of handler
+            throw RuntimeError("Redefinition of handler " + name, handler->location);
         }
         map->insert({{lowercase(name), handler}});
     }
@@ -43,8 +41,7 @@ void Runtime::send(const std::string &name, const std::vector<Value> &arguments)
     auto normalizedName = lowercase(name);
     auto i = handlersByName.find(normalizedName);
     if (i == handlersByName.end()) {
-        config.stderr << "could not find handler named " << name << std::endl; 
-        return;
+        throw RuntimeError("Unrecognized handler \"" + name + "\"", Location());
     } 
 
     stack.push(RuntimeStackFrame(name));
@@ -56,7 +53,7 @@ Value Runtime::call(const std::string &name, const std::vector<Value> &arguments
     auto normalizedName = lowercase(name);
     auto i = functionsByName.find(normalizedName);
     if (i == functionsByName.end()) {
-        throw std::runtime_error("could not find function named \"" + name + "\"");
+        throw RuntimeError("Call to unknown function \"" + name + "\"", Location());
     }
 
     stack.push(RuntimeStackFrame(name));
@@ -100,8 +97,8 @@ void Runtime::execute(const std::unique_ptr<ast::StatementList> &statements) {
     for (auto& statement : statements->statements) {
         try {
             statement->accept(*this);
-        } catch (std::runtime_error &error) {
-            config.stderr << "error: " << error.what() << std::endl;
+        } catch (RuntimeError &error) {
+            report(error);
             return;
         }
 
@@ -112,12 +109,21 @@ void Runtime::execute(const std::unique_ptr<ast::StatementList> &statements) {
     }
 }
 
+void Runtime::report(const RuntimeError &error) {
+    auto lineNumber = error.where.lineNumber;
+    
+    config.stderr << name << ":" << lineNumber << ": runtime error: ";
+    config.stderr << error.what() << std::endl;
+}
+
 #pragma mark - StatementVisitor
 
 void Runtime::visit(const Message &s) {
     std::vector<Value> arguments;
-    for (auto &expression : s.arguments->expressions) {
-        arguments.push_back(expression->evaluate(*this));
+    if (s.arguments) {
+        for (auto &expression : s.arguments->expressions) {
+            arguments.push_back(expression->evaluate(*this));
+        }
     }
     send(s.name->name, arguments);
 }
@@ -195,10 +201,10 @@ void Runtime::visit(const NextRepeat &) {
 }
 
 void Runtime::visit(const Exit &e) {
-    if (e.messageKey->name == stack.top().messageKey) {
+    if (e.messageKey->name == stack.top().name) {
         stack.top().exiting = true;
     } else {
-        // runtime error
+        throw RuntimeError("Unexpected identifier " + e.messageKey->name, e.location);
     }
 }
 
@@ -315,7 +321,7 @@ Value Runtime::valueOf(const Minus &e) {
     } else if (value.isFloat()) {
         return Value(-e.expression->evaluate(*this).asFloat());
     } else {
-        throw std::runtime_error("expected number");
+        throw RuntimeError("Expected number; got \"" + value.asString() + "\"", e.location);
     }
 }
 

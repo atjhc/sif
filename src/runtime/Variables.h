@@ -31,33 +31,11 @@ class Variables {
     std::unordered_map<std::string, Value> _values;
 
 public:
-    Value get(const std::string &name) const {
-        auto key = lowercase(name);
-        auto i = _values.find(key);
-        if (i != _values.end()) {
-            return i->second;
-        } else {
-            return Value(name);
-        }
-    }
+    Value get(const std::string &name) const;
+    void set(const std::string &name, const Value &value);
 
-    void set(const std::string &name, const Value &value) {
-        auto key = lowercase(name);
-        _values[key] = value;
-    }
-
-    void insert(const Variables &variables) {
-        _values.insert(variables._values.begin(), variables._values.end());
-    }
-
-    void insert(const std::vector<std::string> &names, const std::vector<Value> &values) {
-        for (int i = 0; i < names.size(); i++) {
-            if (i == values.size()) {
-                break;
-            }
-            set(names[i], values[i]);
-        }
-    }
+    void insert(const Variables &variables);
+    void insert(const std::vector<std::string> &names, const std::vector<Value> &values);
 };
 
 CH_NAMESPACE_END
