@@ -69,6 +69,23 @@ Value Runtime::call(const std::string &name, const std::vector<Value> &arguments
 
 #pragma mark - Private
 
+void Runtime::set(const std::string &name, const Value &value) {
+    const auto &i = stack.top().globals.find(name);
+    if (i != stack.top().globals.end()) {
+        return globals.set(name, value);
+    }
+    return stack.top().variables.set(name, value);
+
+}
+
+Value Runtime::get(const std::string &name) const {
+    const auto &i = stack.top().globals.find(name);
+    if (i != stack.top().globals.end()) {
+        return globals.get(name);
+    }
+    return stack.top().variables.get(name);
+}
+
 void Runtime::execute(const std::unique_ptr<ast::Handler> &handler, const std::vector<Value> &values) {
     std::vector<std::string> argumentNames;
     for (auto &argument : handler->arguments->identifiers) {
@@ -198,19 +215,26 @@ void Runtime::visit(const Return &s) {
 }
 
 void Runtime::visit(const Put &s) {
-    auto value = s.expression->evaluate(*this).value;
+    auto value = s.expression->evaluate(*this);
     if (s.target) {
+        auto &name = s.target->name;
         switch (s.preposition->type) {
-        case Preposition::Before:
+        case Preposition::Before: {
+            auto targetValue = get(name);
+            set(name, value.asString() + targetValue.asString());
             break;
+        }
+        case Preposition::After: {
+            auto targetValue = get(name);
+            set(name, targetValue.asString() + value.asString());
+            break;
+        }
         case Preposition::Into:
-            stack.top().variables.set(s.target->name, value);
-            break;
-        case Preposition::After:
+            set(name, value);
             break;
         }
     } else {
-        config.stdout << value << std::endl;
+        config.stdout << value.asString() << std::endl;
     }
 }
 
@@ -232,12 +256,7 @@ void Runtime::visit(const Ask &s) {
 #pragma mark - ExpressionVisitor
 
 Value Runtime::valueOf(const Identifier &e) {
-    const auto &name = e.name;
-    const auto &i = stack.top().globals.find(name);
-    if (i != stack.top().globals.end()) {
-        return globals.get(name);
-    }
-    return stack.top().variables.get(name);
+    return get(e.name);
 }
 
 Value Runtime::valueOf(const FunctionCall &e) {

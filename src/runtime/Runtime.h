@@ -83,6 +83,9 @@ public:
     
 private:
 
+    void set(const std::string &name, const Value &value);
+    Value get(const std::string &name) const;
+
     void execute(const std::unique_ptr<ast::Handler> &handler, const std::vector<Value> &arguments);
     void execute(const std::unique_ptr<ast::StatementList> &statements);
 

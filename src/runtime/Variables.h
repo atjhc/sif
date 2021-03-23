@@ -31,7 +31,7 @@ class Variables {
     std::unordered_map<std::string, Value> _values;
 
 public:
-    Value get(const std::string &name) {
+    Value get(const std::string &name) const {
         auto key = lowercase(name);
         auto i = _values.find(key);
         if (i != _values.end()) {
