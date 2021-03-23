@@ -39,7 +39,7 @@ Runtime::Runtime(std::unique_ptr<Script> &s)
     }
 }
 
-void Runtime::run(const std::string &name, const std::vector<Value> &arguments) {
+void Runtime::send(const std::string &name, const std::vector<Value> &arguments) {
     auto normalizedName = lowercase(name);
     auto i = handlersByName.find(normalizedName);
     if (i == handlersByName.end()) {
@@ -114,12 +114,20 @@ void Runtime::execute(const std::unique_ptr<ast::StatementList> &statements) {
 
 #pragma mark - StatementVisitor
 
-void Runtime::visit(const If &e) {
-    auto condition = e.condition->evaluate(*this);
+void Runtime::visit(const Message &s) {
+    std::vector<Value> arguments;
+    for (auto &expression : s.arguments->expressions) {
+        arguments.push_back(expression->evaluate(*this));
+    }
+    send(s.name->name, arguments);
+}
+
+void Runtime::visit(const If &s) {
+    auto condition = s.condition->evaluate(*this);
     if (condition.asBool()) {
-        execute(e.ifStatements);
-    } else if (e.elseStatements) {
-        execute(e.elseStatements);
+        execute(s.ifStatements);
+    } else if (s.elseStatements) {
+        execute(s.elseStatements);
     }
 }
 

@@ -46,6 +46,10 @@ public:
         _values[key] = value;
     }
 
+    void insert(const Variables &variables) {
+        _values.insert(variables._values.begin(), variables._values.end());
+    }
+
     void insert(const std::vector<std::string> &names, const std::vector<Value> &values) {
         for (int i = 0; i < names.size(); i++) {
             if (i == values.size()) {

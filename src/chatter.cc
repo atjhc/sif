@@ -67,7 +67,7 @@ static int run(const std::string &fileName, const std::string &messageName, cons
     }
 
     Runtime runtime(result);
-    runtime.run(messageName, values);
+    runtime.send(messageName, values);
 
     return 0;
 }

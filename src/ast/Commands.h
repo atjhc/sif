@@ -24,6 +24,21 @@
 CH_AST_NAMESPACE_BEGIN
 
 struct Expression;
+struct ExpressionList;
+
+struct Message: Statement {
+	std::unique_ptr<Identifier> name;
+	std::unique_ptr<ExpressionList> arguments;
+
+	Message(Identifier *_name, ExpressionList *_arguments)
+		: name(_name), arguments(_arguments) {}
+
+	void accept(StatementVisitor &visitor) const override {
+		visitor.visit(*this);
+	}
+
+	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+};
 
 struct Put: Statement {
 	std::unique_ptr<Expression> expression;

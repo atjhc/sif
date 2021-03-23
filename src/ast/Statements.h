@@ -36,6 +36,7 @@ struct Repeat;
 struct RepeatCount;
 struct RepeatRange;
 struct RepeatCondition;
+struct Message;
 struct ExitRepeat;
 struct NextRepeat;
 struct Exit;
@@ -49,6 +50,7 @@ struct Ask;
 class StatementVisitor {
 public:
 	virtual void visit(const If &) = 0;
+	virtual void visit(const Message &) = 0;
 	virtual void visit(const Repeat &) = 0;
 	virtual void visit(const RepeatCount &) = 0;
 	virtual void visit(const RepeatRange &) = 0;

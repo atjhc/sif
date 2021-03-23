@@ -78,7 +78,7 @@ public:
 
     Runtime(std::unique_ptr<Script> &s);
 
-    void run(const std::string &name, const std::vector<Value> &arguments = {});
+    void send(const std::string &name, const std::vector<Value> &arguments = {});
     Value call(const std::string &name, const std::vector<Value> &arguments = {});
     
 private:
@@ -91,6 +91,7 @@ private:
 
 #pragma mark - StatementVisitor
 
+    void visit(const Message &s) override;
     void visit(const If &) override;
     void visit(const Repeat &) override;
     void visit(const RepeatCount &s) override;
