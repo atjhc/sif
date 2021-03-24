@@ -116,6 +116,10 @@ private:
     void perform(const Put &) override;
     void perform(const Get &) override;
     void perform(const Ask &) override;
+    void perform(const Add &) override;
+    void perform(const Subtract &) override;
+    void perform(const Multiply &) override;
+    void perform(const Divide &) override;
 
 #pragma mark - Expressions
 

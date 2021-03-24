@@ -25,19 +25,6 @@ void Command::prettyPrint(std::ostream &out, PrettyPrintContext &context) const 
 	}
 }
 
-void Put::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "put ";
-	expression->prettyPrint(out, context);
-	if (preposition) {
-		out << " ";
-		preposition->prettyPrint(out, context);
-	}
-	if (target) {
-		out << " ";
-		target->prettyPrint(out, context);
-	}
-}
-
 void Preposition::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	switch (type) {
 	case Before:
@@ -52,6 +39,19 @@ void Preposition::prettyPrint(std::ostream &out, PrettyPrintContext &context) co
 	}
 }
 
+void Put::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	out << "put ";
+	expression->prettyPrint(out, context);
+	if (preposition) {
+		out << " ";
+		preposition->prettyPrint(out, context);
+	}
+	if (target) {
+		out << " ";
+		target->prettyPrint(out, context);
+	}
+}
+
 void Get::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << "get ";
 	expression->prettyPrint(out, context);
@@ -60,6 +60,30 @@ void Get::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 void Ask::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << "ask ";
 	expression->prettyPrint(out, context);
+}
+
+void Add::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	out << "add ";
+	expression->prettyPrint(out, context);
+	out << " to ";
+}
+
+void Subtract::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	out << "subtract ";
+	expression->prettyPrint(out, context);
+	out << " from ";
+}
+
+void Multiply::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	out << "multiply ";
+	expression->prettyPrint(out, context);
+	out << " by ";
+}
+
+void Divide::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	out << "divide ";
+	expression->prettyPrint(out, context);
+	out << " by ";
 }
 
 CH_AST_NAMESPACE_END

@@ -63,12 +63,25 @@ int yyerror(yyscan_t, ParserContext&, const char *);
 
 %}
 
-%token THE ON END FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN SEND WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES NOT AN NO OR CONTAINS IS IN WITHIN OF EMPTY FALSE FORM_FEED LINE_FEED PI QUOTE SPACE TAB TRUE UP ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN AND EOL
-%token PUT GET ASK
-%token INTO BEFORE AFTER
-%token LPAREN RPAREN PLUS MINUS MULT DIVIDE LT GT LTE GTE NEQ
+// Keywords
+%token THE ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN SEND WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES NOT AN NO OR CONTAINS IS IN WITHIN OF FORM_FEED LINE_FEED PI UP AND EOL
 
+// Commands
+%token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
+
+// Prepositions
+%token INTO BEFORE AFTER
+
+// Expressions
+%token LPAREN RPAREN PLUS MINUS MULT DIV LT GT LTE GTE NEQ
+
+// Constants
+%token EMPTY FALSE QUOTE SPACE TAB TRUE ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN
+
+// Ordinals
 %token FIRST SECOND THIRD FOURTH FIFTH SIXTH SEVENTH EIGHTH NINTH TENTH LAST MIDDLE ANY
+
+// Chunks
 %token CHAR WORD LINE ITEM
 
 %left OR AND
@@ -261,7 +274,6 @@ commandStatement
     : PUT expression {
         $$ = new Put($2, nullptr, nullptr);
     }
-    // TODO: container support
     | PUT expression preposition IDENTIFIER {
         $$ = new Put($2, $3, $4);
     }
@@ -270,6 +282,18 @@ commandStatement
     }
     | ASK expression {
         $$ = new Ask($2);
+    }
+    | ADD expression TO IDENTIFIER {
+        $$ = new Add($2, $4);
+    }
+    | SUBTRACT expression FROM IDENTIFIER {
+        $$ = new Subtract($2, $4);
+    }
+    | MULTIPLY IDENTIFIER BY expression {
+        $$ = new Multiply($4, $2);
+    }
+    | DIVIDE IDENTIFIER BY expression {
+        $$ = new Divide($4, $2);
     }
     | IDENTIFIER {
         $$ = new Command($1, nullptr);
@@ -444,7 +468,7 @@ expression
     | expression MOD expression {
         $$ = new BinaryOp(BinaryOp::Mod, $1, $3);
     }
-    | expression notEqualTo expression %prec AND {
+    | expression NEQ expression {
         $$ = new BinaryOp(BinaryOp::NotEqual, $1, $3);
     }
     | expression OR expression {
@@ -489,6 +513,9 @@ expression
     | MINUS expression {
         $$ = new Minus($2);
     } 
+    | NOT expression {
+        $$ = new Not($2);
+    }
     | constant {
         $$ = $1;
     }
@@ -678,11 +705,6 @@ constant
 maybeThe
     : /* empty */
     | THE
-;
-
-notEqualTo
-    : NEQ
-    | IS NOT %prec NEQ
 ;
 
 maybeEOL

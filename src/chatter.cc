@@ -88,14 +88,14 @@ int main(int argc, char *argv[]) {
         {"trace-parse",     no_argument, &yydebug,       1},
         {"message-name",    required_argument, 0, 'm'},
         {"pretty-print",    no_argument, &prettyPrint, 'p'},
-        {"help",            no_argument, &prettyPrint, 'h'},
+        {"help",            no_argument, 0, 'h'},
         {0, 0, 0, 0}
     };
 
     std::string messageName = "begin";
 
     int c, option_index = 0;
-    while ((c = getopt_long(argc, argv, "mp", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "mph", long_options, &option_index)) != -1) {
         switch (c) {
         case 'p':
             prettyPrint = 1;

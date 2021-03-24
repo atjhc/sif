@@ -23,25 +23,34 @@
 
 CH_AST_NAMESPACE_BEGIN
 
+struct Expression;
+struct ExpressionList;
+
 struct Command;
 struct Put;
 struct Get;
 struct Ask;
-struct Expression;
-struct ExpressionList;
+struct Add;
+struct Subtract;
+struct Multiply;
+struct Divide;
 
 struct CommandVisitor {
 	virtual void perform(const Command &) = 0;
 	virtual void perform(const Put &) = 0;
 	virtual void perform(const Get &) = 0;
 	virtual void perform(const Ask &) = 0;
+	virtual void perform(const Add &) = 0;
+	virtual void perform(const Subtract &) = 0;
+	virtual void perform(const Multiply &) = 0;
+	virtual void perform(const Divide &) = 0;
 };
 
 struct Command: Statement {
 	std::unique_ptr<Identifier> name;
 	std::unique_ptr<ExpressionList> arguments;
 
-	Command(Identifier *_name, ExpressionList *_arguments)
+	Command(Identifier *_name, ExpressionList *_arguments = nullptr)
 		: name(_name), arguments(_arguments) {}
 
 	void accept(StatementVisitor &visitor) const override {
@@ -77,7 +86,7 @@ struct Put: Command {
 	std::unique_ptr<Identifier> target;
 
 	Put(Expression *_expression, Preposition *_preposition, Identifier *_target)
-		: Command(new Identifier("put"), new ExpressionList()), expression(_expression), preposition(_preposition), target(_target) {}
+		: Command(new Identifier("put")), expression(_expression), preposition(_preposition), target(_target) {}
 
 	void perform(CommandVisitor &visitor) const override {
 		visitor.perform(*this);
@@ -90,7 +99,7 @@ struct Get: Command {
 	std::unique_ptr<Expression> expression;
 
 	Get(Expression *_expression) 
-		: Command(new Identifier("get"), new ExpressionList()), expression(_expression) {}
+		: Command(new Identifier("get")), expression(_expression) {}
 
 	void perform(CommandVisitor &visitor) const override {
 		visitor.perform(*this);
@@ -103,7 +112,63 @@ struct Ask: Command {
 	std::unique_ptr<Expression> expression;
 
 	Ask(Expression *_expression) 
-		: Command(new Identifier("ask"), new ExpressionList()), expression(_expression) {}
+		: Command(new Identifier("ask")), expression(_expression) {}
+
+	void perform(CommandVisitor &visitor) const override {
+		visitor.perform(*this);
+	}
+
+	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct Add: Command {
+	std::unique_ptr<Expression> expression;
+	std::unique_ptr<Identifier> destination;
+
+	Add(Expression *_expression, Identifier *_destination) 
+		: Command(new Identifier("add")), expression(_expression), destination(_destination) {}
+
+	void perform(CommandVisitor &visitor) const override {
+		visitor.perform(*this);
+	}
+
+	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct Subtract: Command {
+	std::unique_ptr<Expression> expression;
+	std::unique_ptr<Identifier> destination;
+
+	Subtract(Expression *_expression, Identifier *_destination) 
+		: Command(new Identifier("subtract")), expression(_expression), destination(_destination) {}
+
+	void perform(CommandVisitor &visitor) const override {
+		visitor.perform(*this);
+	}
+
+	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct Multiply: Command {
+	std::unique_ptr<Expression> expression;
+	std::unique_ptr<Identifier> destination;
+
+	Multiply(Expression *_expression, Identifier *_destination) 
+		: Command(new Identifier("multiply")), expression(_expression), destination(_destination) {}
+
+	void perform(CommandVisitor &visitor) const override {
+		visitor.perform(*this);
+	}
+
+	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct Divide: Command {
+	std::unique_ptr<Expression> expression;
+	std::unique_ptr<Identifier> destination;
+
+	Divide(Expression *_expression, Identifier *_destination) 
+		: Command(new Identifier("divide")), expression(_expression), destination(_destination) {}
 
 	void perform(CommandVisitor &visitor) const override {
 		visitor.perform(*this);

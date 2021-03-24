@@ -78,6 +78,12 @@ void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const
 	out << ")";
 }
 
+void Not::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+	out << "not (";
+	expression->prettyPrint(out, context);
+	out << ")";
+}
+
 void Minus::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << "-(";
 	expression->prettyPrint(out, context);

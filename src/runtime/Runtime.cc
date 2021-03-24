@@ -241,7 +241,7 @@ void Runtime::visit(const Command &c) {
 
 
     if (passed) {
-        (&c)->perform(*this);
+        c.perform(*this);
     }
 }
 
@@ -288,6 +288,65 @@ void Runtime::perform(const Ask &s) {
     std::getline(config.stdin, result);
 
     stack.top().variables.set("it", result);
+}
+
+void Runtime::perform(const Add &c) {
+    auto &targetName = c.destination->name;
+
+    auto value = c.expression->evaluate(*this);
+    auto targetValue = get(targetName);
+
+    if (!targetValue.isNumber()) {
+        throw RuntimeError("Expected number, got " + targetValue.asString(), c.destination->location);
+    }
+    if (!value.isNumber()) {
+        throw RuntimeError("Expected number, got " + targetValue.asString(), c.expression->location);
+    }
+
+    set(targetName, targetValue.asFloat() + value.asFloat());
+}
+
+void Runtime::perform(const Subtract &c) {
+    auto &targetName = c.destination->name;
+
+    auto value = c.expression->evaluate(*this);
+    auto targetValue = get(targetName);
+    
+    if (!targetValue.isNumber()) {
+        throw RuntimeError("Expected number, got " + targetValue.asString(), c.destination->location);
+    }
+    if (!value.isNumber()) {
+        throw RuntimeError("Expected number, got " + targetValue.asString(), c.expression->location);
+    }
+    set(targetName, targetValue.asFloat() - value.asFloat());
+}
+
+void Runtime::perform(const Multiply &c) {
+    auto &targetName = c.destination->name;
+
+    auto value = c.expression->evaluate(*this);
+    auto targetValue = get(targetName);
+    
+    if (!targetValue.isNumber()) {
+        throw RuntimeError("Expected number, got " + targetValue.asString(), c.destination->location);
+    }
+    if (!value.isNumber()) {
+        throw RuntimeError("Expected number, got " + targetValue.asString(), c.expression->location);
+    }
+    set(targetName, targetValue.asFloat() * value.asFloat());
+}
+
+void Runtime::perform(const Divide &c) {
+    auto value = c.expression->evaluate(*this);
+    auto &targetName = c.destination->name;
+    auto targetValue = get(targetName);
+    if (!targetValue.isNumber()) {
+        throw RuntimeError("Expected number, got " + targetValue.asString(), c.destination->location);
+    }
+    if (!value.isNumber()) {
+        throw RuntimeError("Expected number, got " + targetValue.asString(), c.expression->location);
+    }
+    set(targetName, targetValue.asFloat() / value.asFloat());
 }
 
 #pragma mark - ExpressionVisitor
