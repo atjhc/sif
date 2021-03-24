@@ -14,12 +14,13 @@
 //  limitations under the License.
 //
 
-#include "Runtime.h"
+#include "runtime/Runtime.h"
+#include "chunk.h"
 
 CH_NAMESPACE_BEGIN
 
-Runtime::Runtime(const std::string &n, std::unique_ptr<Script> &s)
-    : name(n), script(std::move(s)) {
+Runtime::Runtime(const std::string &n, std::unique_ptr<Script> &s, RuntimeConfig c)
+    : config(c), name(n), script(std::move(s)) {
 
     for (auto& handler : script->handlers) {
         auto& name = handler->messageKey->name;
@@ -419,20 +420,40 @@ Value Runtime::valueOf(const StringLiteral &e) {
     return Value(e.value);
 }
 
-Value Runtime::valueOf(const RangeChunk &) {
-    return Value();
+static type chunk_type(Chunk::Type t) {
+    switch (t) {
+    case Chunk::Char:   return character;
+    case Chunk::Word:   return word;
+    case Chunk::Item:   return item;
+    case Chunk::Line:   return line;
+    }
 }
 
-Value Runtime::valueOf(const AnyChunk &) {
-    return Value();
+Value Runtime::valueOf(const RangeChunk &c) {
+    auto value = c.expression->evaluate(*this);
+    auto startValue = c.start->evaluate(*this);
+
+    if (c.end) {
+        auto endValue = c.end->evaluate(*this);
+        return Value(range_chunk(chunk_type(c.type), startValue.asInteger() - 1, endValue.asInteger() - 1, value.value).get());
+    } else {
+        return Value(chunk(chunk_type(c.type), startValue.asInteger() - 1, value.value).get());
+    }
 }
 
-Value Runtime::valueOf(const LastChunk &) {
-    return Value();
+Value Runtime::valueOf(const AnyChunk &c) {
+    auto value = c.expression->evaluate(*this);
+    return Value(random_chunk(chunk_type(c.type), [this](int count) { return config.random() * count; }, value.value).get());
 }
 
-Value Runtime::valueOf(const MiddleChunk &) {
-    return Value();
+Value Runtime::valueOf(const LastChunk &c) {
+    auto value = c.expression->evaluate(*this);
+    return Value(last_chunk(chunk_type(c.type), value.value).get());
+}
+
+Value Runtime::valueOf(const MiddleChunk &c) {
+    auto value = c.expression->evaluate(*this);
+    return Value(middle_chunk(chunk_type(c.type), value.value).get());
 }
 
 CH_NAMESPACE_END

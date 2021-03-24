@@ -20,10 +20,9 @@ on begin
 	return 1 > 2
 	return 1 >= 2
 	return "string literal"
-	--return the cos of 5
+	return the cos of 5
 	return cos(10)
 	return max(10, 20)
 	return a & b
 	return a && b
-	-- TODO: Check precedence rules
 end begin

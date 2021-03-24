@@ -8,12 +8,16 @@ SRCROOT := src
 TOOLS := $(SRCROOT)/chatter.cc $(SRCROOT)/tests.cc
 CODEGEN := $(DSTROOT)/yyParser.cc $(DSTROOT)/yyScanner.cc
 
+COMMON_HEADERS := $(SRCROOT)/Common.h $(SRCROOT)/Utilities.h
+
 # Find all .cc files under the SRCROOT directory.
 SRC := $(shell find src -name '*.cc' | xargs)
 
 # Filter out tools from the framework.
 SRC := $(filter-out $(TOOLS),$(SRC))
-SRC := $(filter-out $(SRCROOT)/tests/%,$(SRC))
+
+TEST_SRC := $(filter $(SRCROOT)/tests/%,$(SRC))
+SRC := $(filter-out $(TEST_SRC),$(SRC))
 
 # Add the code generation files.
 SRC := $(CODEGEN) $(SRC)
@@ -48,7 +52,7 @@ test: $(DSTROOT)/test
 dstroot:
 	mkdir -p $(DSTROOT)
 
-$(DSTROOT)/test: tests.cc $(DSTROOT)/$(LIBNAME)
+$(DSTROOT)/test: tests.cc $(TEST_SRC) $(DSTROOT)/$(LIBNAME)
 	$(CC) $(CPPFLAGS) -o $(DSTROOT)/test $< $(DSTROOT)/$(LIBNAME)
 
 $(DSTROOT)/$(TOOLNAME): $(SRCROOT)/chatter.cc $(DSTROOT)/$(LIBNAME)
@@ -66,7 +70,7 @@ $(DSTROOT)/yyParser.cc: $(SRCROOT)/parser/parser.y
 	@mkdir -p $(dir $@)
 	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(SRCROOT)/parser/parser.y
 
-$(DSTROOT)/%.o: %.cc %.h
+$(DSTROOT)/%.o: %.cc %.h $(COMMON_HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 

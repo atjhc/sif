@@ -21,6 +21,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <random>
+#include <chrono>
 
 #include <getopt.h>
 #include <libgen.h>
@@ -66,7 +68,17 @@ static int run(const std::string &fileName, const std::string &messageName, cons
         values.push_back(chatter::Value(argument));
     }
 
-    Runtime runtime(fileName, result);
+    RuntimeConfig runtimeConfig;
+
+    // Configure the random number generator.
+    std::default_random_engine generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::uniform_real_distribution<float> distribution(0.0,1.0);
+    runtimeConfig.random = [&]() { return distribution(generator); };
+
+    // Create the runtime object.
+    Runtime runtime(fileName, result, runtimeConfig);
+
+    // Send a message to the responder chain.
     runtime.send(messageName, values);
 
     return 0;

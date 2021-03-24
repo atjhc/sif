@@ -35,6 +35,9 @@ struct Test {
 #define assert_true(c) \
     _assert_true(c, #c, __FILE__, __LINE__)
 
+#define assert_eq(lhs, rhs) \
+    _assert_eq(lhs, rhs, __FILE__, __LINE__)
+
 struct TestSuite {
     std::string resourcesPath;
     
@@ -94,6 +97,16 @@ struct TestSuite {
         return contents;
     }
 
+    template<class T1, class T2>
+    void _assert_eq(const T1 &lhs, const T2 &rhs, std::string file = __FILE__, int line = __LINE__) {
+        if (lhs == rhs) {
+            success_count++;
+        } else {
+            std::cout << "Test \"" << lhs << "\" == \"" << rhs << "\" failed. (" << file << ":" << line << ")" << std::endl;
+            failure_count++;
+        }
+    }
+
     void _assert_true(bool condition, std::string msg = "", std::string file = __FILE__, int line = __LINE__) {
         if (condition) {
             success_count++;
@@ -105,14 +118,16 @@ struct TestSuite {
 
 private:
     std::vector<Test> tests;
-    int success_count;
-    int failure_count;
+    int success_count = 0;
+    int failure_count = 0;
 };
 
 #include "tests/parse_tests.cc"
+#include "tests/chunk_tests.cc"
 
 int main(int argc, char *argv[]) {
     auto tests = TestSuite(argv[1]);
     tests.add(TEST(parse_tests));
+    tests.add(TEST(chunk_tests));
     return tests.run();
 }

@@ -43,6 +43,7 @@ struct RuntimeConfig {
     std::ostream &stdout = std::cout;
     std::istream &stdin = std::cin;
     std::ostream &stderr = std::cerr;
+    std::function<float()> random;
 };
 
 struct RuntimeStackFrame {
@@ -80,7 +81,7 @@ class Runtime: StatementVisitor, ExpressionVisitor, CommandVisitor {
 
 public:
 
-    Runtime(const std::string &name, std::unique_ptr<Script> &s);
+    Runtime(const std::string &name, std::unique_ptr<Script> &s, RuntimeConfig c = RuntimeConfig());
 
     bool send(const std::string &name, const std::vector<Value> &arguments = {});
     Value call(const std::string &name, const std::vector<Value> &arguments = {});
