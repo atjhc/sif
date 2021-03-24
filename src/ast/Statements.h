@@ -36,7 +36,6 @@ struct Repeat;
 struct RepeatCount;
 struct RepeatRange;
 struct RepeatCondition;
-struct Message;
 struct ExitRepeat;
 struct NextRepeat;
 struct Exit;
@@ -46,11 +45,11 @@ struct Return;
 struct Put;
 struct Get;
 struct Ask;
+struct Command;
 
 class StatementVisitor {
 public:
 	virtual void visit(const If &) = 0;
-	virtual void visit(const Message &) = 0;
 	virtual void visit(const Repeat &) = 0;
 	virtual void visit(const RepeatCount &) = 0;
 	virtual void visit(const RepeatRange &) = 0;
@@ -61,9 +60,7 @@ public:
 	virtual void visit(const Pass &) = 0;
 	virtual void visit(const Global &) = 0;
 	virtual void visit(const Return &) = 0;
-	virtual void visit(const Put &) = 0;
-	virtual void visit(const Get &) = 0;
-	virtual void visit(const Ask &) = 0;
+	virtual void visit(const Command &) = 0;
 };
 
 struct Statement: Node {

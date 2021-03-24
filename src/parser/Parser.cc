@@ -41,20 +41,22 @@ ParserContext::ParserContext(const ParserConfig &config, const std::string &sour
 void ParserContext::error(const char *msg) {
     numberOfErrors++;
     auto lineNumber = currentLocation.lineNumber;
-    auto position = currentLocation.position;
+    // auto position = currentLocation.position;
     
-    err << fileName << ":" << lineNumber << ":" << position << ": error: ";
+    err << fileName << ":" << lineNumber << ": error: ";
     err << msg << std::endl;
 
     auto lineString = sourceLines[lineNumber - 1];
     err << lineString << std::endl;
 
+/* TODO: Get characer position working.
     std::string indentString;
     for (int i = 0; i < position; i++) {
     	if (lineString.at(i) == '\t') indentString += '\t';
     	else indentString += ' ';
     }
     err << indentString << "^" << std::endl;
+*/
 }
 
 std::unique_ptr<ast::Script> Parser::parse(const ParserConfig &config, const std::string &source) {

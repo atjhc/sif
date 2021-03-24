@@ -108,6 +108,24 @@ using namespace chatter::ast;
 [lL][iI][nN][eE]			LEX_RETURN(LINE);
 [iI][tT][eE][mM]			LEX_RETURN(ITEM);
 
+[tT][rR][uU][eE]			LEX_RETURN(TRUE);
+[fF][aA][lL][sS][eE]		LEX_RETURN(FALSE);
+[eE][mM][pP][tT][yY]		LEX_RETURN(EMPTY);
+[zZ][eE][rR][oO]			LEX_RETURN(ZERO);
+[oO][nN][eE]				LEX_RETURN(ONE);
+[tT][wW][oO]				LEX_RETURN(TWO);
+[tT][hH][rR][eE][eE]		LEX_RETURN(THREE);
+[fF][oO][uU][rR]			LEX_RETURN(FOUR);
+[fF][iI][vV][eE]			LEX_RETURN(FIVE);
+[sS][iI][xX]				LEX_RETURN(SIX);
+[sS][eE][vV][eE][nN]		LEX_RETURN(SEVEN);
+[eE][iI][gG][hH][tT]		LEX_RETURN(EIGHT);
+[nN][iI][nN][eE]			LEX_RETURN(NINE);
+[tE][eE][nN]				LEX_RETURN(TEN);
+[tT][aA][bB]				LEX_RETURN(TAB);
+[sS][pP][aA][cC][eE]		LEX_RETURN(SPACE);
+[qQ][uU][oO][tT][eE]		LEX_RETURN(QUOTE);
+
 do							LEX_RETURN(DO);
 next						LEX_RETURN(NEXT);
 send						LEX_RETURN(SEND);
@@ -118,10 +136,8 @@ an 							LEX_RETURN(AN);
 no 							LEX_RETURN(NO);
 in 							LEX_RETURN(IN);
 within 						LEX_RETURN(WITHIN);
-empty						LEX_RETURN(EMPTY);
 formFeed 					LEX_RETURN(FORM_FEED);
 lineFeed 					LEX_RETURN(LINE_FEED);
-tab							LEX_RETURN(TAB);
 up 							LEX_RETURN(UP);
 
 "("							LEX_RETURN(LPAREN);

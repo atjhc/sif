@@ -39,9 +39,10 @@ void Variables::insert(const Variables &variables) {
 void Variables::insert(const std::vector<std::string> &names, const std::vector<Value> &values) {
     for (int i = 0; i < names.size(); i++) {
         if (i == values.size()) {
-            break;
-        }
-        set(names[i], values[i]);
+            set(names[i], Value());
+        } else {
+	        set(names[i], values[i]);
+	    }
     }
 }
 

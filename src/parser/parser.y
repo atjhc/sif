@@ -95,7 +95,7 @@ int yyerror(yyscan_t, ParserContext&, const char *);
 %nterm <statementList> statementList elseBlock
 %nterm <statement> statement ifBlock keywordStatement commandStatement
 %nterm <statement> repeatBlock repeatForever repeatCount repeatCondition repeatRange
-%nterm <expression> expression condition functionCall ordinal
+%nterm <expression> expression condition functionCall ordinal constant
 %nterm <chunk> chunk
 %nterm <chunkType> chunkType
 %nterm <expressionList> expressionList
@@ -150,6 +150,8 @@ handler
             $$ = new Handler(Handler::HandlerKind, $2, $3, $5);
         } else {
             $$ = nullptr;
+            auto msg = "Expected " + $2->name + ", got " + $7->name;
+            yyerror(scanner, context, msg.c_str());
         }
     }
     | FUNCTION messageKey identifierList EOL
@@ -158,7 +160,8 @@ handler
         if ($2->name == $7->name) {
             $$ = new Handler(Handler::FunctionKind, $2, $3, $5);
         } else {
-            $$ = nullptr;
+            auto msg = "Expected " + $2->name + ", got " + $7->name;
+            yyerror(scanner, context, msg.c_str());
         }
     }
 ;
@@ -216,6 +219,15 @@ messageKey
     : IDENTIFIER {
         $$ = $1;
     }
+    | PUT {
+        $$ = new Identifier("put");
+    }
+    | GET {
+        $$ = new Identifier("get");
+    }
+    | ASK {
+        $$ = new Identifier("ask");
+    }
 ;
 
 keywordStatement
@@ -260,10 +272,10 @@ commandStatement
         $$ = new Ask($2);
     }
     | IDENTIFIER {
-        $$ = new Message($1, nullptr);
+        $$ = new Command($1, nullptr);
     }
     | IDENTIFIER expressionList {
-        $$ = new Message($1, $2);
+        $$ = new Command($1, $2);
     }
 ;
 
@@ -477,6 +489,9 @@ expression
     | MINUS expression {
         $$ = new Minus($2);
     } 
+    | constant {
+        $$ = $1;
+    }
     | IDENTIFIER {
         $$ = $1;
     }
@@ -599,6 +614,63 @@ ordinal
         $$ = new IntLiteral(9);
     }
     | TENTH {
+        $$ = new IntLiteral(10);
+    }
+;
+
+constant
+    : TRUE {
+        $$ = new StringLiteral("true");
+    }
+    | FALSE {
+        $$ = new StringLiteral("false");
+    }
+    | EMPTY {
+        $$ = new StringLiteral("");
+    }
+    | RETURN {
+        $$ = new StringLiteral("\n");
+    }
+    | TAB {
+        $$ = new StringLiteral("\t");
+    }
+    | SPACE {
+        $$ = new StringLiteral(" ");
+    }
+    | QUOTE {
+        $$ = new StringLiteral("\"");
+    }
+    | ZERO {
+        $$ = new IntLiteral(0);
+    }
+    | ONE {
+        $$ = new IntLiteral(1);
+    }
+    | TWO {
+        $$ = new IntLiteral(2);
+    }
+    | THREE {
+        $$ = new IntLiteral(3);
+    }
+    | FOUR {
+        $$ = new IntLiteral(4);
+    }
+    | FIVE {
+        $$ = new IntLiteral(5);
+    }
+    | SIX {
+        $$ = new IntLiteral(6);
+    }
+    | SEVEN {
+        $$ = new IntLiteral(7);
+    }
+    | EIGHT {
+        $$ = new IntLiteral(8);
+    }
+    | NINE {
+        $$ = new IntLiteral(9);
+    }
+    | TEN {
         $$ = new IntLiteral(10);
     }
 ;

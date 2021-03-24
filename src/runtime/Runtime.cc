@@ -33,20 +33,25 @@ Runtime::Runtime(const std::string &n, std::unique_ptr<Script> &s)
         if (i != map->end()) {
             throw RuntimeError("Redefinition of handler " + name, handler->location);
         }
+
         map->insert({{lowercase(name), handler}});
     }
 }
 
-void Runtime::send(const std::string &name, const std::vector<Value> &arguments) {
+bool Runtime::send(const std::string &name, const std::vector<Value> &arguments) {
     auto normalizedName = lowercase(name);
     auto i = handlersByName.find(normalizedName);
     if (i == handlersByName.end()) {
-        throw RuntimeError("Unrecognized handler \"" + name + "\"", Location());
+        // throw RuntimeError("Unrecognized handler \"" + name + "\"", Location());
+        return true;
     } 
 
     stack.push(RuntimeStackFrame(name));
     execute(i->second.get(), arguments);
+    bool passing = stack.top().passing;
     stack.pop();
+
+    return passing;
 }
 
 Value Runtime::call(const std::string &name, const std::vector<Value> &arguments) {
@@ -85,8 +90,10 @@ Value Runtime::get(const std::string &name) const {
 
 void Runtime::execute(const std::unique_ptr<ast::Handler> &handler, const std::vector<Value> &values) {
     std::vector<std::string> argumentNames;
-    for (auto &argument : handler->arguments->identifiers) {
-        argumentNames.push_back(argument->name);
+    if (handler->arguments) {
+        for (auto &argument : handler->arguments->identifiers) {
+            argumentNames.push_back(argument->name);
+        }
     }
 
     stack.top().variables.insert(argumentNames, values);
@@ -117,16 +124,6 @@ void Runtime::report(const RuntimeError &error) {
 }
 
 #pragma mark - StatementVisitor
-
-void Runtime::visit(const Message &s) {
-    std::vector<Value> arguments;
-    if (s.arguments) {
-        for (auto &expression : s.arguments->expressions) {
-            arguments.push_back(expression->evaluate(*this));
-        }
-    }
-    send(s.name->name, arguments);
-}
 
 void Runtime::visit(const If &s) {
     auto condition = s.condition->evaluate(*this);
@@ -228,7 +225,33 @@ void Runtime::visit(const Return &s) {
     }
 }
 
-void Runtime::visit(const Put &s) {
+void Runtime::visit(const Command &c) {
+    auto name = lowercase(c.name->name);
+
+    // Assume we are passing until we find a handler.
+    bool passed = true;
+
+    std::vector<Value> arguments;
+    if (c.arguments) {
+        for (auto &expression : c.arguments->expressions) {
+            arguments.push_back(expression->evaluate(*this));
+        }
+    }
+    passed = send(name, arguments);
+
+
+    if (passed) {
+        (&c)->perform(*this);
+    }
+}
+
+#pragma mark - Commands
+
+void Runtime::perform(const Command &s) {
+    /* no-op */
+}
+
+void Runtime::perform(const Put &s) {
     auto value = s.expression->evaluate(*this);
     if (s.target) {
         auto &name = s.target->name;
@@ -252,12 +275,12 @@ void Runtime::visit(const Put &s) {
     }
 }
 
-void Runtime::visit(const Get &s) {
+void Runtime::perform(const Get &s) {
     auto result = s.expression->evaluate(*this);
     stack.top().variables.set("it", result);
 }
 
-void Runtime::visit(const Ask &s) {
+void Runtime::perform(const Ask &s) {
     auto question = s.expression->evaluate(*this);
     
     config.stdout << question.value;

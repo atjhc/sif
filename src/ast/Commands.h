@@ -23,33 +23,33 @@
 
 CH_AST_NAMESPACE_BEGIN
 
+struct Command;
+struct Put;
+struct Get;
+struct Ask;
 struct Expression;
 struct ExpressionList;
 
-struct Message: Statement {
+struct CommandVisitor {
+	virtual void perform(const Command &) = 0;
+	virtual void perform(const Put &) = 0;
+	virtual void perform(const Get &) = 0;
+	virtual void perform(const Ask &) = 0;
+};
+
+struct Command: Statement {
 	std::unique_ptr<Identifier> name;
 	std::unique_ptr<ExpressionList> arguments;
 
-	Message(Identifier *_name, ExpressionList *_arguments)
+	Command(Identifier *_name, ExpressionList *_arguments)
 		: name(_name), arguments(_arguments) {}
 
 	void accept(StatementVisitor &visitor) const override {
 		visitor.visit(*this);
 	}
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-};
-
-struct Put: Statement {
-	std::unique_ptr<Expression> expression;
-	std::unique_ptr<Preposition> preposition;
-	std::unique_ptr<Identifier> target;
-
-	Put(Expression *_expression, Preposition *_preposition, Identifier *_target)
-		: expression(_expression), preposition(_preposition), target(_target) {}
-
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
+	virtual void perform(CommandVisitor &visitor) const {
+		visitor.perform(*this);
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
@@ -69,25 +69,44 @@ struct Preposition: Node {
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Get: Statement {
+#pragma mark Messages
+
+struct Put: Command {
 	std::unique_ptr<Expression> expression;
+	std::unique_ptr<Preposition> preposition;
+	std::unique_ptr<Identifier> target;
 
-	Get(Expression *_expression) : expression(_expression) {}
+	Put(Expression *_expression, Preposition *_preposition, Identifier *_target)
+		: Command(new Identifier("put"), new ExpressionList()), expression(_expression), preposition(_preposition), target(_target) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
+	void perform(CommandVisitor &visitor) const override {
+		visitor.perform(*this);
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Ask: Statement {
+struct Get: Command {
 	std::unique_ptr<Expression> expression;
 
-	Ask(Expression *_expression) : expression(_expression) {}
+	Get(Expression *_expression) 
+		: Command(new Identifier("get"), new ExpressionList()), expression(_expression) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
+	void perform(CommandVisitor &visitor) const override {
+		visitor.perform(*this);
+	}
+
+	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct Ask: Command {
+	std::unique_ptr<Expression> expression;
+
+	Ask(Expression *_expression) 
+		: Command(new Identifier("ask"), new ExpressionList()), expression(_expression) {}
+
+	void perform(CommandVisitor &visitor) const override {
+		visitor.perform(*this);
 	}
 
 	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;

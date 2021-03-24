@@ -18,7 +18,7 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void Message::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+void Command::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
 	out << name->name;
 	if (arguments) {
 		arguments->prettyPrint(out, context);

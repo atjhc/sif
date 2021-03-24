@@ -63,7 +63,7 @@ struct RuntimeStackFrame {
         : name(_name) {}
 };
 
-class Runtime: StatementVisitor, ExpressionVisitor {
+class Runtime: StatementVisitor, ExpressionVisitor, CommandVisitor {
     using HandlerMap = std::unordered_map<std::string, std::reference_wrapper<std::unique_ptr<Handler>>>;
 
     RuntimeConfig config;
@@ -82,7 +82,7 @@ public:
 
     Runtime(const std::string &name, std::unique_ptr<Script> &s);
 
-    void send(const std::string &name, const std::vector<Value> &arguments = {});
+    bool send(const std::string &name, const std::vector<Value> &arguments = {});
     Value call(const std::string &name, const std::vector<Value> &arguments = {});
     
 private:
@@ -95,9 +95,8 @@ private:
 
     void report(const RuntimeError &error);
 
-#pragma mark - StatementVisitor
+#pragma mark - Statements
 
-    void visit(const Message &s) override;
     void visit(const If &) override;
     void visit(const Repeat &) override;
     void visit(const RepeatCount &s) override;
@@ -109,11 +108,16 @@ private:
     void visit(const Pass &) override;
     void visit(const Global &) override;
     void visit(const Return &) override;
-    void visit(const Put &) override;
-    void visit(const Get &) override;
-    void visit(const Ask &) override;
+    void visit(const Command &) override;
 
-#pragma mark - ExpressionVisitor
+#pragma mark Commands
+
+    void perform(const Command &s) override;
+    void perform(const Put &) override;
+    void perform(const Get &) override;
+    void perform(const Ask &) override;
+
+#pragma mark - Expressions
 
     Value valueOf(const Identifier &) override;
     Value valueOf(const FunctionCall &) override;
