@@ -14,69 +14,105 @@
 //  limitations under the License.
 //
 
-#include <iostream>
-#include <fstream>
+// #include "tests/common.h"
+
+#include <vector>
 #include <string>
+#include <iostream>
 #include <sstream>
+#include <fstream>
 #include <sys/types.h>
 #include <dirent.h>
 
-#include "parser/Parser.h"
+struct TestSuite;
 
-using namespace chatter;
-using namespace chatter::ast;
+#define TEST(x) {#x, x}
+struct Test {
+    std::string name;
+    std::function<void(TestSuite&)> test;
+};
 
-static int parseTest(const std::string &path) {
-    assert(!path.empty());
+#define assert_true(c) \
+    _assert_true(c, #c, __FILE__, __LINE__)
 
-    std::string source;
-    std::ifstream file(path);
-
-    assert(file);
-
-    std::ostringstream ss;
-    ss << file.rdbuf();
-    source = ss.str();
-
-    ParserConfig config;
-    config.fileName = path;
-
-    return (Parser().parse(config, source) == nullptr);
-}
-
-static int runTests(const std::string &path) {
-    DIR *testsDirectory = opendir(path.c_str());
-    if (!testsDirectory) {
-        std::cerr << "Could not open directory at path: " << path << std::endl;
-    }
+struct TestSuite {
+    std::string resourcesPath;
     
-    std::vector<std::string> fileNames;
-    while (struct dirent *entry = readdir(testsDirectory)) {
-        std::string name = entry->d_name;
-        if (name == "." || name == "..") {
-            continue;
+    TestSuite(std::string _resourcesPath) : resourcesPath(_resourcesPath) {}
+
+    void add(const Test &test) {
+        tests.push_back(test);
+    }
+
+    int run() {
+        std::cout << "Running " << tests.size() << " tests." << std::endl;
+        for (auto &test : tests) {
+            std::cout << "Running " << test.name << std::endl;
+            test.test(*this);
+            std::cout << "Finished " << test.name << std::endl;
         }
-        fileNames.push_back(name);
+        std::cout << "Ran " << failure_count + success_count << " tests with " 
+            << success_count << " successes and " << failure_count << " failures." << std::endl;
+
+        return failure_count;
     }
-    
-    int failureCount = 0;
-    int passCount = 0;
-    std::cout << "Running " << fileNames.size() << " parse tests." << std::endl;
-    for (auto fileName : fileNames) {
-        int result = parseTest(path + "/" + fileName);
-        if (result) {
-            failureCount++;
+
+    std::vector<std::string> files_in(const std::string &path) const {
+        auto fullPath = resourcesPath + '/' + path;
+        DIR *directory = opendir(fullPath.c_str());
+        std::vector<std::string> paths;
+
+        if (!directory) {
+            std::cerr << "Could not open directory at path: " << fullPath << std::endl;
+            return paths;
+        }
+        
+        while (struct dirent *entry = readdir(directory)) {
+            std::string name = entry->d_name;
+            if (name == "." || name == "..") {
+                continue;
+            }
+            paths.push_back(path + '/' + name);
+        }
+
+        return paths;
+    }
+
+    std::string file_contents(const std::string &path) const {
+        auto fullPath = resourcesPath + '/' + path;
+        std::ifstream file(fullPath);
+        std::string contents;
+        
+        if (!file) {
+            std::cerr << "Could not open file at path: " << fullPath << std::endl;
+            return contents;
+        }
+
+        std::ostringstream ss;
+        ss << file.rdbuf();
+        contents = ss.str();
+        return contents;
+    }
+
+    void _assert_true(bool condition, std::string msg = "", std::string file = __FILE__, int line = __LINE__) {
+        if (condition) {
+            success_count++;
         } else {
-            passCount++;
+            std::cout << "Test \"" << msg << "\" failed. (" << file << ":" << line << ")" << std::endl;
+            failure_count++;
         }
     }
 
-    std::cout << "Ran " << fileNames.size() << " parse tests with " 
-        << failureCount << " failures and " << passCount << " successes." << std::endl;
+private:
+    std::vector<Test> tests;
+    int success_count;
+    int failure_count;
+};
 
-    return 0;
-}
+#include "tests/parse_tests.cc"
 
 int main(int argc, char *argv[]) {
-    return runTests(argv[1]);
+    auto tests = TestSuite(argv[1]);
+    tests.add(TEST(parse_tests));
+    return tests.run();
 }

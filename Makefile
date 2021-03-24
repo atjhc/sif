@@ -13,6 +13,7 @@ SRC := $(shell find src -name '*.cc' | xargs)
 
 # Filter out tools from the framework.
 SRC := $(filter-out $(TOOLS),$(SRC))
+SRC := $(filter-out $(SRCROOT)/tests/%,$(SRC))
 
 # Add the code generation files.
 SRC := $(CODEGEN) $(SRC)
@@ -42,7 +43,7 @@ format:
 	find src -name '*.h' -exec clang-format -i --style=file {} \;
 
 test: $(DSTROOT)/test
-	$(DSTROOT)/test $(SRCROOT)/tests/parser
+	$(DSTROOT)/test $(SRCROOT)/tests
 
 dstroot:
 	mkdir -p $(DSTROOT)
