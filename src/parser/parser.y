@@ -93,7 +93,7 @@ int yyerror(yyscan_t, ParserContext&, const char *);
 %left PLUS MINUS
 %left MULT DIV DIV_TRUNC MOD
 
-%left IDENTIFIER OF
+%right IDENTIFIER OF
 
 %nonassoc THEN
 %nonassoc ELSE
