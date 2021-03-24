@@ -22,67 +22,50 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Chunk: Expression {
-    enum Type {
-        Char,
-        Word,
-        Item,
-        Line
-    };
+struct Chunk : Expression {
+    enum Type { Char, Word, Item, Line };
 
     Type type;
     Expression *expression;
 
-    Chunk(Type _type, Expression *_expression)
-        : type(_type), expression(_expression) {}
+    Chunk(Type _type, Expression *_expression) : type(_type), expression(_expression) {}
 
     std::string ordinalName() const;
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct RangeChunk: Chunk {
+struct RangeChunk : Chunk {
     Expression *start;
     Expression *end;
 
-	RangeChunk(Type _type, Expression *_start, Expression *_end, Expression *_expression = nullptr)
-		: Chunk(_type, _expression), start(_start), end(_end) {}
+    RangeChunk(Type _type, Expression *_start, Expression *_end, Expression *_expression = nullptr)
+        : Chunk(_type, _expression), start(_start), end(_end) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct LastChunk: Chunk {
-    LastChunk(Type _type, Expression *_expression = nullptr)
-        : Chunk(_type, _expression) {}
+struct LastChunk : Chunk {
+    LastChunk(Type _type, Expression *_expression = nullptr) : Chunk(_type, _expression) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct MiddleChunk: Chunk {
-    MiddleChunk(Type _type, Expression *_expression = nullptr)
-        : Chunk(_type, _expression) {}
+struct MiddleChunk : Chunk {
+    MiddleChunk(Type _type, Expression *_expression = nullptr) : Chunk(_type, _expression) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct AnyChunk: Chunk {
-    AnyChunk(Type _type, Expression *_expression = nullptr)
-        : Chunk(_type, _expression) {}
+struct AnyChunk : Chunk {
+    AnyChunk(Type _type, Expression *_expression = nullptr) : Chunk(_type, _expression) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

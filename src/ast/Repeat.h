@@ -16,86 +16,76 @@
 
 #pragma once
 
-#include "Common.h"
 #include "Base.h"
+#include "Common.h"
 #include "Expressions.h"
 #include "Handlers.h"
 
-#include <vector>
 #include <ostream>
+#include <vector>
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Repeat: Statement {
-	std::unique_ptr<StatementList> statements;
+struct Repeat : Statement {
+    std::unique_ptr<StatementList> statements;
 
-	Repeat(StatementList *_statements) : statements(_statements) {}
+    Repeat(StatementList *_statements) : statements(_statements) {}
 
-	virtual void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    virtual void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-	virtual void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const {}
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    virtual void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const {}
 };
 
-struct RepeatCount: Repeat {
-	std::unique_ptr<Expression> countExpression;
+struct RepeatCount : Repeat {
+    std::unique_ptr<Expression> countExpression;
 
-	RepeatCount(Expression *_countExpression, StatementList *_statements)
-		: Repeat(_statements), countExpression(_countExpression) {}
+    RepeatCount(Expression *_countExpression, StatementList *_statements)
+        : Repeat(_statements), countExpression(_countExpression) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct RepeatRange: Repeat {
-	std::unique_ptr<Identifier> variable;
-	std::unique_ptr<Expression> startExpression;
-	std::unique_ptr<Expression> endExpression;
-	bool ascending;
+struct RepeatRange : Repeat {
+    std::unique_ptr<Identifier> variable;
+    std::unique_ptr<Expression> startExpression;
+    std::unique_ptr<Expression> endExpression;
+    bool ascending;
 
-	RepeatRange(Identifier *_variable, Expression *_startExpression, Expression *_endExpression, bool _ascending, StatementList *_statements)
-		: Repeat(_statements), variable(_variable), startExpression(_startExpression), endExpression(_endExpression), ascending(_ascending) {}
+    RepeatRange(Identifier *_variable, Expression *_startExpression, Expression *_endExpression,
+                bool _ascending, StatementList *_statements)
+        : Repeat(_statements), variable(_variable), startExpression(_startExpression),
+          endExpression(_endExpression), ascending(_ascending) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct RepeatCondition: Repeat {
-	std::unique_ptr<Expression> condition;
-	bool conditionValue;
+struct RepeatCondition : Repeat {
+    std::unique_ptr<Expression> condition;
+    bool conditionValue;
 
-	RepeatCondition(Expression *_condition, bool _conditionValue, StatementList *_statements)
-		: Repeat(_statements), condition(_condition), conditionValue(_conditionValue) {}
+    RepeatCondition(Expression *_condition, bool _conditionValue, StatementList *_statements)
+        : Repeat(_statements), condition(_condition), conditionValue(_conditionValue) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct ExitRepeat: Statement {
-	void accept(StatementVisitor &v) const override {
-		v.visit(*this);
-	}
+struct ExitRepeat : Statement {
+    void accept(StatementVisitor &v) const override { v.visit(*this); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct NextRepeat: Statement {
-	void accept(StatementVisitor &v) const override {
-		v.visit(*this);
-	}
+struct NextRepeat : Statement {
+    void accept(StatementVisitor &v) const override { v.visit(*this); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 CH_AST_NAMESPACE_END

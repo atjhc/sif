@@ -19,47 +19,47 @@
 CH_AST_NAMESPACE_BEGIN
 
 void StatementList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	context.indentLevel += 1;
-	for (auto& statement : statements) {
-		out << context.indentString();
-		statement->prettyPrint(out, context);
-		out << std::endl;
-	}
-	context.indentLevel -= 1;
+    context.indentLevel += 1;
+    for (auto &statement : statements) {
+        out << context.indentString();
+        statement->prettyPrint(out, context);
+        out << std::endl;
+    }
+    context.indentLevel -= 1;
 }
 
 void If::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "if ";
-	condition->prettyPrint(out, context);
-	out << " then" << std::endl;
-	ifStatements->prettyPrint(out, context);
-	if (elseStatements) {
-		out << context.indentString() << "else" << std::endl;
-		elseStatements->prettyPrint(out, context);
-	}
-	out << context.indentString() << "end if";
+    out << "if ";
+    condition->prettyPrint(out, context);
+    out << " then" << std::endl;
+    ifStatements->prettyPrint(out, context);
+    if (elseStatements) {
+        out << context.indentString() << "else" << std::endl;
+        elseStatements->prettyPrint(out, context);
+    }
+    out << context.indentString() << "end if";
 }
 
 void Exit::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "exit ";
-	messageKey->prettyPrint(out, context);
+    out << "exit ";
+    messageKey->prettyPrint(out, context);
 }
 
 void Pass::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "pass ";
-	messageKey->prettyPrint(out, context);
+    out << "pass ";
+    messageKey->prettyPrint(out, context);
 }
 
 void Global::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "global ";
-	variables->prettyPrint(out, context);
+    out << "global ";
+    variables->prettyPrint(out, context);
 }
 
 void Return::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "return ";
-	if (expression) {
-		expression->prettyPrint(out, context);
-	}
+    out << "return ";
+    if (expression) {
+        expression->prettyPrint(out, context);
+    }
 }
 
 CH_AST_NAMESPACE_END

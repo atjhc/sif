@@ -19,46 +19,46 @@
 CH_AST_NAMESPACE_BEGIN
 
 void Repeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "repeat";
-	prettyPrintCondition(out, context);
-	out << std::endl;
-	statements->prettyPrint(out, context);
-	out << context.indentString() << "end repeat";
+    out << "repeat";
+    prettyPrintCondition(out, context);
+    out << std::endl;
+    statements->prettyPrint(out, context);
+    out << context.indentString() << "end repeat";
 }
 
 void RepeatRange::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-	out << " with ";
-	variable->prettyPrint(out, context);
-	out << " = ";
-	startExpression->prettyPrint(out, context);
-	if (ascending) {
-		out << " to ";
-	} else {
-		out << " down to ";
-	}
-	endExpression->prettyPrint(out, context);
+    out << " with ";
+    variable->prettyPrint(out, context);
+    out << " = ";
+    startExpression->prettyPrint(out, context);
+    if (ascending) {
+        out << " to ";
+    } else {
+        out << " down to ";
+    }
+    endExpression->prettyPrint(out, context);
 }
 
 void RepeatCount::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-	out << " ";
-	countExpression->prettyPrint(out, context);
+    out << " ";
+    countExpression->prettyPrint(out, context);
 }
 
 void RepeatCondition::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-	if (conditionValue) {
-		out << " while ";
-	} else {
-		out << " until ";
-	}
-	condition->prettyPrint(out, context);
+    if (conditionValue) {
+        out << " while ";
+    } else {
+        out << " until ";
+    }
+    condition->prettyPrint(out, context);
 }
 
 void NextRepeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "next repeat";
+    out << "next repeat";
 }
 
 void ExitRepeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out <<  "exit repeat";
+    out << "exit repeat";
 }
 
 CH_AST_NAMESPACE_END

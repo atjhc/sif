@@ -16,13 +16,13 @@
 
 #pragma once
 
-#include "Common.h"
 #include "Base.h"
+#include "Common.h"
 #include "Expressions.h"
 #include "Handlers.h"
 
-#include <vector>
 #include <ostream>
+#include <vector>
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -48,87 +48,77 @@ struct Ask;
 struct Command;
 
 class StatementVisitor {
-public:
-	virtual void visit(const If &) = 0;
-	virtual void visit(const Repeat &) = 0;
-	virtual void visit(const RepeatCount &) = 0;
-	virtual void visit(const RepeatRange &) = 0;
-	virtual void visit(const RepeatCondition &) = 0;
-	virtual void visit(const ExitRepeat &) = 0;
-	virtual void visit(const NextRepeat &) = 0;
-	virtual void visit(const Exit &) = 0;
-	virtual void visit(const Pass &) = 0;
-	virtual void visit(const Global &) = 0;
-	virtual void visit(const Return &) = 0;
-	virtual void visit(const Command &) = 0;
+  public:
+    virtual void visit(const If &) = 0;
+    virtual void visit(const Repeat &) = 0;
+    virtual void visit(const RepeatCount &) = 0;
+    virtual void visit(const RepeatRange &) = 0;
+    virtual void visit(const RepeatCondition &) = 0;
+    virtual void visit(const ExitRepeat &) = 0;
+    virtual void visit(const NextRepeat &) = 0;
+    virtual void visit(const Exit &) = 0;
+    virtual void visit(const Pass &) = 0;
+    virtual void visit(const Global &) = 0;
+    virtual void visit(const Return &) = 0;
+    virtual void visit(const Command &) = 0;
 };
 
-struct Statement: Node {
-	virtual ~Statement() = default;
-	virtual void accept(StatementVisitor &visitor) const = 0;
+struct Statement : Node {
+    virtual ~Statement() = default;
+    virtual void accept(StatementVisitor &visitor) const = 0;
 };
 
-struct If: Statement {
-	std::unique_ptr<Expression> condition;
-	std::unique_ptr<StatementList> ifStatements;
-	std::unique_ptr<StatementList> elseStatements;
+struct If : Statement {
+    std::unique_ptr<Expression> condition;
+    std::unique_ptr<StatementList> ifStatements;
+    std::unique_ptr<StatementList> elseStatements;
 
-	If(Expression *_condition, StatementList *_ifStatements, StatementList *_elseStatements) 
-		: condition(_condition), ifStatements(_ifStatements), elseStatements(_elseStatements) {}
+    If(Expression *_condition, StatementList *_ifStatements, StatementList *_elseStatements)
+        : condition(_condition), ifStatements(_ifStatements), elseStatements(_elseStatements) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Exit: Statement {
-	std::unique_ptr<Identifier> messageKey;
+struct Exit : Statement {
+    std::unique_ptr<Identifier> messageKey;
 
-	Exit(Identifier *_messageKey) : messageKey(_messageKey) {}
+    Exit(Identifier *_messageKey) : messageKey(_messageKey) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Pass: Statement {
-	std::unique_ptr<Identifier> messageKey;
+struct Pass : Statement {
+    std::unique_ptr<Identifier> messageKey;
 
-	Pass(Identifier *_messageKey) : messageKey(_messageKey) {}
+    Pass(Identifier *_messageKey) : messageKey(_messageKey) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Global: Statement {
-	std::unique_ptr<IdentifierList> variables;
+struct Global : Statement {
+    std::unique_ptr<IdentifierList> variables;
 
-	Global(IdentifierList *_variables) : variables(_variables) {}
+    Global(IdentifierList *_variables) : variables(_variables) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Return: Statement {
-	std::unique_ptr<Expression> expression;
+struct Return : Statement {
+    std::unique_ptr<Expression> expression;
 
-	Return(Expression *_expression) : expression(_expression) {}
+    Return(Expression *_expression) : expression(_expression) {}
 
-	void accept(StatementVisitor &visitor) const override {
-		visitor.visit(*this);
-	}
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 CH_AST_NAMESPACE_END

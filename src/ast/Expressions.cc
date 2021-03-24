@@ -19,112 +19,104 @@
 CH_AST_NAMESPACE_BEGIN
 
 void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "(";
-	left->prettyPrint(out, context);
-	switch (op) {
-	case Equal:
-		out << " = ";
-		break;
-	case NotEqual:
-		out << " <> ";
-		break;
-	case LessThan:
-		out << " < ";
-		break;
-	case GreaterThan:
-		out << " > ";
-		break;
-	case LessThanOrEqual:
-		out << " <= ";
-		break;
-	case GreaterThanOrEqual:
-		out << " >= ";
-		break;
-	case Plus:
-		out << " + ";
-		break;
-	case Minus:
-		out << " - ";
-		break;
-	case Multiply:
-		out << " * ";
-		break;
-	case Divide:
-		out << " / ";
-		break;
-	case IsIn:
-		out << " is in ";
-		break;
-	case Contains:
-		out << " contains ";
-		break;
-	case Or:
-		out << " or ";
-		break;
-	case And:
-		out << " and ";
-		break;
-	case Mod:
-		out << " mod ";
-		break;
-	case Concat:
-		out << " & ";
-		break;
-	case ConcatWithSpace:
-		out << " && ";
-		break;
-	}
-	right->prettyPrint(out, context);
-	out << ")";
+    out << "(";
+    left->prettyPrint(out, context);
+    switch (op) {
+    case Equal:
+        out << " = ";
+        break;
+    case NotEqual:
+        out << " <> ";
+        break;
+    case LessThan:
+        out << " < ";
+        break;
+    case GreaterThan:
+        out << " > ";
+        break;
+    case LessThanOrEqual:
+        out << " <= ";
+        break;
+    case GreaterThanOrEqual:
+        out << " >= ";
+        break;
+    case Plus:
+        out << " + ";
+        break;
+    case Minus:
+        out << " - ";
+        break;
+    case Multiply:
+        out << " * ";
+        break;
+    case Divide:
+        out << " / ";
+        break;
+    case IsIn:
+        out << " is in ";
+        break;
+    case Contains:
+        out << " contains ";
+        break;
+    case Or:
+        out << " or ";
+        break;
+    case And:
+        out << " and ";
+        break;
+    case Mod:
+        out << " mod ";
+        break;
+    case Concat:
+        out << " & ";
+        break;
+    case ConcatWithSpace:
+        out << " && ";
+        break;
+    }
+    right->prettyPrint(out, context);
+    out << ")";
 }
 
 void Not::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "not (";
-	expression->prettyPrint(out, context);
-	out << ")";
+    out << "not (";
+    expression->prettyPrint(out, context);
+    out << ")";
 }
 
 void Minus::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "-(";
-	expression->prettyPrint(out, context);
-	out << ")";
+    out << "-(";
+    expression->prettyPrint(out, context);
+    out << ")";
 }
 
 void FunctionCall::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	identifier->prettyPrint(out, context);
-	out << "(";
-	if (arguments) {
-		arguments->prettyPrint(out, context);
-	}
-	out << ")";
+    identifier->prettyPrint(out, context);
+    out << "(";
+    if (arguments) {
+        arguments->prettyPrint(out, context);
+    }
+    out << ")";
 }
 
-void FloatLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
-	out << value;
-}
+void FloatLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const { out << value; }
 
-void IntLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
-	out << value;
-}
+void IntLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const { out << value; }
 
-void StringLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
-	out << value;
-}
+void StringLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const { out << value; }
 
-void Identifier::prettyPrint(std::ostream &out, PrettyPrintContext &) const {
-	out << name;
-}
+void Identifier::prettyPrint(std::ostream &out, PrettyPrintContext &) const { out << name; }
 
 void ExpressionList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	auto i = expressions.begin();
-	while (i < expressions.end()) {
-		(*i)->prettyPrint(out, context);
+    auto i = expressions.begin();
+    while (i < expressions.end()) {
+        (*i)->prettyPrint(out, context);
 
-		i++;
-		if (i != expressions.end()) {
-			out << ", ";
-		}
-	}
+        i++;
+        if (i != expressions.end()) {
+            out << ", ";
+        }
+    }
 }
 
 CH_AST_NAMESPACE_END

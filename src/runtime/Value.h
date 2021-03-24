@@ -20,9 +20,9 @@
 #include "Utilities.h"
 
 #include <cstdlib>
+#include <iomanip>
 #include <ostream>
 #include <sstream>
-#include <iomanip>
 
 #include <iostream>
 
@@ -30,7 +30,7 @@ CH_NAMESPACE_BEGIN
 
 // TODO: Add exceptions for improper conversions.
 class Value {
-public:
+  public:
     std::string value;
 
     Value() : value("") {}
@@ -52,13 +52,9 @@ public:
         return false;
     }
 
-    bool asBool() const {
-        return lowercase(value) == "true";
-    }
+    bool asBool() const { return lowercase(value) == "true"; }
 
-    bool isNumber() const {
-        return isInteger() || isFloat();
-    }
+    bool isNumber() const { return isInteger() || isFloat(); }
 
     bool isInteger() const {
         char *p;
@@ -66,9 +62,7 @@ public:
         return (*p == 0);
     }
 
-    int asInteger() const {
-        return std::stoi(value);
-    }
+    int asInteger() const { return std::stoi(value); }
 
     bool isFloat() const {
         char *p;
@@ -76,13 +70,9 @@ public:
         return (*p == 0);
     }
 
-    float asFloat() const {
-        return std::stof(value);
-    }
+    float asFloat() const { return std::stof(value); }
 
-    const std::string &asString() const {
-        return value;
-    }
+    const std::string &asString() const { return value; }
 
     bool operator==(const Value &rhs) const;
     bool operator!=(const Value &rhs) const;
@@ -100,12 +90,12 @@ public:
     Value operator%(const Value &rhs) const;
 };
 
-static inline std::ostream& operator<<(std::ostream& out, const Value &v) {
+static inline std::ostream &operator<<(std::ostream &out, const Value &v) {
     out << v.value;
     return out;
 }
 
-static inline std::ostream& operator<<(std::ostream& out, const std::vector<Value> &v) {
+static inline std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v) {
     auto i = v.begin();
     while (i != v.end()) {
         out << *i;

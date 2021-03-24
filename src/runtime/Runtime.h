@@ -20,19 +20,19 @@
 #include "ast/ast.h"
 #include "runtime/Variables.h"
 
-#include <vector>
+#include <iostream>
+#include <optional>
 #include <stack>
-#include <unordered_set>
 #include <string>
 #include <unordered_map>
-#include <optional>
-#include <iostream>
+#include <unordered_set>
+#include <vector>
 
 CH_NAMESPACE_BEGIN
 
 using namespace ast;
 
-struct RuntimeError: std::runtime_error {
+struct RuntimeError : std::runtime_error {
     Location where;
 
     RuntimeError(const std::string &_what, const Location &_where)
@@ -60,12 +60,12 @@ struct RuntimeStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    RuntimeStackFrame(const std::string &_name) 
-        : name(_name) {}
+    RuntimeStackFrame(const std::string &_name) : name(_name) {}
 };
 
-class Runtime: StatementVisitor, ExpressionVisitor, CommandVisitor {
-    using HandlerMap = std::unordered_map<std::string, std::reference_wrapper<std::unique_ptr<Handler>>>;
+class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
+    using HandlerMap =
+        std::unordered_map<std::string, std::reference_wrapper<std::unique_ptr<Handler>>>;
 
     RuntimeConfig config;
     std::string name;
@@ -79,15 +79,13 @@ class Runtime: StatementVisitor, ExpressionVisitor, CommandVisitor {
     std::stack<RuntimeStackFrame> stack;
     Variables globals;
 
-public:
-
+  public:
     Runtime(const std::string &name, std::unique_ptr<Script> &s, RuntimeConfig c = RuntimeConfig());
 
     bool send(const std::string &name, const std::vector<Value> &arguments = {});
     Value call(const std::string &name, const std::vector<Value> &arguments = {});
-    
-private:
 
+  private:
     void set(const std::string &name, const Value &value);
     Value get(const std::string &name) const;
 

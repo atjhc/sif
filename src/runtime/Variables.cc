@@ -41,8 +41,8 @@ void Variables::insert(const std::vector<std::string> &names, const std::vector<
         if (i == values.size()) {
             set(names[i], Value());
         } else {
-	        set(names[i], values[i]);
-	    }
+            set(names[i], values[i]);
+        }
     }
 }
 

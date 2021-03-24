@@ -16,36 +16,33 @@
 
 // #include "tests/common.h"
 
-#include <vector>
-#include <string>
+#include <dirent.h>
+#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <fstream>
+#include <string>
 #include <sys/types.h>
-#include <dirent.h>
+#include <vector>
 
 struct TestSuite;
 
-#define TEST(x) {#x, x}
+#define TEST(x) \
+    { #x, x }
 struct Test {
     std::string name;
-    std::function<void(TestSuite&)> test;
+    std::function<void(TestSuite &)> test;
 };
 
-#define assert_true(c) \
-    _assert_true(c, #c, __FILE__, __LINE__)
+#define assert_true(c) _assert_true(c, #c, __FILE__, __LINE__)
 
-#define assert_eq(lhs, rhs) \
-    _assert_eq(lhs, rhs, __FILE__, __LINE__)
+#define assert_eq(lhs, rhs) _assert_eq(lhs, rhs, __FILE__, __LINE__)
 
 struct TestSuite {
     std::string resourcesPath;
-    
+
     TestSuite(std::string _resourcesPath) : resourcesPath(_resourcesPath) {}
 
-    void add(const Test &test) {
-        tests.push_back(test);
-    }
+    void add(const Test &test) { tests.push_back(test); }
 
     int run() {
         std::cout << "Running " << tests.size() << " tests." << std::endl;
@@ -54,8 +51,8 @@ struct TestSuite {
             test.test(*this);
             std::cout << "Finished " << test.name << std::endl;
         }
-        std::cout << "Ran " << failure_count + success_count << " tests with " 
-            << success_count << " successes and " << failure_count << " failures." << std::endl;
+        std::cout << "Ran " << failure_count + success_count << " tests with " << success_count
+                  << " successes and " << failure_count << " failures." << std::endl;
 
         return failure_count;
     }
@@ -69,7 +66,7 @@ struct TestSuite {
             std::cerr << "Could not open directory at path: " << fullPath << std::endl;
             return paths;
         }
-        
+
         while (struct dirent *entry = readdir(directory)) {
             std::string name = entry->d_name;
             if (name == "." || name == "..") {
@@ -85,7 +82,7 @@ struct TestSuite {
         auto fullPath = resourcesPath + '/' + path;
         std::ifstream file(fullPath);
         std::string contents;
-        
+
         if (!file) {
             std::cerr << "Could not open file at path: " << fullPath << std::endl;
             return contents;
@@ -97,33 +94,37 @@ struct TestSuite {
         return contents;
     }
 
-    template<class T1, class T2>
-    void _assert_eq(const T1 &lhs, const T2 &rhs, std::string file = __FILE__, int line = __LINE__) {
+    template <class T1, class T2>
+    void _assert_eq(const T1 &lhs, const T2 &rhs, std::string file = __FILE__,
+                    int line = __LINE__) {
         if (lhs == rhs) {
             success_count++;
         } else {
-            std::cout << "Test \"" << lhs << "\" == \"" << rhs << "\" failed. (" << file << ":" << line << ")" << std::endl;
+            std::cout << "Test \"" << lhs << "\" == \"" << rhs << "\" failed. (" << file << ":"
+                      << line << ")" << std::endl;
             failure_count++;
         }
     }
 
-    void _assert_true(bool condition, std::string msg = "", std::string file = __FILE__, int line = __LINE__) {
+    void _assert_true(bool condition, std::string msg = "", std::string file = __FILE__,
+                      int line = __LINE__) {
         if (condition) {
             success_count++;
         } else {
-            std::cout << "Test \"" << msg << "\" failed. (" << file << ":" << line << ")" << std::endl;
+            std::cout << "Test \"" << msg << "\" failed. (" << file << ":" << line << ")"
+                      << std::endl;
             failure_count++;
         }
     }
 
-private:
+  private:
     std::vector<Test> tests;
     int success_count = 0;
     int failure_count = 0;
 };
 
-#include "tests/parse_tests.cc"
 #include "tests/chunk_tests.cc"
+#include "tests/parse_tests.cc"
 
 int main(int argc, char *argv[]) {
     auto tests = TestSuite(argv[1]);

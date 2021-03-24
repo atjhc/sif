@@ -25,29 +25,27 @@ CH_AST_NAMESPACE_BEGIN
 struct Script;
 
 struct Location {
-	unsigned int position = 1;
-	unsigned int lineNumber = 1;
+    unsigned int position = 1;
+    unsigned int lineNumber = 1;
 };
 
 struct PrettyPrintConfig {
-	unsigned int tabSize = 2;
+    unsigned int tabSize = 2;
 };
 
 struct PrettyPrintContext {
-	PrettyPrintConfig config = PrettyPrintConfig();
-	unsigned int indentLevel = 0;
+    PrettyPrintConfig config = PrettyPrintConfig();
+    unsigned int indentLevel = 0;
 
-	std::string indentString() {
-		return std::string(indentLevel * config.tabSize, ' ');
-	}
+    std::string indentString() { return std::string(indentLevel * config.tabSize, ' '); }
 };
 
 struct Node {
-	Location location;
+    Location location;
 
-	virtual ~Node() = default;
-	
-	virtual void prettyPrint(std::ostream &, PrettyPrintContext &) const = 0;
+    virtual ~Node() = default;
+
+    virtual void prettyPrint(std::ostream &, PrettyPrintContext &) const = 0;
 };
 
 CH_AST_NAMESPACE_END

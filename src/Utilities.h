@@ -18,9 +18,9 @@
 
 #include "Common.h"
 
+#include <ostream>
 #include <string>
 #include <vector>
-#include <ostream>
 
 CH_NAMESPACE_BEGIN
 
@@ -30,7 +30,7 @@ static inline std::string lowercase(const std::string &string) {
     return result;
 }
 
-static inline std::ostream& operator<<(std::ostream& out, const std::vector<std::string> &v) {
+static inline std::ostream &operator<<(std::ostream &out, const std::vector<std::string> &v) {
     auto i = v.begin();
     while (i != v.end()) {
         out << *i;

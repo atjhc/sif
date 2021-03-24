@@ -20,17 +20,17 @@
 #include "Utilities.h"
 #include "runtime/Value.h"
 
-#include <vector>
+#include <iostream>
 #include <string>
 #include <unordered_map>
-#include <iostream>
+#include <vector>
 
 CH_NAMESPACE_BEGIN
 
 class Variables {
     std::unordered_map<std::string, Value> _values;
 
-public:
+  public:
     Value get(const std::string &name) const;
     void set(const std::string &name, const Value &value);
 

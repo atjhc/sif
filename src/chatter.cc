@@ -17,12 +17,12 @@
 #include "parser/Parser.h"
 #include "runtime/Runtime.h"
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <sstream>
 #include <string>
-#include <random>
-#include <chrono>
 
 #include <getopt.h>
 #include <libgen.h>
@@ -33,7 +33,8 @@ using namespace chatter::ast;
 extern int yydebug;
 static int prettyPrint = 0;
 
-static int run(const std::string &fileName, const std::string &messageName, const std::vector<std::string> &arguments) {
+static int run(const std::string &fileName, const std::string &messageName,
+               const std::vector<std::string> &arguments) {
     std::string source;
 
     if (!fileName.empty()) {
@@ -71,8 +72,9 @@ static int run(const std::string &fileName, const std::string &messageName, cons
     RuntimeConfig runtimeConfig;
 
     // Configure the random number generator.
-    std::default_random_engine generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-    std::uniform_real_distribution<float> distribution(0.0,1.0);
+    std::default_random_engine generator(
+        std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::uniform_real_distribution<float> distribution(0.0, 1.0);
     runtimeConfig.random = [&]() { return distribution(generator); };
 
     // Create the runtime object.
@@ -85,24 +87,24 @@ static int run(const std::string &fileName, const std::string &messageName, cons
 }
 
 int usage(int argc, char *argv[]) {
-    std::cout 
-        << "Usage: " << basename(argv[0]) << " [options...] [file]" << std::endl
-        << "     --trace-parse"     << "\t Output trace parsing logging"            << std::endl
-        << " -m, --message-name"    << "\t Run the specified message name (default is \"begin\")"   << std::endl
-        << " -p, --pretty-print"    << "\t Pretty print the abstract syntax tree"   << std::endl
-        << " -h, --help"            << "\t Print out this help and exit"            << std::endl
-    ;
+    std::cout << "Usage: " << basename(argv[0]) << " [options...] [file]" << std::endl
+              << "     --trace-parse"
+              << "\t Output trace parsing logging" << std::endl
+              << " -m, --message-name"
+              << "\t Run the specified message name (default is \"begin\")" << std::endl
+              << " -p, --pretty-print"
+              << "\t Pretty print the abstract syntax tree" << std::endl
+              << " -h, --help"
+              << "\t Print out this help and exit" << std::endl;
     return -1;
 }
 
 int main(int argc, char *argv[]) {
-    static struct option long_options[] = {
-        {"trace-parse",     no_argument, &yydebug,       1},
-        {"message-name",    required_argument, 0, 'm'},
-        {"pretty-print",    no_argument, &prettyPrint, 'p'},
-        {"help",            no_argument, 0, 'h'},
-        {0, 0, 0, 0}
-    };
+    static struct option long_options[] = {{"trace-parse", no_argument, &yydebug, 1},
+                                           {"message-name", required_argument, 0, 'm'},
+                                           {"pretty-print", no_argument, &prettyPrint, 'p'},
+                                           {"help", no_argument, 0, 'h'},
+                                           {0, 0, 0, 0}};
 
     std::string messageName = "begin";
 
@@ -123,7 +125,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::string fileName;
-    
+
     if (optind < argc) {
         fileName = argv[optind];
     } else {

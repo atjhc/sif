@@ -19,45 +19,45 @@
 CH_AST_NAMESPACE_BEGIN
 
 void Script::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	for (auto& handler : handlers) {
-     	handler->prettyPrint(out, context);
-	}
+    for (auto &handler : handlers) {
+        handler->prettyPrint(out, context);
+    }
 }
 
 void Handler::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	switch (kind) {
-	case HandlerKind:
-		out << context.indentString() << "on ";
-		break;
-	case FunctionKind:
-		out << context.indentString() << "function ";
-		break;	
-	}
-	
-	messageKey->prettyPrint(out, context);
-	if (arguments) {
-		out << " ";
-		arguments->prettyPrint(out, context);
-	}
-	out << std::endl;
-	if (statements) {
-		statements->prettyPrint(out, context);
-	}
-	out << context.indentString() << "end ";
-	messageKey->prettyPrint(out, context);
-	out << std::endl;
+    switch (kind) {
+    case HandlerKind:
+        out << context.indentString() << "on ";
+        break;
+    case FunctionKind:
+        out << context.indentString() << "function ";
+        break;
+    }
+
+    messageKey->prettyPrint(out, context);
+    if (arguments) {
+        out << " ";
+        arguments->prettyPrint(out, context);
+    }
+    out << std::endl;
+    if (statements) {
+        statements->prettyPrint(out, context);
+    }
+    out << context.indentString() << "end ";
+    messageKey->prettyPrint(out, context);
+    out << std::endl;
 }
 
 void IdentifierList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	auto i = identifiers.begin();
-	while (i != identifiers.end()) {
-		(*i)->prettyPrint(out, context);
+    auto i = identifiers.begin();
+    while (i != identifiers.end()) {
+        (*i)->prettyPrint(out, context);
 
-		i++;
-		if (i != identifiers.end()) {
-			out << ", ";
-		}
-	}
+        i++;
+        if (i != identifiers.end()) {
+            out << ", ";
+        }
+    }
 }
 
 CH_AST_NAMESPACE_END

@@ -16,13 +16,13 @@
 
 #pragma once
 
-#include "Common.h"
 #include "Base.h"
+#include "Common.h"
 #include "Expressions.h"
 #include "Statements.h"
 
-#include <vector>
 #include <ostream>
+#include <vector>
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -33,63 +33,54 @@ struct IdentifierList;
 struct Identifier;
 struct Expression;
 
-struct Script: Node {
-	std::vector<std::unique_ptr<Handler>> handlers;
+struct Script : Node {
+    std::vector<std::unique_ptr<Handler>> handlers;
 
-	Script() {}
+    Script() {}
 
-	void add(Handler *handler) {
-		handlers.push_back(std::unique_ptr<Handler>(handler));
-	}
+    void add(Handler *handler) { handlers.push_back(std::unique_ptr<Handler>(handler)); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
+struct Handler : Node {
+    enum Kind { HandlerKind, FunctionKind };
 
-struct Handler: Node {
-	enum Kind {
-		HandlerKind,
-		FunctionKind
-	};
+    Kind kind;
 
-	Kind kind;
+    std::unique_ptr<Identifier> messageKey;
+    std::unique_ptr<IdentifierList> arguments;
+    std::unique_ptr<StatementList> statements;
 
-	std::unique_ptr<Identifier> messageKey;
-	std::unique_ptr<IdentifierList> arguments;
-	std::unique_ptr<StatementList> statements;
+    Handler(Kind _kind, Identifier *_messageKey, IdentifierList *_arguments,
+            StatementList *_statements)
+        : kind(_kind), messageKey(_messageKey), arguments(_arguments), statements(_statements) {}
 
-	Handler(Kind _kind, Identifier *_messageKey, IdentifierList *_arguments, StatementList *_statements) 
-		: kind(_kind), messageKey(_messageKey), arguments(_arguments), statements(_statements) {}
-
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct StatementList: Node {
-	std::vector<std::unique_ptr<Statement>> statements;
+struct StatementList : Node {
+    std::vector<std::unique_ptr<Statement>> statements;
 
-	StatementList() {}
+    StatementList() {}
 
-	StatementList(Statement *statement) {
-		add(statement);
-	}
+    StatementList(Statement *statement) { add(statement); }
 
-	void add(Statement *statement) {
-		statements.push_back(std::unique_ptr<Statement>(statement));
-	}
+    void add(Statement *statement) { statements.push_back(std::unique_ptr<Statement>(statement)); }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct IdentifierList: Node {
-	std::vector<std::unique_ptr<Identifier>> identifiers;
+struct IdentifierList : Node {
+    std::vector<std::unique_ptr<Identifier>> identifiers;
 
-	IdentifierList() {}
+    IdentifierList() {}
 
-	void add(Identifier *identifier) {
-		identifiers.push_back(std::unique_ptr<Identifier>(identifier));
-	}
+    void add(Identifier *identifier) {
+        identifiers.push_back(std::unique_ptr<Identifier>(identifier));
+    }
 
-	void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 CH_AST_NAMESPACE_END

@@ -22,8 +22,8 @@ CH_NAMESPACE_BEGIN
 Runtime::Runtime(const std::string &n, std::unique_ptr<Script> &s, RuntimeConfig c)
     : config(c), name(n), script(std::move(s)) {
 
-    for (auto& handler : script->handlers) {
-        auto& name = handler->messageKey->name;
+    for (auto &handler : script->handlers) {
+        auto &name = handler->messageKey->name;
 
         auto map = &handlersByName;
         if (handler->kind == Handler::FunctionKind) {
@@ -45,7 +45,7 @@ bool Runtime::send(const std::string &name, const std::vector<Value> &arguments)
     if (i == handlersByName.end()) {
         // throw RuntimeError("Unrecognized handler \"" + name + "\"", Location());
         return true;
-    } 
+    }
 
     stack.push(RuntimeStackFrame(name));
     execute(i->second.get(), arguments);
@@ -78,7 +78,6 @@ void Runtime::set(const std::string &name, const Value &value) {
         return globals.set(name, value);
     }
     return stack.top().variables.set(name, value);
-
 }
 
 Value Runtime::get(const std::string &name) const {
@@ -89,7 +88,8 @@ Value Runtime::get(const std::string &name) const {
     return stack.top().variables.get(name);
 }
 
-void Runtime::execute(const std::unique_ptr<ast::Handler> &handler, const std::vector<Value> &values) {
+void Runtime::execute(const std::unique_ptr<ast::Handler> &handler,
+                      const std::vector<Value> &values) {
     std::vector<std::string> argumentNames;
     if (handler->arguments) {
         for (auto &argument : handler->arguments->identifiers) {
@@ -102,7 +102,7 @@ void Runtime::execute(const std::unique_ptr<ast::Handler> &handler, const std::v
 }
 
 void Runtime::execute(const std::unique_ptr<ast::StatementList> &statements) {
-    for (auto& statement : statements->statements) {
+    for (auto &statement : statements->statements) {
         try {
             statement->accept(*this);
         } catch (RuntimeError &error) {
@@ -119,7 +119,7 @@ void Runtime::execute(const std::unique_ptr<ast::StatementList> &statements) {
 
 void Runtime::report(const RuntimeError &error) {
     auto lineNumber = error.where.lineNumber;
-    
+
     config.stderr << name << ":" << lineNumber << ": runtime error: ";
     config.stderr << error.what() << std::endl;
 }
@@ -190,13 +190,9 @@ void Runtime::visit(const RepeatCondition &s) {
     }
 }
 
-void Runtime::visit(const ExitRepeat &) {
-    stack.top().exitingRepeat = true;
-}
+void Runtime::visit(const ExitRepeat &) { stack.top().exitingRepeat = true; }
 
-void Runtime::visit(const NextRepeat &) {
-    stack.top().skippingRepeat = true;
-}
+void Runtime::visit(const NextRepeat &) { stack.top().skippingRepeat = true; }
 
 void Runtime::visit(const Exit &e) {
     if (e.messageKey->name == stack.top().name) {
@@ -206,9 +202,7 @@ void Runtime::visit(const Exit &e) {
     }
 }
 
-void Runtime::visit(const Pass &) {
-    stack.top().passing = true;
-}
+void Runtime::visit(const Pass &) { stack.top().passing = true; }
 
 void Runtime::visit(const Global &s) {
     std::unordered_set<std::string> globals;
@@ -240,7 +234,6 @@ void Runtime::visit(const Command &c) {
     }
     passed = send(name, arguments);
 
-
     if (passed) {
         c.perform(*this);
     }
@@ -248,9 +241,7 @@ void Runtime::visit(const Command &c) {
 
 #pragma mark - Commands
 
-void Runtime::perform(const Command &s) {
-    /* no-op */
-}
+void Runtime::perform(const Command &s) { /* no-op */ }
 
 void Runtime::perform(const Put &s) {
     auto value = s.expression->evaluate(*this);
@@ -283,7 +274,7 @@ void Runtime::perform(const Get &s) {
 
 void Runtime::perform(const Ask &s) {
     auto question = s.expression->evaluate(*this);
-    
+
     config.stdout << question.value;
     std::string result;
     std::getline(config.stdin, result);
@@ -298,10 +289,12 @@ void Runtime::perform(const Add &c) {
     auto targetValue = get(targetName);
 
     if (!targetValue.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(), c.destination->location);
+        throw RuntimeError("Expected number, got " + targetValue.asString(),
+                           c.destination->location);
     }
     if (!value.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(), c.expression->location);
+        throw RuntimeError("Expected number, got " + targetValue.asString(),
+                           c.expression->location);
     }
 
     set(targetName, targetValue.asFloat() + value.asFloat());
@@ -312,12 +305,14 @@ void Runtime::perform(const Subtract &c) {
 
     auto value = c.expression->evaluate(*this);
     auto targetValue = get(targetName);
-    
+
     if (!targetValue.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(), c.destination->location);
+        throw RuntimeError("Expected number, got " + targetValue.asString(),
+                           c.destination->location);
     }
     if (!value.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(), c.expression->location);
+        throw RuntimeError("Expected number, got " + targetValue.asString(),
+                           c.expression->location);
     }
     set(targetName, targetValue.asFloat() - value.asFloat());
 }
@@ -327,12 +322,14 @@ void Runtime::perform(const Multiply &c) {
 
     auto value = c.expression->evaluate(*this);
     auto targetValue = get(targetName);
-    
+
     if (!targetValue.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(), c.destination->location);
+        throw RuntimeError("Expected number, got " + targetValue.asString(),
+                           c.destination->location);
     }
     if (!value.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(), c.expression->location);
+        throw RuntimeError("Expected number, got " + targetValue.asString(),
+                           c.expression->location);
     }
     set(targetName, targetValue.asFloat() * value.asFloat());
 }
@@ -342,19 +339,19 @@ void Runtime::perform(const Divide &c) {
     auto &targetName = c.destination->name;
     auto targetValue = get(targetName);
     if (!targetValue.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(), c.destination->location);
+        throw RuntimeError("Expected number, got " + targetValue.asString(),
+                           c.destination->location);
     }
     if (!value.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(), c.expression->location);
+        throw RuntimeError("Expected number, got " + targetValue.asString(),
+                           c.expression->location);
     }
     set(targetName, targetValue.asFloat() / value.asFloat());
 }
 
 #pragma mark - ExpressionVisitor
 
-Value Runtime::valueOf(const Identifier &e) {
-    return get(e.name);
-}
+Value Runtime::valueOf(const Identifier &e) { return get(e.name); }
 
 Value Runtime::valueOf(const FunctionCall &e) {
     std::vector<Value> arguments;
@@ -373,29 +370,44 @@ Value Runtime::valueOf(const BinaryOp &e) {
     auto rhs = e.right->evaluate(*this);
 
     switch (e.op) {
-    case BinaryOp::Equal: return lhs == rhs;
-    case BinaryOp::NotEqual: return lhs != rhs;
-    case BinaryOp::LessThan: return lhs < rhs;
-    case BinaryOp::GreaterThan: return lhs > rhs;
-    case BinaryOp::LessThanOrEqual: return lhs <= rhs;
-    case BinaryOp::GreaterThanOrEqual: return lhs >= rhs;
-    case BinaryOp::Plus: return lhs + rhs;
-    case BinaryOp::Minus: return lhs - rhs;
-    case BinaryOp::Multiply: return lhs * rhs;
-    case BinaryOp::Divide: return lhs / rhs;
-    case BinaryOp::IsIn: return rhs.contains(lhs);
-    case BinaryOp::Contains: return lhs.contains(rhs);
-    case BinaryOp::Or: return lhs || rhs;
-    case BinaryOp::And: return lhs && rhs;
-    case BinaryOp::Mod: return lhs % rhs;
-    case BinaryOp::Concat: return lhs.value + rhs.value;
-    case BinaryOp::ConcatWithSpace: return lhs.value + " " + rhs.value;
+    case BinaryOp::Equal:
+        return lhs == rhs;
+    case BinaryOp::NotEqual:
+        return lhs != rhs;
+    case BinaryOp::LessThan:
+        return lhs < rhs;
+    case BinaryOp::GreaterThan:
+        return lhs > rhs;
+    case BinaryOp::LessThanOrEqual:
+        return lhs <= rhs;
+    case BinaryOp::GreaterThanOrEqual:
+        return lhs >= rhs;
+    case BinaryOp::Plus:
+        return lhs + rhs;
+    case BinaryOp::Minus:
+        return lhs - rhs;
+    case BinaryOp::Multiply:
+        return lhs * rhs;
+    case BinaryOp::Divide:
+        return lhs / rhs;
+    case BinaryOp::IsIn:
+        return rhs.contains(lhs);
+    case BinaryOp::Contains:
+        return lhs.contains(rhs);
+    case BinaryOp::Or:
+        return lhs || rhs;
+    case BinaryOp::And:
+        return lhs && rhs;
+    case BinaryOp::Mod:
+        return lhs % rhs;
+    case BinaryOp::Concat:
+        return lhs.value + rhs.value;
+    case BinaryOp::ConcatWithSpace:
+        return lhs.value + " " + rhs.value;
     }
 }
 
-Value Runtime::valueOf(const Not &e) {
-    return Value(!e.expression->evaluate(*this).asBool());
-}
+Value Runtime::valueOf(const Not &e) { return Value(!e.expression->evaluate(*this).asBool()); }
 
 Value Runtime::valueOf(const Minus &e) {
     auto value = e.expression->evaluate(*this);
@@ -408,24 +420,22 @@ Value Runtime::valueOf(const Minus &e) {
     }
 }
 
-Value Runtime::valueOf(const FloatLiteral &e) {
-    return Value(e.value);
-}
+Value Runtime::valueOf(const FloatLiteral &e) { return Value(e.value); }
 
-Value Runtime::valueOf(const IntLiteral &e) {
-    return Value(e.value);
-}
+Value Runtime::valueOf(const IntLiteral &e) { return Value(e.value); }
 
-Value Runtime::valueOf(const StringLiteral &e) {
-    return Value(e.value);
-}
+Value Runtime::valueOf(const StringLiteral &e) { return Value(e.value); }
 
 static type chunk_type(Chunk::Type t) {
     switch (t) {
-    case Chunk::Char:   return character;
-    case Chunk::Word:   return word;
-    case Chunk::Item:   return item;
-    case Chunk::Line:   return line;
+    case Chunk::Char:
+        return character;
+    case Chunk::Word:
+        return word;
+    case Chunk::Item:
+        return item;
+    case Chunk::Line:
+        return line;
     }
 }
 
@@ -435,7 +445,9 @@ Value Runtime::valueOf(const RangeChunk &c) {
 
     if (c.end) {
         auto endValue = c.end->evaluate(*this);
-        return Value(range_chunk(chunk_type(c.type), startValue.asInteger() - 1, endValue.asInteger() - 1, value.value).get());
+        return Value(range_chunk(chunk_type(c.type), startValue.asInteger() - 1,
+                                 endValue.asInteger() - 1, value.value)
+                         .get());
     } else {
         return Value(chunk(chunk_type(c.type), startValue.asInteger() - 1, value.value).get());
     }
@@ -443,7 +455,10 @@ Value Runtime::valueOf(const RangeChunk &c) {
 
 Value Runtime::valueOf(const AnyChunk &c) {
     auto value = c.expression->evaluate(*this);
-    return Value(random_chunk(chunk_type(c.type), [this](int count) { return config.random() * count; }, value.value).get());
+    return Value(
+        random_chunk(
+            chunk_type(c.type), [this](int count) { return config.random() * count; }, value.value)
+            .get());
 }
 
 Value Runtime::valueOf(const LastChunk &c) {

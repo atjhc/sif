@@ -21,8 +21,8 @@
 #include "ast/Handlers.h"
 #include "runtime/Value.h"
 
-#include <vector>
 #include <ostream>
+#include <vector>
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -40,7 +40,7 @@ struct MiddleChunk;
 struct LastChunk;
 
 class ExpressionVisitor {
-public:
+  public:
     virtual Value valueOf(const Identifier &) = 0;
     virtual Value valueOf(const FunctionCall &) = 0;
     virtual Value valueOf(const BinaryOp &) = 0;
@@ -55,19 +55,17 @@ public:
     virtual Value valueOf(const MiddleChunk &) = 0;
 };
 
-struct Expression: Node {
+struct Expression : Node {
     virtual ~Expression() = default;
     virtual Value evaluate(ExpressionVisitor &) const = 0;
 };
 
-struct ExpressionList: Node {
+struct ExpressionList : Node {
     std::vector<std::unique_ptr<Expression>> expressions;
 
     ExpressionList() {}
 
-    ExpressionList(Expression *expression) {
-        add(expression);
-    }
+    ExpressionList(Expression *expression) { add(expression); }
 
     void add(Expression *expression) {
         expressions.push_back(std::unique_ptr<Expression>(expression));
@@ -76,33 +74,29 @@ struct ExpressionList: Node {
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Identifier: Expression {
+struct Identifier : Expression {
     std::string name;
 
     Identifier(const std::string &_name) : name(_name) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct FunctionCall: Expression {
+struct FunctionCall : Expression {
     std::unique_ptr<Identifier> identifier;
     std::unique_ptr<ExpressionList> arguments;
 
-    FunctionCall(Identifier *_identifier, ExpressionList *_arguments) :
-        identifier(_identifier), arguments(_arguments) {}
+    FunctionCall(Identifier *_identifier, ExpressionList *_arguments)
+        : identifier(_identifier), arguments(_arguments) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct BinaryOp: Expression {
+struct BinaryOp : Expression {
     enum Operator {
         Equal,
         NotEqual,
@@ -129,69 +123,57 @@ struct BinaryOp: Expression {
     BinaryOp(Operator _op, Expression *_left, Expression *_right)
         : op(_op), left(_left), right(_right) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Not: Expression {
+struct Not : Expression {
     std::unique_ptr<Expression> expression;
 
     Not(Expression *_expression) : expression(_expression) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct Minus: Expression {
+struct Minus : Expression {
     std::unique_ptr<Expression> expression;
 
     Minus(Expression *_expression) : expression(_expression) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct FloatLiteral: Expression {
+struct FloatLiteral : Expression {
     float value;
 
     FloatLiteral(float _value) : value(_value) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct IntLiteral: Expression {
+struct IntLiteral : Expression {
     int value;
 
     IntLiteral(int _value) : value(_value) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct StringLiteral: Expression {
+struct StringLiteral : Expression {
     std::string value;
 
     StringLiteral(const std::string &_value) : value(_value) {}
 
-    Value evaluate(ExpressionVisitor &v) const override {
-        return v.valueOf(*this);
-    }
+    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

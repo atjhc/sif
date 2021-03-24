@@ -19,71 +19,71 @@
 CH_AST_NAMESPACE_BEGIN
 
 void Command::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << name->name;
-	if (arguments) {
-		arguments->prettyPrint(out, context);
-	}
+    out << name->name;
+    if (arguments) {
+        arguments->prettyPrint(out, context);
+    }
 }
 
 void Preposition::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	switch (type) {
-	case Before:
-		out << "before";
-		break;
-	case Into:
-		out << "into";
-		break;
-	case After:
-		out << "after";
-		break;
-	}
+    switch (type) {
+    case Before:
+        out << "before";
+        break;
+    case Into:
+        out << "into";
+        break;
+    case After:
+        out << "after";
+        break;
+    }
 }
 
 void Put::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "put ";
-	expression->prettyPrint(out, context);
-	if (preposition) {
-		out << " ";
-		preposition->prettyPrint(out, context);
-	}
-	if (target) {
-		out << " ";
-		target->prettyPrint(out, context);
-	}
+    out << "put ";
+    expression->prettyPrint(out, context);
+    if (preposition) {
+        out << " ";
+        preposition->prettyPrint(out, context);
+    }
+    if (target) {
+        out << " ";
+        target->prettyPrint(out, context);
+    }
 }
 
 void Get::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "get ";
-	expression->prettyPrint(out, context);
+    out << "get ";
+    expression->prettyPrint(out, context);
 }
 
 void Ask::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "ask ";
-	expression->prettyPrint(out, context);
+    out << "ask ";
+    expression->prettyPrint(out, context);
 }
 
 void Add::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "add ";
-	expression->prettyPrint(out, context);
-	out << " to ";
+    out << "add ";
+    expression->prettyPrint(out, context);
+    out << " to ";
 }
 
 void Subtract::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "subtract ";
-	expression->prettyPrint(out, context);
-	out << " from ";
+    out << "subtract ";
+    expression->prettyPrint(out, context);
+    out << " from ";
 }
 
 void Multiply::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "multiply ";
-	expression->prettyPrint(out, context);
-	out << " by ";
+    out << "multiply ";
+    expression->prettyPrint(out, context);
+    out << " by ";
 }
 
 void Divide::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-	out << "divide ";
-	expression->prettyPrint(out, context);
-	out << " by ";
+    out << "divide ";
+    expression->prettyPrint(out, context);
+    out << " by ";
 }
 
 CH_AST_NAMESPACE_END

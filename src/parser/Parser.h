@@ -24,30 +24,30 @@
 CH_NAMESPACE_BEGIN
 
 struct ParserConfig {
-	std::string fileName = "<stdin>";
-	std::ostream &err = std::cerr;
+    std::string fileName = "<stdin>";
+    std::ostream &err = std::cerr;
 };
 
 struct ParserContext {
-	void *scanner = nullptr;
-	ast::Script *script = nullptr;
+    void *scanner = nullptr;
+    ast::Script *script = nullptr;
 
-	std::string fileName;
-	std::vector<std::string> sourceLines;
-	std::ostream &err;
+    std::string fileName;
+    std::vector<std::string> sourceLines;
+    std::ostream &err;
 
-	unsigned int numberOfErrors = 0;
-	ast::Location currentLocation;
-	ast::Location lookAheadLocation;
+    unsigned int numberOfErrors = 0;
+    ast::Location currentLocation;
+    ast::Location lookAheadLocation;
 
-	ParserContext(const ParserConfig &config, const std::string &s);
+    ParserContext(const ParserConfig &config, const std::string &s);
 
-	void error(const char *msg);
+    void error(const char *msg);
 };
 
 class Parser {
-public:
-	std::unique_ptr<ast::Script> parse(const ParserConfig &config, const std::string &source);
+  public:
+    std::unique_ptr<ast::Script> parse(const ParserConfig &config, const std::string &source);
 };
 
 CH_NAMESPACE_END

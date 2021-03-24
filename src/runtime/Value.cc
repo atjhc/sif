@@ -20,44 +20,26 @@
 
 CH_NAMESPACE_BEGIN
 
-bool Value::operator==(const Value &rhs) const {
-    return lowercase(value) == lowercase(rhs.value);
-}
+bool Value::operator==(const Value &rhs) const { return lowercase(value) == lowercase(rhs.value); }
 
-bool Value::operator!=(const Value &rhs) const {
-    return lowercase(value) != lowercase(rhs.value);
-}
+bool Value::operator!=(const Value &rhs) const { return lowercase(value) != lowercase(rhs.value); }
 
-bool Value::operator<(const Value &rhs) const {
-    return asFloat() < rhs.asFloat();
-}
+bool Value::operator<(const Value &rhs) const { return asFloat() < rhs.asFloat(); }
 
-bool Value::operator>(const Value &rhs) const {
-    return asFloat() > rhs.asFloat();
-}
+bool Value::operator>(const Value &rhs) const { return asFloat() > rhs.asFloat(); }
 
-bool Value::operator<=(const Value &rhs) const {
-    return asFloat() <= rhs.asFloat();
-}
+bool Value::operator<=(const Value &rhs) const { return asFloat() <= rhs.asFloat(); }
 
-bool Value::operator>=(const Value &rhs) const {
-    return asFloat() >= rhs.asFloat();
-}
+bool Value::operator>=(const Value &rhs) const { return asFloat() >= rhs.asFloat(); }
 
-bool Value::operator&&(const Value &rhs) const {
-    return asBool() && rhs.asBool();
-}
+bool Value::operator&&(const Value &rhs) const { return asBool() && rhs.asBool(); }
 
-bool Value::operator||(const Value &rhs) const {
-    return asBool() || rhs.asBool();
-}
+bool Value::operator||(const Value &rhs) const { return asBool() || rhs.asBool(); }
 
-bool Value::contains(const Value &rhs) const {
-    return value.find(rhs.value) != std::string::npos;
-}
+bool Value::contains(const Value &rhs) const { return value.find(rhs.value) != std::string::npos; }
 
 Value Value::operator+(const Value &rhs) const {
-	if (isNumber() && rhs.isNumber()) {
+    if (isNumber() && rhs.isNumber()) {
         return asFloat() + rhs.asFloat();
     } else {
         throw std::runtime_error("expected number");
