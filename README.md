@@ -1,6 +1,6 @@
 ## Chatter
 
-Chatter is a lightweight scripting language modeled after [HyperTalk](https://en.wikipedia.org/wiki/HyperTalk), Apple's scripting language built for [HyperCard](https://en.wikipedia.org/wiki/HyperCard). This is very much a work in progress; the grammar is not complete, and the runtime is pretty unstable. It's also pretty limited in functionality, and mostly just useful for scratching the itch of nostalgia.
+Chatter is a lightweight scripting language inspired by [HyperTalk](https://en.wikipedia.org/wiki/HyperTalk) (and by extension, [AppleScript](https://en.wikipedia.org/wiki/AppleScript)), the scripting language built for [HyperCard](https://en.wikipedia.org/wiki/HyperCard). This is very much a work in progress; the grammar is not complete, and the runtime is pretty unstable. It's also pretty limited in functionality, and mostly just useful for scratching the itch of nostalgia.
 
 Since you probably just want to see the language, here is a sample chatter script that solves FizzBuzz:
 ```
@@ -47,4 +47,4 @@ end begin
 
 When I was young I learned to program by playing around with HyperCard. At first I simply drew pictures and used some of the builtin actions (e.g. changing cards) to make short point-and-click adventure games similar to Myst (indeed, Myst was originally built on top of HyperCard). I gradually began adding more complexity into my games (tracking items, stats, and even building simple animations), and that was truly my entry into a life-long love of programming.
 
-I don't expect this language to be particularly useful to anybody, but I find it appealing as a learning tool due to its very english-like syntax. I always wanted to implement a programming language as an exercise, and HyperTalk seemed like a great way to combine that goal with a feeling of nostalgia and my general love for HyperCard.
+I don't expect this language to be particularly useful to anybody, but I find it appealing as a learning tool due to its very english-like syntax. I have always wanted to implement a programming language as an exercise, and this seemed like a great way to combine that goal with a feeling of nostalgia and my general love for HyperCard.

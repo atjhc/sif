@@ -85,9 +85,9 @@ int yyerror(yyscan_t, ParserContext&, const char *);
 %token CHAR WORD LINE ITEM
 
 %left OR AND
-%left IS EQ NEQ /* IS NOT */
+%left IS EQ NEQ
 %left NOT
-%left CONTAINS /* IS IN */
+%left CONTAINS
 %left LT GT LTE GTE 
 %left CONCAT CONCAT_SPACE
 %left PLUS MINUS
@@ -108,7 +108,7 @@ int yyerror(yyscan_t, ParserContext&, const char *);
 %nterm <statementList> statementList elseBlock
 %nterm <statement> statement ifBlock keywordStatement commandStatement
 %nterm <statement> repeatBlock repeatForever repeatCount repeatCondition repeatRange
-%nterm <expression> expression condition functionCall ordinal constant
+%nterm <expression> expression functionCall ordinal constant
 %nterm <chunk> chunk
 %nterm <chunkType> chunkType
 %nterm <expressionList> expressionList
@@ -116,9 +116,6 @@ int yyerror(yyscan_t, ParserContext&, const char *);
 
 %destructor { delete $$; } IDENTIFIER
 %start start
-
-// TODO: Remove this once the existing conflicts are resolved.
-//%expect 28
 
 %%
 
@@ -241,6 +238,18 @@ messageKey
     | ASK {
         $$ = new Identifier("ask");
     }
+    | ADD {
+        $$ = new Identifier("add");
+    }
+    | SUBTRACT {
+        $$ = new Identifier("subtract");
+    }
+    | MULTIPLY {
+        $$ = new Identifier("multiply");
+    }
+    | DIVIDE {
+        $$ = new Identifier("divide");
+    }
 ;
 
 keywordStatement
@@ -304,14 +313,14 @@ commandStatement
 ;
 
 ifBlock
-    : IF condition maybeEOL THEN statement {
+    : IF expression maybeEOL THEN statement {
         if ($2 && $5) {
             $$ = new If($2, new StatementList($5), nullptr);
         } else {
             $$ = nullptr;
         }
     }
-    | IF condition maybeEOL THEN EOL statementList END IF {
+    | IF expression maybeEOL THEN EOL statementList END IF {
         if ($2 && $6) {
             $$ = new If($2, $6, nullptr);
         } else {
@@ -319,16 +328,16 @@ ifBlock
         }
     }
     // TODO: Add missing IF/ELSE construct:
-    //   if condition then statement
+    //   if expression then statement
     //   else statement
-    | IF condition maybeEOL THEN statement elseBlock {
+    | IF expression maybeEOL THEN statement elseBlock {
         if ($2 && $5 && $6) {
             $$ = new If($2, new StatementList($5), $6);
         } else {
             $$ = nullptr;
         }
     } 
-    | IF condition maybeEOL THEN EOL statementList elseBlock {
+    | IF expression maybeEOL THEN EOL statementList elseBlock {
         if ($2 && $6 && $7) {
             $$ = new If($2, $6, $7);
         } else {
@@ -374,11 +383,11 @@ repeatForever
 ;
 
 repeatCount
-    : REPEAT expression maybeTimes EOL 
+    : REPEAT maybeFor expression maybeTimes EOL 
         statementList 
       END REPEAT {
-        if ($2) {
-            $$ = new RepeatCount($2, $5);
+        if ($3) {
+            $$ = new RepeatCount($3, $6);
         } else {
             $$ = nullptr;
         }
@@ -432,15 +441,14 @@ maybeForever
     | FOREVER
 ;
 
+maybeFor
+    : /* empty */
+    | FOR
+;
+
 maybeTimes
     : /* empty */
     | TIMES
-;
-
-condition
-    : expression {
-        $$ = $1;
-    }
 ;
 
 expression

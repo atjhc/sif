@@ -30,12 +30,11 @@ OBJ := $(patsubst $(DSTROOT)/%.cc,$(DSTROOT)/%.o,$(OBJ))
 # create a build rule that matches target sub directories.
 VPATH := $(SRCROOT)
 
-# TODO: Remove exceptions for implicit-function-declaration and unused-function
-# I need these for the time being because they flag generated code.
-WNO := -Wno-unneeded-internal-declaration
-WNO := $(WNO) -Wno-unused-function
+# TODO: Remove exceptions for implicit-function-declaration, unused-function,
+# and no-register. I need these for the time being because they flag generated code.
+WNO := -Wno-unneeded-internal-declaration -Wno-unused-function -Wno-register
 
-CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++17 -Wno-register
+CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++17
 
 all: dstroot $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 
