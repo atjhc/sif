@@ -14,37 +14,9 @@
 //  limitations under the License.
 //
 
-#pragma once
-
-#include "Common.h"
-#include "ast/Script.h"
-
-#include <iostream>
+#include "runtime/Object.h"
 
 CH_NAMESPACE_BEGIN
 
-struct ParserConfig {
-    std::string fileName = "<stdin>";
-    std::ostream &err = std::cerr;
-};
-
-struct ParserContext {
-    ParserConfig config;
-
-    void *scanner = nullptr;
-    std::vector<std::string> sourceLines;
-
-    ast::Script *script = nullptr;
-    unsigned int numberOfErrors = 0;
-
-    ParserContext(const ParserConfig &config, const std::string &source);
-
-    void error(ast::Location location, const std::string &msg);
-};
-
-class Parser {
-  public:
-    std::unique_ptr<ast::Script> parse(const ParserConfig &config, const std::string &source);
-};
 
 CH_NAMESPACE_END

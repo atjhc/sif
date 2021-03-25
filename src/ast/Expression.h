@@ -18,7 +18,7 @@
 
 #include "Common.h"
 #include "ast/Base.h"
-#include "ast/Handlers.h"
+#include "ast/Handler.h"
 #include "runtime/Value.h"
 
 #include <ostream>

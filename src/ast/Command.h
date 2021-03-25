@@ -18,8 +18,8 @@
 
 #include "Common.h"
 #include "ast/Base.h"
-#include "ast/Expressions.h"
-#include "ast/Statements.h"
+#include "ast/Expression.h"
+#include "ast/Statement.h"
 
 CH_AST_NAMESPACE_BEGIN
 

@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "Commands.h"
+#include "Command.h"
 
 CH_AST_NAMESPACE_BEGIN
 

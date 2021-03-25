@@ -25,7 +25,10 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "ast/ast.h"
+#include "ast/Script.h"
+#include "ast/Chunk.h"
+#include "ast/Command.h"
+#include "ast/Repeat.h"
 #include "parser/Parser.h"
 
 #ifndef YY_TYPEDEF_YY_SCANNER_T
@@ -36,11 +39,13 @@
 using namespace chatter;
 using namespace chatter::ast;
 
+#include "parser/yy_shared.h"
+
 %}
 
 %error-verbose
 %verbose
-%debug
+%locations
 
 %union {
     Script          *script;
@@ -58,13 +63,14 @@ using namespace chatter::ast;
 
 %{
 
-int yylex(YYSTYPE*, yyscan_t, ParserContext&);
-int yyerror(yyscan_t, ParserContext&, const char *);
+int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 
 %}
 
 // Keywords
-%token THE ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN SEND WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES NOT AN NO OR CONTAINS IS IN WITHIN OF FORM_FEED LINE_FEED PI UP AND EOL
+%token THE ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN 
+%token SEND WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
+%token NOT AN NO OR CONTAINS IS IN WITHIN OF FORM_FEED LINE_FEED PI UP AND EOL
 
 // Commands
 %token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
@@ -158,10 +164,11 @@ handler
       END messageKey {
         if ($2->name == $7->name) {
             $$ = new Handler(Handler::HandlerKind, $2, $3, $5);
+            $$->location = @2.first;
         } else {
             $$ = nullptr;
             auto msg = "Expected " + $2->name + ", got " + $7->name;
-            yyerror(scanner, context, msg.c_str());
+            yyerror(&yylloc, scanner, context, msg.c_str());
         }
     }
     | FUNCTION messageKey identifierList EOL
@@ -169,9 +176,10 @@ handler
       END messageKey {
         if ($2->name == $7->name) {
             $$ = new Handler(Handler::FunctionKind, $2, $3, $5);
+            $$->location = @2.first;
         } else {
             auto msg = "Expected " + $2->name + ", got " + $7->name;
-            yyerror(scanner, context, msg.c_str());
+            yyerror(&yylloc, scanner, context, msg.c_str());
         }
     }
 ;
@@ -231,45 +239,58 @@ messageKey
     }
     | PUT {
         $$ = new Identifier("put");
+        $$->location = @1.first;
     }
     | GET {
         $$ = new Identifier("get");
+        $$->location = @1.first;
     }
     | ASK {
         $$ = new Identifier("ask");
+        $$->location = @1.first;
     }
     | ADD {
         $$ = new Identifier("add");
+        $$->location = @1.first;
     }
     | SUBTRACT {
         $$ = new Identifier("subtract");
+        $$->location = @1.first;
     }
     | MULTIPLY {
         $$ = new Identifier("multiply");
+        $$->location = @1.first;
     }
     | DIVIDE {
         $$ = new Identifier("divide");
+        $$->location = @1.first;
     }
 ;
 
 keywordStatement
     : EXIT REPEAT { 
         $$ = new ExitRepeat();
+        $$->location = @1.first;
     }
     | NEXT REPEAT { 
         $$ = new NextRepeat();
+        $$->location = @1.first;
     }
     | EXIT messageKey {
         $$ = new Exit($2);
+        $$->location = @1.first;
     }
     | PASS messageKey { 
         $$ = new Pass($2);
+        $$->location = @1.first;
     }
     | GLOBAL identifierList {
         $$ = new Global($2);
+        $$->location = @1.first;
     }
     | RETURN expression {
         $$ = new Return($2);
+        $$->location = @1.first;
     }
     | ifBlock { 
         $$ = $1;
@@ -282,33 +303,43 @@ keywordStatement
 commandStatement
     : PUT expression {
         $$ = new Put($2, nullptr, nullptr);
+        $$->location = @1.first;
     }
     | PUT expression preposition IDENTIFIER {
         $$ = new Put($2, $3, $4);
+        $$->location = @1.first;
     }
     | GET expression {
         $$ = new Get($2);
+        $$->location = @1.first;
     }
     | ASK expression {
         $$ = new Ask($2);
+        $$->location = @1.first;
     }
     | ADD expression TO IDENTIFIER {
         $$ = new Add($2, $4);
+        $$->location = @1.first;
     }
     | SUBTRACT expression FROM IDENTIFIER {
         $$ = new Subtract($2, $4);
+        $$->location = @1.first;
     }
     | MULTIPLY IDENTIFIER BY expression {
         $$ = new Multiply($4, $2);
+        $$->location = @1.first;
     }
     | DIVIDE IDENTIFIER BY expression {
         $$ = new Divide($4, $2);
+        $$->location = @1.first;
     }
     | IDENTIFIER {
         $$ = new Command($1, nullptr);
+        $$->location = @1.first;
     }
     | IDENTIFIER expressionList {
         $$ = new Command($1, $2);
+        $$->location = @1.first;
     }
 ;
 
@@ -316,6 +347,7 @@ ifBlock
     : IF expression maybeEOL THEN statement {
         if ($2 && $5) {
             $$ = new If($2, new StatementList($5), nullptr);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
@@ -323,6 +355,7 @@ ifBlock
     | IF expression maybeEOL THEN EOL statementList END IF {
         if ($2 && $6) {
             $$ = new If($2, $6, nullptr);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
@@ -333,6 +366,7 @@ ifBlock
     | IF expression maybeEOL THEN statement elseBlock {
         if ($2 && $5 && $6) {
             $$ = new If($2, new StatementList($5), $6);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
@@ -340,6 +374,7 @@ ifBlock
     | IF expression maybeEOL THEN EOL statementList elseBlock {
         if ($2 && $6 && $7) {
             $$ = new If($2, $6, $7);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
@@ -350,6 +385,7 @@ elseBlock
     : ELSE statement {
         if ($2) {
             $$ = new StatementList($2);
+            $$->location = @2.first;
         } else {
             $$ = nullptr;
         }
@@ -379,6 +415,7 @@ repeatForever
         statementList 
       END REPEAT {
         $$ = new Repeat($4);
+        $$->location = @1.first;
     }
 ;
 
@@ -388,7 +425,8 @@ repeatCount
       END REPEAT {
         if ($3) {
             $$ = new RepeatCount($3, $6);
-        } else {
+            $$->location = @1.first;
+       } else {
             $$ = nullptr;
         }
     }
@@ -400,6 +438,7 @@ repeatCondition
       END REPEAT {
         if ($3) {
             $$ = new RepeatCondition($3, true, $5);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
@@ -409,6 +448,7 @@ repeatCondition
       END REPEAT {
         if ($3) {
             $$ = new RepeatCondition($3, false, $5);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
@@ -421,6 +461,7 @@ repeatRange
       END REPEAT {
         if ($5 && $7) {
             $$ = new RepeatRange($3, $5, $7, true, $9);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
@@ -430,6 +471,7 @@ repeatRange
       END REPEAT {
         if ($5 && $8) {
             $$ = new RepeatRange($3, $5, $8, false, $10);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
@@ -457,57 +499,75 @@ expression
     }
     | expression PLUS expression {
         $$ = new BinaryOp(BinaryOp::Plus, $1, $3);
+        $$->location = @1.first;
     }
     | expression MINUS expression {
         $$ = new BinaryOp(BinaryOp::Minus, $1, $3);
+        $$->location = @1.first;
     }
     | expression MULT expression {
         $$ = new BinaryOp(BinaryOp::Multiply, $1, $3);
+        $$->location = @1.first;
     }
     | expression DIV expression {
         $$ = new BinaryOp(BinaryOp::Divide, $1, $3);
+        $$->location = @1.first;
     } 
     | expression IS expression {
         $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
+        $$->location = @1.first;
     }
     | expression EQ expression {
         $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
+        $$->location = @1.first;
     }
     | expression MOD expression {
         $$ = new BinaryOp(BinaryOp::Mod, $1, $3);
+        $$->location = @1.first;
     }
     | expression NEQ expression {
         $$ = new BinaryOp(BinaryOp::NotEqual, $1, $3);
+        $$->location = @1.first;
     }
     | expression OR expression {
         $$ = new BinaryOp(BinaryOp::Or, $1, $3);
+        $$->location = @1.first;
     }
     | expression AND expression {
         $$ = new BinaryOp(BinaryOp::And, $1, $3);
+        $$->location = @1.first;
     }
     | expression IS IN expression %prec AND {
         $$ = new BinaryOp(BinaryOp::IsIn, $1, $4);
+        $$->location = @1.first;
     }
     | expression CONTAINS expression {
         $$ = new BinaryOp(BinaryOp::Contains, $1, $3);
+        $$->location = @1.first;
     }
     | expression LT expression {
         $$ = new BinaryOp(BinaryOp::LessThan, $1, $3);
+        $$->location = @1.first;
     }
     | expression GT expression {
         $$ = new BinaryOp(BinaryOp::GreaterThan, $1, $3);
+        $$->location = @1.first;
     } 
     | expression LTE expression {
         $$ = new BinaryOp(BinaryOp::LessThanOrEqual, $1, $3);
+        $$->location = @1.first;
     }
     | expression GTE expression {
         $$ = new BinaryOp(BinaryOp::GreaterThanOrEqual, $1, $3);
+        $$->location = @1.first;
     }
     | expression CONCAT expression {
         $$ = new BinaryOp(BinaryOp::Concat, $1, $3);
+        $$->location = @1.first;
     }
     | expression CONCAT_SPACE expression {
         $$ = new BinaryOp(BinaryOp::ConcatWithSpace, $1, $3);
+        $$->location = @1.first;
     }
     | chunk OF expression {
         $$ = $1;
@@ -520,9 +580,11 @@ expression
     } 
     | MINUS expression {
         $$ = new Minus($2);
+        $$->location = @1.first;
     } 
     | NOT expression {
         $$ = new Not($2);
+        $$->location = @1.first;
     }
     | constant {
         $$ = $1;
@@ -544,16 +606,19 @@ expression
 functionCall
     : THE IDENTIFIER {
         $$ = new FunctionCall($2, nullptr);
+        $$->location = @2.first;
     }
     | THE IDENTIFIER OF expression {
         $$ = new FunctionCall($2, new ExpressionList($4));
+        $$->location = @2.first;
     }
     | IDENTIFIER LPAREN expressionList RPAREN {
         $$ = new FunctionCall($1, $3);
+        $$->location = @1.first;
     }
-    // TODO: Not positive if I need this.
     | IDENTIFIER LPAREN RPAREN {
         $$ = new FunctionCall($1, nullptr);
+        $$->location = @1.first;
     }
 ;
 
@@ -587,21 +652,27 @@ preposition
 chunk
     : maybeThe ordinal chunkType {
         $$ = new RangeChunk($3, $2, nullptr);
+        $$->location = @2.first;
     }
     | chunkType expression {
         $$ = new RangeChunk($1, $2, nullptr);
+        $$->location = @1.first;
     }
     | chunkType expression TO expression {
         $$ = new RangeChunk($1, $2, $4);
+        $$->location = @1.first;
     }
     | ANY chunkType {
         $$ = new AnyChunk($2);
+        $$->location = @1.first;
     }
     | maybeThe MIDDLE chunkType {
         $$ = new MiddleChunk($3);
+        $$->location = @2.first;
     }
     | maybeThe LAST chunkType {
         $$ = new LastChunk($3);
+        $$->location = @2.first;
     }
 ;
 
@@ -722,12 +793,7 @@ maybeEOL
 
 %%
 
-#define YYDEBUG 1
-
-using namespace chatter;
-using namespace chatter::ast;
-
-int yyerror(yyscan_t scanner, ParserContext &context, const char *msg) {
-    context.error(msg);
+int yyerror(YYLTYPE *yylloc, yyscan_t scanner, ParserContext &context, const char *msg) {
+    context.error(yylloc->first, msg);
     return 0;
 }

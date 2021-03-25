@@ -14,7 +14,12 @@
 //  limitations under the License.
 //
 
-#include "Parser.h"
+#include "parser/Parser.h"
+
+#include "ast/Script.h"
+#include "ast/Chunk.h"
+#include "ast/Command.h"
+#include "ast/Repeat.h"
 
 // clang-format off
 using namespace chatter::ast;
@@ -28,35 +33,32 @@ extern int yyparse(yyscan_t scanner, chatter::ParserContext &);
 
 CH_NAMESPACE_BEGIN
 
-ParserContext::ParserContext(const ParserConfig &config, const std::string &source)
-    : fileName(config.fileName), err(config.err) {
+ParserContext::ParserContext(const ParserConfig &c, const std::string &s)
+    : config(c) {
 
-    auto ss = std::stringstream(source);
+    auto ss = std::stringstream(s);
     std::string line;
     while (std::getline(ss, line, '\n')) {
         sourceLines.push_back(line);
     }
 }
 
-void ParserContext::error(const char *msg) {
+void ParserContext::error(Location location, const std::string &msg) {
     numberOfErrors++;
-    auto lineNumber = currentLocation.lineNumber;
-    // auto position = currentLocation.position;
 
-    err << fileName << ":" << lineNumber << ": error: ";
-    err << msg << std::endl;
+    config.err << config.fileName << ":" << location.lineNumber << ":"
+               << location.position << ": error: ";
+    config.err << msg << std::endl;
 
-    auto lineString = sourceLines[lineNumber - 1];
-    err << lineString << std::endl;
+    auto lineString = sourceLines[location.lineNumber - 1];
+    config.err << lineString << std::endl;
 
-    /* TODO: Get characer position working.
-        std::string indentString;
-        for (int i = 0; i < position; i++) {
-            if (lineString.at(i) == '\t') indentString += '\t';
-            else indentString += ' ';
-        }
-        err << indentString << "^" << std::endl;
-    */
+    std::string indentString;
+    for (int i = 0; i < location.position; i++) {
+        if (lineString.at(i) == '\t') indentString += '\t';
+        else indentString += ' ';
+    }
+    config.err << indentString << "^" << std::endl;
 }
 
 std::unique_ptr<ast::Script> Parser::parse(const ParserConfig &config, const std::string &source) {
@@ -75,9 +77,9 @@ std::unique_ptr<ast::Script> Parser::parse(const ParserConfig &config, const std
     yylex_destroy(context.scanner);
 
     if (context.numberOfErrors > 0) {
-        context.err << context.numberOfErrors
-                    << (context.numberOfErrors > 1 ? " errors " : " error ") << "generated."
-                    << std::endl;
+        config.err << context.numberOfErrors
+                   << (context.numberOfErrors > 1 ? " errors " : " error ") << "generated."
+                   << std::endl;
     }
 
     return std::unique_ptr<ast::Script>(context.script);

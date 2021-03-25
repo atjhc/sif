@@ -18,30 +18,19 @@
 
 #include "Base.h"
 #include "Common.h"
-#include "Expressions.h"
-#include "Statements.h"
+#include "Expression.h"
+#include "Statement.h"
 
 #include <ostream>
 #include <vector>
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Handler;
 struct Statement;
 struct StatementList;
 struct IdentifierList;
 struct Identifier;
 struct Expression;
-
-struct Script : Node {
-    std::vector<std::unique_ptr<Handler>> handlers;
-
-    Script() {}
-
-    void add(Handler *handler) { handlers.push_back(std::unique_ptr<Handler>(handler)); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-};
 
 struct Handler : Node {
     enum Kind { HandlerKind, FunctionKind };

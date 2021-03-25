@@ -17,34 +17,26 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Script.h"
 
-#include <iostream>
+#include "ast/Base.h"
+#include "ast/Handler.h"
 
-CH_NAMESPACE_BEGIN
+#include <ostream>
+#include <vector>
 
-struct ParserConfig {
-    std::string fileName = "<stdin>";
-    std::ostream &err = std::cerr;
+CH_AST_NAMESPACE_BEGIN
+
+struct Script : Node {
+    std::vector<std::unique_ptr<Handler>> handlers;
+
+    Script() {}
+
+    void add(Handler *handler) { 
+        handlers.push_back(std::unique_ptr<Handler>(handler)); 
+    }
+
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-struct ParserContext {
-    ParserConfig config;
 
-    void *scanner = nullptr;
-    std::vector<std::string> sourceLines;
-
-    ast::Script *script = nullptr;
-    unsigned int numberOfErrors = 0;
-
-    ParserContext(const ParserConfig &config, const std::string &source);
-
-    void error(ast::Location location, const std::string &msg);
-};
-
-class Parser {
-  public:
-    std::unique_ptr<ast::Script> parse(const ParserConfig &config, const std::string &source);
-};
-
-CH_NAMESPACE_END
+CH_AST_NAMESPACE_END

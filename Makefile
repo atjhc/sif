@@ -38,7 +38,8 @@ CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++17
 
 all: dstroot $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 
-debug: CPPFLAGS += -g
+debug: CPPFLAGS += -g -DYYDEBUG=1
+# debug: BISONFLAGS += --debug
 debug: all
 
 format:
@@ -67,7 +68,7 @@ $(DSTROOT)/yyScanner.cc: $(SRCROOT)/parser/scanner.l
 
 $(DSTROOT)/yyParser.cc: $(SRCROOT)/parser/parser.y
 	@mkdir -p $(dir $@)
-	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(SRCROOT)/parser/parser.y
+	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(BISONFLAGS) $(SRCROOT)/parser/parser.y
 
 $(DSTROOT)/%.o: %.cc %.h $(COMMON_HEADERS)
 	@mkdir -p $(dir $@)

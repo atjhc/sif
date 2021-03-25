@@ -15,7 +15,7 @@
 //
 
 #include "runtime/Runtime.h"
-#include "chunk.h"
+#include "utilities/chunk.h"
 
 CH_NAMESPACE_BEGIN
 
@@ -35,7 +35,7 @@ Runtime::Runtime(const std::string &n, std::unique_ptr<Script> &s, RuntimeConfig
             throw RuntimeError("Redefinition of handler " + name, handler->location);
         }
 
-        map->insert({{lowercase(name), handler}});
+        map->insert({lowercase(name), *handler});
     }
 }
 
@@ -43,12 +43,11 @@ bool Runtime::send(const std::string &name, const std::vector<Value> &arguments)
     auto normalizedName = lowercase(name);
     auto i = handlersByName.find(normalizedName);
     if (i == handlersByName.end()) {
-        // throw RuntimeError("Unrecognized handler \"" + name + "\"", Location());
         return true;
     }
 
     stack.push(RuntimeStackFrame(name));
-    execute(i->second.get(), arguments);
+    execute(i->second, arguments);
     bool passing = stack.top().passing;
     stack.pop();
 
@@ -63,7 +62,7 @@ Value Runtime::call(const std::string &name, const std::vector<Value> &arguments
     }
 
     stack.push(RuntimeStackFrame(name));
-    execute(i->second.get(), arguments);
+    execute(i->second, arguments);
     auto result = stack.top().returningValue;
     stack.pop();
 
@@ -88,21 +87,21 @@ Value Runtime::get(const std::string &name) const {
     return stack.top().variables.get(name);
 }
 
-void Runtime::execute(const std::unique_ptr<ast::Handler> &handler,
+void Runtime::execute(const ast::Handler &handler,
                       const std::vector<Value> &values) {
     std::vector<std::string> argumentNames;
-    if (handler->arguments) {
-        for (auto &argument : handler->arguments->identifiers) {
+    if (handler.arguments) {
+        for (auto &argument : handler.arguments->identifiers) {
             argumentNames.push_back(argument->name);
         }
     }
 
     stack.top().variables.insert(argumentNames, values);
-    execute(handler.get()->statements);
+    execute(*handler.statements);
 }
 
-void Runtime::execute(const std::unique_ptr<ast::StatementList> &statements) {
-    for (auto &statement : statements->statements) {
+void Runtime::execute(const ast::StatementList &statements) {
+    for (auto &statement : statements.statements) {
         try {
             statement->accept(*this);
         } catch (RuntimeError &error) {
@@ -129,15 +128,15 @@ void Runtime::report(const RuntimeError &error) {
 void Runtime::visit(const If &s) {
     auto condition = s.condition->evaluate(*this);
     if (condition.asBool()) {
-        execute(s.ifStatements);
+        execute(*s.ifStatements);
     } else if (s.elseStatements) {
-        execute(s.elseStatements);
+        execute(*s.elseStatements);
     }
 }
 
 void Runtime::visit(const Repeat &s) {
     while (true) {
-        execute(s.statements);
+        execute(*s.statements);
         if (stack.top().exitingRepeat) {
             stack.top().exitingRepeat = false;
             break;
@@ -149,7 +148,7 @@ void Runtime::visit(const RepeatCount &s) {
     auto countValue = s.countExpression->evaluate(*this);
     auto count = countValue.asInteger();
     for (int i = 0; i < count; i++) {
-        execute(s.statements);
+        execute(*s.statements);
         if (stack.top().exitingRepeat) {
             stack.top().exitingRepeat = false;
             break;
@@ -165,7 +164,7 @@ void Runtime::visit(const RepeatRange &s) {
     auto i = startValue;
     while ((s.ascending ? i <= endValue : i >= endValue)) {
         stack.top().variables.set(iteratorName, Value(i));
-        execute(s.statements);
+        execute(*s.statements);
         if (stack.top().exitingRepeat) {
             stack.top().exitingRepeat = false;
             break;
@@ -181,7 +180,7 @@ void Runtime::visit(const RepeatRange &s) {
 void Runtime::visit(const RepeatCondition &s) {
     auto conditionValue = s.condition->evaluate(*this).asBool();
     while (conditionValue == s.conditionValue) {
-        execute(s.statements);
+        execute(*s.statements);
         if (stack.top().exitingRepeat) {
             stack.top().exitingRepeat = false;
             break;

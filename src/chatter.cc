@@ -30,7 +30,10 @@
 using namespace chatter;
 using namespace chatter::ast;
 
+#if defined(YYDEBUG)
 extern int yydebug;
+#endif
+
 static int prettyPrint = 0;
 
 static int run(const std::string &fileName, const std::string &messageName,
@@ -88,8 +91,10 @@ static int run(const std::string &fileName, const std::string &messageName,
 
 int usage(int argc, char *argv[]) {
     std::cout << "Usage: " << basename(argv[0]) << " [options...] [file]" << std::endl
+#if defined(YYDEBUG)
               << "     --trace-parse"
               << "\t Output trace parsing logging" << std::endl
+#endif
               << " -m, --message-name"
               << "\t Run the specified message name (default is \"begin\")" << std::endl
               << " -p, --pretty-print"
@@ -100,11 +105,15 @@ int usage(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-    static struct option long_options[] = {{"trace-parse", no_argument, &yydebug, 1},
-                                           {"message-name", required_argument, 0, 'm'},
-                                           {"pretty-print", no_argument, &prettyPrint, 'p'},
-                                           {"help", no_argument, 0, 'h'},
-                                           {0, 0, 0, 0}};
+    static struct option long_options[] = {
+#if defined(YYDEBUG)
+       {"trace-parse", no_argument, &yydebug, 1},
+#endif
+       {"message-name", required_argument, 0, 'm'},
+       {"pretty-print", no_argument, &prettyPrint, 'p'},
+       {"help", no_argument, 0, 'h'},
+       {0, 0, 0, 0}
+   };
 
     std::string messageName = "begin";
 

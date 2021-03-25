@@ -19,27 +19,31 @@
 #include <string>
 #include <iostream>
 
-#include "ast/ast.h"
+#include "ast/Expression.h"
+#include "ast/Chunk.h"
 #include "parser/Parser.h"
 
 using namespace chatter;
 using namespace chatter::ast;
 
-#include "yyParser.h"
-
-#define YY_DECL int yylex(YYSTYPE *yylval_param, void *yyscanner, ParserContext &context)
+#include "parser/yy_shared.h"
 
 #define LEX_RETURN(token) \
 	{ \
-		context.currentLocation = context.lookAheadLocation; \
-		context.lookAheadLocation.lineNumber = yylineno; \
 		return token; \
 	}
 
 #define YY_USER_ACTION \
-	{ \
-		context.lookAheadLocation.position += strlen(yytext); \
-	}
+    yylloc->first = yylloc->last; \
+    for(int i = 0; yytext[i] != '\0'; i++) { \
+        if(yytext[i] == '\n') { \
+            yylloc->last.lineNumber++; \
+            yylloc->last.position = 0; \
+        } \
+        else { \
+            yylloc->last.position++; \
+        } \
+    }
 
 %}
 
@@ -181,21 +185,19 @@ up 							LEX_RETURN(UP);
 }
 
 "--".*\n {
-	context.lookAheadLocation.position = 1;
 	LEX_RETURN(EOL);
 }
 
 \¬\n {
-	context.lookAheadLocation.position = 1;
+	/* ignore */ ;
 }
 
 \n+ {
-	context.lookAheadLocation.position = 1;
 	LEX_RETURN(EOL);
 }
 
 [ \t]* {
-	;
+	/* ignore */ ;
 }
 
 %%

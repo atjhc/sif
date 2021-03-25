@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "Expressions.h"
+#include "Expression.h"
 
 CH_AST_NAMESPACE_BEGIN
 

@@ -14,15 +14,9 @@
 //  limitations under the License.
 //
 
-#include "Handlers.h"
+#include "Handler.h"
 
 CH_AST_NAMESPACE_BEGIN
-
-void Script::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    for (auto &handler : handlers) {
-        handler->prettyPrint(out, context);
-    }
-}
 
 void Handler::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
     switch (kind) {

@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Base.h"
-#include "ast/Expressions.h"
+
+#include "ast/Expression.h"
 
 CH_AST_NAMESPACE_BEGIN
 

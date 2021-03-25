@@ -17,7 +17,10 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/ast.h"
+#include "ast/Script.h"
+#include "ast/Chunk.h"
+#include "ast/Command.h"
+#include "ast/Repeat.h"
 #include "runtime/Variables.h"
 
 #include <iostream>
@@ -31,6 +34,9 @@
 CH_NAMESPACE_BEGIN
 
 using namespace ast;
+
+using StringSet = std::unordered_set<std::string>;
+using HandlerRefMap = std::unordered_map<std::string, std::reference_wrapper<Handler>>;
 
 struct RuntimeError : std::runtime_error {
     Location where;
@@ -47,7 +53,6 @@ struct RuntimeConfig {
 };
 
 struct RuntimeStackFrame {
-    using StringSet = std::unordered_set<std::string>;
 
     std::string name;
     Variables variables;
@@ -64,16 +69,13 @@ struct RuntimeStackFrame {
 };
 
 class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
-    using HandlerMap =
-        std::unordered_map<std::string, std::reference_wrapper<std::unique_ptr<Handler>>>;
-
     RuntimeConfig config;
     std::string name;
 
     // AST
     std::unique_ptr<Script> script;
-    HandlerMap handlersByName;
-    HandlerMap functionsByName;
+    HandlerRefMap handlersByName;
+    HandlerRefMap functionsByName;
 
     // State information
     std::stack<RuntimeStackFrame> stack;
@@ -89,8 +91,8 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void set(const std::string &name, const Value &value);
     Value get(const std::string &name) const;
 
-    void execute(const std::unique_ptr<ast::Handler> &handler, const std::vector<Value> &arguments);
-    void execute(const std::unique_ptr<ast::StatementList> &statements);
+    void execute(const ast::Handler &handler, const std::vector<Value> &arguments);
+    void execute(const ast::StatementList &statements);
 
     void report(const RuntimeError &error);
 

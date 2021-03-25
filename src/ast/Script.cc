@@ -14,36 +14,14 @@
 //  limitations under the License.
 //
 
-#pragma once
-
-#include "Common.h"
-
-#include <ostream>
+#include "ast/Script.h"
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Location {
-    unsigned int position = 1;
-    unsigned int lineNumber = 1;
-};
-
-struct PrettyPrintConfig {
-    unsigned int tabSize = 2;
-};
-
-struct PrettyPrintContext {
-    PrettyPrintConfig config = PrettyPrintConfig();
-    unsigned int indentLevel = 0;
-
-    std::string indentString() { return std::string(indentLevel * config.tabSize, ' '); }
-};
-
-struct Node {
-    Location location;
-
-    virtual ~Node() = default;
-
-    virtual void prettyPrint(std::ostream &, PrettyPrintContext &) const = 0;
-};
+void Script::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+    for (auto &handler : handlers) {
+        handler->prettyPrint(out, context);
+    }
+}
 
 CH_AST_NAMESPACE_END

@@ -16,10 +16,10 @@
 
 #pragma once
 
-#include "Base.h"
 #include "Common.h"
-#include "Expressions.h"
-#include "Handlers.h"
+
+#include "ast/Base.h"
+#include "ast/Statement.h"
 
 #include <ostream>
 #include <vector>
