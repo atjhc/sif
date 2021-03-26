@@ -31,12 +31,9 @@ struct Script : Node {
 
     Script() {}
 
-    void add(Handler *handler) { 
-        handlers.push_back(std::unique_ptr<Handler>(handler)); 
-    }
+    void add(Handler *handler) { handlers.push_back(std::unique_ptr<Handler>(handler)); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
-
 
 CH_AST_NAMESPACE_END

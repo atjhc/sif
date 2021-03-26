@@ -17,10 +17,10 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Script.h"
 #include "ast/Chunk.h"
 #include "ast/Command.h"
 #include "ast/Repeat.h"
+#include "ast/Script.h"
 #include "runtime/Variables.h"
 
 #include <iostream>

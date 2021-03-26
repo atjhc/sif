@@ -21,21 +21,16 @@ CH_NAMESPACE_BEGIN
 
 CH_DECL_CLASS_REF(Object)
 class Object {
-	std::string _name;
-	std::unique_ptr<ast::Script> _script;
+    std::string _name;
+    std::unique_ptr<ast::Script> _script;
 
-public:
-	
-	Object(const std::string &n, std::unique_ptr<ast::Script> &s)
-		: _name(n), _script(std::move(s)) {}
+  public:
+    Object(const std::string &n, std::unique_ptr<ast::Script> &s)
+        : _name(n), _script(std::move(s)) {}
 
-	const std::string &name() const {
-		return _name;
-	}
+    const std::string &name() const { return _name; }
 
-	const std::unique_ptr<ast::Script> &script() const {
-		return _script;
-	}
+    const std::unique_ptr<ast::Script> &script() const { return _script; }
 };
 
 CH_NAMESPACE_END

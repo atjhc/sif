@@ -107,13 +107,13 @@ int usage(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     static struct option long_options[] = {
 #if defined(YYDEBUG)
-       {"trace-parse", no_argument, &yydebug, 1},
+        {"trace-parse", no_argument, &yydebug, 1},
 #endif
-       {"message-name", required_argument, 0, 'm'},
-       {"pretty-print", no_argument, &prettyPrint, 'p'},
-       {"help", no_argument, 0, 'h'},
-       {0, 0, 0, 0}
-   };
+        {"message-name", required_argument, 0, 'm'},
+        {"pretty-print", no_argument, &prettyPrint, 'p'},
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}
+    };
 
     std::string messageName = "begin";
 

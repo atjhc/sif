@@ -87,8 +87,7 @@ Value Runtime::get(const std::string &name) const {
     return stack.top().variables.get(name);
 }
 
-void Runtime::execute(const ast::Handler &handler,
-                      const std::vector<Value> &values) {
+void Runtime::execute(const ast::Handler &handler, const std::vector<Value> &values) {
     std::vector<std::string> argumentNames;
     if (handler.arguments) {
         for (auto &argument : handler.arguments->identifiers) {
@@ -240,7 +239,8 @@ void Runtime::visit(const Command &c) {
 
 #pragma mark - Commands
 
-void Runtime::perform(const Command &s) { /* no-op */ }
+void Runtime::perform(const Command &s) { /* no-op */
+}
 
 void Runtime::perform(const Put &s) {
     auto value = s.expression->evaluate(*this);

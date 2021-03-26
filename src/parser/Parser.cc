@@ -16,10 +16,10 @@
 
 #include "parser/Parser.h"
 
-#include "ast/Script.h"
 #include "ast/Chunk.h"
 #include "ast/Command.h"
 #include "ast/Repeat.h"
+#include "ast/Script.h"
 
 // clang-format off
 using namespace chatter::ast;
@@ -33,8 +33,7 @@ extern int yyparse(yyscan_t scanner, chatter::ParserContext &);
 
 CH_NAMESPACE_BEGIN
 
-ParserContext::ParserContext(const ParserConfig &c, const std::string &s)
-    : config(c) {
+ParserContext::ParserContext(const ParserConfig &c, const std::string &s) : config(c) {
 
     auto ss = std::stringstream(s);
     std::string line;
@@ -46,8 +45,8 @@ ParserContext::ParserContext(const ParserConfig &c, const std::string &s)
 void ParserContext::error(Location location, const std::string &msg) {
     numberOfErrors++;
 
-    config.err << config.fileName << ":" << location.lineNumber << ":"
-               << location.position << ": error: ";
+    config.err << config.fileName << ":" << location.lineNumber << ":" << location.position
+               << ": error: ";
     config.err << msg << std::endl;
 
     auto lineString = sourceLines[location.lineNumber - 1];
@@ -55,8 +54,10 @@ void ParserContext::error(Location location, const std::string &msg) {
 
     std::string indentString;
     for (int i = 0; i < location.position; i++) {
-        if (lineString.at(i) == '\t') indentString += '\t';
-        else indentString += ' ';
+        if (lineString.at(i) == '\t')
+            indentString += '\t';
+        else
+            indentString += ' ';
     }
     config.err << indentString << "^" << std::endl;
 }

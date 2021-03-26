@@ -29,5 +29,5 @@
     }
 
 #define CH_DECL_CLASS_REF(C) \
-	class C; \
-	using C ## Ref = std::shared_ptr<C>;
+    class C;                 \
+    using C##Ref = std::shared_ptr<C>;
