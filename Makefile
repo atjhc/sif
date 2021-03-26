@@ -38,7 +38,7 @@ CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror $(WNO) -std=c++17
 
 all: dstroot $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 
-debug: CPPFLAGS += -g -DYYDEBUG=1
+debug: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
 # debug: BISONFLAGS += --debug
 debug: all
 

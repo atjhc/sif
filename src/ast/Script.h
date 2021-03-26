@@ -27,11 +27,11 @@
 CH_AST_NAMESPACE_BEGIN
 
 struct Script : Node {
-    std::vector<std::unique_ptr<Handler>> handlers;
+    std::vector<Owned<Handler>> handlers;
 
     Script() {}
 
-    void add(Handler *handler) { handlers.push_back(std::unique_ptr<Handler>(handler)); }
+    void add(Handler *handler) { handlers.push_back(Owned<Handler>(handler)); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

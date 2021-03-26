@@ -44,7 +44,7 @@ struct ParserContext {
 
 class Parser {
   public:
-    std::unique_ptr<ast::Script> parse(const ParserConfig &config, const std::string &source);
+    Owned<ast::Script> parse(const ParserConfig &config, const std::string &source);
 };
 
 CH_NAMESPACE_END

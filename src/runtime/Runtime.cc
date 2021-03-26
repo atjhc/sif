@@ -15,56 +15,66 @@
 //
 
 #include "runtime/Runtime.h"
+#include "runtime/Object.h"
 #include "utilities/chunk.h"
 
 CH_NAMESPACE_BEGIN
 
-Runtime::Runtime(const std::string &n, std::unique_ptr<Script> &s, RuntimeConfig c)
-    : config(c), name(n), script(std::move(s)) {
+Runtime::Runtime(const std::string &n, RuntimeConfig c)
+    : config(c), name(n) {}
 
-    for (auto &handler : script->handlers) {
-        auto &name = handler->messageKey->name;
+bool Runtime::send(const RuntimeMessage &message, Strong<Object> target) {
+    trace(std::string("send(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
-        auto map = &handlersByName;
-        if (handler->kind == Handler::FunctionKind) {
-            map = &functionsByName;
-        }
-
-        auto i = map->find(name);
-        if (i != map->end()) {
-            throw RuntimeError("Redefinition of handler " + name, handler->location);
-        }
-
-        map->insert({lowercase(name), *handler});
+    if (target == nullptr) {
+        return false;
     }
+
+    bool passing = true;
+    auto handler = target->handlerFor(message);
+    if (handler.has_value()) {
+        stack.push(RuntimeStackFrame(message.name, target));
+        execute(*handler, message.arguments);
+        passing = stack.top().passing;
+        stack.pop();
+    }
+
+    bool handled = true;
+    if (passing) {
+        if (target) {
+            target = target->parent();
+        }
+        handled = send(message, target);
+    }
+
+    return handled;
 }
 
-bool Runtime::send(const std::string &name, const std::vector<Value> &arguments) {
-    auto normalizedName = lowercase(name);
-    auto i = handlersByName.find(normalizedName);
-    if (i == handlersByName.end()) {
-        return true;
+Value Runtime::call(const RuntimeMessage &message, Strong<Object> target) {
+    trace(std::string("call(") + message.name + ", " + (target ? target->name() : "null") + ")");
+
+    if (target == nullptr) {
+        return Value();
     }
 
-    stack.push(RuntimeStackFrame(name));
-    execute(i->second, arguments);
-    bool passing = stack.top().passing;
-    stack.pop();
+    Value result;
+    bool passing = false;
 
-    return passing;
-}
-
-Value Runtime::call(const std::string &name, const std::vector<Value> &arguments) {
-    auto normalizedName = lowercase(name);
-    auto i = functionsByName.find(normalizedName);
-    if (i == functionsByName.end()) {
-        throw RuntimeError("Call to unknown function \"" + name + "\"", Location());
+    auto handler = target->functionFor(message);
+    if (handler.has_value()) {
+        stack.push(RuntimeStackFrame(message.name, target));
+        execute(*handler, message.arguments);
+        passing = stack.top().passing;
+        result = stack.top().returningValue;
+        stack.pop();
     }
 
-    stack.push(RuntimeStackFrame(name));
-    execute(i->second, arguments);
-    auto result = stack.top().returningValue;
-    stack.pop();
+    if (passing) {
+        if (target) {
+            target = target->parent();
+        }
+        call(message, target);
+    }
 
     return result;
 }
@@ -121,6 +131,15 @@ void Runtime::report(const RuntimeError &error) {
     config.stderr << name << ":" << lineNumber << ": runtime error: ";
     config.stderr << error.what() << std::endl;
 }
+
+void Runtime::trace(const std::string &msg) {
+#if defined(DEBUG)
+    if (config.tracing) {
+        config.stderr << name << ": " << msg << std::endl;
+    }
+#endif
+}
+
 
 #pragma mark - StatementVisitor
 
@@ -193,7 +212,7 @@ void Runtime::visit(const ExitRepeat &) { stack.top().exitingRepeat = true; }
 void Runtime::visit(const NextRepeat &) { stack.top().skippingRepeat = true; }
 
 void Runtime::visit(const Exit &e) {
-    if (e.messageKey->name == stack.top().name) {
+    if (e.messageKey->name == stack.top().message.name) {
         stack.top().exiting = true;
     } else {
         throw RuntimeError("Unexpected identifier " + e.messageKey->name, e.location);
@@ -219,28 +238,23 @@ void Runtime::visit(const Return &s) {
 }
 
 void Runtime::visit(const Command &c) {
-    auto name = lowercase(c.name->name);
-
-    // Assume we are passing until we find a handler.
-    bool passed = true;
-
-    std::vector<Value> arguments;
+    auto message = RuntimeMessage(c.name->name);
     if (c.arguments) {
         for (auto &expression : c.arguments->expressions) {
-            arguments.push_back(expression->evaluate(*this));
+            message.arguments.push_back(expression->evaluate(*this));
         }
     }
-    passed = send(name, arguments);
 
-    if (passed) {
+    bool handled = send(message, stack.top().target);
+    if (!handled) {
         c.perform(*this);
     }
 }
 
+
 #pragma mark - Commands
 
-void Runtime::perform(const Command &s) { /* no-op */
-}
+void Runtime::perform(const Command &s) { /* no-op */ }
 
 void Runtime::perform(const Put &s) {
     auto value = s.expression->evaluate(*this);
@@ -353,15 +367,15 @@ void Runtime::perform(const Divide &c) {
 Value Runtime::valueOf(const Identifier &e) { return get(e.name); }
 
 Value Runtime::valueOf(const FunctionCall &e) {
-    std::vector<Value> arguments;
+    auto message = RuntimeMessage(e.identifier->name);
     if (e.arguments) {
         for (auto &argument : e.arguments->expressions) {
             auto value = argument->evaluate(*this);
-            arguments.push_back(value);
+            message.arguments.push_back(value);
         }
     }
 
-    return call(e.identifier->name, arguments);
+    return call(message, stack.top().target);
 }
 
 Value Runtime::valueOf(const BinaryOp &e) {

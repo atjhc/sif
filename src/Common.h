@@ -17,6 +17,29 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
+#include <unordered_map>
+
+template <class T>
+using Strong = std::shared_ptr<T>;
+
+template <class T>
+using Weak = std::weak_ptr<T>;
+
+template <class T>
+using Owned = std::unique_ptr<T>;
+
+template <class T>
+using Set = std::unordered_set<T>;
+
+template <class K, class V>
+using Map = std::unordered_map<K, V>;
+
+template <class T>
+using Ref = std::reference_wrapper<T>;
+
+template <class T>
+using Optional = std::optional<T>;
 
 #define CH_NAMESPACE_BEGIN namespace chatter {
 #define CH_NAMESPACE_END }
@@ -28,6 +51,9 @@
     }                        \
     }
 
-#define CH_DECL_CLASS_REF(C) \
-    class C;                 \
-    using C##Ref = std::shared_ptr<C>;
+#define CH_RUNTIME_NAMESPACE_BEGIN \
+    namespace chatter {        \
+    namespace runtime {
+#define CH_RUNTIME_NAMESPACE_END \
+    }                        \
+    }

@@ -27,7 +27,7 @@
 CH_AST_NAMESPACE_BEGIN
 
 struct Repeat : Statement {
-    std::unique_ptr<StatementList> statements;
+    Owned<StatementList> statements;
 
     Repeat(StatementList *_statements) : statements(_statements) {}
 
@@ -38,7 +38,7 @@ struct Repeat : Statement {
 };
 
 struct RepeatCount : Repeat {
-    std::unique_ptr<Expression> countExpression;
+    Owned<Expression> countExpression;
 
     RepeatCount(Expression *_countExpression, StatementList *_statements)
         : Repeat(_statements), countExpression(_countExpression) {}
@@ -49,9 +49,9 @@ struct RepeatCount : Repeat {
 };
 
 struct RepeatRange : Repeat {
-    std::unique_ptr<Identifier> variable;
-    std::unique_ptr<Expression> startExpression;
-    std::unique_ptr<Expression> endExpression;
+    Owned<Identifier> variable;
+    Owned<Expression> startExpression;
+    Owned<Expression> endExpression;
     bool ascending;
 
     RepeatRange(Identifier *_variable, Expression *_startExpression, Expression *_endExpression,
@@ -65,7 +65,7 @@ struct RepeatRange : Repeat {
 };
 
 struct RepeatCondition : Repeat {
-    std::unique_ptr<Expression> condition;
+    Owned<Expression> condition;
     bool conditionValue;
 
     RepeatCondition(Expression *_condition, bool _conditionValue, StatementList *_statements)

@@ -15,7 +15,46 @@
 //
 
 #include "runtime/Object.h"
+#include "runtime/Runtime.h"
 
 CH_NAMESPACE_BEGIN
+
+Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &parent)
+    : _name(n), _script(std::move(s)), _parent(parent) {
+
+    for (auto &handler : _script->handlers) {
+        auto &name = handler->messageKey->name;
+
+        auto map = &_handlers;
+        if (handler->kind == ast::Handler::FunctionKind) {
+            map = &_functions;
+        }
+
+        auto i = map->find(name);
+        if (i != map->end()) {
+            throw RuntimeError("Redefinition of handler " + name, handler->location);
+        }
+
+        map->insert({lowercase(name), *handler});
+    }
+}
+
+Optional<Ref<ast::Handler>> Object::handlerFor(const RuntimeMessage &message) {
+    auto i = _handlers.find(message.name);
+    if (i == _handlers.end()) {
+        return std::nullopt;
+    }
+
+    return std::make_optional(i->second);
+}
+
+Optional<Ref<ast::Handler>> Object::functionFor(const RuntimeMessage &message) {
+    auto i = _functions.find(message.name);
+    if (i == _functions.end()) {
+        return std::nullopt;
+    }
+
+    return std::make_optional(i->second);
+}
 
 CH_NAMESPACE_END

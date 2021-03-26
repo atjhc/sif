@@ -61,14 +61,14 @@ struct Expression : Node {
 };
 
 struct ExpressionList : Node {
-    std::vector<std::unique_ptr<Expression>> expressions;
+    std::vector<Owned<Expression>> expressions;
 
     ExpressionList() {}
 
     ExpressionList(Expression *expression) { add(expression); }
 
     void add(Expression *expression) {
-        expressions.push_back(std::unique_ptr<Expression>(expression));
+        expressions.push_back(Owned<Expression>(expression));
     }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
@@ -85,8 +85,8 @@ struct Identifier : Expression {
 };
 
 struct FunctionCall : Expression {
-    std::unique_ptr<Identifier> identifier;
-    std::unique_ptr<ExpressionList> arguments;
+    Owned<Identifier> identifier;
+    Owned<ExpressionList> arguments;
 
     FunctionCall(Identifier *_identifier, ExpressionList *_arguments)
         : identifier(_identifier), arguments(_arguments) {}
@@ -118,7 +118,7 @@ struct BinaryOp : Expression {
     };
 
     Operator op;
-    std::unique_ptr<Expression> left, right;
+    Owned<Expression> left, right;
 
     BinaryOp(Operator _op, Expression *_left, Expression *_right)
         : op(_op), left(_left), right(_right) {}
@@ -129,7 +129,7 @@ struct BinaryOp : Expression {
 };
 
 struct Not : Expression {
-    std::unique_ptr<Expression> expression;
+    Owned<Expression> expression;
 
     Not(Expression *_expression) : expression(_expression) {}
 
@@ -139,7 +139,7 @@ struct Not : Expression {
 };
 
 struct Minus : Expression {
-    std::unique_ptr<Expression> expression;
+    Owned<Expression> expression;
 
     Minus(Expression *_expression) : expression(_expression) {}
 

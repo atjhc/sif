@@ -47,8 +47,8 @@ struct CommandVisitor {
 };
 
 struct Command : Statement {
-    std::unique_ptr<Identifier> name;
-    std::unique_ptr<ExpressionList> arguments;
+    Owned<Identifier> name;
+    Owned<ExpressionList> arguments;
 
     Command(Identifier *_name, ExpressionList *_arguments = nullptr)
         : name(_name), arguments(_arguments) {}
@@ -73,9 +73,9 @@ struct Preposition : Node {
 #pragma mark Messages
 
 struct Put : Command {
-    std::unique_ptr<Expression> expression;
-    std::unique_ptr<Preposition> preposition;
-    std::unique_ptr<Identifier> target;
+    Owned<Expression> expression;
+    Owned<Preposition> preposition;
+    Owned<Identifier> target;
 
     Put(Expression *_expression, Preposition *_preposition, Identifier *_target)
         : Command(new Identifier("put")), expression(_expression), preposition(_preposition),
@@ -87,7 +87,7 @@ struct Put : Command {
 };
 
 struct Get : Command {
-    std::unique_ptr<Expression> expression;
+    Owned<Expression> expression;
 
     Get(Expression *_expression) : Command(new Identifier("get")), expression(_expression) {}
 
@@ -97,7 +97,7 @@ struct Get : Command {
 };
 
 struct Ask : Command {
-    std::unique_ptr<Expression> expression;
+    Owned<Expression> expression;
 
     Ask(Expression *_expression) : Command(new Identifier("ask")), expression(_expression) {}
 
@@ -107,8 +107,8 @@ struct Ask : Command {
 };
 
 struct Add : Command {
-    std::unique_ptr<Expression> expression;
-    std::unique_ptr<Identifier> destination;
+    Owned<Expression> expression;
+    Owned<Identifier> destination;
 
     Add(Expression *_expression, Identifier *_destination)
         : Command(new Identifier("add")), expression(_expression), destination(_destination) {}
@@ -119,8 +119,8 @@ struct Add : Command {
 };
 
 struct Subtract : Command {
-    std::unique_ptr<Expression> expression;
-    std::unique_ptr<Identifier> destination;
+    Owned<Expression> expression;
+    Owned<Identifier> destination;
 
     Subtract(Expression *_expression, Identifier *_destination)
         : Command(new Identifier("subtract")), expression(_expression), destination(_destination) {}
@@ -131,8 +131,8 @@ struct Subtract : Command {
 };
 
 struct Multiply : Command {
-    std::unique_ptr<Expression> expression;
-    std::unique_ptr<Identifier> destination;
+    Owned<Expression> expression;
+    Owned<Identifier> destination;
 
     Multiply(Expression *_expression, Identifier *_destination)
         : Command(new Identifier("multiply")), expression(_expression), destination(_destination) {}
@@ -143,8 +143,8 @@ struct Multiply : Command {
 };
 
 struct Divide : Command {
-    std::unique_ptr<Expression> expression;
-    std::unique_ptr<Identifier> destination;
+    Owned<Expression> expression;
+    Owned<Identifier> destination;
 
     Divide(Expression *_expression, Identifier *_destination)
         : Command(new Identifier("divide")), expression(_expression), destination(_destination) {}

@@ -69,9 +69,9 @@ struct Statement : Node {
 };
 
 struct If : Statement {
-    std::unique_ptr<Expression> condition;
-    std::unique_ptr<StatementList> ifStatements;
-    std::unique_ptr<StatementList> elseStatements;
+    Owned<Expression> condition;
+    Owned<StatementList> ifStatements;
+    Owned<StatementList> elseStatements;
 
     If(Expression *_condition, StatementList *_ifStatements, StatementList *_elseStatements)
         : condition(_condition), ifStatements(_ifStatements), elseStatements(_elseStatements) {}
@@ -82,7 +82,7 @@ struct If : Statement {
 };
 
 struct Exit : Statement {
-    std::unique_ptr<Identifier> messageKey;
+    Owned<Identifier> messageKey;
 
     Exit(Identifier *_messageKey) : messageKey(_messageKey) {}
 
@@ -92,7 +92,7 @@ struct Exit : Statement {
 };
 
 struct Pass : Statement {
-    std::unique_ptr<Identifier> messageKey;
+    Owned<Identifier> messageKey;
 
     Pass(Identifier *_messageKey) : messageKey(_messageKey) {}
 
@@ -102,7 +102,7 @@ struct Pass : Statement {
 };
 
 struct Global : Statement {
-    std::unique_ptr<IdentifierList> variables;
+    Owned<IdentifierList> variables;
 
     Global(IdentifierList *_variables) : variables(_variables) {}
 
@@ -112,7 +112,7 @@ struct Global : Statement {
 };
 
 struct Return : Statement {
-    std::unique_ptr<Expression> expression;
+    Owned<Expression> expression;
 
     Return(Expression *_expression) : expression(_expression) {}
 

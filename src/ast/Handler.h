@@ -37,9 +37,9 @@ struct Handler : Node {
 
     Kind kind;
 
-    std::unique_ptr<Identifier> messageKey;
-    std::unique_ptr<IdentifierList> arguments;
-    std::unique_ptr<StatementList> statements;
+    Owned<Identifier> messageKey;
+    Owned<IdentifierList> arguments;
+    Owned<StatementList> statements;
 
     Handler(Kind _kind, Identifier *_messageKey, IdentifierList *_arguments,
             StatementList *_statements)
@@ -49,24 +49,24 @@ struct Handler : Node {
 };
 
 struct StatementList : Node {
-    std::vector<std::unique_ptr<Statement>> statements;
+    std::vector<Owned<Statement>> statements;
 
     StatementList() {}
 
     StatementList(Statement *statement) { add(statement); }
 
-    void add(Statement *statement) { statements.push_back(std::unique_ptr<Statement>(statement)); }
+    void add(Statement *statement) { statements.push_back(Owned<Statement>(statement)); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct IdentifierList : Node {
-    std::vector<std::unique_ptr<Identifier>> identifiers;
+    std::vector<Owned<Identifier>> identifiers;
 
     IdentifierList() {}
 
     void add(Identifier *identifier) {
-        identifiers.push_back(std::unique_ptr<Identifier>(identifier));
+        identifiers.push_back(Owned<Identifier>(identifier));
     }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;

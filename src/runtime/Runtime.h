@@ -34,8 +34,8 @@
 CH_NAMESPACE_BEGIN
 
 using namespace ast;
+class Object;
 
-using StringSet = std::unordered_set<std::string>;
 using HandlerRefMap = std::unordered_map<std::string, std::reference_wrapper<Handler>>;
 
 struct RuntimeError : std::runtime_error {
@@ -45,18 +45,30 @@ struct RuntimeError : std::runtime_error {
         : std::runtime_error(_what), where(_where) {}
 };
 
+struct RuntimeMessage {
+    std::string name;
+    std::vector<Value> arguments;
+
+    RuntimeMessage(const std::string &n, const std::vector<Value> args = {})
+        : name(lowercase(n)), arguments(args) {}
+};
+
 struct RuntimeConfig {
     std::ostream &stdout = std::cout;
     std::istream &stdin = std::cin;
     std::ostream &stderr = std::cerr;
     std::function<float()> random;
+#if defined(DEBUG)
+    bool tracing;
+#endif
 };
 
 struct RuntimeStackFrame {
-    std::string name;
+    RuntimeMessage message;
+    Strong<Object> target;
 
     Variables variables;
-    StringSet globals;
+    Set<std::string> globals;
     Value returningValue;
 
     bool skippingRepeat = false;
@@ -65,29 +77,26 @@ struct RuntimeStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    RuntimeStackFrame(const std::string &_name) : name(_name) {}
+    RuntimeStackFrame(const std::string &m, const Strong<Object> &t = nullptr) : message(m), target(t) {}
 };
 
 class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     RuntimeConfig config;
     std::string name;
 
-    // AST
-    std::unique_ptr<Script> script;
-    HandlerRefMap handlersByName;
-    HandlerRefMap functionsByName;
-
     // State information
     std::stack<RuntimeStackFrame> stack;
     Variables globals;
 
   public:
-    Runtime(const std::string &name, std::unique_ptr<Script> &s, RuntimeConfig c = RuntimeConfig());
 
-    bool send(const std::string &name, const std::vector<Value> &arguments = {});
-    Value call(const std::string &name, const std::vector<Value> &arguments = {});
+    Runtime(const std::string &name, RuntimeConfig c = RuntimeConfig());
+
+    bool send(const RuntimeMessage &message, Strong<Object> target = nullptr);
+    Value call(const RuntimeMessage &message, Strong<Object> target = nullptr);
 
   private:
+
     void set(const std::string &name, const Value &value);
     Value get(const std::string &name) const;
 
@@ -95,6 +104,7 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void execute(const ast::StatementList &statements);
 
     void report(const RuntimeError &error);
+    void trace(const std::string &msg);
 
 #pragma mark - Statements
 

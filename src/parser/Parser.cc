@@ -62,7 +62,7 @@ void ParserContext::error(Location location, const std::string &msg) {
     config.err << indentString << "^" << std::endl;
 }
 
-std::unique_ptr<ast::Script> Parser::parse(const ParserConfig &config, const std::string &source) {
+Owned<ast::Script> Parser::parse(const ParserConfig &config, const std::string &source) {
     ParserContext context(config, source);
 
     if (yylex_init(&context.scanner)) {
@@ -83,7 +83,7 @@ std::unique_ptr<ast::Script> Parser::parse(const ParserConfig &config, const std
                    << std::endl;
     }
 
-    return std::unique_ptr<ast::Script>(context.script);
+    return Owned<ast::Script>(context.script);
 }
 
 CH_NAMESPACE_END
