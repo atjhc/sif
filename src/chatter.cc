@@ -147,8 +147,6 @@ int main(int argc, char *argv[]) {
 
     if (optind < argc) {
         fileName = argv[optind];
-    } else {
-        return usage(argc, argv);
     }
 
     std::vector<std::string> arguments;

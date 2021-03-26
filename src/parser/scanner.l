@@ -186,7 +186,11 @@ up 							LEX_RETURN(UP);
 }
 
 "--".*\n {
-	LEX_RETURN(EOL);
+	/* ignore */ ;
+}
+
+"#".*\n {
+	/* ignore */ ;
 }
 
 \¬\n {

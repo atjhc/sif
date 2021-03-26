@@ -1,6 +1,7 @@
 CC := clang++
 LIBNAME := chatter.a
 TOOLNAME := chatter
+INSTALL_DIR := /usr/local/bin
 
 DSTROOT := build
 SRCROOT := src
@@ -41,6 +42,11 @@ all: dstroot $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 debug: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
 # debug: BISONFLAGS += --debug
 debug: all
+
+install: all
+	mkdir -p $(INSTALL_DIR)
+	cp $(DSTROOT)/$(TOOLNAME) $(INSTALL_DIR)
+	chmod +x $(INSTALL_DIR)/$(TOOLNAME)
 
 format:
 	find src -name '*.cc' -exec clang-format -i --style=file {} \;
