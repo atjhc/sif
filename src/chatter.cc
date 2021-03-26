@@ -44,6 +44,7 @@ static int prettyPrint = 0;
 static int run(const std::string &fileName, const std::string &messageName,
                const std::vector<std::string> &arguments) {
     std::string source;
+    ParserConfig config;
 
     if (!fileName.empty()) {
         std::ifstream file(fileName);
@@ -52,14 +53,13 @@ static int run(const std::string &fileName, const std::string &messageName,
             ss << file.rdbuf();
             source = ss.str();
         }
+        config.fileName = fileName;
     } else {
         std::ostringstream ss;
         ss << std::cin.rdbuf();
         source = ss.str();
+        config.fileName = "<stdin>";
     }
-
-    ParserConfig config;
-    config.fileName = fileName;
 
     Owned<Script> result;
     if ((result = Parser().parse(config, source)) == nullptr) {
@@ -119,16 +119,16 @@ int main(int argc, char *argv[]) {
         {"trace-parse", no_argument, &yydebug, 1},
         {"trace-runtime", no_argument, &traceRuntime, 1},
 #endif
-        {"message-name", required_argument, 0, 'm'},
+        {"message-name", required_argument, NULL, 'm'},
         {"pretty-print", no_argument, &prettyPrint, 'p'},
-        {"help", no_argument, 0, 'h'},
+        {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
 
     std::string messageName = "begin";
 
-    int c, option_index = 0;
-    while ((c = getopt_long(argc, argv, "mph", long_options, &option_index)) != -1) {
+    int c, opt_index = 0;
+    while ((c = getopt_long(argc, argv, "m:ph", long_options, &opt_index)) != -1) {
         switch (c) {
         case 'p':
             prettyPrint = 1;
@@ -142,15 +142,16 @@ int main(int argc, char *argv[]) {
             break;
         }
     }
+    argc -= optind;
+    argv += optind;
 
     std::string fileName;
-
-    if (optind < argc) {
-        fileName = argv[optind];
+    if (argc > 0) {
+        fileName = argv[0];
     }
 
     std::vector<std::string> arguments;
-    for (int i = optind + 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         arguments.push_back(argv[i]);
     }
 

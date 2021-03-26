@@ -32,7 +32,7 @@ struct ParserContext {
     ParserConfig config;
 
     void *scanner = nullptr;
-    std::vector<std::string> sourceLines;
+    std::string source;
 
     ast::Script *script = nullptr;
     unsigned int numberOfErrors = 0;
