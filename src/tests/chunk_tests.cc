@@ -1,4 +1,4 @@
-#include "chunk.h"
+#include "utilities/chunk.h"
 
 static void chunk_tests(TestSuite &s) {
     std::string string = "firstly, line 1 of the string\n"

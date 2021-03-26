@@ -16,18 +16,12 @@
 
 #pragma once
 
+#include "Common.h"
+
 #include <string>
 
-#define CH_NAMESPACE_BEGIN namespace chatter {
-#define CH_NAMESPACE_END }
+CH_NAMESPACE_BEGIN
 
-#define CH_AST_NAMESPACE_BEGIN \
-    namespace chatter {        \
-    namespace ast {
-#define CH_AST_NAMESPACE_END \
-    }                        \
-    }
+std::string string_from_escaped_string(const std::string &str);
 
-#define CH_DECL_CLASS_REF(C) \
-	class C; \
-	using C ## Ref = std::shared_ptr<C>;
+CH_NAMESPACE_END

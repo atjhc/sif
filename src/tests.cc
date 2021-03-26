@@ -14,8 +14,6 @@
 //  limitations under the License.
 //
 
-// #include "tests/common.h"
-
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
@@ -125,10 +123,12 @@ struct TestSuite {
 
 #include "tests/chunk_tests.cc"
 #include "tests/parse_tests.cc"
+#include "tests/string_tests.cc"
 
 int main(int argc, char *argv[]) {
     auto tests = TestSuite(argv[1]);
     tests.add(TEST(parse_tests));
     tests.add(TEST(chunk_tests));
+    tests.add(TEST(string_tests));
     return tests.run();
 }

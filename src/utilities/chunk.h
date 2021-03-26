@@ -19,7 +19,6 @@
 #include "Common.h"
 
 #include <string>
-
 #include <iostream>
 
 CH_NAMESPACE_BEGIN
@@ -145,4 +144,5 @@ struct middle_chunk : public base_chunk {
         _end = scan_end(_begin);
     }
 };
+
 CH_NAMESPACE_END

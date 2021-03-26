@@ -53,8 +53,8 @@ struct RuntimeConfig {
 };
 
 struct RuntimeStackFrame {
-
     std::string name;
+
     Variables variables;
     StringSet globals;
     Value returningValue;

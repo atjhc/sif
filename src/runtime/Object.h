@@ -19,6 +19,7 @@
 
 CH_NAMESPACE_BEGIN
 
+CH_DECL_CLASS_REF(Object)
 class Object {
 	std::string _name;
 	std::unique_ptr<ast::Script> _script;

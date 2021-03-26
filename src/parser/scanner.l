@@ -22,6 +22,7 @@
 #include "ast/Expression.h"
 #include "ast/Chunk.h"
 #include "parser/Parser.h"
+#include "utilities/strings.h"
 
 using namespace chatter;
 using namespace chatter::ast;
@@ -175,7 +176,7 @@ up 							LEX_RETURN(UP);
 
 \"([^\\\"]|\\.)*\" {
 	auto value = std::string(yytext);
-	yylval->expression = new StringLiteral(value.substr(1, value.length() - 2)); 
+	yylval->expression = new StringLiteral(string_from_escaped_string(value.substr(1, value.length() - 2)));
 	LEX_RETURN(STRING_LITERAL);
 };
 
