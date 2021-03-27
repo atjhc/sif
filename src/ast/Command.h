@@ -36,7 +36,6 @@ struct Multiply;
 struct Divide;
 
 struct CommandVisitor {
-    virtual void perform(const Command &) = 0;
     virtual void perform(const Put &) = 0;
     virtual void perform(const Get &) = 0;
     virtual void perform(const Ask &) = 0;
@@ -55,7 +54,9 @@ struct Command : Statement {
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
-    virtual void perform(CommandVisitor &visitor) const { visitor.perform(*this); }
+    virtual void perform(CommandVisitor &visitor) const { 
+        /* user commands are not executed by the runtime. */
+    }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

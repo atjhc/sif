@@ -78,4 +78,12 @@ Value Value::operator%(const Value &rhs) const {
     }
 }
 
+Value Value::operator^(const Value &rhs) const {
+    if (isNumber() && rhs.isNumber()) {
+        return powf(asFloat(), rhs.asFloat());
+    } else {
+        throw std::runtime_error("expected number");
+    }
+}
+
 CH_NAMESPACE_END

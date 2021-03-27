@@ -113,6 +113,7 @@ struct BinaryOp : Expression {
         Multiply,
         Divide,
         Mod,
+        Exponent,
         Concat,
         ConcatWithSpace
     };

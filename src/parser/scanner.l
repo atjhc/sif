@@ -158,6 +158,7 @@ up 							LEX_RETURN(UP);
 "<"							LEX_RETURN(LT);
 ">"							LEX_RETURN(GT);
 "="							LEX_RETURN(EQ);
+"^"							LEX_RETURN(CARROT);
 "<="|"≤"					LEX_RETURN(LTE);
 ">="|"≥"					LEX_RETURN(GTE);
 "≠"|"<>"					LEX_RETURN(NEQ);

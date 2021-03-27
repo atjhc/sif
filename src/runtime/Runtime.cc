@@ -20,6 +20,10 @@
 
 CH_NAMESPACE_BEGIN
 
+#if !defined(DEBUG)
+    #define trace(x)
+#endif
+
 Runtime::Runtime(const std::string &n, RuntimeConfig c)
     : config(c), name(n) {}
 
@@ -82,16 +86,19 @@ Value Runtime::call(const RuntimeMessage &message, Strong<Object> target) {
 #pragma mark - Private
 
 void Runtime::set(const std::string &name, const Value &value) {
-    const auto &i = stack.top().globals.find(name);
-    if (i != stack.top().globals.end()) {
-        return globals.set(name, value);
+    const auto &globalNames = stack.top().globals;
+    const auto &i = globalNames.find(name);
+    if (i != globalNames.end()) {
+        globals.set(name, value);
+        return;
     }
     return stack.top().variables.set(name, value);
 }
 
 Value Runtime::get(const std::string &name) const {
-    const auto &i = stack.top().globals.find(name);
-    if (i != stack.top().globals.end()) {
+    const auto &globalNames = stack.top().globals;
+    const auto &i = globalNames.find(name);
+    if (i != globalNames.end()) {
         return globals.get(name);
     }
     return stack.top().variables.get(name);
@@ -125,21 +132,20 @@ void Runtime::execute(const ast::StatementList &statements) {
     }
 }
 
-void Runtime::report(const RuntimeError &error) {
+void Runtime::report(const RuntimeError &error) const {
     auto lineNumber = error.where.lineNumber;
 
     config.stderr << name << ":" << lineNumber << ": runtime error: ";
     config.stderr << error.what() << std::endl;
 }
 
-void Runtime::trace(const std::string &msg) {
 #if defined(DEBUG)
+void Runtime::trace(const std::string &msg) const {
     if (config.tracing) {
-        config.stderr << name << ": " << msg << std::endl;
+        config.stdout << name << ": " << msg << std::endl;
     }
-#endif
 }
-
+#endif
 
 #pragma mark - StatementVisitor
 
@@ -211,22 +217,31 @@ void Runtime::visit(const ExitRepeat &) { stack.top().exitingRepeat = true; }
 
 void Runtime::visit(const NextRepeat &) { stack.top().skippingRepeat = true; }
 
-void Runtime::visit(const Exit &e) {
-    if (e.messageKey->name == stack.top().message.name) {
+void Runtime::visit(const Exit &s) {
+    trace("exit(" + s.messageKey->name + ")");
+    if (s.messageKey->name == stack.top().message.name) {
         stack.top().exiting = true;
     } else {
-        throw RuntimeError("Unexpected identifier " + e.messageKey->name, e.location);
+        throw RuntimeError("Unexpected identifier " + s.messageKey->name, s.location);
     }
 }
 
-void Runtime::visit(const Pass &) { stack.top().passing = true; }
+void Runtime::visit(const Pass &s) {
+    trace("pass(" + s.messageKey.name + ")");
+    if (s.messageKey->name == stack.top().message.name) {
+        stack.top().passing = true;
+    } else {
+        throw RuntimeError("Unexpected identifier " + s.messageKey->name, s.location);
+    }
+}
 
 void Runtime::visit(const Global &s) {
-    std::unordered_set<std::string> globals;
+    Set<std::string> globals;
     for (auto &identifier : s.variables->identifiers) {
         globals.insert(identifier->name);
     }
-    stack.top().globals = globals;
+    trace("global(" + describe(globals) + ")");
+    stack.top().globals.insert(globals.begin(), globals.end());
 }
 
 void Runtime::visit(const Return &s) {
@@ -235,6 +250,7 @@ void Runtime::visit(const Return &s) {
         auto value = s.expression->evaluate(*this);
         stack.top().returningValue = value;
     }
+    trace("return(" + stack.top().returningValue.value + ")");
 }
 
 void Runtime::visit(const Command &c) {
@@ -251,10 +267,7 @@ void Runtime::visit(const Command &c) {
     }
 }
 
-
 #pragma mark - Commands
-
-void Runtime::perform(const Command &s) { /* no-op */ }
 
 void Runtime::perform(const Put &s) {
     auto value = s.expression->evaluate(*this);
@@ -403,6 +416,8 @@ Value Runtime::valueOf(const BinaryOp &e) {
         return lhs * rhs;
     case BinaryOp::Divide:
         return lhs / rhs;
+    case BinaryOp::Exponent:
+        return lhs ^ rhs;
     case BinaryOp::IsIn:
         return rhs.contains(lhs);
     case BinaryOp::Contains:

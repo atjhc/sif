@@ -15,9 +15,16 @@ contexts:
       scope: punctuation.definition.comment.chatter
       push: line_comment
 
-    - match: '\b(if|else|then|repeat|end|on|function|pass|exit|return|next|put|get|it)\b'
+    - match: '#'
+      scope: punctuation.definition.comment.chatter
+      push: line_comment
+
+    - match: '\b(if|else|then|repeat|end|on|function|pass|exit|return|next|put|get|it|global)\b'
       scope: keyword.control.c
       
+    - match: '\b(before|into|after|the)\b'
+      scope: keyword.control.c
+
     - match: '\b(true|false|empty|tab|space|zero|one|two|three|four|five|six|seven|eight|nine|ten|quote)\b'
       scope: constant.numeric.c
 

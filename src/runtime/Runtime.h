@@ -36,8 +36,6 @@ CH_NAMESPACE_BEGIN
 using namespace ast;
 class Object;
 
-using HandlerRefMap = std::unordered_map<std::string, std::reference_wrapper<Handler>>;
-
 struct RuntimeError : std::runtime_error {
     Location where;
 
@@ -103,8 +101,11 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void execute(const ast::Handler &handler, const std::vector<Value> &arguments);
     void execute(const ast::StatementList &statements);
 
-    void report(const RuntimeError &error);
-    void trace(const std::string &msg);
+    void report(const RuntimeError &error) const;
+
+#if defined(DEBUG)
+    void trace(const std::string &msg) const;
+#endif
 
 #pragma mark - Statements
 
@@ -123,7 +124,6 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
 
 #pragma mark Commands
 
-    void perform(const Command &s) override;
     void perform(const Put &) override;
     void perform(const Get &) override;
     void perform(const Ask &) override;

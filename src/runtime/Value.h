@@ -88,6 +88,7 @@ class Value {
     Value operator*(const Value &rhs) const;
     Value operator/(const Value &rhs) const;
     Value operator%(const Value &rhs) const;
+    Value operator^(const Value &rhs) const;
 };
 
 static inline std::ostream &operator<<(std::ostream &out, const Value &v) {

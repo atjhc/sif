@@ -79,7 +79,7 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %token INTO BEFORE AFTER
 
 // Expressions
-%token LPAREN RPAREN PLUS MINUS MULT DIV LT GT LTE GTE NEQ
+%token LPAREN RPAREN PLUS MINUS MULT DIV LT GT LTE GTE NEQ CARROT
 
 // Constants
 %token EMPTY FALSE QUOTE SPACE TAB TRUE ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN
@@ -98,6 +98,7 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %left CONCAT CONCAT_SPACE
 %left PLUS MINUS
 %left MULT DIV DIV_TRUNC MOD
+%left CARROT
 
 %right IDENTIFIER OF
 
@@ -567,6 +568,10 @@ expression
     }
     | expression CONCAT_SPACE expression {
         $$ = new BinaryOp(BinaryOp::ConcatWithSpace, $1, $3);
+        $$->location = @1.first;
+    }
+    | expression CARROT expression {
+        $$ = new BinaryOp(BinaryOp::Exponent, $1, $3);
         $$->location = @1.first;
     }
     | chunk OF expression {

@@ -19,6 +19,7 @@
 #include "Common.h"
 
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,25 @@ static inline std::ostream &operator<<(std::ostream &out, const std::vector<std:
             out << ", ";
         }
     }
+    return out;
+}
+
+static inline std::string describe(const Set<std::string> &v) {
+    std::ostringstream ss;
+    auto i = v.begin();
+    while (i != v.end()) {
+        ss << *i;
+
+        i++;
+        if (i != v.end()) {
+            ss << ", ";
+        }
+    }
+    return ss.str();
+}
+
+static inline std::ostream &operator<<(std::ostream &out, const Set<std::string> &v) {
+    out << describe(v);
     return out;
 }
 

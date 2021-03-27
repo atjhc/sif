@@ -52,6 +52,9 @@ void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const
     case Divide:
         out << " / ";
         break;
+    case Exponent:
+        out << " ^ ";
+        break;
     case IsIn:
         out << " is in ";
         break;
