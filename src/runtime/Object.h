@@ -21,8 +21,6 @@
 #include "ast/Handler.h"
 #include "runtime/Runtime.h"
 
-#include <unordered_map>
-
 CH_NAMESPACE_BEGIN
 
 class Object {

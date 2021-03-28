@@ -35,14 +35,18 @@ class Value {
 
     Value() : value("") {}
     Value(const Value &v) : value(v.value) {}
+    Value(const std::string &s) : value(s) {}
+    Value(const char *s) : Value(std::string(s)) {}
     Value(bool v) : value((v ? "true" : "false")) {}
-    Value(float v) {
+    Value(double v) {
         std::ostringstream ss;
         ss << v;
         value = ss.str();
     }
-    Value(int v) : value(std::to_string(v)) {}
-    Value(const std::string &v) : value(v) {}
+    Value(float f) : Value(double(f)) {}
+    
+    template<typename T>
+    Value(T v) : value(std::to_string(v)) {}
 
     bool isBool() const {
         auto lowercased = lowercase(value);
@@ -73,6 +77,9 @@ class Value {
     float asFloat() const { return std::stof(value); }
 
     const std::string &asString() const { return value; }
+
+    operator float() const { return asFloat(); }
+    operator double() const { return asFloat(); }
 
     bool operator==(const Value &rhs) const;
     bool operator!=(const Value &rhs) const;

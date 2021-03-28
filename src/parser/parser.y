@@ -46,6 +46,7 @@ using namespace chatter::ast;
 %error-verbose
 %verbose
 %locations
+%expect 0
 
 %union {
     Script          *script;
@@ -70,7 +71,7 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 // Keywords
 %token THE ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN 
 %token SEND WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
-%token NOT AN NO OR CONTAINS IS IN WITHIN OF FORM_FEED LINE_FEED PI UP AND EOL
+%token NOT AN NO OR CONTAINS IS IN WITHIN OF FORM_FEED LINE_FEED UP AND EOL
 
 // Commands
 %token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
@@ -82,7 +83,7 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %token LPAREN RPAREN PLUS MINUS MULT DIV LT GT LTE GTE NEQ CARROT
 
 // Constants
-%token EMPTY FALSE QUOTE SPACE TAB TRUE ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN
+%token EMPTY FALSE QUOTE SPACE TAB TRUE ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN PI
 
 // Ordinals
 %token FIRST SECOND THIRD FOURTH FIFTH SIXTH SEVENTH EIGHTH NINTH TENTH LAST MIDDLE ANY
@@ -783,6 +784,9 @@ constant
     }
     | TEN {
         $$ = new IntLiteral(10);
+    }
+    | PI {
+        $$ = new FloatLiteral(M_PI);
     }
 ;
 

@@ -131,6 +131,7 @@ using namespace chatter::ast;
 [tT][aA][bB]				LEX_RETURN(TAB);
 [sS][pP][aA][cC][eE]		LEX_RETURN(SPACE);
 [qQ][uU][oO][tT][eE]		LEX_RETURN(QUOTE);
+[pP][iI]					LEX_RETURN(PI);
 
 do							LEX_RETURN(DO);
 next						LEX_RETURN(NEXT);

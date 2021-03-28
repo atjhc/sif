@@ -22,6 +22,9 @@
 #include "ast/Repeat.h"
 #include "ast/Script.h"
 #include "runtime/Variables.h"
+#include "runtime/Value.h"
+#include "runtime/Function.h"
+#include "runtime/Message.h"
 
 #include <iostream>
 #include <optional>
@@ -34,21 +37,15 @@
 CH_NAMESPACE_BEGIN
 
 using namespace ast;
+
 class Object;
+class Runtime;
 
 struct RuntimeError : std::runtime_error {
     Location where;
 
     RuntimeError(const std::string &_what, const Location &_where)
         : std::runtime_error(_what), where(_where) {}
-};
-
-struct RuntimeMessage {
-    std::string name;
-    std::vector<Value> arguments;
-
-    RuntimeMessage(const std::string &n, const std::vector<Value> args = {})
-        : name(lowercase(n)), arguments(args) {}
 };
 
 struct RuntimeConfig {
@@ -67,7 +64,9 @@ struct RuntimeStackFrame {
 
     Variables variables;
     Set<std::string> globals;
+    
     Value returningValue;
+    Value resultValue;
 
     bool skippingRepeat = false;
     bool exitingRepeat = false;
@@ -75,23 +74,27 @@ struct RuntimeStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    RuntimeStackFrame(const std::string &m, const Strong<Object> &t = nullptr) : message(m), target(t) {}
+    RuntimeStackFrame(const RuntimeMessage &m, const Strong<Object> &t = nullptr) : message(m), target(t) {}
 };
 
 class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     RuntimeConfig config;
-    std::string name;
 
     // State information
     std::stack<RuntimeStackFrame> stack;
     Variables globals;
 
+    // Runtime functions
+    Map<std::string, Owned<RuntimeFunction>> functions;
+
   public:
 
-    Runtime(const std::string &name, RuntimeConfig c = RuntimeConfig());
+    Runtime(const RuntimeConfig &c = RuntimeConfig());
 
     bool send(const RuntimeMessage &message, Strong<Object> target = nullptr);
     Value call(const RuntimeMessage &message, Strong<Object> target = nullptr);
+
+    void add(const std::string &name, RuntimeFunction *fn);
 
   private:
 
@@ -101,13 +104,15 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void execute(const ast::Handler &handler, const std::vector<Value> &arguments);
     void execute(const ast::StatementList &statements);
 
+    Value evaluateFunction(const RuntimeMessage &message);
+
     void report(const RuntimeError &error) const;
 
 #if defined(DEBUG)
     void trace(const std::string &msg) const;
 #endif
 
-#pragma mark - Statements
+#pragma mark - StatementVisitor
 
     void visit(const If &) override;
     void visit(const Repeat &) override;
@@ -122,7 +127,7 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void visit(const Return &) override;
     void visit(const Command &) override;
 
-#pragma mark Commands
+#pragma mark CommandVisitor
 
     void perform(const Put &) override;
     void perform(const Get &) override;
@@ -132,7 +137,7 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void perform(const Multiply &) override;
     void perform(const Divide &) override;
 
-#pragma mark - Expressions
+#pragma mark - ExpressionVisitor
 
     Value valueOf(const Identifier &) override;
     Value valueOf(const FunctionCall &) override;
@@ -146,6 +151,12 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     Value valueOf(const AnyChunk &) override;
     Value valueOf(const LastChunk &) override;
     Value valueOf(const MiddleChunk &) override;
+
+    friend ResultFunction;
+    friend ParamFunction;
+    friend ParamCountFunction;
+    friend ParamsFunction;
+    friend RandomFunction;
 };
 
 CH_NAMESPACE_END

@@ -18,14 +18,54 @@
 #include "runtime/Object.h"
 #include "utilities/chunk.h"
 
+#include <cmath>
+
 CH_NAMESPACE_BEGIN
 
 #if !defined(DEBUG)
     #define trace(x)
 #endif
 
-Runtime::Runtime(const std::string &n, RuntimeConfig c)
-    : config(c), name(n) {}
+Runtime::Runtime(const RuntimeConfig &c)
+    : config(c) {
+
+    add("sin", new OneArgumentFunction<sinf>());
+    add("cos", new OneArgumentFunction<cosf>());
+    add("tan", new OneArgumentFunction<tanf>());
+    add("atan", new OneArgumentFunction<atanf>());
+    add("abs", new OneArgumentFunction<fabsf>());
+    add("exp", new OneArgumentFunction<expf>());
+    add("exp2", new OneArgumentFunction<exp2f>());
+    add("log2", new OneArgumentFunction<log2f>());
+    add("log10", new OneArgumentFunction<log10f>());
+    add("ln", new OneArgumentFunction<logf>());
+    add("round", new OneArgumentFunction<roundf>());
+    add("sqrt", new OneArgumentFunction<sqrtf>());
+    add("trunc", new OneArgumentFunction<truncf>());
+
+    add("max", new MaxFunction());
+    add("min", new MinFunction());
+    add("sum", new SumFunction());
+    add("average", new MeanFunction());    
+    add("length", new LengthFunction());
+    add("offset", new OffsetFunction());
+    add("random", new RandomFunction());
+    add("params", new ParamsFunction());
+    add("paramCount", new ParamCountFunction());
+    add("param", new ParamFunction());    
+    add("result", new ResultFunction());
+
+    // TODO: Add these missing functions
+    // runtime.add("seconds", new OneArgumentFunction<float(float)>(roundf));
+    // runtime.add("ticks", new OneArgumentFunction<float(float)>(roundf));
+    // runtime.add("time", new OneArgumentFunction<float(float)>(roundf));
+    // runtime.add("ln1", new OneArgumentFunction<float(float)>(log2f));
+    // runtime.add("exp1", new OneArgumentFunction<float(float)>(expf));
+    // runtime.add("annuity", new OneArgumentFunction<float(float)>(fabs));
+    // runtime.add("charToNum", new OneArgumentFunction<float(float)>(fabs));
+    // runtime.add("numToChar", new OneArgumentFunction<float(float)>(fabs));
+    // runtime.add("compound", new OneArgumentFunction<float(float)>(fabs));
+}
 
 bool Runtime::send(const RuntimeMessage &message, Strong<Object> target) {
     trace(std::string("send(") + message.name + ", " + (target ? target->name() : "null") + ")");
@@ -37,10 +77,15 @@ bool Runtime::send(const RuntimeMessage &message, Strong<Object> target) {
     bool passing = true;
     auto handler = target->handlerFor(message);
     if (handler.has_value()) {
-        stack.push(RuntimeStackFrame(message.name, target));
+        stack.push(RuntimeStackFrame(message, target));
         execute(*handler, message.arguments);
         passing = stack.top().passing;
+        auto resultValue = stack.top().returningValue;
+
         stack.pop();
+        if (stack.size()) {
+            stack.top().resultValue = resultValue;
+        }
     }
 
     bool handled = true;
@@ -58,11 +103,11 @@ Value Runtime::call(const RuntimeMessage &message, Strong<Object> target) {
     trace(std::string("call(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
-        return Value();
+        return evaluateFunction(message);
     }
 
     Value result;
-    bool passing = false;
+    bool passing = true;
 
     auto handler = target->functionFor(message);
     if (handler.has_value()) {
@@ -73,17 +118,17 @@ Value Runtime::call(const RuntimeMessage &message, Strong<Object> target) {
         stack.pop();
     }
 
-    if (passing) {
-        if (target) {
-            target = target->parent();
-        }
-        call(message, target);
+    if (passing && target) {
+        target = target->parent();
     }
-
-    return result;
+    return call(message, target);
 }
 
 #pragma mark - Private
+
+void Runtime::add(const std::string &name, RuntimeFunction *fn) {
+    functions[lowercase(name)] = Owned<RuntimeFunction>(fn);
+}
 
 void Runtime::set(const std::string &name, const Value &value) {
     const auto &globalNames = stack.top().globals;
@@ -135,14 +180,14 @@ void Runtime::execute(const ast::StatementList &statements) {
 void Runtime::report(const RuntimeError &error) const {
     auto lineNumber = error.where.lineNumber;
 
-    config.stderr << name << ":" << lineNumber << ": runtime error: ";
+    config.stderr << stack.top().target->name() << ":" << lineNumber << ": runtime error: ";
     config.stderr << error.what() << std::endl;
 }
 
 #if defined(DEBUG)
 void Runtime::trace(const std::string &msg) const {
     if (config.tracing) {
-        config.stdout << name << ": " << msg << std::endl;
+        config.stdout << "runtime: " << msg << std::endl;
     }
 }
 #endif
@@ -227,7 +272,7 @@ void Runtime::visit(const Exit &s) {
 }
 
 void Runtime::visit(const Pass &s) {
-    trace("pass(" + s.messageKey.name + ")");
+    trace("pass(" + s.messageKey->name + ")");
     if (s.messageKey->name == stack.top().message.name) {
         stack.top().passing = true;
     } else {
@@ -250,7 +295,6 @@ void Runtime::visit(const Return &s) {
         auto value = s.expression->evaluate(*this);
         stack.top().returningValue = value;
     }
-    trace("return(" + stack.top().returningValue.value + ")");
 }
 
 void Runtime::visit(const Command &c) {
@@ -373,6 +417,16 @@ void Runtime::perform(const Divide &c) {
                            c.expression->location);
     }
     set(targetName, targetValue.asFloat() / value.asFloat());
+}
+
+#pragma mark - Functions
+
+Value Runtime::evaluateFunction(const RuntimeMessage &message) {
+    auto fn = functions.find(lowercase(message.name));
+    if (fn != functions.end()) {
+        return fn->second->valueOf(*this, message);
+    }
+    return Value();
 }
 
 #pragma mark - ExpressionVisitor

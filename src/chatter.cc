@@ -89,7 +89,8 @@ static int run(const std::string &fileName, const std::string &messageName,
     std::uniform_real_distribution<float> distribution(0.0, 1.0);
     runtimeConfig.random = [&]() { return distribution(generator); };
 
-    Runtime runtime(fileName, runtimeConfig);
+    Runtime runtime(runtimeConfig);
+
     auto object = std::make_shared<Object>(fileName, result);
     runtime.send(RuntimeMessage(messageName, values), object);
 
