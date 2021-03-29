@@ -117,7 +117,7 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %nterm <script> script scriptList
 %nterm <handler> handler
 %nterm <identifier> messageKey
-%nterm <identifierList> identifierList
+%nterm <identifierList> maybeIdentifierList identifierList
 %nterm <statementList> statementList elseBlock
 %nterm <statement> statement ifBlock keywordStatement commandStatement
 %nterm <statement> repeatBlock repeatForever repeatCount repeatCondition repeatRange
@@ -176,7 +176,7 @@ script
 ;
 
 handler
-    : ON messageKey identifierList EOL
+    : ON messageKey maybeIdentifierList EOL
         statementList
       END messageKey {
         if ($2->name == $7->name) {
@@ -188,7 +188,7 @@ handler
             yyerror(&yylloc, scanner, context, msg.c_str());
         }
     }
-    | FUNCTION messageKey identifierList EOL
+    | FUNCTION messageKey maybeIdentifierList EOL
         statementList
       END messageKey {
         if ($2->name == $7->name) {
@@ -201,12 +201,18 @@ handler
     }
 ;
 
-// TODO: I'm a little suspect of this.
-identifierList
+maybeIdentifierList
     : /* empty */ {
         $$ = nullptr;
-    } 
-    | IDENTIFIER {
+    }
+    | identifierList {
+        $$ = $1
+    }
+;
+
+// TODO: I'm a little suspect of this.
+identifierList
+    : IDENTIFIER {
         if ($1) {
             $$ = new IdentifierList();
             $$->add($1);
