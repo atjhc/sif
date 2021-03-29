@@ -18,6 +18,7 @@
 #include "runtime/Function.h"
 #include "runtime/Runtime.h"
 #include "parser/Parser.h"
+#include "utilities/devnull.h"
 
 #include <sstream>
 
@@ -27,7 +28,7 @@ Value ValueFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
     auto expression = m.arguments[0];
 
     Owned<Expression> result;
-    if ((result = Parser().parseExpression(ParserConfig(), expression.asString())) == nullptr) {
+    if ((result = Parser().parseExpression(ParserConfig("<runtime>", devnull), expression.asString())) == nullptr) {
         return expression.asString();
     }
 

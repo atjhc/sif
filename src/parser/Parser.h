@@ -26,6 +26,9 @@ CH_NAMESPACE_BEGIN
 struct ParserConfig {
     std::string fileName = "<stdin>";
     std::ostream &err = std::cerr;
+
+    ParserConfig(const std::string &n = "<stdin>", std::ostream &o = std::cerr)
+        : fileName(n), err(o) {}
 };
 
 struct ParserContext {
