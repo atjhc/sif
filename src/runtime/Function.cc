@@ -17,10 +17,22 @@
 #include "Common.h"
 #include "runtime/Function.h"
 #include "runtime/Runtime.h"
+#include "parser/Parser.h"
 
 #include <sstream>
 
 CH_NAMESPACE_BEGIN
+
+Value ValueFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
+    auto expression = m.arguments[0];
+
+    Owned<Expression> result;
+    if ((result = Parser().parseExpression(ParserConfig(), expression.asString())) == nullptr) {
+        return expression.asString();
+    }
+
+    return result->evaluate(r);
+}
 
 Value RandomFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
     auto max = m.arguments[0].asInteger();

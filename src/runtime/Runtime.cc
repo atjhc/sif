@@ -54,6 +54,7 @@ Runtime::Runtime(const RuntimeConfig &c)
     add("paramCount", new ParamCountFunction());
     add("param", new ParamFunction());    
     add("result", new ResultFunction());
+    add("value", new ValueFunction());
 
     // TODO: Add these missing functions
     // runtime.add("seconds", new OneArgumentFunction<float(float)>(roundf));

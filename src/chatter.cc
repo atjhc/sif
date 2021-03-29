@@ -62,7 +62,7 @@ static int run(const std::string &fileName, const std::string &messageName,
     }
 
     Owned<Script> result;
-    if ((result = Parser().parse(config, source)) == nullptr) {
+    if ((result = Parser().parseScript(config, source)) == nullptr) {
         return -1;
     }
 

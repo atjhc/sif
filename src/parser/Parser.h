@@ -29,13 +29,26 @@ struct ParserConfig {
 };
 
 struct ParserContext {
+    enum Mode {
+        Script,
+        Statement,
+        Expression
+    };
+
     ParserConfig config;
 
     void *scanner = nullptr;
     std::string source;
 
-    ast::Script *script = nullptr;
+    // Parsing state
+    Mode parsingMode = Script;
+    bool selectingMode = true;
     unsigned int numberOfErrors = 0;
+
+    // Result
+    ast::Script *script = nullptr;
+    ast::Expression *expression = nullptr;
+    ast::Statement *statement = nullptr;
 
     ParserContext(const ParserConfig &config, const std::string &source);
 
@@ -44,7 +57,12 @@ struct ParserContext {
 
 class Parser {
   public:
-    Owned<ast::Script> parse(const ParserConfig &config, const std::string &source);
+    Owned<ast::Script> parseScript(const ParserConfig &config, const std::string &source);
+    Owned<ast::Statement> parseStatement(const ParserConfig &config, const std::string &source);
+    Owned<ast::Expression> parseExpression(const ParserConfig &config, const std::string &source);
+
+  private:
+    void parse(ParserContext &context, const std::string &source);
 };
 
 CH_NAMESPACE_END

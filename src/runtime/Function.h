@@ -80,6 +80,10 @@ struct OffsetFunction: RuntimeFunction {
     }
 };
 
+struct ValueFunction: RuntimeFunction {
+    Value valueOf(Runtime &, const RuntimeMessage &m) const override;
+};
+
 struct RandomFunction: RuntimeFunction {
     Value valueOf(Runtime &, const RuntimeMessage &m) const override;
 };

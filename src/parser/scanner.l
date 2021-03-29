@@ -53,6 +53,20 @@ using namespace chatter::ast;
 
 %%
 
+%{
+	if (context.selectingMode) {
+		context.selectingMode = false;
+		switch (context.parsingMode) {
+		case ParserContext::Script:
+			return START_SCRIPT;
+		case ParserContext::Statement:
+			return START_STATEMENT;
+		case ParserContext::Expression:
+			return START_EXPRESSION;
+		}
+	}
+%}
+
 [oO][nN] 							LEX_RETURN(ON);
 [eE][nN][dD]						LEX_RETURN(END);
 [fF][uU][nN][cC][tT][iI][oO][nN]  	LEX_RETURN(FUNCTION);

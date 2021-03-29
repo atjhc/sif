@@ -58,11 +58,9 @@ void ParserContext::error(Location location, const std::string &msg) {
     config.err << indentString << "^" << std::endl;
 }
 
-Owned<ast::Script> Parser::parse(const ParserConfig &config, const std::string &source) {
-    ParserContext context(config, source);
-
+void Parser::parse(ParserContext &context, const std::string &source) {
     if (yylex_init(&context.scanner)) {
-        return nullptr;
+        return;
     }
 
     YY_BUFFER_STATE buf = yy_scan_string(source.c_str(), context.scanner);
@@ -74,12 +72,51 @@ Owned<ast::Script> Parser::parse(const ParserConfig &config, const std::string &
     yylex_destroy(context.scanner);
 
     if (context.numberOfErrors > 0) {
-        config.err << context.numberOfErrors
+        context.config.err << context.numberOfErrors
                    << (context.numberOfErrors > 1 ? " errors " : " error ") << "generated."
                    << std::endl;
+    }
+}
+
+Owned<ast::Script> Parser::parseScript(const ParserConfig &config, const std::string &source) {
+    ParserContext context(config, source);
+    context.parsingMode = ParserContext::Script;
+
+    parse(context, source);
+
+    if (context.numberOfErrors && context.script) {
+        delete context.script;
+        context.script = nullptr;
     }
 
     return Owned<ast::Script>(context.script);
 }
+
+Owned<ast::Statement> Parser::parseStatement(const ParserConfig &config, const std::string &source) {
+    ParserContext context(config, source);
+    context.parsingMode = ParserContext::Statement;
+
+    if (context.numberOfErrors && context.expression) {
+        delete context.statement;
+        context.statement = nullptr;
+    }
+
+    return Owned<ast::Statement>(context.statement);
+}
+
+Owned<ast::Expression> Parser::parseExpression(const ParserConfig &config, const std::string &source) {
+    ParserContext context(config, source);
+    context.parsingMode = ParserContext::Expression;
+
+    parse(context, source);
+
+    if (context.numberOfErrors && context.expression) {
+        delete context.expression;
+        context.expression = nullptr;
+    }
+
+    return Owned<ast::Expression>(context.expression);
+}
+
 
 CH_NAMESPACE_END

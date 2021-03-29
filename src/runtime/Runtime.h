@@ -157,6 +157,7 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     friend ParamCountFunction;
     friend ParamsFunction;
     friend RandomFunction;
+    friend ValueFunction;
 };
 
 CH_NAMESPACE_END

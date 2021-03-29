@@ -68,6 +68,11 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 
 %}
 
+// Virtual start tokens.
+%token START_SCRIPT
+%token START_STATEMENT
+%token START_EXPRESSION
+
 // Keywords
 %token THE ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN 
 %token SEND WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
@@ -122,14 +127,24 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %nterm <expressionList> expressionList
 %nterm <preposition> preposition
 
-%destructor { delete $$; } IDENTIFIER
+//%destructor { delete $$; $$ = nullptr; } IDENTIFIER INT_LITERAL STRING_LITERAL FLOAT_LITERAL
+//%destructor { delete $$; $$ = nullptr; } <script> <handler> <identifier> <statement> <expression>
+//%destructor { delete $$; $$ = nullptr; } <statementList> <expressionList> <identifierList>
+//%destructor { delete $$; $$ = nullptr; } <chunk> <preposition>
+
 %start start
 
 %%
 
 start
-    : scriptList { 
-        context.script = $1;
+    : START_SCRIPT scriptList { 
+        context.script = $2;
+    }
+    | START_STATEMENT statement {
+        context.statement = $2;
+    }
+    | START_EXPRESSION expression {
+        context.expression = $2;
     }
 ;
 
@@ -192,12 +207,20 @@ identifierList
         $$ = nullptr;
     } 
     | IDENTIFIER {
-        $$ = new IdentifierList();
-        $$->add($1);
+        if ($1) {
+            $$ = new IdentifierList();
+            $$->add($1);
+        } else {
+            $$ = nullptr;
+        }
     }
     | identifierList COMMA IDENTIFIER {
-        $$ = $1;
-        $$->add($3);
+        if ($1 && $3) {
+            $$ = $1;
+            $$->add($3);
+        } else {
+            $$ = nullptr;
+        }
     }
 ;
 
@@ -206,19 +229,23 @@ statementList
         $$ = new StatementList();
     }
     | statement { 
-        $$ = new StatementList();
         if ($1) {
+            $$ = new StatementList();
             $$->add($1);
-        } 
+        } else {
+            $$ = nullptr;
+        }
     }
     | statementList EOL statement {
-        if ($1) {
-            $$ = $1;
-        } else {
-            $$ = new StatementList();
-        }
         if ($3) {
+            if ($1) {
+                $$ = $1;
+            } else {
+                $$ = new StatementList();
+            }
             $$->add($3);
+        } else {
+            $$ = nullptr;
         }
     }
     | statementList EOL {
@@ -500,97 +527,183 @@ expression
         $$ = $2;
     }
     | expression PLUS expression {
-        $$ = new BinaryOp(BinaryOp::Plus, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Plus, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression MINUS expression {
-        $$ = new BinaryOp(BinaryOp::Minus, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Minus, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression MULT expression {
-        $$ = new BinaryOp(BinaryOp::Multiply, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Multiply, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression DIV expression {
-        $$ = new BinaryOp(BinaryOp::Divide, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Divide, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     } 
     | expression IS expression {
-        $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression EQ expression {
-        $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression MOD expression {
-        $$ = new BinaryOp(BinaryOp::Mod, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Mod, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression NEQ expression {
-        $$ = new BinaryOp(BinaryOp::NotEqual, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::NotEqual, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression OR expression {
-        $$ = new BinaryOp(BinaryOp::Or, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Or, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression AND expression {
-        $$ = new BinaryOp(BinaryOp::And, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::And, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression IS IN expression %prec AND {
-        $$ = new BinaryOp(BinaryOp::IsIn, $1, $4);
-        $$->location = @1.first;
+        if ($1 && $4) {
+            $$ = new BinaryOp(BinaryOp::IsIn, $1, $4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression CONTAINS expression {
-        $$ = new BinaryOp(BinaryOp::Contains, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Contains, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression LT expression {
-        $$ = new BinaryOp(BinaryOp::LessThan, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::LessThan, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression GT expression {
-        $$ = new BinaryOp(BinaryOp::GreaterThan, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::GreaterThan, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     } 
     | expression LTE expression {
-        $$ = new BinaryOp(BinaryOp::LessThanOrEqual, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::LessThanOrEqual, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression GTE expression {
-        $$ = new BinaryOp(BinaryOp::GreaterThanOrEqual, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::GreaterThanOrEqual, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression CONCAT expression {
-        $$ = new BinaryOp(BinaryOp::Concat, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Concat, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression CONCAT_SPACE expression {
-        $$ = new BinaryOp(BinaryOp::ConcatWithSpace, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::ConcatWithSpace, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | expression CARROT expression {
-        $$ = new BinaryOp(BinaryOp::Exponent, $1, $3);
-        $$->location = @1.first;
+        if ($1 && $3) {
+            $$ = new BinaryOp(BinaryOp::Exponent, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | chunk OF expression {
-        $$ = $1;
         if ($1) {
+            $$ = $1;
             $1->expression = $3;
+        } else {
+            $$ = nullptr;
         }
     }
     | functionCall {
         $$ = $1;
     } 
     | MINUS expression {
-        $$ = new Minus($2);
-        $$->location = @1.first;
+        if ($2) {
+            $$ = new Minus($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     } 
     | NOT expression {
-        $$ = new Not($2);
-        $$->location = @1.first;
+        if ($2) {
+            $$ = new Not($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | constant {
         $$ = $1;
@@ -615,12 +728,20 @@ functionCall
         $$->location = @2.first;
     }
     | THE IDENTIFIER OF expression {
-        $$ = new FunctionCall($2, new ExpressionList($4));
-        $$->location = @2.first;
+        if ($4) {
+            $$ = new FunctionCall($2, new ExpressionList($4));
+            $$->location = @2.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | IDENTIFIER LPAREN expressionList RPAREN {
-        $$ = new FunctionCall($1, $3);
-        $$->location = @1.first;
+        if ($3) {
+            $$ = new FunctionCall($1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | IDENTIFIER LPAREN RPAREN {
         $$ = new FunctionCall($1, nullptr);
@@ -636,9 +757,11 @@ expressionList
         }
     }
     | expressionList COMMA expression {
-        $$ = $1;
         if ($3) {
+            $$ = $1;
             $$->add($3);
+        } else {
+            $$ = nullptr;
         }
     }
 ;
