@@ -114,7 +114,7 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %token <expression> FLOAT_LITERAL INT_LITERAL STRING_LITERAL
 %token <identifier> IDENTIFIER
 
-%nterm <script> script scriptList
+%nterm <script> script
 %nterm <handler> handler
 %nterm <identifier> messageKey
 %nterm <identifierList> maybeIdentifierList identifierList
@@ -136,7 +136,7 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %%
 
 start
-    : START_SCRIPT scriptList { 
+    : START_SCRIPT script { 
         context.script = $2;
     }
     | START_STATEMENT statement {
@@ -147,20 +147,8 @@ start
     }
 ;
 
-scriptList
-    : script maybeEOL { 
-        $$ = $1;
-    }
-    | EOL script maybeEOL {
-        $$ = $2;
-    }
-    | EOL {
-        $$ = nullptr;
-    }
-;
-
 script
-    : handler { 
+    : handler {
         $$ = new Script();
         if ($1) {
             $$->add($1);
@@ -175,7 +163,10 @@ script
 ;
 
 handler
-    : ON messageKey maybeIdentifierList EOL
+    : /* empty */ {
+        $$ = nullptr;
+    }
+    | ON messageKey maybeIdentifierList EOL
         maybeStatementList
       END messageKey {
         if ($2 && $7) {
