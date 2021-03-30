@@ -118,7 +118,7 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %nterm <handler> handler
 %nterm <identifier> messageKey
 %nterm <identifierList> maybeIdentifierList identifierList
-%nterm <statementList> statementList elseBlock
+%nterm <statementList> statementList maybeStatementList elseBlock
 %nterm <statement> statement ifBlock keywordStatement commandStatement
 %nterm <statement> repeatBlock repeatForever repeatCount repeatCondition repeatRange
 %nterm <expression> expression functionCall ordinal constant
@@ -127,10 +127,9 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %nterm <expressionList> expressionList
 %nterm <preposition> preposition
 
-//%destructor { delete $$; $$ = nullptr; } IDENTIFIER INT_LITERAL STRING_LITERAL FLOAT_LITERAL
-//%destructor { delete $$; $$ = nullptr; } <script> <handler> <identifier> <statement> <expression>
-//%destructor { delete $$; $$ = nullptr; } <statementList> <expressionList> <identifierList>
-//%destructor { delete $$; $$ = nullptr; } <chunk> <preposition>
+%destructor { delete $$; $$ = nullptr; } IDENTIFIER INT_LITERAL STRING_LITERAL FLOAT_LITERAL
+%destructor { delete $$; $$ = nullptr; } maybeStatementList handler statementList statement messageKey
+%destructor { delete $$; $$ = nullptr; } chunk preposition ordinal constant functionCall expression expressionList
 
 %start start
 
@@ -177,26 +176,35 @@ script
 
 handler
     : ON messageKey maybeIdentifierList EOL
-        statementList
+        maybeStatementList
       END messageKey {
-        if ($2->name == $7->name) {
-            $$ = new Handler(Handler::HandlerKind, $2, $3, $5);
-            $$->location = @2.first;
+        if ($2 && $7) {
+            if ($2->name == $7->name) {
+                $$ = new Handler(Handler::HandlerKind, $2, $3, $5);
+                $$->location = @2.first;
+                delete $7;
+            } else {
+                auto msg = "Expected " + $2->name + ", got " + $7->name;
+                yyerror(&yylloc, scanner, context, msg.c_str());
+            }
         } else {
             $$ = nullptr;
-            auto msg = "Expected " + $2->name + ", got " + $7->name;
-            yyerror(&yylloc, scanner, context, msg.c_str());
         }
     }
     | FUNCTION messageKey maybeIdentifierList EOL
-        statementList
+        maybeStatementList
       END messageKey {
-        if ($2->name == $7->name) {
-            $$ = new Handler(Handler::FunctionKind, $2, $3, $5);
-            $$->location = @2.first;
+        if ($2 && $7) {
+            if ($2->name == $7->name) {
+                $$ = new Handler(Handler::FunctionKind, $2, $3, $5);
+                $$->location = @2.first;
+                delete $7;
+            } else {
+                auto msg = "Expected " + $2->name + ", got " + $7->name;
+                yyerror(&yylloc, scanner, context, msg.c_str());
+            }
         } else {
-            auto msg = "Expected " + $2->name + ", got " + $7->name;
-            yyerror(&yylloc, scanner, context, msg.c_str());
+            $$ = nullptr;
         }
     }
 ;
@@ -210,7 +218,6 @@ maybeIdentifierList
     }
 ;
 
-// TODO: I'm a little suspect of this.
 identifierList
     : IDENTIFIER {
         if ($1) {
@@ -230,11 +237,17 @@ identifierList
     }
 ;
 
-statementList
+maybeStatementList
     : /* empty */ {
-        $$ = new StatementList();
+        $$ = nullptr;    
     }
-    | statement { 
+    | statementList {
+        $$ = $1
+    }
+;
+
+statementList
+    : statement { 
         if ($1) {
             $$ = new StatementList();
             $$->add($1);
@@ -244,13 +257,10 @@ statementList
     }
     | statementList EOL statement {
         if ($3) {
-            if ($1) {
-                $$ = $1;
-            } else {
-                $$ = new StatementList();
-            }
+            $$ = $1;
             $$->add($3);
         } else {
+            delete $1;
             $$ = nullptr;
         }
     }
@@ -449,8 +459,12 @@ repeatForever
     : REPEAT maybeForever EOL 
         statementList 
       END REPEAT {
-        $$ = new Repeat($4);
-        $$->location = @1.first;
+        if ($4) {
+            $$ = new Repeat($4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
 ;
 
@@ -757,13 +771,15 @@ functionCall
 
 expressionList
     : expression {
-        $$ = new ExpressionList();
         if ($1) {
+            $$ = new ExpressionList();
             $$->add($1);
+        } else {
+            $$ = nullptr;
         }
     }
     | expressionList COMMA expression {
-        if ($3) {
+        if ($1 && $3) {
             $$ = $1;
             $$->add($3);
         } else {

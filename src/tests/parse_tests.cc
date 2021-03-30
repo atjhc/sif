@@ -6,6 +6,6 @@ static void parse_tests(TestSuite &suite) {
         config.fileName = path;
 
         auto source = suite.file_contents(path);
-        suite.assert_true(chatter::Parser().parse(config, source) != nullptr);
+        suite.assert_true(chatter::Parser().parseScript(config, source) != nullptr);
     }
 }

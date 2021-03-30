@@ -59,7 +59,7 @@ dstroot:
 	mkdir -p $(DSTROOT)
 
 $(DSTROOT)/test: tests.cc $(TEST_SRC) $(DSTROOT)/$(LIBNAME)
-	$(CC) $(CPPFLAGS) -o $(DSTROOT)/test $< $(DSTROOT)/$(LIBNAME)
+	$(CC) $(CPPFLAGS) -g -o $(DSTROOT)/test $< $(DSTROOT)/$(LIBNAME)
 
 $(DSTROOT)/$(TOOLNAME): $(SRCROOT)/chatter.cc $(DSTROOT)/$(LIBNAME)
 	$(CC) $(CPPFLAGS) -o $(DSTROOT)/$(TOOLNAME) $< $(DSTROOT)/$(LIBNAME)
@@ -68,13 +68,13 @@ $(DSTROOT)/$(LIBNAME): $(OBJ)
 	ar rc $(DSTROOT)/$(LIBNAME) $(OBJ)
 	ranlib $(DSTROOT)/$(LIBNAME)
 
-$(DSTROOT)/yyScanner.cc: $(SRCROOT)/parser/scanner.l
+$(DSTROOT)/yyScanner.cc: $(SRCROOT)/parser/yy_scanner.l
 	@mkdir -p $(dir $@)
-	flex --outfile=$(DSTROOT)/yyScanner.cc --header-file=$(DSTROOT)/yyScanner.h $(SRCROOT)/parser/scanner.l
+	flex --outfile=$(DSTROOT)/yyScanner.cc --header-file=$(DSTROOT)/yyScanner.h $(SRCROOT)/parser/yy_scanner.l
 
-$(DSTROOT)/yyParser.cc: $(SRCROOT)/parser/parser.y
+$(DSTROOT)/yyParser.cc: $(SRCROOT)/parser/yy_parser.y
 	@mkdir -p $(dir $@)
-	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(BISONFLAGS) $(SRCROOT)/parser/parser.y
+	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(BISONFLAGS) $(SRCROOT)/parser/yy_parser.y
 
 $(DSTROOT)/%.o: %.cc %.h $(COMMON_HEADERS)
 	@mkdir -p $(dir $@)
