@@ -119,9 +119,9 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %nterm <identifier> messageKey
 %nterm <identifierList> maybeIdentifierList identifierList
 %nterm <statementList> statementList maybeStatementList elseBlock
-%nterm <statement> statement ifBlock keywordStatement commandStatement
-%nterm <statement> repeatBlock repeatForever repeatCount repeatCondition repeatRange
-%nterm <expression> expression functionCall ordinal constant
+%nterm <statement> statement ifStatement keywordStatement commandStatement
+%nterm <statement> repeatStatement repeatForever repeatCount repeatCondition repeatRange
+%nterm <expression> expression ifCondition functionCall ordinal constant
 %nterm <chunk> chunk
 %nterm <chunkType> chunkType
 %nterm <expressionList> expressionList
@@ -328,10 +328,10 @@ keywordStatement
         $$ = new Return($2);
         $$->location = @1.first;
     }
-    | ifBlock { 
+    | ifStatement {
         $$ = $1;
     }
-    | repeatBlock {
+    | repeatStatement {
         $$ = $1;
     }
 ;
@@ -379,18 +379,18 @@ commandStatement
     }
 ;
 
-ifBlock
-    : IF expression maybeEOL THEN statement {
-        if ($2 && $5) {
-            $$ = new If($2, new StatementList($5), nullptr);
+ifStatement
+    : ifCondition THEN statement {
+        if ($1 && $3) {
+            $$ = new If($1, new StatementList($3), nullptr);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
     }
-    | IF expression maybeEOL THEN EOL statementList END IF {
-        if ($2 && $6) {
-            $$ = new If($2, $6, nullptr);
+    | ifCondition THEN EOL statementList END IF {
+        if ($1 && $4) {
+            $$ = new If($1, $4, nullptr);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -399,17 +399,17 @@ ifBlock
     // TODO: Add missing IF/ELSE construct:
     //   if expression then statement
     //   else statement
-    | IF expression maybeEOL THEN statement elseBlock {
-        if ($2 && $5 && $6) {
-            $$ = new If($2, new StatementList($5), $6);
+    | ifCondition THEN statement elseBlock {
+        if ($1 && $3 && $4) {
+            $$ = new If($1, new StatementList($3), $4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
     } 
-    | IF expression maybeEOL THEN EOL statementList elseBlock {
-        if ($2 && $6 && $7) {
-            $$ = new If($2, $6, $7);
+    | ifCondition THEN EOL statementList elseBlock {
+        if ($1 && $4 && $5) {
+            $$ = new If($1, $4, $5);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -431,7 +431,16 @@ elseBlock
     }
 ;
 
-repeatBlock
+ifCondition
+    : IF expression {
+        $$ = $2;
+    }
+    | IF expression EOL {
+        $$ = $2;
+    }
+;
+
+repeatStatement
     : repeatForever {
         $$ = $1;
     }
@@ -929,11 +938,6 @@ constant
 maybeThe
     : /* empty */
     | THE
-;
-
-maybeEOL
-    : /* empty */ 
-    | EOL
 ;
 
 %%
