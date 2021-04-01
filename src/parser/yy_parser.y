@@ -14,11 +14,16 @@
 //  limitations under the License.
 //
 
+//%require "3.7"
+
 %pure-parser
+//%define api.pure
+
 %lex-param   { scanner }
 %lex-param   { context }
 %parse-param { yyscan_t scanner }
 %parse-param { ParserContext &context }
+
 %{
 
 #include <string>
@@ -44,6 +49,8 @@ using namespace chatter::ast;
 %}
 
 %error-verbose
+//%define parse.error verbose
+
 %verbose
 %locations
 %expect 0
@@ -205,7 +212,7 @@ maybeIdentifierList
         $$ = nullptr;
     }
     | identifierList {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
@@ -233,7 +240,7 @@ maybeStatementList
         $$ = nullptr;    
     }
     | statementList {
-        $$ = $1
+        $$ = $1;
     }
 ;
 
@@ -396,9 +403,6 @@ ifStatement
             $$ = nullptr;
         }
     }
-    // TODO: Add missing IF/ELSE construct:
-    //   if expression then statement
-    //   else statement
     | ifCondition THEN statement elseBlock {
         if ($1 && $3 && $4) {
             $$ = new If($1, new StatementList($3), $4);
@@ -415,6 +419,18 @@ ifStatement
             $$ = nullptr;
         }
     }
+// TODO: The following construction is ambiguous, but valid
+//       in HyperTalk. For now, Chatter does not allow these.
+/*
+    | ifCondition THEN statement EOL elseBlock {
+        if ($1 && $4 && $5) {
+            $$ = new If($1, $4, $5);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+*/
 ;
 
 elseBlock

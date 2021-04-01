@@ -1,4 +1,8 @@
 CC := clang++
+BISON := bison
+# BISON := /usr/local/opt/bison/bin/bison
+FLEX := flex
+
 LIBNAME := chatter.a
 TOOLNAME := chatter
 INSTALL_DIR := /usr/local/bin
@@ -70,11 +74,11 @@ $(DSTROOT)/$(LIBNAME): $(OBJ)
 
 $(DSTROOT)/yyScanner.cc: $(SRCROOT)/parser/yy_scanner.l
 	@mkdir -p $(dir $@)
-	flex --outfile=$(DSTROOT)/yyScanner.cc --header-file=$(DSTROOT)/yyScanner.h $(SRCROOT)/parser/yy_scanner.l
+	$(FLEX) --outfile=$(DSTROOT)/yyScanner.cc --header-file=$(DSTROOT)/yyScanner.h $(SRCROOT)/parser/yy_scanner.l
 
 $(DSTROOT)/yyParser.cc: $(SRCROOT)/parser/yy_parser.y
 	@mkdir -p $(dir $@)
-	bison --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(BISONFLAGS) $(SRCROOT)/parser/yy_parser.y
+	$(BISON) --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(BISONFLAGS) $(SRCROOT)/parser/yy_parser.y
 
 $(DSTROOT)/%.o: %.cc %.h $(COMMON_HEADERS)
 	@mkdir -p $(dir $@)
