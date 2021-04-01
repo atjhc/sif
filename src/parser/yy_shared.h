@@ -14,11 +14,12 @@
 //  limitations under the License.
 //
 
-#define YYLTYPE YYLTYPE
-typedef struct YYLTYPE {
+#include "ast/Base.h"
+
+struct ParseLocation {
     Location first;
     Location last;
-} YYLTYPE;
+};
 
 #define YYLLOC_DEFAULT(Cur, Rhs, N)                             \
     do                                                          \
@@ -31,8 +32,4 @@ typedef struct YYLTYPE {
         }                                                       \
     while (0)
 
-#include "yyParser.h"
-
-#define YY_DECL \
-    int yylex(YYSTYPE *yylval_param, YYLTYPE *yylloc, void *yyscanner, ParserContext &context)
-extern YY_DECL;
+typedef void* yyscan_t;

@@ -14,16 +14,6 @@
 //  limitations under the License.
 //
 
-//%require "3.7"
-
-%pure-parser
-//%define api.pure
-
-%lex-param   { scanner }
-%lex-param   { context }
-%parse-param { yyscan_t scanner }
-%parse-param { ParserContext &context }
-
 %{
 
 #include <string>
@@ -36,20 +26,30 @@
 #include "ast/Repeat.h"
 #include "parser/Parser.h"
 
-#ifndef YY_TYPEDEF_YY_SCANNER_T
-    #define YY_TYPEDEF_YY_SCANNER_T
-    typedef void* yyscan_t;
-#endif
-
 using namespace chatter;
 using namespace chatter::ast;
 
-#include "parser/yy_shared.h"
-
 %}
 
-%error-verbose
-//%define parse.error verbose
+%code provides {
+    #define YY_DECL \
+        int yylex(YYSTYPE *yylval_param, YYLTYPE *yylloc, void *yyscanner, ParserContext &context)
+    extern YY_DECL;
+}
+
+%require "3.7"
+
+//%pure-parser
+%define api.pure
+
+%lex-param { scanner } { context }
+%parse-param { yyscan_t scanner } { chatter::ParserContext &context }
+
+%define api.location.type { ParseLocation }
+%code requires { #include "parser/yy_shared.h" }
+
+//%error-verbose
+%define parse.error verbose
 
 %verbose
 %locations
@@ -81,9 +81,9 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %token START_EXPRESSION
 
 // Keywords
-%token THE ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN 
-%token SEND WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
-%token NOT AN NO OR CONTAINS IS IN WITHIN OF FORM_FEED LINE_FEED UP AND EOL
+%token ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN 
+%token WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
+%token NOT THE AN NO OR CONTAINS IS IN WITHIN OF FORM_FEED LINE_FEED UP AND EOL
 
 // Commands
 %token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
@@ -95,10 +95,12 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %token LPAREN RPAREN PLUS MINUS MULT DIV LT GT LTE GTE NEQ CARROT
 
 // Constants
-%token EMPTY FALSE QUOTE SPACE TAB TRUE ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN PI
+%token EMPTY FALSE QUOTE SPACE TAB TRUE PI
+%token ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN
 
 // Ordinals
-%token FIRST SECOND THIRD FOURTH FIFTH SIXTH SEVENTH EIGHTH NINTH TENTH LAST MIDDLE ANY
+%token FIRST SECOND THIRD FOURTH FIFTH SIXTH SEVENTH EIGHTH NINTH TENTH
+%token LAST MIDDLE ANY
 
 // Chunks
 %token CHAR WORD LINE ITEM

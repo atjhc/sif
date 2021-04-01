@@ -27,7 +27,7 @@
 using namespace chatter;
 using namespace chatter::ast;
 
-#include "parser/yy_shared.h"
+#include "yyParser.h"
 
 #define LEX_RETURN(token) \
 	{ \

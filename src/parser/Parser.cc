@@ -30,7 +30,7 @@ using namespace chatter::ast;
 
 #include <sstream>
 
-extern int yyparse(yyscan_t scanner, chatter::ParserContext &);
+// extern int yyparse(yyscan_t scanner, chatter::ParserContext &);
 
 CH_NAMESPACE_BEGIN
 

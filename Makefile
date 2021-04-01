@@ -1,7 +1,8 @@
 CC := clang++
-BISON := bison
-# BISON := /usr/local/opt/bison/bin/bison
-FLEX := flex
+# BISON := bison
+# FLEX := flex
+BISON := /usr/local/opt/bison/bin/bison
+FLEX := /usr/local/opt/flex/bin/flex
 
 LIBNAME := chatter.a
 TOOLNAME := chatter
