@@ -151,6 +151,10 @@ Value Runtime::get(const std::string &name) const {
 }
 
 void Runtime::execute(const ast::Handler &handler, const std::vector<Value> &values) {
+    if (handler.statements == nullptr) {
+        return;
+    }
+
     std::vector<std::string> argumentNames;
     if (handler.arguments) {
         for (auto &argument : handler.arguments->identifiers) {
@@ -187,7 +191,7 @@ void Runtime::report(const RuntimeError &error) const {
 
 #if defined(DEBUG)
 void Runtime::trace(const std::string &msg) const {
-    if (config.tracing) {
+    if (config.enableTracing) {
         config.stdout << "runtime: " << msg << std::endl;
     }
 }

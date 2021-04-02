@@ -49,9 +49,15 @@ struct Command : Statement {
     Owned<Identifier> name;
     Owned<ExpressionList> arguments;
 
-    Command(Identifier *_name, ExpressionList *_arguments = nullptr)
-        : name(_name), arguments(_arguments) {}
+    Command(Owned<Identifier> &n, Owned<ExpressionList> &args)
+        : name(std::move(n)), arguments(std::move(args)) {}
+    
+    Command(Owned<Identifier> &n)
+        : name(std::move(n)), arguments(nullptr) {}
 
+    Command(Identifier *n)
+        : name(n), arguments(nullptr) {}
+    
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
     virtual void perform(CommandVisitor &visitor) const { 
@@ -66,7 +72,7 @@ struct Preposition : Node {
 
     PrepositionType type;
 
-    Preposition(PrepositionType _type) : type(_type) {}
+    Preposition(PrepositionType t) : type(t) {}
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -78,9 +84,13 @@ struct Put : Command {
     Owned<Preposition> preposition;
     Owned<Identifier> target;
 
-    Put(Expression *_expression, Preposition *_preposition, Identifier *_target)
-        : Command(new Identifier("put")), expression(_expression), preposition(_preposition),
-          target(_target) {}
+    Put(Owned<Expression> &e, Owned<Preposition> &p, Owned<Identifier> &t)
+        : Command(new Identifier("put")), expression(std::move(e)), preposition(std::move(p)),
+          target(std::move(t)) {}
+
+    Put(Owned<Expression> &e)
+        : Command(new Identifier("put")), expression(std::move(e)), preposition(nullptr),
+          target(nullptr) {}
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
 
@@ -90,7 +100,7 @@ struct Put : Command {
 struct Get : Command {
     Owned<Expression> expression;
 
-    Get(Expression *_expression) : Command(new Identifier("get")), expression(_expression) {}
+    Get(Owned<Expression> &e) : Command(new Identifier("get")), expression(std::move(e)) {}
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
 
@@ -100,7 +110,7 @@ struct Get : Command {
 struct Ask : Command {
     Owned<Expression> expression;
 
-    Ask(Expression *_expression) : Command(new Identifier("ask")), expression(_expression) {}
+    Ask(Owned<Expression> &e) : Command(new Identifier("ask")), expression(std::move(e)) {}
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
 
@@ -111,8 +121,8 @@ struct Add : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Add(Expression *_expression, Identifier *_destination)
-        : Command(new Identifier("add")), expression(_expression), destination(_destination) {}
+    Add(Owned<Expression> &e, Owned<Identifier> &d)
+        : Command(new Identifier("add")), expression(std::move(e)), destination(std::move(d)) {}
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
 
@@ -123,8 +133,8 @@ struct Subtract : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Subtract(Expression *_expression, Identifier *_destination)
-        : Command(new Identifier("subtract")), expression(_expression), destination(_destination) {}
+    Subtract(Owned<Expression> &e, Owned<Identifier> &d)
+        : Command(new Identifier("subtract")), expression(std::move(e)), destination(std::move(d)) {}
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
 
@@ -135,8 +145,8 @@ struct Multiply : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Multiply(Expression *_expression, Identifier *_destination)
-        : Command(new Identifier("multiply")), expression(_expression), destination(_destination) {}
+    Multiply(Owned<Expression> &e, Owned<Identifier> &d)
+        : Command(new Identifier("multiply")), expression(std::move(e)), destination(std::move(d)) {}
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
 
@@ -147,8 +157,8 @@ struct Divide : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Divide(Expression *_expression, Identifier *_destination)
-        : Command(new Identifier("divide")), expression(_expression), destination(_destination) {}
+    Divide(Owned<Expression> &e, Owned<Identifier> &d)
+        : Command(new Identifier("divide")), expression(std::move(e)), destination(std::move(d)) {}
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
 

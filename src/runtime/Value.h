@@ -23,6 +23,7 @@
 #include <iomanip>
 #include <ostream>
 #include <sstream>
+#include <string>
 
 #include <iostream>
 
@@ -44,7 +45,7 @@ class Value {
         value = ss.str();
     }
     Value(float f) : Value(double(f)) {}
-    
+
     template<typename T>
     Value(T v) : value(std::to_string(v)) {}
 

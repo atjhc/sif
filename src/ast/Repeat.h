@@ -29,7 +29,7 @@ CH_AST_NAMESPACE_BEGIN
 struct Repeat : Statement {
     Owned<StatementList> statements;
 
-    Repeat(StatementList *_statements) : statements(_statements) {}
+    Repeat(Owned<StatementList> &s) : statements(std::move(s)) {}
 
     virtual void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
@@ -40,8 +40,8 @@ struct Repeat : Statement {
 struct RepeatCount : Repeat {
     Owned<Expression> countExpression;
 
-    RepeatCount(Expression *_countExpression, StatementList *_statements)
-        : Repeat(_statements), countExpression(_countExpression) {}
+    RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s)
+        : Repeat(s), countExpression(std::move(cs)) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
@@ -54,10 +54,10 @@ struct RepeatRange : Repeat {
     Owned<Expression> endExpression;
     bool ascending;
 
-    RepeatRange(Identifier *_variable, Expression *_startExpression, Expression *_endExpression,
-                bool _ascending, StatementList *_statements)
-        : Repeat(_statements), variable(_variable), startExpression(_startExpression),
-          endExpression(_endExpression), ascending(_ascending) {}
+    RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee,
+                bool asc, Owned<StatementList> &s)
+        : Repeat(s), variable(std::move(v)), startExpression(std::move(se)),
+          endExpression(std::move(ee)), ascending(asc) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
@@ -68,8 +68,8 @@ struct RepeatCondition : Repeat {
     Owned<Expression> condition;
     bool conditionValue;
 
-    RepeatCondition(Expression *_condition, bool _conditionValue, StatementList *_statements)
-        : Repeat(_statements), condition(_condition), conditionValue(_conditionValue) {}
+    RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl)
+        : Repeat(sl), condition(std::move(c)), conditionValue(cv) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 

@@ -14,16 +14,15 @@
 //  limitations under the License.
 //
 
+%require "3.7"
+
 %{
 
 #include <string>
 #include <iostream>
 #include <cstdlib>
 
-#include "ast/Script.h"
-#include "ast/Chunk.h"
-#include "ast/Command.h"
-#include "ast/Repeat.h"
+#include "Common.h"
 #include "parser/Parser.h"
 
 using namespace chatter;
@@ -33,47 +32,37 @@ using namespace chatter::ast;
 
 %code provides {
     #define YY_DECL \
-        int yylex(YYSTYPE *yylval_param, YYLTYPE *yylloc, void *yyscanner, ParserContext &context)
+        int yylex(yy::parser::semantic_type* yylval, \
+                  yy::parser::location_type* yylloc, \
+                  void *yyscanner,                   \
+                  chatter::ParserContext &context)
     extern YY_DECL;
 }
 
-%require "3.7"
+//%define api.pure
+//%language "c++"
+%skeleton "lalr1.cc"
 
-//%pure-parser
-%define api.pure
-
-%lex-param { scanner } { context }
-%parse-param { yyscan_t scanner } { chatter::ParserContext &context }
+%param { yyscan_t scanner } { chatter::ParserContext &ctx }
 
 %define api.location.type { ParseLocation }
-%code requires { #include "parser/yy_shared.h" }
+%code requires { 
+    #include "parser/yy_shared.h"
+    #include "ast/Script.h"
+    #include "ast/Chunk.h"
+    #include "ast/Command.h"
+    #include "ast/Repeat.h"
+}
 
-//%error-verbose
-%define parse.error verbose
+%define parse.error detailed
+%define api.value.type variant
+%define api.token.raw
+//%define api.value.automove
+//%define api.token.constructor
 
 %verbose
 %locations
 %expect 0
-
-%union {
-    Script          *script;
-    Handler         *handler;
-    Statement       *statement;
-    StatementList   *statementList;
-    Identifier      *identifier;
-    IdentifierList  *identifierList;
-    Expression      *expression;
-    ExpressionList  *expressionList;
-    Preposition     *preposition;
-    Chunk           *chunk;
-    Chunk::Type      chunkType;
-}
-
-%{
-
-int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
-
-%}
 
 // Virtual start tokens.
 %token START_SCRIPT
@@ -120,25 +109,25 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 %nonassoc THEN
 %nonassoc ELSE
 
-%token <expression> FLOAT_LITERAL INT_LITERAL STRING_LITERAL
-%token <identifier> IDENTIFIER
+%token <Owned<Expression>> FLOAT_LITERAL INT_LITERAL STRING_LITERAL
+%token <Owned<Identifier>> IDENTIFIER
 
-%nterm <script> script
-%nterm <handler> handler
-%nterm <identifier> messageKey
-%nterm <identifierList> maybeIdentifierList identifierList
-%nterm <statementList> statementList maybeStatementList elseBlock
-%nterm <statement> statement ifStatement keywordStatement commandStatement
-%nterm <statement> repeatStatement repeatForever repeatCount repeatCondition repeatRange
-%nterm <expression> expression ifCondition functionCall ordinal constant
-%nterm <chunk> chunk
-%nterm <chunkType> chunkType
-%nterm <expressionList> expressionList
-%nterm <preposition> preposition
+%nterm <Owned<Script>> script
+%nterm <Owned<Handler>> handler
+%nterm <Owned<Identifier>> messageKey
+%nterm <Owned<IdentifierList>> maybeIdentifierList identifierList
+%nterm <Owned<StatementList>> statementList maybeStatementList elseBlock
+%nterm <Owned<Statement>> statement ifStatement keywordStatement commandStatement
+%nterm <Owned<Statement>> repeatStatement repeatForever repeatCount repeatCondition repeatRange
+%nterm <Owned<Expression>> expression ifCondition functionCall ordinal constant
+%nterm <Owned<Chunk>> chunk
+%nterm <Chunk::Type> chunkType
+%nterm <Owned<ExpressionList>> expressionList
+%nterm <Owned<Preposition>> preposition
 
-%destructor { delete $$; $$ = nullptr; } IDENTIFIER INT_LITERAL STRING_LITERAL FLOAT_LITERAL
-%destructor { delete $$; $$ = nullptr; } maybeStatementList handler statementList statement messageKey
-%destructor { delete $$; $$ = nullptr; } chunk preposition ordinal constant functionCall expression expressionList
+//%destructor { delete $$; $$ = nullptr; } IDENTIFIER INT_LITERAL STRING_LITERAL FLOAT_LITERAL
+//%destructor { delete $$; $$ = nullptr; } maybeStatementList handler statementList statement messageKey
+//%destructor { delete $$; $$ = nullptr; } chunk preposition ordinal constant functionCall expression expressionList
 
 %start start
 
@@ -146,25 +135,25 @@ int yyerror(YYLTYPE*, yyscan_t, ParserContext&, const char *);
 
 start
     : START_SCRIPT script { 
-        context.script = $2;
+        ctx.script = std::move($2);
     }
     | START_STATEMENT statement {
-        context.statement = $2;
+        ctx.statement = std::move($2);
     }
     | START_EXPRESSION expression {
-        context.expression = $2;
+        ctx.expression = std::move($2);
     }
 ;
 
 script
     : handler {
-        $$ = new Script();
+        $$ = MakeOwned<Script>();
         if ($1) {
             $$->add($1);
         } 
     }
     | script EOL handler { 
-        $$ = $1;
+        $$ = std::move($1);
         if ($3) {
             $$->add($3);
         }
@@ -180,12 +169,11 @@ handler
       END messageKey {
         if ($2 && $7) {
             if ($2->name == $7->name) {
-                $$ = new Handler(Handler::HandlerKind, $2, $3, $5);
+                $$ = MakeOwned<Handler>(Handler::HandlerKind, $2, $3, $5);
                 $$->location = @2.first;
-                delete $7;
             } else {
                 auto msg = "Expected " + $2->name + ", got " + $7->name;
-                yyerror(&yylloc, scanner, context, msg.c_str());
+                error(@$, msg.c_str());
             }
         } else {
             $$ = nullptr;
@@ -196,12 +184,11 @@ handler
       END messageKey {
         if ($2 && $7) {
             if ($2->name == $7->name) {
-                $$ = new Handler(Handler::FunctionKind, $2, $3, $5);
+                $$ = MakeOwned<Handler>(Handler::FunctionKind, $2, $3, $5);
                 $$->location = @2.first;
-                delete $7;
             } else {
                 auto msg = "Expected " + $2->name + ", got " + $7->name;
-                yyerror(&yylloc, scanner, context, msg.c_str());
+                error(@$, msg.c_str());
             }
         } else {
             $$ = nullptr;
@@ -214,14 +201,14 @@ maybeIdentifierList
         $$ = nullptr;
     }
     | identifierList {
-        $$ = $1;
+        $$ = std::move($1);
     }
 ;
 
 identifierList
     : IDENTIFIER {
         if ($1) {
-            $$ = new IdentifierList();
+            $$ = MakeOwned<IdentifierList>();
             $$->add($1);
         } else {
             $$ = nullptr;
@@ -229,7 +216,7 @@ identifierList
     }
     | identifierList COMMA IDENTIFIER {
         if ($1 && $3) {
-            $$ = $1;
+            $$ = std::move($1);
             $$->add($3);
         } else {
             $$ = nullptr;
@@ -242,14 +229,14 @@ maybeStatementList
         $$ = nullptr;    
     }
     | statementList {
-        $$ = $1;
+        $$ = std::move($1);
     }
 ;
 
 statementList
     : statement { 
         if ($1) {
-            $$ = new StatementList();
+            $$ = MakeOwned<StatementList>();
             $$->add($1);
         } else {
             $$ = nullptr;
@@ -257,133 +244,132 @@ statementList
     }
     | statementList EOL statement {
         if ($3) {
-            $$ = $1;
+            $$ = std::move($1);
             $$->add($3);
         } else {
-            delete $1;
             $$ = nullptr;
         }
     }
     | statementList EOL {
-        $$ = $1;
+        $$ = std::move($1);
     }
 ;
 
 statement
     : keywordStatement { 
-        $$ = $1;
+        $$ = std::move($1);
     } 
     | commandStatement {
-        $$ = $1;
+        $$ = std::move($1);
     }
 ;
 
 messageKey
     : IDENTIFIER {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | PUT {
-        $$ = new Identifier("put");
+        $$ = MakeOwned<Identifier>("put");
         $$->location = @1.first;
     }
     | GET {
-        $$ = new Identifier("get");
+        $$ = MakeOwned<Identifier>("get");
         $$->location = @1.first;
     }
     | ASK {
-        $$ = new Identifier("ask");
+        $$ = MakeOwned<Identifier>("ask");
         $$->location = @1.first;
     }
     | ADD {
-        $$ = new Identifier("add");
+        $$ = MakeOwned<Identifier>("add");
         $$->location = @1.first;
     }
     | SUBTRACT {
-        $$ = new Identifier("subtract");
+        $$ = MakeOwned<Identifier>("subtract");
         $$->location = @1.first;
     }
     | MULTIPLY {
-        $$ = new Identifier("multiply");
+        $$ = MakeOwned<Identifier>("multiply");
         $$->location = @1.first;
     }
     | DIVIDE {
-        $$ = new Identifier("divide");
+        $$ = MakeOwned<Identifier>("divide");
         $$->location = @1.first;
     }
 ;
 
 keywordStatement
     : EXIT REPEAT { 
-        $$ = new ExitRepeat();
+        $$ = MakeOwned<ExitRepeat>();
         $$->location = @1.first;
     }
     | NEXT REPEAT { 
-        $$ = new NextRepeat();
+        $$ = MakeOwned<NextRepeat>();
         $$->location = @1.first;
     }
     | EXIT messageKey {
-        $$ = new Exit($2);
+        $$ = MakeOwned<Exit>($2);
         $$->location = @1.first;
     }
     | PASS messageKey { 
-        $$ = new Pass($2);
+        $$ = MakeOwned<Pass>($2);
         $$->location = @1.first;
     }
     | GLOBAL identifierList {
-        $$ = new Global($2);
+        $$ = MakeOwned<Global>($2);
         $$->location = @1.first;
     }
     | RETURN expression {
-        $$ = new Return($2);
+        $$ = MakeOwned<Return>($2);
         $$->location = @1.first;
     }
     | ifStatement {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | repeatStatement {
-        $$ = $1;
+        $$ = std::move($1);
     }
 ;
 
 commandStatement
     : PUT expression {
-        $$ = new Put($2, nullptr, nullptr);
+        $$ = MakeOwned<Put>($2);
         $$->location = @1.first;
     }
     | PUT expression preposition IDENTIFIER {
-        $$ = new Put($2, $3, $4);
+        $$ = MakeOwned<Put>($2, $3, $4);
         $$->location = @1.first;
     }
     | GET expression {
-        $$ = new Get($2);
+        $$ = MakeOwned<Get>($2);
         $$->location = @1.first;
     }
     | ASK expression {
-        $$ = new Ask($2);
+        $$ = MakeOwned<Ask>($2);
         $$->location = @1.first;
     }
     | ADD expression TO IDENTIFIER {
-        $$ = new Add($2, $4);
+        $$ = MakeOwned<Add>($2, $4);
         $$->location = @1.first;
     }
     | SUBTRACT expression FROM IDENTIFIER {
-        $$ = new Subtract($2, $4);
+        $$ = MakeOwned<Subtract>($2, $4);
         $$->location = @1.first;
     }
     | MULTIPLY IDENTIFIER BY expression {
-        $$ = new Multiply($4, $2);
+        $$ = MakeOwned<Multiply>($4, $2);
         $$->location = @1.first;
     }
     | DIVIDE IDENTIFIER BY expression {
-        $$ = new Divide($4, $2);
+        $$ = MakeOwned<Divide>($4, $2);
         $$->location = @1.first;
     }
     | IDENTIFIER {
-        $$ = new Command($1, nullptr);
+        $$ = MakeOwned<Command>($1);
         $$->location = @1.first;
     }
     | IDENTIFIER expressionList {
-        $$ = new Command($1, $2);
+        $$ = MakeOwned<Command>($1, $2);
         $$->location = @1.first;
     }
 ;
@@ -391,7 +377,7 @@ commandStatement
 ifStatement
     : ifCondition THEN statement {
         if ($1 && $3) {
-            $$ = new If($1, new StatementList($3), nullptr);
+            $$ = MakeOwned<If>($1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -399,7 +385,7 @@ ifStatement
     }
     | ifCondition THEN EOL statementList END IF {
         if ($1 && $4) {
-            $$ = new If($1, $4, nullptr);
+            $$ = MakeOwned<If>($1, $4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -407,7 +393,7 @@ ifStatement
     }
     | ifCondition THEN statement elseBlock {
         if ($1 && $3 && $4) {
-            $$ = new If($1, new StatementList($3), $4);
+            $$ = MakeOwned<If>($1, $3, $4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -415,7 +401,7 @@ ifStatement
     } 
     | ifCondition THEN EOL statementList elseBlock {
         if ($1 && $4 && $5) {
-            $$ = new If($1, $4, $5);
+            $$ = MakeOwned<If>($1, $4, $5);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -438,38 +424,38 @@ ifStatement
 elseBlock
     : ELSE statement {
         if ($2) {
-            $$ = new StatementList($2);
+            $$ = MakeOwned<StatementList>($2);
             $$->location = @2.first;
         } else {
             $$ = nullptr;
         }
     }
     | ELSE EOL statementList END IF {
-        $$ = $3;
+        $$ = std::move($3);
     }
 ;
 
 ifCondition
     : IF expression {
-        $$ = $2;
+        $$ = std::move($2);
     }
     | IF expression EOL {
-        $$ = $2;
+        $$ = std::move($2);
     }
 ;
 
 repeatStatement
     : repeatForever {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | repeatCount {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | repeatCondition {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | repeatRange {
-        $$ = $1;
+        $$ = std::move($1);
     }
 ;
 
@@ -478,7 +464,7 @@ repeatForever
         statementList 
       END REPEAT {
         if ($4) {
-            $$ = new Repeat($4);
+            $$ = MakeOwned<Repeat>($4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -491,7 +477,7 @@ repeatCount
         statementList 
       END REPEAT {
         if ($3) {
-            $$ = new RepeatCount($3, $6);
+            $$ = MakeOwned<RepeatCount>($3, $6);
             $$->location = @1.first;
        } else {
             $$ = nullptr;
@@ -504,7 +490,7 @@ repeatCondition
         statementList 
       END REPEAT {
         if ($3) {
-            $$ = new RepeatCondition($3, true, $5);
+            $$ = MakeOwned<RepeatCondition>($3, true, $5);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -514,7 +500,7 @@ repeatCondition
         statementList 
       END REPEAT {
         if ($3) {
-            $$ = new RepeatCondition($3, false, $5);
+            $$ = MakeOwned<RepeatCondition>($3, false, $5);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -527,7 +513,7 @@ repeatRange
         statementList
       END REPEAT {
         if ($5 && $7) {
-            $$ = new RepeatRange($3, $5, $7, true, $9);
+            $$ = MakeOwned<RepeatRange>($3, $5, $7, true, $9);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -537,7 +523,7 @@ repeatRange
         statementList
       END REPEAT {
         if ($5 && $8) {
-            $$ = new RepeatRange($3, $5, $8, false, $10);
+            $$ = MakeOwned<RepeatRange>($3, $5, $8, false, $10);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -562,11 +548,11 @@ maybeTimes
 
 expression
     : LPAREN expression RPAREN {
-        $$ = $2;
+        $$ = std::move($2);
     }
     | expression PLUS expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Plus, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Plus, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -574,7 +560,7 @@ expression
     }
     | expression MINUS expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Minus, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Minus, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -582,7 +568,7 @@ expression
     }
     | expression MULT expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Multiply, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Multiply, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -590,7 +576,7 @@ expression
     }
     | expression DIV expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Divide, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Divide, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -598,7 +584,7 @@ expression
     } 
     | expression IS expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Equal, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -606,7 +592,7 @@ expression
     }
     | expression EQ expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Equal, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Equal, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -614,7 +600,7 @@ expression
     }
     | expression MOD expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Mod, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Mod, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -622,7 +608,7 @@ expression
     }
     | expression NEQ expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::NotEqual, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::NotEqual, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -630,7 +616,7 @@ expression
     }
     | expression OR expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Or, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Or, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -638,7 +624,7 @@ expression
     }
     | expression AND expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::And, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::And, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -646,7 +632,7 @@ expression
     }
     | expression IS IN expression %prec AND {
         if ($1 && $4) {
-            $$ = new BinaryOp(BinaryOp::IsIn, $1, $4);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::IsIn, $1, $4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -654,7 +640,7 @@ expression
     }
     | expression CONTAINS expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Contains, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Contains, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -662,7 +648,7 @@ expression
     }
     | expression LT expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::LessThan, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::LessThan, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -670,7 +656,7 @@ expression
     }
     | expression GT expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::GreaterThan, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::GreaterThan, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -678,7 +664,7 @@ expression
     } 
     | expression LTE expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::LessThanOrEqual, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::LessThanOrEqual, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -686,7 +672,7 @@ expression
     }
     | expression GTE expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::GreaterThanOrEqual, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::GreaterThanOrEqual, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -694,7 +680,7 @@ expression
     }
     | expression CONCAT expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Concat, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Concat, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -702,7 +688,7 @@ expression
     }
     | expression CONCAT_SPACE expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::ConcatWithSpace, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::ConcatWithSpace, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -710,26 +696,26 @@ expression
     }
     | expression CARROT expression {
         if ($1 && $3) {
-            $$ = new BinaryOp(BinaryOp::Exponent, $1, $3);
+            $$ = MakeOwned<BinaryOp>(BinaryOp::Exponent, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
     }
     | chunk OF expression {
-        if ($1) {
-            $$ = $1;
-            $1->expression = $3;
+        if ($1 && $3) {
+            $1->expression = std::move($3);
+            $$ = std::move($1);
         } else {
             $$ = nullptr;
         }
     }
     | functionCall {
-        $$ = $1;
+        $$ = std::move($1);
     } 
     | MINUS expression {
         if ($2) {
-            $$ = new Minus($2);
+            $$ = MakeOwned<Minus>($2);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -737,37 +723,37 @@ expression
     } 
     | NOT expression {
         if ($2) {
-            $$ = new Not($2);
+            $$ = MakeOwned<Not>($2);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
     }
     | constant {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | IDENTIFIER {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | INT_LITERAL {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | FLOAT_LITERAL {
-        $$ = $1;
+        $$ = std::move($1);
     }
     | STRING_LITERAL {
-        $$ = $1;
+        $$ = std::move($1);
     }
 ;
 
 functionCall
     : THE IDENTIFIER {
-        $$ = new FunctionCall($2, nullptr);
+        $$ = MakeOwned<FunctionCall>($2);
         $$->location = @2.first;
     }
     | THE IDENTIFIER OF expression {
         if ($4) {
-            $$ = new FunctionCall($2, new ExpressionList($4));
+            $$ = MakeOwned<FunctionCall>($2, $4);
             $$->location = @2.first;
         } else {
             $$ = nullptr;
@@ -775,14 +761,14 @@ functionCall
     }
     | IDENTIFIER LPAREN expressionList RPAREN {
         if ($3) {
-            $$ = new FunctionCall($1, $3);
+            $$ = MakeOwned<FunctionCall>($1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
     }
     | IDENTIFIER LPAREN RPAREN {
-        $$ = new FunctionCall($1, nullptr);
+        $$ = MakeOwned<FunctionCall>($1);
         $$->location = @1.first;
     }
 ;
@@ -790,7 +776,7 @@ functionCall
 expressionList
     : expression {
         if ($1) {
-            $$ = new ExpressionList();
+            $$ = MakeOwned<ExpressionList>();
             $$->add($1);
         } else {
             $$ = nullptr;
@@ -798,7 +784,7 @@ expressionList
     }
     | expressionList COMMA expression {
         if ($1 && $3) {
-            $$ = $1;
+            $$ = std::move($1);
             $$->add($3);
         } else {
             $$ = nullptr;
@@ -808,39 +794,39 @@ expressionList
 
 preposition
     : INTO {
-        $$ = new Preposition(Preposition::Into);
+        $$ = MakeOwned<Preposition>(Preposition::Into);
     }
     | BEFORE {
-        $$ = new Preposition(Preposition::Before);
+        $$ = MakeOwned<Preposition>(Preposition::Before);
     }
     | AFTER {
-        $$ = new Preposition(Preposition::After);
+        $$ = MakeOwned<Preposition>(Preposition::After);
     }
 ;
 
 chunk
     : maybeThe ordinal chunkType {
-        $$ = new RangeChunk($3, $2, nullptr);
+        $$ = MakeOwned<RangeChunk>($3, $2);
         $$->location = @2.first;
     }
     | chunkType expression {
-        $$ = new RangeChunk($1, $2, nullptr);
+        $$ = MakeOwned<RangeChunk>($1, $2);
         $$->location = @1.first;
     }
     | chunkType expression TO expression {
-        $$ = new RangeChunk($1, $2, $4);
+        $$ = MakeOwned<RangeChunk>($1, $2, $4);
         $$->location = @1.first;
     }
     | ANY chunkType {
-        $$ = new AnyChunk($2);
+        $$ = MakeOwned<AnyChunk>($2);
         $$->location = @1.first;
     }
     | maybeThe MIDDLE chunkType {
-        $$ = new MiddleChunk($3);
+        $$ = MakeOwned<MiddleChunk>($3);
         $$->location = @2.first;
     }
     | maybeThe LAST chunkType {
-        $$ = new LastChunk($3);
+        $$ = MakeOwned<LastChunk>($3);
         $$->location = @2.first;
     }
 ;
@@ -862,94 +848,94 @@ chunkType
 
 ordinal
     : FIRST {
-        $$ = new IntLiteral(1);
+        $$ = MakeOwned<IntLiteral>(1);
     }
     | SECOND {
-        $$ = new IntLiteral(2);
+        $$ = MakeOwned<IntLiteral>(2);
     }
     | THIRD {
-        $$ = new IntLiteral(3);
+        $$ = MakeOwned<IntLiteral>(3);
     }
     | FOURTH {
-        $$ = new IntLiteral(4);
+        $$ = MakeOwned<IntLiteral>(4);
     }
     | FIFTH {
-        $$ = new IntLiteral(5);
+        $$ = MakeOwned<IntLiteral>(5);
     }
     | SIXTH {
-        $$ = new IntLiteral(6);
+        $$ = MakeOwned<IntLiteral>(6);
     }
     | SEVENTH {
-        $$ = new IntLiteral(7);
+        $$ = MakeOwned<IntLiteral>(7);
     }
     | EIGHTH {
-        $$ = new IntLiteral(8);
+        $$ = MakeOwned<IntLiteral>(8);
     }
     | NINTH {
-        $$ = new IntLiteral(9);
+        $$ = MakeOwned<IntLiteral>(9);
     }
     | TENTH {
-        $$ = new IntLiteral(10);
+        $$ = MakeOwned<IntLiteral>(10);
     }
 ;
 
 constant
     : TRUE {
-        $$ = new StringLiteral("true");
+        $$ = MakeOwned<StringLiteral>("true");
     }
     | FALSE {
-        $$ = new StringLiteral("false");
+        $$ = MakeOwned<StringLiteral>("false");
     }
     | EMPTY {
-        $$ = new StringLiteral("");
+        $$ = MakeOwned<StringLiteral>("");
     }
     | RETURN {
-        $$ = new StringLiteral("\n");
+        $$ = MakeOwned<StringLiteral>("\n");
     }
     | TAB {
-        $$ = new StringLiteral("\t");
+        $$ = MakeOwned<StringLiteral>("\t");
     }
     | SPACE {
-        $$ = new StringLiteral(" ");
+        $$ = MakeOwned<StringLiteral>(" ");
     }
     | QUOTE {
-        $$ = new StringLiteral("\"");
+        $$ = MakeOwned<StringLiteral>("\"");
     }
     | ZERO {
-        $$ = new IntLiteral(0);
+        $$ = MakeOwned<IntLiteral>(0);
     }
     | ONE {
-        $$ = new IntLiteral(1);
+        $$ = MakeOwned<IntLiteral>(1);
     }
     | TWO {
-        $$ = new IntLiteral(2);
+        $$ = MakeOwned<IntLiteral>(2);
     }
     | THREE {
-        $$ = new IntLiteral(3);
+        $$ = MakeOwned<IntLiteral>(3);
     }
     | FOUR {
-        $$ = new IntLiteral(4);
+        $$ = MakeOwned<IntLiteral>(4);
     }
     | FIVE {
-        $$ = new IntLiteral(5);
+        $$ = MakeOwned<IntLiteral>(5);
     }
     | SIX {
-        $$ = new IntLiteral(6);
+        $$ = MakeOwned<IntLiteral>(6);
     }
     | SEVEN {
-        $$ = new IntLiteral(7);
+        $$ = MakeOwned<IntLiteral>(7);
     }
     | EIGHT {
-        $$ = new IntLiteral(8);
+        $$ = MakeOwned<IntLiteral>(8);
     }
     | NINE {
-        $$ = new IntLiteral(9);
+        $$ = MakeOwned<IntLiteral>(9);
     }
     | TEN {
-        $$ = new IntLiteral(10);
+        $$ = MakeOwned<IntLiteral>(10);
     }
     | PI {
-        $$ = new FloatLiteral(M_PI);
+        $$ = MakeOwned<IntLiteral>(M_PI);
     }
 ;
 
@@ -960,7 +946,6 @@ maybeThe
 
 %%
 
-int yyerror(YYLTYPE *yylloc, yyscan_t scanner, ParserContext &context, const char *msg) {
-    context.error(yylloc->first, msg);
-    return 0;
+void yy::parser::error(const yy::parser::location_type &location, const std::string &msg) {
+    ctx.error(location.first, msg);
 }

@@ -65,10 +65,10 @@ struct ExpressionList : Node {
 
     ExpressionList() {}
 
-    ExpressionList(Expression *expression) { add(expression); }
+    ExpressionList(Owned<Expression> &e) { add(e); }
 
-    void add(Expression *expression) {
-        expressions.push_back(Owned<Expression>(expression));
+    void add(Owned<Expression> &e) {
+        expressions.push_back(std::move(e));
     }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
@@ -77,7 +77,8 @@ struct ExpressionList : Node {
 struct Identifier : Expression {
     std::string name;
 
-    Identifier(const std::string &_name) : name(_name) {}
+    Identifier(const std::string &n) : name(n) {}
+    Identifier(const char *n) : name(n) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -88,8 +89,14 @@ struct FunctionCall : Expression {
     Owned<Identifier> identifier;
     Owned<ExpressionList> arguments;
 
-    FunctionCall(Identifier *_identifier, ExpressionList *_arguments)
-        : identifier(_identifier), arguments(_arguments) {}
+    FunctionCall(Owned<Identifier> &id, Owned<ExpressionList> &args)
+        : identifier(std::move(id)), arguments(std::move(args)) {}
+
+    FunctionCall(Owned<Identifier> &id, Owned<Expression> &arg)
+        : identifier(std::move(id)), arguments(MakeOwned<ExpressionList>(arg)) {}
+
+    FunctionCall(Owned<Identifier> &id)
+        : identifier(std::move(id)), arguments(nullptr) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -121,8 +128,8 @@ struct BinaryOp : Expression {
     Operator op;
     Owned<Expression> left, right;
 
-    BinaryOp(Operator _op, Expression *_left, Expression *_right)
-        : op(_op), left(_left), right(_right) {}
+    BinaryOp(Operator o, Owned<Expression> &l, Owned<Expression> &r)
+        : op(o), left(std::move(l)), right(std::move(r)) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -132,7 +139,7 @@ struct BinaryOp : Expression {
 struct Not : Expression {
     Owned<Expression> expression;
 
-    Not(Expression *_expression) : expression(_expression) {}
+    Not(Owned<Expression> &e) : expression(std::move(e)) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -142,7 +149,7 @@ struct Not : Expression {
 struct Minus : Expression {
     Owned<Expression> expression;
 
-    Minus(Expression *_expression) : expression(_expression) {}
+    Minus(Owned<Expression> &e) : expression(std::move(e)) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -152,7 +159,7 @@ struct Minus : Expression {
 struct FloatLiteral : Expression {
     float value;
 
-    FloatLiteral(float _value) : value(_value) {}
+    FloatLiteral(float v) : value(v) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -162,7 +169,7 @@ struct FloatLiteral : Expression {
 struct IntLiteral : Expression {
     int value;
 
-    IntLiteral(int _value) : value(_value) {}
+    IntLiteral(int i) : value(i) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -172,7 +179,7 @@ struct IntLiteral : Expression {
 struct StringLiteral : Expression {
     std::string value;
 
-    StringLiteral(const std::string &_value) : value(_value) {}
+    StringLiteral(const std::string &v) : value(v) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 

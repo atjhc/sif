@@ -57,6 +57,7 @@ format:
 	find src -name '*.cc' -exec clang-format -i --style=file {} \;
 	find src -name '*.h' -exec clang-format -i --style=file {} \;
 
+test: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
 test: $(DSTROOT)/test
 	$(DSTROOT)/test $(SRCROOT)/tests
 

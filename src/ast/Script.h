@@ -31,7 +31,7 @@ struct Script : Node {
 
     Script() {}
 
-    void add(Handler *handler) { handlers.push_back(Owned<Handler>(handler)); }
+    void add(Owned<Handler> &handler) { handlers.push_back(std::move(handler)); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

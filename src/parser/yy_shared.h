@@ -21,6 +21,11 @@ struct ParseLocation {
     Location last;
 };
 
+static inline std::ostream &operator<<(std::ostream &out, const ParseLocation &location) {
+    out << location.first << ":" << location.last;
+    return out;
+}
+
 #define YYLLOC_DEFAULT(Cur, Rhs, N)                             \
     do                                                          \
         if (N) {                                                \

@@ -29,9 +29,9 @@ using namespace chatter::ast;
 
 #include "yyParser.h"
 
-#define LEX_RETURN(token) \
+#define LEX_RETURN(NAME) \
 	{ \
-		return token; \
+		return yy::parser::token::NAME; \
 	}
 
 #define YY_USER_ACTION \
@@ -46,10 +46,12 @@ using namespace chatter::ast;
         } \
     }
 
+// %option reentrant bison-bridge
+// %option noyywrap yylineno nounput noinput batch
+
 %}
 
-%option reentrant bison-bridge
-%option noyywrap yylineno
+%option yylineno noyywrap reentrant nounput
 
 %%
 
@@ -58,11 +60,11 @@ using namespace chatter::ast;
 		context.selectingMode = false;
 		switch (context.parsingMode) {
 		case ParserContext::Script:
-			return START_SCRIPT;
+			return yy::parser::token::START_SCRIPT;
 		case ParserContext::Statement:
-			return START_STATEMENT;
+			return yy::parser::token::START_STATEMENT;
 		case ParserContext::Expression:
-			return START_EXPRESSION;
+			return yy::parser::token::START_EXPRESSION;
 		}
 	}
 %}
@@ -149,8 +151,6 @@ using namespace chatter::ast;
 
 do							LEX_RETURN(DO);
 next						LEX_RETURN(NEXT);
-send						LEX_RETURN(SEND);
-window						LEX_RETURN(WINDOW);
 program						LEX_RETURN(PROGRAM);
 for 						LEX_RETURN(FOR);
 an 							LEX_RETURN(AN);
@@ -159,7 +159,6 @@ in 							LEX_RETURN(IN);
 within 						LEX_RETURN(WITHIN);
 formFeed 					LEX_RETURN(FORM_FEED);
 lineFeed 					LEX_RETURN(LINE_FEED);
-up 							LEX_RETURN(UP);
 
 "("							LEX_RETURN(LPAREN);
 ")"							LEX_RETURN(RPAREN);
@@ -181,23 +180,27 @@ up 							LEX_RETURN(UP);
 
 
 (([1-9][0-9]*)|0) {
-	yylval->expression = new IntLiteral(atoi(yytext));
+	auto expression = new IntLiteral(atoi(yytext));
+	yylval->emplace<Expression*>(expression);
 	LEX_RETURN(INT_LITERAL); 
 };
 
 (([1-9][0-9]*)|0)(\.[0-9][0-9]*)? { 
-	yylval->expression = new FloatLiteral(atof(yytext));
+	auto expression = new FloatLiteral(atof(yytext));
+	yylval->emplace<Expression*>(expression);
 	LEX_RETURN(FLOAT_LITERAL); 
 };
 
 \"([^\\\"]|\\.)*\" {
-	auto value = std::string(yytext);
-	yylval->expression = new StringLiteral(string_from_escaped_string(value.substr(1, value.length() - 2)));
+	auto value = string_from_escaped_string(std::string(yytext));
+	auto expression = new StringLiteral(value.substr(1, value.length() - 2));
+	yylval->emplace<Expression*>(expression);
 	LEX_RETURN(STRING_LITERAL);
 };
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
-	yylval->identifier = new Identifier(std::string(yytext)); 
+	auto expression = new StringLiteral(std::string(yytext));
+	yylval->emplace<Expression*>(expression);
 	LEX_RETURN(IDENTIFIER); 
 }
 

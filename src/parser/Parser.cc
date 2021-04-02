@@ -67,7 +67,15 @@ void Parser::parse(ParserContext &context, const std::string &source) {
 
     // There seems to be a bug with Flex 2.5.35 where yylineno is uninitialized.
     yyset_lineno(1, context.scanner);
-    yyparse((yyscan_t)context.scanner, context);
+
+    yy::parser parser(context.scanner, context);
+#if defined(DEBUG) && YYDEBUG == 1
+    if (context.config.enableTracing) {
+        parser.set_debug_level(1);
+    }
+#endif
+    parser.parse();
+
     yy_delete_buffer(buf, context.scanner);
     yylex_destroy(context.scanner);
 
@@ -85,11 +93,10 @@ Owned<ast::Script> Parser::parseScript(const ParserConfig &config, const std::st
     parse(context, source);
 
     if (context.numberOfErrors && context.script) {
-        delete context.script;
         context.script = nullptr;
     }
 
-    return Owned<ast::Script>(context.script);
+    return std::move(context.script);
 }
 
 Owned<ast::Statement> Parser::parseStatement(const ParserConfig &config, const std::string &source) {
@@ -97,11 +104,10 @@ Owned<ast::Statement> Parser::parseStatement(const ParserConfig &config, const s
     context.parsingMode = ParserContext::Statement;
 
     if (context.numberOfErrors && context.expression) {
-        delete context.statement;
         context.statement = nullptr;
     }
 
-    return Owned<ast::Statement>(context.statement);
+    return std::move(context.statement);
 }
 
 Owned<ast::Expression> Parser::parseExpression(const ParserConfig &config, const std::string &source) {
@@ -111,11 +117,10 @@ Owned<ast::Expression> Parser::parseExpression(const ParserConfig &config, const
     parse(context, source);
 
     if (context.numberOfErrors && context.expression) {
-        delete context.expression;
         context.expression = nullptr;
     }
 
-    return Owned<ast::Expression>(context.expression);
+    return std::move(context.expression);
 }
 
 

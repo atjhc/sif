@@ -26,20 +26,28 @@ struct Chunk : Expression {
     enum Type { Char, Word, Item, Line };
 
     Type type;
-    Expression *expression;
+    Owned<Expression> expression;
 
-    Chunk(Type _type, Expression *_expression) : type(_type), expression(_expression) {}
+    Chunk(Type t, Owned<Expression> &e) : type(t), expression(std::move(e)) {}
+
+    Chunk(Type t) : type(t), expression(nullptr) {}
 
     std::string ordinalName() const;
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
 struct RangeChunk : Chunk {
-    Expression *start;
-    Expression *end;
+    Owned<Expression> start;
+    Owned<Expression> end;
 
-    RangeChunk(Type _type, Expression *_start, Expression *_end, Expression *_expression = nullptr)
-        : Chunk(_type, _expression), start(_start), end(_end) {}
+    RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee, Owned<Expression> &e)
+        : Chunk(t, e), start(std::move(se)), end(std::move(ee)) {}
+
+    RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee)
+        : Chunk(t), start(std::move(se)), end(std::move(ee)) {}
+    
+    RangeChunk(Type t, Owned<Expression> &se)
+        : Chunk(t), start(std::move(se)) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -47,7 +55,9 @@ struct RangeChunk : Chunk {
 };
 
 struct LastChunk : Chunk {
-    LastChunk(Type _type, Expression *_expression = nullptr) : Chunk(_type, _expression) {}
+    LastChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
+
+    LastChunk(Type t) : Chunk(t) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -55,7 +65,8 @@ struct LastChunk : Chunk {
 };
 
 struct MiddleChunk : Chunk {
-    MiddleChunk(Type _type, Expression *_expression = nullptr) : Chunk(_type, _expression) {}
+    MiddleChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
+    MiddleChunk(Type t) : Chunk(t) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
@@ -63,7 +74,8 @@ struct MiddleChunk : Chunk {
 };
 
 struct AnyChunk : Chunk {
-    AnyChunk(Type _type, Expression *_expression = nullptr) : Chunk(_type, _expression) {}
+    AnyChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
+    AnyChunk(Type t) : Chunk(t) {}
 
     Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 

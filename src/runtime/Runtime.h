@@ -53,8 +53,9 @@ struct RuntimeConfig {
     std::istream &stdin = std::cin;
     std::ostream &stderr = std::cerr;
     std::function<float()> random;
+
 #if defined(DEBUG)
-    bool tracing;
+    bool enableTracing = false;
 #endif
 };
 

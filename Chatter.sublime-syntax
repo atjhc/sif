@@ -22,7 +22,7 @@ contexts:
     - match: '\b(if|else|then|repeat|end|on|function|pass|exit|return|next|put|get|it|global)\b'
       scope: keyword.control.c
       
-    - match: '\b(before|into|after|the)\b'
+    - match: '\b(before|into|after|the|of)\b'
       scope: keyword.control.c
 
     - match: '\b(true|false|empty|tab|space|zero|one|two|three|four|five|six|seven|eight|nine|ten|quote)\b'

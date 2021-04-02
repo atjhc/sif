@@ -27,6 +27,11 @@ struct Location {
     unsigned int lineNumber = 1;
 };
 
+static inline std::ostream &operator<<(std::ostream &out, const Location &location) {
+    out << location.lineNumber << ":" << location.position;
+    return out;
+}
+
 struct PrettyPrintConfig {
     unsigned int tabSize = 2;
 };

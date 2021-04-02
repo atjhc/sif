@@ -73,8 +73,18 @@ struct If : Statement {
     Owned<StatementList> ifStatements;
     Owned<StatementList> elseStatements;
 
-    If(Expression *_condition, StatementList *_ifStatements, StatementList *_elseStatements)
-        : condition(_condition), ifStatements(_ifStatements), elseStatements(_elseStatements) {}
+    If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es)
+        : condition(std::move(c)), ifStatements(std::move(is)), elseStatements(std::move(es)) {}
+
+    If(Owned<Expression> &c, Owned<StatementList> &isl)
+        : condition(std::move(c)), ifStatements(std::move(isl)), elseStatements(nullptr) {}
+
+    If(Owned<Expression> &c, Owned<Statement> &is)
+        : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(nullptr) {}
+
+    If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl)
+        : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(std::move(esl)) {}
+
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
@@ -84,7 +94,7 @@ struct If : Statement {
 struct Exit : Statement {
     Owned<Identifier> messageKey;
 
-    Exit(Identifier *_messageKey) : messageKey(_messageKey) {}
+    Exit(Owned<Identifier> &m) : messageKey(std::move(m)) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
@@ -94,7 +104,7 @@ struct Exit : Statement {
 struct Pass : Statement {
     Owned<Identifier> messageKey;
 
-    Pass(Identifier *_messageKey) : messageKey(_messageKey) {}
+    Pass(Owned<Identifier> &m) : messageKey(std::move(m)) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
@@ -104,7 +114,7 @@ struct Pass : Statement {
 struct Global : Statement {
     Owned<IdentifierList> variables;
 
-    Global(IdentifierList *_variables) : variables(_variables) {}
+    Global(Owned<IdentifierList> &v) : variables(std::move(v)) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
@@ -114,7 +124,7 @@ struct Global : Statement {
 struct Return : Statement {
     Owned<Expression> expression;
 
-    Return(Expression *_expression) : expression(_expression) {}
+    Return(Owned<Expression> &e) : expression(std::move(e)) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 

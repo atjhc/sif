@@ -31,8 +31,8 @@
 using namespace chatter;
 using namespace chatter::ast;
 
-#if defined(YYDEBUG)
-extern int yydebug;
+#if defined(DEBUG)
+static int traceParsing = 0;
 #endif
 
 #if defined(DEBUG)
@@ -61,6 +61,10 @@ static int run(const std::string &fileName, const std::string &messageName,
         config.fileName = "<stdin>";
     }
 
+#if defined(DEBUG)
+    config.enableTracing = traceParsing;
+#endif
+
     Owned<Script> result;
     if ((result = Parser().parseScript(config, source)) == nullptr) {
         return -1;
@@ -80,7 +84,7 @@ static int run(const std::string &fileName, const std::string &messageName,
     RuntimeConfig runtimeConfig;
 
 #if defined(DEBUG)
-    runtimeConfig.tracing = traceRuntime;
+    runtimeConfig.enableTracing = traceRuntime;
 #endif    
 
     // Configure the random number generator.
@@ -117,7 +121,7 @@ int usage(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     static struct option long_options[] = {
 #if defined(YYDEBUG)
-        {"trace-parse", no_argument, &yydebug, 1},
+        {"trace-parse", no_argument, &traceParsing, 1},
         {"trace-runtime", no_argument, &traceRuntime, 1},
 #endif
         {"message-name", required_argument, NULL, 'm'},

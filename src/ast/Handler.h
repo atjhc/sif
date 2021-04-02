@@ -41,9 +41,9 @@ struct Handler : Node {
     Owned<IdentifierList> arguments;
     Owned<StatementList> statements;
 
-    Handler(Kind _kind, Identifier *_messageKey, IdentifierList *_arguments,
-            StatementList *_statements)
-        : kind(_kind), messageKey(_messageKey), arguments(_arguments), statements(_statements) {}
+    Handler(Kind _kind, Owned<Identifier> &mk, Owned<IdentifierList> &args,
+            Owned<StatementList> &sl)
+        : kind(_kind), messageKey(std::move(mk)), arguments(std::move(args)), statements(std::move(sl)) {}
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -53,9 +53,9 @@ struct StatementList : Node {
 
     StatementList() {}
 
-    StatementList(Statement *statement) { add(statement); }
+    StatementList(Owned<Statement> &statement) { add(statement); }
 
-    void add(Statement *statement) { statements.push_back(Owned<Statement>(statement)); }
+    void add(Owned<Statement> &statement) { statements.push_back(std::move(statement)); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -65,8 +65,8 @@ struct IdentifierList : Node {
 
     IdentifierList() {}
 
-    void add(Identifier *identifier) {
-        identifiers.push_back(Owned<Identifier>(identifier));
+    void add(Owned<Identifier> &identifier) {
+        identifiers.push_back(std::move(identifier));
     }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;

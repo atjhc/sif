@@ -41,6 +41,12 @@ using Ref = std::reference_wrapper<T>;
 template <class T>
 using Optional = std::optional<T>;
 
+template<class T, class... Args>
+std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T>>
+MakeOwned(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
 #define CH_NAMESPACE_BEGIN namespace chatter {
 #define CH_NAMESPACE_END }
 
