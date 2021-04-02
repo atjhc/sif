@@ -1,20 +1,20 @@
-%{
+/*
+  Copyright (c) 2021 James Callender
 
-//
-//  Copyright (c) 2021 James Callender
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//  http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+%{
 
 #include <string>
 #include <iostream>
@@ -46,12 +46,22 @@ using namespace chatter::ast;
         } \
     }
 
-// %option reentrant bison-bridge
-// %option noyywrap yylineno nounput noinput batch
-
 %}
 
-%option yylineno noyywrap reentrant nounput
+/* Generate line number information. */
+%option yylineno 
+
+/* Make the parser reentrant. */
+%option reentrant
+
+/* Not using yywrap. */
+%option noyywrap
+
+/* Not currently using unput. */
+%option nounput
+
+/* Not currently using input. */
+%option noinput
 
 %%
 
@@ -177,39 +187,29 @@ lineFeed 					LEX_RETURN(LINE_FEED);
 ">="|"≥"					LEX_RETURN(GTE);
 "≠"|"<>"					LEX_RETURN(NEQ);
 
-
-
-(([1-9][0-9]*)|0) {
+([0-9][0-9]*) {
 	auto expression = new IntLiteral(atoi(yytext));
 	yylval->emplace<Expression*>(expression);
 	LEX_RETURN(INT_LITERAL); 
 };
 
-(([1-9][0-9]*)|0)(\.[0-9][0-9]*)? { 
+([0-9][0-9]*)(\.[0-9][0-9]*)? { 
 	auto expression = new FloatLiteral(atof(yytext));
-	yylval->emplace<Expression*>(expression);
+	yylval->emplace<Owned<Expression>>(expression);
 	LEX_RETURN(FLOAT_LITERAL); 
 };
 
 \"([^\\\"]|\\.)*\" {
 	auto value = string_from_escaped_string(std::string(yytext));
 	auto expression = new StringLiteral(value.substr(1, value.length() - 2));
-	yylval->emplace<Expression*>(expression);
+	yylval->emplace<Owned<Expression>>(expression);
 	LEX_RETURN(STRING_LITERAL);
 };
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
 	auto expression = new StringLiteral(std::string(yytext));
-	yylval->emplace<Expression*>(expression);
+	yylval->emplace<Owned<Expression>>(expression);
 	LEX_RETURN(IDENTIFIER); 
-}
-
-"--".*\n {
-	/* ignore */ ;
-}
-
-"#".*\n {
-	/* ignore */ ;
 }
 
 \¬\n {
@@ -218,6 +218,14 @@ lineFeed 					LEX_RETURN(LINE_FEED);
 
 \n+ {
 	LEX_RETURN(EOL);
+}
+
+"--".*\n {
+	/* ignore */ ;
+}
+
+"#".*\n {
+	/* ignore */ ;
 }
 
 [ \t]* {

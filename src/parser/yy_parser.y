@@ -157,7 +157,7 @@ script
 ;
 
 handler
-    : /* empty */ {
+    : %empty {
         $$ = nullptr;
     }
     | ON messageKey maybeIdentifierList EOL
@@ -193,7 +193,7 @@ handler
 ;
 
 maybeIdentifierList
-    : /* empty */ {
+    : %empty {
         $$ = nullptr;
     }
     | identifierList {
@@ -221,7 +221,7 @@ identifierList
 ;
 
 maybeStatementList
-    : /* empty */ {
+    : %empty {
         $$ = nullptr;    
     }
     | statementList {
@@ -526,17 +526,17 @@ repeatRange
 ;
 
 maybeForever
-    : /* empty */
+    : %empty
     | FOREVER
 ;
 
 maybeFor
-    : /* empty */
+    : %empty
     | FOR
 ;
 
 maybeTimes
-    : /* empty */
+    : %empty
     | TIMES
 ;
 
@@ -934,7 +934,7 @@ constant
 ;
 
 maybeThe
-    : /* empty */
+    : %empty
     | THE
 ;
 
