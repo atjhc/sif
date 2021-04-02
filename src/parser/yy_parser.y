@@ -125,10 +125,6 @@ using namespace chatter::ast;
 %nterm <Owned<ExpressionList>> expressionList
 %nterm <Owned<Preposition>> preposition
 
-//%destructor { delete $$; $$ = nullptr; } IDENTIFIER INT_LITERAL STRING_LITERAL FLOAT_LITERAL
-//%destructor { delete $$; $$ = nullptr; } maybeStatementList handler statementList statement messageKey
-//%destructor { delete $$; $$ = nullptr; } chunk preposition ordinal constant functionCall expression expressionList
-
 %start start
 
 %%
@@ -409,16 +405,14 @@ ifStatement
     }
 // TODO: The following construction is ambiguous, but valid
 //       in HyperTalk. For now, Chatter does not allow these.
-/*
-    | ifCondition THEN statement EOL elseBlock {
-        if ($1 && $4 && $5) {
-            $$ = new If($1, $4, $5);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-*/
+    //| ifCondition THEN statement EOL elseBlock {
+    //    if ($1 && $3 && $5) {
+    //        $$ = MakeOwned<If>($1, $3, $5);
+    //        $$->location = @1.first;
+    //    } else {
+    //        $$ = nullptr;
+    //    }
+    //}
 ;
 
 elseBlock
