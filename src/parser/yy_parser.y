@@ -39,13 +39,10 @@ using namespace chatter::ast;
     extern YY_DECL;
 }
 
-//%define api.pure
-//%language "c++"
-%skeleton "lalr1.cc"
+%language "c++"
 
 %param { yyscan_t scanner } { chatter::ParserContext &ctx }
 
-%define api.location.type { ParseLocation }
 %code requires { 
     #include "parser/yy_shared.h"
     #include "ast/Script.h"
@@ -54,10 +51,22 @@ using namespace chatter::ast;
     #include "ast/Repeat.h"
 }
 
-%define parse.error detailed
+// Use our custom location type.
+%define api.location.type { ParseLocation }
+
+// Use custom error method.
+%define parse.error custom
+
+// Use variant for semantic values.
 %define api.value.type variant
+
+// Use raw token value.
 %define api.token.raw
-//%define api.value.automove
+
+// This seems to give correct expected token lists.
+%define parse.lac full
+
+// Disabled for now.
 //%define api.token.constructor
 
 %verbose
@@ -70,9 +79,9 @@ using namespace chatter::ast;
 %token START_EXPRESSION
 
 // Keywords
-%token ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA GLOBAL NEXT PASS RETURN 
+%token ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA "," GLOBAL NEXT PASS RETURN
 %token WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
-%token NOT THE AN NO OR CONTAINS IS IN WITHIN OF FORM_FEED LINE_FEED UP AND EOL
+%token NOT THE AN NO IS IN WITHIN OF FORM_FEED LINE_FEED UP EOL
 
 // Commands
 %token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
@@ -81,7 +90,8 @@ using namespace chatter::ast;
 %token INTO BEFORE AFTER
 
 // Expressions
-%token LPAREN RPAREN PLUS MINUS MULT DIV LT GT LTE GTE NEQ CARROT
+%token LPAREN "(" RPAREN ")" PLUS "+" MINUS "-" MULT "*" DIV "/" LT "<" GT ">" LTE "<=" GTE ">=" CARROT "^"
+%token CONCAT "&" CONCAT_SPACE "&&" EQ "=" NEQ "<>" AND OR CONTAINS
 
 // Constants
 %token EMPTY FALSE QUOTE SPACE TAB TRUE PI
@@ -98,7 +108,7 @@ using namespace chatter::ast;
 %left IS EQ NEQ
 %left NOT
 %left CONTAINS
-%left LT GT LTE GTE 
+%left LT GT LTE GTE
 %left CONCAT CONCAT_SPACE
 %left PLUS MINUS
 %left MULT DIV DIV_TRUNC MOD
@@ -939,6 +949,38 @@ maybeThe
 ;
 
 %%
+
+static std::string symbolName(const yy::parser &parser, const yy::parser::symbol_kind_type &symbol) {
+    switch (symbol) {
+        case yy::parser::symbol_kind::S_YYEOF: return "end of file";
+        case yy::parser::symbol_kind::S_YYUNDEF: return "invalid token";
+        case yy::parser::symbol_kind::S_IDENTIFIER: return "identifier";
+        case yy::parser::symbol_kind::S_EOL: return "new line";
+        case yy::parser::symbol_kind::S_INT_LITERAL: return "integer literal";
+        case yy::parser::symbol_kind::S_FLOAT_LITERAL: return "float literal";
+        case yy::parser::symbol_kind::S_STRING_LITERAL: return "string literal";
+        default: return lowercase("'" + std::string(parser.symbol_name(symbol)) + "'");
+    }
+}
+
+void yy::parser::report_syntax_error(const yy::parser::context &yyContext) const {
+    std::ostringstream ss;
+    ss << "syntax error, ";
+
+    symbol_kind_type lookahead = yyContext.token();
+    if (lookahead != symbol_kind::S_YYEMPTY) {
+        ss << "unexpected " << symbolName(*this, lookahead);
+    }
+
+    enum { MAX_TOKENS = 5 };
+    symbol_kind_type expected[MAX_TOKENS];
+    int n = yyContext.expected_tokens(expected, MAX_TOKENS);
+    for (int i = 0; i < n; i++) {
+        ss << (i == 0 ? ", expected " : " or ")
+           << symbolName(*this, expected[i]);
+    }
+    ctx.error(yyContext.location().first, ss.str());
+}
 
 void yy::parser::error(const yy::parser::location_type &location, const std::string &msg) {
     ctx.error(location.first, msg);
