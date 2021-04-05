@@ -21,6 +21,7 @@
 #include "ast/Command.h"
 #include "ast/Repeat.h"
 #include "ast/Script.h"
+#include "parser/Parser.h"
 #include "runtime/Variables.h"
 #include "runtime/Value.h"
 #include "runtime/Function.h"
@@ -126,6 +127,7 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void visit(const Pass &) override;
     void visit(const Global &) override;
     void visit(const Return &) override;
+    void visit(const Do &) override;
     void visit(const Command &) override;
 
 #pragma mark CommandVisitor

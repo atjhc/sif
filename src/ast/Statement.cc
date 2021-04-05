@@ -62,4 +62,13 @@ void Return::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
     }
 }
 
+void Do::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+    out << "do ";
+    expression->prettyPrint(out, context);
+    if (language) {
+        out << " as ";
+        language->prettyPrint(out, context);
+    }
+}
+
 CH_AST_NAMESPACE_END

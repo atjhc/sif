@@ -42,7 +42,7 @@ class basic_onullstream : public std::basic_ostream<cT, traits> {
 typedef basic_onullstream<char> onullstream;
 typedef basic_onullstream<wchar_t> wonullstream;
 
-onullstream devnull;
-wonullstream wdevnull;
+extern onullstream devnull;
+extern wonullstream wdevnull;
 
 CH_NAMESPACE_END

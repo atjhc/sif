@@ -17,6 +17,7 @@
 #include "runtime/Runtime.h"
 #include "runtime/Object.h"
 #include "utilities/chunk.h"
+#include "utilities/devnull.h"
 #include "ast/Property.h"
 #include "ast/Descriptor.h"
 
@@ -303,6 +304,28 @@ void Runtime::visit(const Return &s) {
         auto value = s.expression->evaluate(*this);
         stack.top().returningValue = value;
     }
+}
+
+void Runtime::visit(const Do &c) {
+    if (c.language) {
+        // TODO: call out to another language.
+        return;
+    }
+
+    auto value = c.expression->evaluate(*this);
+    auto valueString = value.asString();
+
+    Owned<StatementList> result;
+
+    if ((result = Parser().parseStatements(ParserConfig("<runtime>", config.stderr), valueString)) == nullptr) {
+        if (valueString.size() < 100) {
+            throw RuntimeError("could not perform script \"" + valueString + "\"", c.location);
+        } else {
+            throw RuntimeError("could not perform script", c.location);
+        }
+    }
+
+    execute(*result);
 }
 
 void Runtime::visit(const Command &c) {

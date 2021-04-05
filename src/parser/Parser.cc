@@ -49,7 +49,7 @@ void ParserContext::error(Location location, const std::string &msg) {
     config.err << lineString << std::endl;
 
     std::string indentString;
-    for (int i = 0; i < location.position && i < lineString.size(); i++) {
+    for (int i = 0; i < location.position - 1 && i < lineString.size(); i++) {
         if (lineString.at(i) == '\t')
             indentString += '\t';
         else
@@ -99,15 +99,17 @@ Owned<ast::Script> Parser::parseScript(const ParserConfig &config, const std::st
     return std::move(context.script);
 }
 
-Owned<ast::Statement> Parser::parseStatement(const ParserConfig &config, const std::string &source) {
+Owned<ast::StatementList> Parser::parseStatements(const ParserConfig &config, const std::string &source) {
     ParserContext context(config, source);
-    context.parsingMode = ParserContext::Statement;
+    context.parsingMode = ParserContext::Statements;
 
-    if (context.numberOfErrors && context.expression) {
-        context.statement = nullptr;
+    parse(context, source);
+
+    if (context.numberOfErrors && context.statements) {
+        context.statements = nullptr;
     }
 
-    return std::move(context.statement);
+    return std::move(context.statements);
 }
 
 Owned<ast::Expression> Parser::parseExpression(const ParserConfig &config, const std::string &source) {

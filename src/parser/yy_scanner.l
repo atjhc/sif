@@ -71,7 +71,7 @@ using namespace chatter::ast;
 		switch (context.parsingMode) {
 		case ParserContext::Script:
 			return yy::parser::token::START_SCRIPT;
-		case ParserContext::Statement:
+		case ParserContext::Statements:
 			return yy::parser::token::START_STATEMENT;
 		case ParserContext::Expression:
 			return yy::parser::token::START_EXPRESSION;
@@ -118,7 +118,7 @@ using namespace chatter::ast;
 [sS][uU][bB][tT][rR][aA][cC][tT]	LEX_RETURN(SUBTRACT);
 [mM][uU][lL][tT][iI][pP][lL][yY] 	LEX_RETURN(MULTIPLY);
 [dD][iI][vV][iI][dD][eE]			LEX_RETURN(DIVIDE);
-
+[aA][sS]							LEX_RETURN(AS);
 
 [fF][iI][rR][sS][tT]			LEX_RETURN(FIRST);
 [sS][eE][cC][oO][nN][dD]		LEX_RETURN(SECOND);

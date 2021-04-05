@@ -83,7 +83,7 @@ using namespace chatter::ast;
 // Keywords
 %token ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA "," GLOBAL NEXT PASS RETURN
 %token WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
-%token NOT THE AN NO IS IN WITHIN OF FORM_FEED LINE_FEED UP EOL
+%token NOT THE AN NO IS IN WITHIN OF FORM_FEED LINE_FEED UP EOL AS
 
 // Commands
 %token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
@@ -147,8 +147,8 @@ start
     : START_SCRIPT script { 
         ctx.script = std::move($2);
     }
-    | START_STATEMENT statement {
-        ctx.statement = std::move($2);
+    | START_STATEMENT statementList {
+        ctx.statements = std::move($2);
     }
     | START_EXPRESSION expression {
         ctx.expression = std::move($2);
@@ -330,8 +330,28 @@ keywordStatement
         $$->location = @1.first;
     }
     | RETURN expression {
-        $$ = MakeOwned<Return>($2);
-        $$->location = @1.first;
+        if ($2) {
+            $$ = MakeOwned<Return>($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | DO expression {
+        if ($2) {
+            $$ = MakeOwned<Do>($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
+    | DO expression AS IDENTIFIER {
+        if ($2) {
+            $$ = MakeOwned<Do>($2, $4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
     }
     | ifStatement {
         $$ = std::move($1);

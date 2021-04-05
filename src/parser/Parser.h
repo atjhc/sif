@@ -38,7 +38,7 @@ struct ParserConfig {
 struct ParserContext {
     enum Mode {
         Script,
-        Statement,
+        Statements,
         Expression
     };
 
@@ -55,7 +55,7 @@ struct ParserContext {
     // Result
     Owned<ast::Script> script = nullptr;
     Owned<ast::Expression> expression = nullptr;
-    Owned<ast::Statement> statement = nullptr;
+    Owned<ast::StatementList> statements = nullptr;
 
     ParserContext(const ParserConfig &config, const std::string &source);
 
@@ -65,7 +65,7 @@ struct ParserContext {
 class Parser {
   public:
     Owned<ast::Script> parseScript(const ParserConfig &config, const std::string &source);
-    Owned<ast::Statement> parseStatement(const ParserConfig &config, const std::string &source);
+    Owned<ast::StatementList> parseStatements(const ParserConfig &config, const std::string &source);
     Owned<ast::Expression> parseExpression(const ParserConfig &config, const std::string &source);
 
   private:

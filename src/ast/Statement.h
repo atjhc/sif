@@ -42,6 +42,7 @@ struct Exit;
 struct Pass;
 struct Global;
 struct Return;
+struct Do;
 struct Put;
 struct Get;
 struct Ask;
@@ -60,6 +61,7 @@ class StatementVisitor {
     virtual void visit(const Pass &) = 0;
     virtual void visit(const Global &) = 0;
     virtual void visit(const Return &) = 0;
+    virtual void visit(const Do &) = 0;
     virtual void visit(const Command &) = 0;
 };
 
@@ -125,6 +127,19 @@ struct Return : Statement {
     Owned<Expression> expression;
 
     Return(Owned<Expression> &e) : expression(std::move(e)) {}
+
+    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
+
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+};
+
+struct Do : Statement {
+    Owned<Expression> expression;
+    Owned<Identifier> language;
+
+    Do(Owned<Expression> &e) : expression(std::move(e)), language(nullptr) {}
+    Do(Owned<Expression> &e, Owned<Identifier> &l)
+        : expression(std::move(e)), language(std::move(l)) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
