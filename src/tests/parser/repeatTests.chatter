@@ -5,10 +5,10 @@ on begin
 	repeat 10 times
 		put "repeat"
 	end repeat
-	repeat until a = 10
+	repeat until x = 10
 		put "repeat"
 	end repeat
-	repeat while a < 10
+	repeat while x < 10
 		put "repeat"
 	end repeat
 	repeat with x = 0 to 10

@@ -740,6 +740,14 @@ expression
             $$ = nullptr;
         }
     }
+    | expression IS AN expression %prec IS {
+        if ($1 && $4) {
+            $$ = MakeOwned<BinaryOp>(BinaryOp::IsAn, $1, $4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
     | expression CONTAINS expression {
         if ($1 && $3) {
             $$ = MakeOwned<BinaryOp>(BinaryOp::Contains, $1, $3);

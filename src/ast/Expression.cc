@@ -58,6 +58,9 @@ void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const
     case IsIn:
         out << " is in ";
         break;
+    case IsAn:
+        out << " is a ";
+        break;
     case Contains:
         out << " contains ";
         break;

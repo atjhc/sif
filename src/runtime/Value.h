@@ -52,6 +52,10 @@ class Value {
     template<typename T>
     Value(T v) : value(std::to_string(v)) {}
 
+    bool isEmpty() const {
+        return value.empty();
+    }
+
     bool isBool() const {
         auto lowercased = lowercase(value);
         if (lowercased == "true" || lowercased == "false") {

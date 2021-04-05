@@ -117,6 +117,7 @@ struct BinaryOp : Expression {
         LessThanOrEqual,
         GreaterThanOrEqual,
         IsIn,
+        IsAn,
         Contains,
         Or,
         And,

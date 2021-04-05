@@ -23,6 +23,6 @@ on begin
 	return the cos of 5
 	return cos(10)
 	return max(10, 20)
-	return a & b
-	return a && b
+	return x & y
+	return x && y
 end begin

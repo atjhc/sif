@@ -503,6 +503,24 @@ Value Runtime::valueOf(const BinaryOp &e) {
     auto lhs = e.left->evaluate(*this);
     auto rhs = e.right->evaluate(*this);
 
+    if (e.op == BinaryOp::IsAn) {
+        auto typeName = lowercase(rhs.asString());
+        if (typeName == "number") {
+            return lhs.isNumber();
+        }
+        if (typeName == "integer") {
+            return lhs.isInteger();
+        }
+        if (typeName == "empty") {
+            return lhs.isEmpty();
+        }
+        if (typeName == "logical") {
+            return lhs.isBool();
+        }
+        // TODO: Check for additional host defined types.
+        throw RuntimeError("unknown type name '" + rhs.asString() + "'", e.right->location);
+    }
+
     switch (e.op) {
     case BinaryOp::Equal:
         return lhs == rhs;
@@ -540,6 +558,8 @@ Value Runtime::valueOf(const BinaryOp &e) {
         return lhs.value + rhs.value;
     case BinaryOp::ConcatWithSpace:
         return lhs.value + " " + rhs.value;
+    default:
+        return Value();
     }
 }
 

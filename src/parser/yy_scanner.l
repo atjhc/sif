@@ -115,6 +115,7 @@ until                       LEX_RETURN(UNTIL);
 with                        LEX_RETURN(WITH);
 down                        LEX_RETURN(DOWN);
 is                          LEX_RETURN(IS);
+a|an                        LEX_RETURN(AN);
 from                        LEX_RETURN(FROM);
 by                          LEX_RETURN(BY);
 add                         LEX_RETURN(ADD);
