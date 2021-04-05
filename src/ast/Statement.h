@@ -135,10 +135,10 @@ struct Return : Statement {
 
 struct Do : Statement {
     Owned<Expression> expression;
-    Owned<Identifier> language;
+    Owned<Expression> language;
 
     Do(Owned<Expression> &e) : expression(std::move(e)), language(nullptr) {}
-    Do(Owned<Expression> &e, Owned<Identifier> &l)
+    Do(Owned<Expression> &e, Owned<Expression> &l)
         : expression(std::move(e)), language(std::move(l)) {}
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }

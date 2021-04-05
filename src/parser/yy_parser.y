@@ -345,7 +345,7 @@ keywordStatement
             $$ = nullptr;
         }
     } 
-    | DO expression AS IDENTIFIER {
+    | DO expression AS expression {
         if ($2) {
             $$ = MakeOwned<Do>($2, $4);
             $$->location = @1.first;

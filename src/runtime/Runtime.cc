@@ -308,8 +308,9 @@ void Runtime::visit(const Return &s) {
 
 void Runtime::visit(const Do &c) {
     if (c.language) {
+        auto languageName = c.language->evaluate(*this);
         // TODO: call out to another language.
-        return;
+        throw RuntimeError("unrecognized language '" + languageName.asString() + "'", c.location);
     }
 
     auto value = c.expression->evaluate(*this);
@@ -318,11 +319,7 @@ void Runtime::visit(const Do &c) {
     Owned<StatementList> result;
 
     if ((result = Parser().parseStatements(ParserConfig("<runtime>", config.stderr), valueString)) == nullptr) {
-        if (valueString.size() < 100) {
-            throw RuntimeError("could not perform script \"" + valueString + "\"", c.location);
-        } else {
-            throw RuntimeError("could not perform script", c.location);
-        }
+        throw RuntimeError("failed to parse script", c.location);
     }
 
     execute(*result);
