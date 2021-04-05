@@ -30,9 +30,9 @@ using namespace chatter::ast;
 #include "yyParser.h"
 
 #define LEX_RETURN(NAME) \
-	{ \
-		return yy::parser::token::NAME; \
-	}
+    { \
+        return yy::parser::token::NAME; \
+    }
 
 #define YY_USER_ACTION \
     yylloc->first = yylloc->last; \
@@ -63,173 +63,171 @@ using namespace chatter::ast;
 /* Not currently using input. */
 %option noinput
 
+/* All Chatter keywords are case insensitive. */
+%option case-insensitive
+
 %%
 
 %{
-	if (context.selectingMode) {
-		context.selectingMode = false;
-		switch (context.parsingMode) {
-		case ParserContext::Script:
-			return yy::parser::token::START_SCRIPT;
-		case ParserContext::Statements:
-			return yy::parser::token::START_STATEMENT;
-		case ParserContext::Expression:
-			return yy::parser::token::START_EXPRESSION;
-		}
-	}
+    if (context.selectingMode) {
+        context.selectingMode = false;
+        switch (context.parsingMode) {
+        case ParserContext::Script:
+            return yy::parser::token::START_SCRIPT;
+        case ParserContext::Statements:
+            return yy::parser::token::START_STATEMENT;
+        case ParserContext::Expression:
+            return yy::parser::token::START_EXPRESSION;
+        }
+    }
 %}
 
-[oO][nN] 							LEX_RETURN(ON);
-[eE][nN][dD]						LEX_RETURN(END);
-[fF][uU][nN][cC][tT][iI][oO][nN]  	LEX_RETURN(FUNCTION);
-[eE][xX][iI][tT]					LEX_RETURN(EXIT);
-[rR][eE][pP][eE][aA][tT]			LEX_RETURN(REPEAT);
-[pP][aA][sS][sS]					LEX_RETURN(PASS);
-[iI][fF] 							LEX_RETURN(IF);
-[tT][hH][eE][nN]					LEX_RETURN(THEN);
-[eE][lL][sS][eE]					LEX_RETURN(ELSE);
-[oO][fF] 							LEX_RETURN(OF);
-[pP][uU][tT]						LEX_RETURN(PUT);
-[gG][eE][tT] 						LEX_RETURN(GET);
-[aA][sS][kK] 						LEX_RETURN(ASK);
-[iI][nN][tT][oO]					LEX_RETURN(INTO);
-[aA][fF][tT][eE][rR]				LEX_RETURN(AFTER);
-[bB][eE][fF][oO][rR][eE]			LEX_RETURN(BEFORE);
-[wW][hH][iI][lL][eE] 				LEX_RETURN(WHILE);
-[gG][lL][oO][bB][aA][lL]			LEX_RETURN(GLOBAL);
-[rR][eE][tT][uU][rR][nN]			LEX_RETURN(RETURN);
-[tT][oO]							LEX_RETURN(TO);
-[tT][hH][eE]						LEX_RETURN(THE);
-[nN][oO][tT] 						LEX_RETURN(NOT);
-[aA][nN][dD] 						LEX_RETURN(AND);
-[oO][rR] 							LEX_RETURN(OR);
-[dD][iI][vV]						LEX_RETURN(DIV_TRUNC);
-[mM][oO][dD]						LEX_RETURN(MOD);
-[cC][oO][nN][tT][aA][iI][nN][sS] 	LEX_RETURN(CONTAINS);
-[fF][oO][rR][eE][vV][eE][rR] 		LEX_RETURN(FOREVER);
-[tT][iI][mM][eE][sS]				LEX_RETURN(TIMES);
-[uU][nN][tT][iI][lL]				LEX_RETURN(UNTIL);
-[wW][iI][tT][hH]					LEX_RETURN(WITH);
-[dD][oO][wW][nN]					LEX_RETURN(DOWN);
-[iI][sS]							LEX_RETURN(IS);
-[fF][rR][oO][mM]					LEX_RETURN(FROM);
-[bB][yY]							LEX_RETURN(BY);
-[aA][dD][dD]						LEX_RETURN(ADD);
-[sS][uU][bB][tT][rR][aA][cC][tT]	LEX_RETURN(SUBTRACT);
-[mM][uU][lL][tT][iI][pP][lL][yY] 	LEX_RETURN(MULTIPLY);
-[dD][iI][vV][iI][dD][eE]			LEX_RETURN(DIVIDE);
-[aA][sS]							LEX_RETURN(AS);
+on                          LEX_RETURN(ON);
+end                         LEX_RETURN(END);
+function                    LEX_RETURN(FUNCTION);
+exit                        LEX_RETURN(EXIT);
+repeat                      LEX_RETURN(REPEAT);
+pass                        LEX_RETURN(PASS);
+if                          LEX_RETURN(IF);
+then                        LEX_RETURN(THEN);
+else                        LEX_RETURN(ELSE);
+of                          LEX_RETURN(OF);
+put                         LEX_RETURN(PUT);
+get                         LEX_RETURN(GET);
+ask                         LEX_RETURN(ASK);
+into                        LEX_RETURN(INTO);
+after                       LEX_RETURN(AFTER);
+before                      LEX_RETURN(BEFORE);
+while                       LEX_RETURN(WHILE);
+global                      LEX_RETURN(GLOBAL);
+return                      LEX_RETURN(RETURN);
+to                          LEX_RETURN(TO);
+the                         LEX_RETURN(THE);
+not                         LEX_RETURN(NOT);
+and                         LEX_RETURN(AND);
+or                          LEX_RETURN(OR);
+div                         LEX_RETURN(DIV_TRUNC);
+mod                         LEX_RETURN(MOD);
+contains                    LEX_RETURN(CONTAINS);
+forever                     LEX_RETURN(FOREVER);
+times                       LEX_RETURN(TIMES);
+until                       LEX_RETURN(UNTIL);
+with                        LEX_RETURN(WITH);
+down                        LEX_RETURN(DOWN);
+is                          LEX_RETURN(IS);
+from                        LEX_RETURN(FROM);
+by                          LEX_RETURN(BY);
+add                         LEX_RETURN(ADD);
+subtract                    LEX_RETURN(SUBTRACT);
+multiply                    LEX_RETURN(MULTIPLY);
+divide                      LEX_RETURN(DIVIDE);
+as                          LEX_RETURN(AS);
+do                          LEX_RETURN(DO);
+next                        LEX_RETURN(NEXT);
+program                     LEX_RETURN(PROGRAM);
+for                         LEX_RETURN(FOR);
+no                          LEX_RETURN(NO);
+in                          LEX_RETURN(IN);
+within                      LEX_RETURN(WITHIN);
 
-[fF][iI][rR][sS][tT]			LEX_RETURN(FIRST);
-[sS][eE][cC][oO][nN][dD]		LEX_RETURN(SECOND);
-[tT][hH][iI][rR][dD]			LEX_RETURN(THIRD);
-[fF][oO][uU][rR][tT][hH]		LEX_RETURN(FOURTH);
-[fF][iI][fF][tT][hH]			LEX_RETURN(FIFTH);
-[sS][iI][xX][tT][hH]			LEX_RETURN(SIXTH);
-[sS][eE][vV][eE][nN][tT][hH] 	LEX_RETURN(SEVENTH);
-[eE][iI][gG][hH][tT][hH]		LEX_RETURN(EIGHTH);
-[nN][iI][nN][tT][hH]			LEX_RETURN(NINTH);
-[tT][eE][nN][tT][hH]			LEX_RETURN(TENTH);
-[lL][aA][sS][tT]				LEX_RETURN(LAST);
-[mM][iI][dD]					LEX_RETURN(MIDDLE);
-[mM][iI][dD][dD][lL][eE]		LEX_RETURN(MIDDLE);
-[aA][nN][yY]					LEX_RETURN(ANY);
+first                       LEX_RETURN(FIRST);
+second                      LEX_RETURN(SECOND);
+third                       LEX_RETURN(THIRD);
+fourth                      LEX_RETURN(FOURTH);
+fifth                       LEX_RETURN(FIFTH);
+sixth                       LEX_RETURN(SIXTH);
+seventh                     LEX_RETURN(SEVENTH);
+eighth                      LEX_RETURN(EIGHTH);
+ninth                       LEX_RETURN(NINTH);
+tenth                       LEX_RETURN(TENTH);
+last                        LEX_RETURN(LAST);
+(mid)|(middle)              LEX_RETURN(MIDDLE);
+any                         LEX_RETURN(ANY);
 
-[cC][hH][aA][rR]			LEX_RETURN(CHAR);
-[wW][oO][rR][dD]			LEX_RETURN(WORD);
-[lL][iI][nN][eE]			LEX_RETURN(LINE);
-[iI][tT][eE][mM]			LEX_RETURN(ITEM);
+(char)|(character)          LEX_RETURN(CHAR);
+word                        LEX_RETURN(WORD);
+line                        LEX_RETURN(LINE);
+item                        LEX_RETURN(ITEM);
 
-[tT][rR][uU][eE]			LEX_RETURN(TRUE);
-[fF][aA][lL][sS][eE]		LEX_RETURN(FALSE);
-[eE][mM][pP][tT][yY]		LEX_RETURN(EMPTY);
-[zZ][eE][rR][oO]			LEX_RETURN(ZERO);
-[oO][nN][eE]				LEX_RETURN(ONE);
-[tT][wW][oO]				LEX_RETURN(TWO);
-[tT][hH][rR][eE][eE]		LEX_RETURN(THREE);
-[fF][oO][uU][rR]			LEX_RETURN(FOUR);
-[fF][iI][vV][eE]			LEX_RETURN(FIVE);
-[sS][iI][xX]				LEX_RETURN(SIX);
-[sS][eE][vV][eE][nN]		LEX_RETURN(SEVEN);
-[eE][iI][gG][hH][tT]		LEX_RETURN(EIGHT);
-[nN][iI][nN][eE]			LEX_RETURN(NINE);
-[tE][eE][nN]				LEX_RETURN(TEN);
-[tT][aA][bB]				LEX_RETURN(TAB);
-[sS][pP][aA][cC][eE]		LEX_RETURN(SPACE);
-[qQ][uU][oO][tT][eE]		LEX_RETURN(QUOTE);
-[pP][iI]					LEX_RETURN(PI);
+true                        LEX_RETURN(TRUE);
+false                       LEX_RETURN(FALSE);
+empty                       LEX_RETURN(EMPTY);
+zero                        LEX_RETURN(ZERO);
+one                         LEX_RETURN(ONE);
+two                         LEX_RETURN(TWO);
+three                       LEX_RETURN(THREE);
+four                        LEX_RETURN(FOUR);
+five                        LEX_RETURN(FIVE);
+six                         LEX_RETURN(SIX);
+seven                       LEX_RETURN(SEVEN);
+eigth                       LEX_RETURN(EIGHT);
+nine                        LEX_RETURN(NINE);
+ten                         LEX_RETURN(TEN);
+tab                         LEX_RETURN(TAB);
+space                       LEX_RETURN(SPACE);
+quote                       LEX_RETURN(QUOTE);
+pi                          LEX_RETURN(PI);
 
-do							LEX_RETURN(DO);
-next						LEX_RETURN(NEXT);
-program						LEX_RETURN(PROGRAM);
-for 						LEX_RETURN(FOR);
-an 							LEX_RETURN(AN);
-no 							LEX_RETURN(NO);
-in 							LEX_RETURN(IN);
-within 						LEX_RETURN(WITHIN);
-formFeed 					LEX_RETURN(FORM_FEED);
-lineFeed 					LEX_RETURN(LINE_FEED);
-
-"("							LEX_RETURN(LPAREN);
-")"							LEX_RETURN(RPAREN);
-"&&"						LEX_RETURN(CONCAT_SPACE);
-"&"							LEX_RETURN(CONCAT);
-","							LEX_RETURN(COMMA);
-"+"							LEX_RETURN(PLUS);
-"-"							LEX_RETURN(MINUS);
-"*"							LEX_RETURN(MULT);
-"/"							LEX_RETURN(DIV);
-"<"							LEX_RETURN(LT);
-">"							LEX_RETURN(GT);
-"="							LEX_RETURN(EQ);
-"^"							LEX_RETURN(CARROT);
-"<="|"≤"					LEX_RETURN(LTE);
-">="|"≥"					LEX_RETURN(GTE);
-"≠"|"<>"					LEX_RETURN(NEQ);
+"("                         LEX_RETURN(LPAREN);
+")"                         LEX_RETURN(RPAREN);
+"&&"                        LEX_RETURN(CONCAT_SPACE);
+"&"                         LEX_RETURN(CONCAT);
+","                         LEX_RETURN(COMMA);
+"+"                         LEX_RETURN(PLUS);
+"-"                         LEX_RETURN(MINUS);
+"*"                         LEX_RETURN(MULT);
+"/"                         LEX_RETURN(DIV);
+"<"                         LEX_RETURN(LT);
+">"                         LEX_RETURN(GT);
+"="                         LEX_RETURN(EQ);
+"^"                         LEX_RETURN(CARROT);
+"<="|"≤"                    LEX_RETURN(LTE);
+">="|"≥"                    LEX_RETURN(GTE);
+"≠"|"<>"                    LEX_RETURN(NEQ);
 
 ([0-9][0-9]*) {
-	auto expression = new IntLiteral(atoi(yytext));
-	yylval->emplace<Expression*>(expression);
-	LEX_RETURN(INT_LITERAL); 
-};
+    auto expression = new IntLiteral(atoi(yytext));
+    yylval->emplace<Expression*>(expression);
+    LEX_RETURN(INT_LITERAL); 
+}
 
 ([0-9][0-9]*)(\.[0-9][0-9]*)? { 
-	auto expression = new FloatLiteral(atof(yytext));
-	yylval->emplace<Owned<Expression>>(expression);
-	LEX_RETURN(FLOAT_LITERAL); 
-};
+    auto expression = new FloatLiteral(atof(yytext));
+    yylval->emplace<Owned<Expression>>(expression);
+    LEX_RETURN(FLOAT_LITERAL); 
+}
 
 \"([^\\\"]|\\.)*\" {
-	auto value = string_from_escaped_string(std::string(yytext));
-	auto expression = new StringLiteral(value.substr(1, value.length() - 2));
-	yylval->emplace<Owned<Expression>>(expression);
-	LEX_RETURN(STRING_LITERAL);
-};
+    auto value = string_from_escaped_string(std::string(yytext));
+    auto expression = new StringLiteral(value.substr(1, value.length() - 2));
+    yylval->emplace<Owned<Expression>>(expression);
+    LEX_RETURN(STRING_LITERAL);
+}
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
-	auto expression = new StringLiteral(std::string(yytext));
-	yylval->emplace<Owned<Expression>>(expression);
-	LEX_RETURN(IDENTIFIER); 
+    auto expression = new StringLiteral(std::string(yytext));
+    yylval->emplace<Owned<Expression>>(expression);
+    LEX_RETURN(IDENTIFIER); 
 }
 
 \¬\n {
-	/* ignore */ ;
+    /* ignore */ ;
 }
 
 \n+ {
-	LEX_RETURN(EOL);
+    LEX_RETURN(EOL);
 }
 
 "--".*\n? {
-	/* ignore */ ;
+    /* ignore */ ;
 }
 
 "#".*\n? {
-	/* ignore */ ;
+    /* ignore */ ;
 }
 
 [ \t]* {
-	/* ignore */ ;
+    /* ignore */ ;
 }
 
 %%
