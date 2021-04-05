@@ -740,9 +740,27 @@ expression
             $$ = nullptr;
         }
     }
+    | expression IS NOT IN expression %prec IS {
+        if ($1 && $5) {
+            Owned<Expression> isIn = MakeOwned<BinaryOp>(BinaryOp::IsIn, $1, $5);
+            $$ = MakeOwned<Not>(isIn);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
     | expression IS AN expression %prec IS {
         if ($1 && $4) {
             $$ = MakeOwned<BinaryOp>(BinaryOp::IsAn, $1, $4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | expression IS NOT AN expression %prec IS {
+        if ($1 && $5) {
+            Owned<Expression> isAn = MakeOwned<BinaryOp>(BinaryOp::IsAn, $1, $5);
+            $$ = MakeOwned<Not>(isAn);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
