@@ -40,9 +40,8 @@ ParserContext::ParserContext(const ParserConfig &c, const std::string &s)
 void ParserContext::error(Location location, const std::string &msg) {
     numberOfErrors++;
 
-    config.err << config.fileName << ":" << location.lineNumber << ":" << location.position
-               << ": error: ";
-    config.err << msg << std::endl;
+    config.err << config.fileName << ":" << location << ": error: "
+               << msg << std::endl;
 
     auto lineChunk = chunk(line, location.lineNumber - 1, source);
     auto lineString = lineChunk.get();
@@ -86,8 +85,8 @@ void Parser::parse(ParserContext &context, const std::string &source) {
     }
 }
 
-Owned<ast::Script> Parser::parseScript(const ParserConfig &config, const std::string &source) {
-    ParserContext context(config, source);
+Owned<ast::Script> Parser::parseScript(const std::string &source) {
+    ParserContext context(_config, source);
     context.parsingMode = ParserContext::Script;
 
     parse(context, source);
@@ -99,8 +98,8 @@ Owned<ast::Script> Parser::parseScript(const ParserConfig &config, const std::st
     return std::move(context.script);
 }
 
-Owned<ast::StatementList> Parser::parseStatements(const ParserConfig &config, const std::string &source) {
-    ParserContext context(config, source);
+Owned<ast::StatementList> Parser::parseStatements(const std::string &source) {
+    ParserContext context(_config, source);
     context.parsingMode = ParserContext::Statements;
 
     parse(context, source);
@@ -112,8 +111,8 @@ Owned<ast::StatementList> Parser::parseStatements(const ParserConfig &config, co
     return std::move(context.statements);
 }
 
-Owned<ast::Expression> Parser::parseExpression(const ParserConfig &config, const std::string &source) {
-    ParserContext context(config, source);
+Owned<ast::Expression> Parser::parseExpression(const std::string &source) {
+    ParserContext context(_config, source);
     context.parsingMode = ParserContext::Expression;
 
     parse(context, source);
@@ -124,6 +123,5 @@ Owned<ast::Expression> Parser::parseExpression(const ParserConfig &config, const
 
     return std::move(context.expression);
 }
-
 
 CH_NAMESPACE_END

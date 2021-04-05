@@ -172,25 +172,13 @@ void Runtime::execute(const ast::Handler &handler, const std::vector<Value> &val
 
 void Runtime::execute(const ast::StatementList &statements) {
     for (auto &statement : statements.statements) {
-        try {
-            statement->accept(*this);
-        } catch (RuntimeError &error) {
-            report(error);
-            return;
-        }
+        statement->accept(*this);
 
         auto &frame = stack.top();
         if (frame.passing || frame.exiting || frame.returning) {
             break;
         }
     }
-}
-
-void Runtime::report(const RuntimeError &error) const {
-    auto lineNumber = error.where.lineNumber;
-
-    config.stderr << stack.top().target->name() << ":" << lineNumber << ": runtime error: ";
-    config.stderr << error.what() << std::endl;
 }
 
 #if defined(DEBUG)
@@ -309,16 +297,17 @@ void Runtime::visit(const Return &s) {
 void Runtime::visit(const Do &c) {
     if (c.language) {
         auto languageName = c.language->evaluate(*this);
-        // TODO: call out to another language.
-        throw RuntimeError("unrecognized language '" + languageName.asString() + "'", c.location);
+        // TODO: Call out to another language.
+        throw RuntimeError("unrecognized language '" + languageName.asString() + "'", c.language->location);
     }
 
     auto value = c.expression->evaluate(*this);
     auto valueString = value.asString();
 
+    Parser parser(ParserConfig("<runtime>", config.stderr));
     Owned<StatementList> result;
 
-    if ((result = Parser().parseStatements(ParserConfig("<runtime>", config.stderr), valueString)) == nullptr) {
+    if ((result = parser.parseStatements(valueString)) == nullptr) {
         throw RuntimeError("failed to parse script", c.location);
     }
 

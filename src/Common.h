@@ -47,6 +47,12 @@ MakeOwned(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+template<class T, class... Args>
+std::shared_ptr<T>
+MakeStrong(Args&&... args) {
+    return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
 #define CH_NAMESPACE_BEGIN namespace chatter {
 #define CH_NAMESPACE_END }
 

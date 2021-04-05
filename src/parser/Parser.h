@@ -64,12 +64,16 @@ struct ParserContext {
 
 class Parser {
   public:
-    Owned<ast::Script> parseScript(const ParserConfig &config, const std::string &source);
-    Owned<ast::StatementList> parseStatements(const ParserConfig &config, const std::string &source);
-    Owned<ast::Expression> parseExpression(const ParserConfig &config, const std::string &source);
+    Parser(const ParserConfig &config) : _config(config) {}
+ 
+    Owned<ast::Script> parseScript(const std::string &source);
+    Owned<ast::StatementList> parseStatements(const std::string &source);
+    Owned<ast::Expression> parseExpression(const std::string &source);
 
   private:
     void parse(ParserContext &context, const std::string &source);
+
+    ParserConfig _config;
 };
 
 CH_NAMESPACE_END

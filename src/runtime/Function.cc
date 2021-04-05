@@ -27,8 +27,9 @@ CH_RUNTIME_NAMESPACE_BEGIN
 Value ValueFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
     auto expression = m.arguments[0];
 
+	Parser parser(ParserConfig("<runtime>", devnull));
     Owned<Expression> result;
-    if ((result = Parser().parseExpression(ParserConfig("<runtime>", devnull), expression.asString())) == nullptr) {
+    if ((result = parser.parseExpression(expression.asString())) == nullptr) {
         return expression.asString();
     }
 

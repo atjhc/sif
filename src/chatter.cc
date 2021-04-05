@@ -45,6 +45,8 @@ static int prettyPrint = 0;
 static int run(const std::string &fileName, const std::string &messageName,
                const std::vector<std::string> &arguments) {
     std::string source;
+    std::string contextName;
+
     ParserConfig config;
 
     if (!fileName.empty()) {
@@ -54,20 +56,24 @@ static int run(const std::string &fileName, const std::string &messageName,
             ss << file.rdbuf();
             source = ss.str();
         }
-        config.fileName = fileName;
+        contextName = fileName;
     } else {
         std::ostringstream ss;
         ss << std::cin.rdbuf();
         source = ss.str();
-        config.fileName = "<stdin>";
+        contextName = "<stdin>";
     }
+
+    config.fileName = contextName;
 
 #if defined(DEBUG)
     config.enableTracing = traceParsing;
 #endif
 
+    Parser parser(config);
     Owned<Script> result;
-    if ((result = Parser().parseScript(config, source)) == nullptr) {
+
+    if ((result = parser.parseScript(source)) == nullptr) {
         return -1;
     }
 
@@ -96,8 +102,13 @@ static int run(const std::string &fileName, const std::string &messageName,
 
     Runtime runtime(runtimeConfig);
 
-    auto object = std::make_shared<Object>(fileName, result);
-    runtime.send(RuntimeMessage(messageName, values), object);
+    auto object = MakeStrong<Object>(fileName, result);
+    try {
+        runtime.send(RuntimeMessage(messageName, values), object);
+    } catch (RuntimeError &error) {
+        std::cerr << contextName << ":" << error.where << ": error: "
+                  << error.what() << std::endl;
+    }
 
     return 0;
 }

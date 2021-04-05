@@ -108,8 +108,6 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
 
     runtime::Value evaluateFunction(const RuntimeMessage &message);
 
-    void report(const RuntimeError &error) const;
-
 #if defined(DEBUG)
     void trace(const std::string &msg) const;
 #endif

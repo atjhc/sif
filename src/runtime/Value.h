@@ -36,9 +36,12 @@ class Value {
 
     Value() : value("") {}
     Value(const Value &v) : value(v.value) {}
+
     Value(const std::string &s) : value(s) {}
     Value(const char *s) : Value(std::string(s)) {}
+
     Value(bool v) : value((v ? "true" : "false")) {}
+
     Value(double v) {
         std::ostringstream ss;
         ss << v;
