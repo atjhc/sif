@@ -211,7 +211,11 @@ pi                          LEX_RETURN(PI);
     LEX_RETURN(IDENTIFIER); 
 }
 
-\¬\n {
+\¬.*\n {
+    /* ignore */ ;
+}
+
+\\.*\n {
     /* ignore */ ;
 }
 
@@ -229,6 +233,10 @@ pi                          LEX_RETURN(PI);
 
 [ \t]* {
     /* ignore */ ;
+}
+
+. {
+    /* ignore */
 }
 
 %%
