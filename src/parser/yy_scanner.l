@@ -220,11 +220,11 @@ lineFeed 					LEX_RETURN(LINE_FEED);
 	LEX_RETURN(EOL);
 }
 
-"--".*\n {
+"--".*\n? {
 	/* ignore */ ;
 }
 
-"#".*\n {
+"#".*\n? {
 	/* ignore */ ;
 }
 

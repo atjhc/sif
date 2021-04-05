@@ -14,28 +14,21 @@
 //  limitations under the License.
 //
 
-#pragma once
+#include "ast/Property.h"
 
-#include "Common.h"
-#include "Utilities.h"
-#include "runtime/Value.h"
+CH_AST_NAMESPACE_BEGIN
 
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <vector>
+void Property::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+    out << "the ";
+    if (adjective) {
+        adjective->prettyPrint(out, context);
+        out << " ";
+    }
+    name->prettyPrint(out, context);
+    if (expression) {
+        out << " of ";
+        expression->prettyPrint(out, context);
+    }
+}
 
-CH_RUNTIME_NAMESPACE_BEGIN
-
-class Variables {
-    std::unordered_map<std::string, Value> _values;
-
-  public:
-    Value get(const std::string &name) const;
-    void set(const std::string &name, const Value &value);
-
-    void insert(const Variables &variables);
-    void insert(const std::vector<std::string> &names, const std::vector<Value> &values);
-};
-
-CH_RUNTIME_NAMESPACE_END
+CH_AST_NAMESPACE_END

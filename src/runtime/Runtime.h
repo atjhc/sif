@@ -34,7 +34,7 @@
 #include <unordered_set>
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 using namespace ast;
 
@@ -105,7 +105,7 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void execute(const ast::Handler &handler, const std::vector<Value> &arguments);
     void execute(const ast::StatementList &statements);
 
-    Value evaluateFunction(const RuntimeMessage &message);
+    runtime::Value evaluateFunction(const RuntimeMessage &message);
 
     void report(const RuntimeError &error) const;
 
@@ -142,6 +142,8 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
 
     Value valueOf(const Identifier &) override;
     Value valueOf(const FunctionCall &) override;
+    Value valueOf(const Property &) override;
+    Value valueOf(const Descriptor &) override;
     Value valueOf(const BinaryOp &) override;
     Value valueOf(const Not &) override;
     Value valueOf(const Minus &) override;
@@ -161,4 +163,4 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     friend ValueFunction;
 };
 
-CH_NAMESPACE_END
+CH_RUNTIME_NAMESPACE_END

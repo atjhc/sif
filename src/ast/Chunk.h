@@ -49,7 +49,7 @@ struct RangeChunk : Chunk {
     RangeChunk(Type t, Owned<Expression> &se)
         : Chunk(t), start(std::move(se)) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -59,7 +59,7 @@ struct LastChunk : Chunk {
 
     LastChunk(Type t) : Chunk(t) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -68,7 +68,7 @@ struct MiddleChunk : Chunk {
     MiddleChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
     MiddleChunk(Type t) : Chunk(t) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -77,7 +77,7 @@ struct AnyChunk : Chunk {
     AnyChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
     AnyChunk(Type t) : Chunk(t) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

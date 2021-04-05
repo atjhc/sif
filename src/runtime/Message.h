@@ -21,7 +21,7 @@
 
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 struct RuntimeMessage {
     std::string name;
@@ -31,4 +31,4 @@ struct RuntimeMessage {
         : name(lowercase(n)), arguments(args) {}
 };
 
-CH_NAMESPACE_END;
+CH_RUNTIME_NAMESPACE_END

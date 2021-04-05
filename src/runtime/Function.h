@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <numeric>
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 class Runtime;
 
@@ -105,4 +105,4 @@ struct ResultFunction: RuntimeFunction {
 };
 
 
-CH_NAMESPACE_END;
+CH_RUNTIME_NAMESPACE_END

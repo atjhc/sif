@@ -30,6 +30,7 @@
 
 using namespace chatter;
 using namespace chatter::ast;
+using namespace chatter::runtime;
 
 #if defined(DEBUG)
 static int traceParsing = 0;
@@ -76,9 +77,9 @@ static int run(const std::string &fileName, const std::string &messageName,
         return 0;
     }
 
-    std::vector<chatter::Value> values;
+    std::vector<Value> values;
     for (auto &argument : arguments) {
-        values.push_back(chatter::Value(argument));
+        values.push_back(Value(argument));
     }
 
     RuntimeConfig runtimeConfig;

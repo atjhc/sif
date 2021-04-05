@@ -28,6 +28,9 @@ CH_AST_NAMESPACE_BEGIN
 
 struct Identifier;
 struct FunctionCall;
+struct Property;
+struct ObjectProperty;
+struct Descriptor;
 struct BinaryOp;
 struct Not;
 struct Minus;
@@ -41,23 +44,25 @@ struct LastChunk;
 
 class ExpressionVisitor {
   public:
-    virtual Value valueOf(const Identifier &) = 0;
-    virtual Value valueOf(const FunctionCall &) = 0;
-    virtual Value valueOf(const BinaryOp &) = 0;
-    virtual Value valueOf(const Not &) = 0;
-    virtual Value valueOf(const Minus &) = 0;
-    virtual Value valueOf(const FloatLiteral &) = 0;
-    virtual Value valueOf(const IntLiteral &) = 0;
-    virtual Value valueOf(const StringLiteral &) = 0;
-    virtual Value valueOf(const RangeChunk &) = 0;
-    virtual Value valueOf(const AnyChunk &) = 0;
-    virtual Value valueOf(const LastChunk &) = 0;
-    virtual Value valueOf(const MiddleChunk &) = 0;
+    virtual runtime::Value valueOf(const Identifier &) = 0;
+    virtual runtime::Value valueOf(const FunctionCall &) = 0;
+    virtual runtime::Value valueOf(const Property &) = 0;
+    virtual runtime::Value valueOf(const Descriptor &) = 0;
+    virtual runtime::Value valueOf(const BinaryOp &) = 0;
+    virtual runtime::Value valueOf(const Not &) = 0;
+    virtual runtime::Value valueOf(const Minus &) = 0;
+    virtual runtime::Value valueOf(const FloatLiteral &) = 0;
+    virtual runtime::Value valueOf(const IntLiteral &) = 0;
+    virtual runtime::Value valueOf(const StringLiteral &) = 0;
+    virtual runtime::Value valueOf(const RangeChunk &) = 0;
+    virtual runtime::Value valueOf(const AnyChunk &) = 0;
+    virtual runtime::Value valueOf(const LastChunk &) = 0;
+    virtual runtime::Value valueOf(const MiddleChunk &) = 0;
 };
 
 struct Expression : Node {
     virtual ~Expression() = default;
-    virtual Value evaluate(ExpressionVisitor &) const = 0;
+    virtual runtime::Value evaluate(ExpressionVisitor &) const = 0;
 };
 
 struct ExpressionList : Node {
@@ -80,7 +85,7 @@ struct Identifier : Expression {
     Identifier(const std::string &n) : name(n) {}
     Identifier(const char *n) : name(n) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -98,7 +103,7 @@ struct FunctionCall : Expression {
     FunctionCall(Owned<Identifier> &id)
         : identifier(std::move(id)), arguments(nullptr) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -131,7 +136,7 @@ struct BinaryOp : Expression {
     BinaryOp(Operator o, Owned<Expression> &l, Owned<Expression> &r)
         : op(o), left(std::move(l)), right(std::move(r)) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -141,7 +146,7 @@ struct Not : Expression {
 
     Not(Owned<Expression> &e) : expression(std::move(e)) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -151,7 +156,7 @@ struct Minus : Expression {
 
     Minus(Owned<Expression> &e) : expression(std::move(e)) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -161,7 +166,7 @@ struct FloatLiteral : Expression {
 
     FloatLiteral(float v) : value(v) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -171,7 +176,7 @@ struct IntLiteral : Expression {
 
     IntLiteral(int i) : value(i) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
@@ -181,7 +186,7 @@ struct StringLiteral : Expression {
 
     StringLiteral(const std::string &v) : value(v) {}
 
-    Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };

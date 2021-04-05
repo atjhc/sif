@@ -17,10 +17,12 @@
 #include "runtime/Runtime.h"
 #include "runtime/Object.h"
 #include "utilities/chunk.h"
+#include "ast/Property.h"
+#include "ast/Descriptor.h"
 
 #include <cmath>
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 #if !defined(DEBUG)
     #define trace(x)
@@ -119,10 +121,11 @@ Value Runtime::call(const RuntimeMessage &message, Strong<Object> target) {
         stack.pop();
     }
 
-    if (passing && target) {
-        target = target->parent();
+    if (passing) {
+        return call(message, target->parent());
     }
-    return call(message, target);
+
+    return result;
 }
 
 #pragma mark - Private
@@ -450,6 +453,43 @@ Value Runtime::valueOf(const FunctionCall &e) {
     return call(message, stack.top().target);
 }
 
+Value Runtime::valueOf(const Property &p) {
+    auto message = RuntimeMessage(p.name->name);
+    if (p.expression) {
+        auto value = p.expression->evaluate(*this);
+        message.arguments.push_back(value);
+    }
+
+    // Property calls skip the message path.
+    return call(message, nullptr);
+}
+
+Value Runtime::valueOf(const Descriptor &d) {
+    auto& name = d.name->name;
+    if (!d.value) {
+        // Assume a variable lookup.
+        return get(d.name->name);
+    }
+
+    // Check the responder chain for a function handler.
+    auto message = RuntimeMessage(d.name->name);
+    auto handler = stack.top().target->functionFor(message);
+    if (handler.has_value()) {
+        message.arguments.push_back(d.value->evaluate(*this));
+        return call(message, stack.top().target);
+    }
+
+    // Check for a builtin function.
+    auto fn = functions.find(lowercase(message.name));
+    if (fn != functions.end()) {
+        message.arguments.push_back(d.value->evaluate(*this));
+        return fn->second->valueOf(*this, message);
+    }
+
+    // TODO: Find an object using the descriptor.
+    throw RuntimeError("unrecognized descriptor '" + name + "'", d.location);
+}
+
 Value Runtime::valueOf(const BinaryOp &e) {
     auto lhs = e.left->evaluate(*this);
     auto rhs = e.right->evaluate(*this);
@@ -558,4 +598,4 @@ Value Runtime::valueOf(const MiddleChunk &c) {
     return Value(middle_chunk(chunk_type(c.type), value.value).get());
 }
 
-CH_NAMESPACE_END
+CH_RUNTIME_NAMESPACE_END

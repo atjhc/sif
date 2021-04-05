@@ -21,7 +21,7 @@
 #include "ast/Handler.h"
 #include "runtime/Runtime.h"
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 class Object {
     std::string _name;
@@ -42,4 +42,4 @@ class Object {
     Optional<Ref<ast::Handler>> functionFor(const RuntimeMessage &message);
 };
 
-CH_NAMESPACE_END
+CH_RUNTIME_NAMESPACE_END

@@ -14,28 +14,17 @@
 //  limitations under the License.
 //
 
-#pragma once
+#include "ast/Descriptor.h"
 
-#include "Common.h"
-#include "Utilities.h"
-#include "runtime/Value.h"
+CH_AST_NAMESPACE_BEGIN
 
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <vector>
+void Descriptor::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
+    name->prettyPrint(out, context);
+    if (value) {
+        out << " (";
+        value->prettyPrint(out, context);
+        out << ")";
+    }
+}
 
-CH_RUNTIME_NAMESPACE_BEGIN
-
-class Variables {
-    std::unordered_map<std::string, Value> _values;
-
-  public:
-    Value get(const std::string &name) const;
-    void set(const std::string &name, const Value &value);
-
-    void insert(const Variables &variables);
-    void insert(const std::vector<std::string> &names, const std::vector<Value> &values);
-};
-
-CH_RUNTIME_NAMESPACE_END
+CH_AST_NAMESPACE_END

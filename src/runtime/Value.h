@@ -27,7 +27,7 @@
 
 #include <iostream>
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 // TODO: Add exceptions for improper conversions.
 class Value {
@@ -117,4 +117,4 @@ static inline std::ostream &operator<<(std::ostream &out, const std::vector<Valu
     return out;
 }
 
-CH_NAMESPACE_END
+CH_RUNTIME_NAMESPACE_END

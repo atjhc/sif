@@ -18,7 +18,7 @@
 
 #include <iostream>
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 bool Value::operator==(const Value &rhs) const { return lowercase(value) == lowercase(rhs.value); }
 
@@ -86,4 +86,4 @@ Value Value::operator^(const Value &rhs) const {
     }
 }
 
-CH_NAMESPACE_END
+CH_RUNTIME_NAMESPACE_END

@@ -22,7 +22,7 @@
 
 #include <sstream>
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 Value ValueFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
     auto expression = m.arguments[0];
@@ -74,4 +74,4 @@ Value ResultFunction::valueOf(Runtime &r, const RuntimeMessage &) const {
 	return r.stack.top().resultValue;
 }
 
-CH_NAMESPACE_END;
+CH_RUNTIME_NAMESPACE_END

@@ -17,7 +17,7 @@
 #include "runtime/Object.h"
 #include "runtime/Runtime.h"
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &parent)
     : _name(n), _script(std::move(s)), _parent(parent) {
@@ -57,4 +57,4 @@ Optional<Ref<ast::Handler>> Object::functionFor(const RuntimeMessage &message) {
     return std::make_optional(i->second);
 }
 
-CH_NAMESPACE_END
+CH_RUNTIME_NAMESPACE_END

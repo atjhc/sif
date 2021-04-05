@@ -17,25 +17,29 @@
 #pragma once
 
 #include "Common.h"
-#include "Utilities.h"
+#include "ast/Base.h"
+#include "ast/Expression.h"
 #include "runtime/Value.h"
 
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <ostream>
 
-CH_RUNTIME_NAMESPACE_BEGIN
+CH_AST_NAMESPACE_BEGIN
 
-class Variables {
-    std::unordered_map<std::string, Value> _values;
+struct Identifier;
 
-  public:
-    Value get(const std::string &name) const;
-    void set(const std::string &name, const Value &value);
+struct Descriptor : Expression {
+    Owned<Identifier> name;
+    Owned<Expression> value;
 
-    void insert(const Variables &variables);
-    void insert(const std::vector<std::string> &names, const std::vector<Value> &values);
+    Descriptor(Owned<Identifier> &n, Owned<Expression> &v)
+        : name(std::move(n)), value(std::move(v)) {}
+
+    Descriptor(Owned<Identifier> &n)
+        : name(std::move(n)), value(nullptr) {}
+
+    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
+
+    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
 };
 
-CH_RUNTIME_NAMESPACE_END
+CH_AST_NAMESPACE_END

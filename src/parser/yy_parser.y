@@ -49,6 +49,8 @@ using namespace chatter::ast;
     #include "ast/Chunk.h"
     #include "ast/Command.h"
     #include "ast/Repeat.h"
+    #include "ast/Property.h"
+    #include "ast/Descriptor.h"
 }
 
 // Use our custom location type.
@@ -104,6 +106,9 @@ using namespace chatter::ast;
 // Chunks
 %token CHAR WORD LINE ITEM
 
+%nonassoc IDENTIFIER 
+%nonassoc OF
+
 %left OR AND
 %left IS EQ NEQ
 %left NOT
@@ -113,8 +118,6 @@ using namespace chatter::ast;
 %left PLUS MINUS
 %left MULT DIV DIV_TRUNC MOD
 %left CARROT
-
-%right IDENTIFIER OF
 
 %nonassoc THEN
 %nonassoc ELSE
@@ -129,7 +132,8 @@ using namespace chatter::ast;
 %nterm <Owned<StatementList>> statementList maybeStatementList elseBlock
 %nterm <Owned<Statement>> statement ifStatement keywordStatement commandStatement
 %nterm <Owned<Statement>> repeatStatement repeatForever repeatCount repeatCondition repeatRange
-%nterm <Owned<Expression>> expression ifCondition functionCall ordinal constant
+%nterm <Owned<Expression>> factor literal expression ifCondition functionCall property ordinal constant
+%nterm <Owned<Descriptor>> descriptor
 %nterm <Owned<Chunk>> chunk
 %nterm <Chunk::Type> chunkType
 %nterm <Owned<ExpressionList>> expressionList
@@ -550,10 +554,84 @@ maybeTimes
     | TIMES
 ;
 
-expression
-    : LPAREN expression RPAREN {
-        $$ = std::move($2);
+descriptor
+    : IDENTIFIER {
+        $$ = MakeOwned<Descriptor>($1);
+        $$->location = @1.first;
     }
+    | IDENTIFIER factor {
+        if ($2) {
+            $$ = MakeOwned<Descriptor>($1, $2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+factor
+    : literal {
+        $$ = std::move($1);
+    }
+    | constant {
+        $$ = std::move($1);
+    }
+    | descriptor {
+        $$ = std::move($1);
+    }
+    | functionCall {
+        $$ = std::move($1);
+    }
+    | property {
+        $$ = std::move($1);
+    }
+    | LPAREN expression RPAREN {
+        if ($2) {
+            $$ = std::move($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | MINUS factor {
+        if ($2) {
+            $$ = MakeOwned<Minus>($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
+    | NOT factor {
+        if ($2) {
+            $$ = MakeOwned<Not>($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+literal
+    : INT_LITERAL {
+        $$ = std::move($1);
+    }
+    | FLOAT_LITERAL {
+        $$ = std::move($1);
+    }
+    | STRING_LITERAL {
+        $$ = std::move($1);
+    }
+;
+
+expression
+    : factor {
+        if ($1) {
+            $$ = std::move($1);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
     | expression PLUS expression {
         if ($1 && $3) {
             $$ = MakeOwned<BinaryOp>(BinaryOp::Plus, $1, $3);
@@ -714,56 +792,54 @@ expression
             $$ = nullptr;
         }
     }
-    | functionCall {
-        $$ = std::move($1);
-    } 
-    | MINUS expression {
-        if ($2) {
-            $$ = MakeOwned<Minus>($2);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    } 
-    | NOT expression {
-        if ($2) {
-            $$ = MakeOwned<Not>($2);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | constant {
-        $$ = std::move($1);
-    }
-    | IDENTIFIER {
-        $$ = std::move($1);
-    }
-    | INT_LITERAL {
-        $$ = std::move($1);
-    }
-    | FLOAT_LITERAL {
-        $$ = std::move($1);
-    }
-    | STRING_LITERAL {
-        $$ = std::move($1);
-    }
 ;
 
-functionCall
+property
     : THE IDENTIFIER {
-        $$ = MakeOwned<FunctionCall>($2);
+        $$ = MakeOwned<Property>($2);
         $$->location = @2.first;
     }
-    | THE IDENTIFIER OF expression {
+    | THE IDENTIFIER IDENTIFIER {
+        $$ = MakeOwned<Property>($2, $3);
+        $$->location = @2.first;
+    }
+    | THE IDENTIFIER OF factor {
         if ($4) {
-            $$ = MakeOwned<FunctionCall>($2, $4);
+            $$ = MakeOwned<Property>($2, $4);
             $$->location = @2.first;
         } else {
             $$ = nullptr;
         }
     }
-    | IDENTIFIER LPAREN expressionList RPAREN {
+    | IDENTIFIER OF factor {
+        if ($3) {
+            $$ = MakeOwned<Property>($1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | THE IDENTIFIER IDENTIFIER OF factor {
+        if ($5) {
+            $$ = MakeOwned<Property>($2, $3, $5);
+            $$->location = @2.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    // TODO: Disabled for now due to conflicts.
+    // | IDENTIFIER IDENTIFIER OF factor {
+    //     if ($4) {
+    //         $$ = MakeOwned<Property>($1, $2, $4);
+    //         $$->location = @1.first;
+    //     } else {
+    //         $$ = nullptr;
+    //     }
+    // }
+;
+
+functionCall
+    : IDENTIFIER LPAREN expressionList RPAREN {
         if ($3) {
             $$ = MakeOwned<FunctionCall>($1, $3);
             $$->location = @1.first;
@@ -778,10 +854,11 @@ functionCall
 ;
 
 expressionList
-    : expression {
-        if ($1) {
+    : expression COMMA expression {
+        if ($1 && $3) {
             $$ = MakeOwned<ExpressionList>();
             $$->add($1);
+            $$->add($3);
         } else {
             $$ = nullptr;
         }

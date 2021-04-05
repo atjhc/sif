@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-CH_NAMESPACE_BEGIN
+CH_RUNTIME_NAMESPACE_BEGIN
 
 Value Variables::get(const std::string &name) const {
     auto key = lowercase(name);
@@ -46,4 +46,4 @@ void Variables::insert(const std::vector<std::string> &names, const std::vector<
     }
 }
 
-CH_NAMESPACE_END
+CH_RUNTIME_NAMESPACE_END
