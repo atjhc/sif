@@ -30,10 +30,11 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-// TODO: Add exceptions for improper conversions.
+class Object;
+
 class Value {
   public:
-    std::variant<std::string, double, long, bool> value;
+    std::variant<std::string, double, long, bool, Strong<Object>> value;
 
     Value() : value(std::string("")) {}
 
@@ -66,6 +67,9 @@ class Value {
     double asFloat() const;
 
     std::string asString() const;
+
+    bool isObject() const;
+    Strong<Object> asObject() const;
 
     operator int() const { return asInteger(); }
     operator long() const { return asInteger(); }

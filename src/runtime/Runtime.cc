@@ -16,6 +16,7 @@
 
 #include "runtime/Runtime.h"
 #include "runtime/Object.h"
+#include "runtime/Property.h"
 #include "utilities/chunk.h"
 #include "utilities/devnull.h"
 #include "ast/Property.h"
@@ -24,6 +25,8 @@
 #include <cmath>
 
 CH_RUNTIME_NAMESPACE_BEGIN
+
+using namespace ast;
 
 #if !defined(DEBUG)
     #define trace(x)
@@ -58,6 +61,7 @@ Runtime::Runtime(const RuntimeConfig &c)
     add("param", new ParamFunction());    
     add("result", new ResultFunction());
     add("value", new ValueFunction());
+    add("target", new TargetFunction());
 
     // TODO: Add these missing functions
     // runtime.add("seconds", new OneArgumentFunction<float(float)>(roundf));
@@ -264,7 +268,7 @@ void Runtime::visit(const Exit &s) {
     if (s.messageKey->name == stack.top().message.name) {
         stack.top().exiting = true;
     } else {
-        throw RuntimeError("Unexpected identifier " + s.messageKey->name, s.location);
+        throw RuntimeError("unexpected identifier " + s.messageKey->name, s.location);
     }
 }
 
@@ -273,7 +277,7 @@ void Runtime::visit(const Pass &s) {
     if (s.messageKey->name == stack.top().message.name) {
         stack.top().passing = true;
     } else {
-        throw RuntimeError("Unexpected identifier " + s.messageKey->name, s.location);
+        throw RuntimeError("unexpected identifier " + s.messageKey->name, s.location);
     }
 }
 
@@ -376,11 +380,11 @@ void Runtime::perform(const Add &c) {
     auto targetValue = get(targetName);
 
     if (!targetValue.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(),
+        throw RuntimeError("expected number, got " + targetValue.asString(),
                            c.destination->location);
     }
     if (!value.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(),
+        throw RuntimeError("expected number, got " + targetValue.asString(),
                            c.expression->location);
     }
 
@@ -394,11 +398,11 @@ void Runtime::perform(const Subtract &c) {
     auto targetValue = get(targetName);
 
     if (!targetValue.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(),
+        throw RuntimeError("expected number, got " + targetValue.asString(),
                            c.destination->location);
     }
     if (!value.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(),
+        throw RuntimeError("expected number, got " + targetValue.asString(),
                            c.expression->location);
     }
     set(targetName, targetValue.asFloat() - value.asFloat());
@@ -411,11 +415,11 @@ void Runtime::perform(const Multiply &c) {
     auto targetValue = get(targetName);
 
     if (!targetValue.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(),
+        throw RuntimeError("expected number, got " + targetValue.asString(),
                            c.destination->location);
     }
     if (!value.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(),
+        throw RuntimeError("expected number, got " + targetValue.asString(),
                            c.expression->location);
     }
     set(targetName, targetValue.asFloat() * value.asFloat());
@@ -426,11 +430,11 @@ void Runtime::perform(const Divide &c) {
     auto &targetName = c.destination->name;
     auto targetValue = get(targetName);
     if (!targetValue.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(),
+        throw RuntimeError("expected number, got " + targetValue.asString(),
                            c.destination->location);
     }
     if (!value.isNumber()) {
-        throw RuntimeError("Expected number, got " + targetValue.asString(),
+        throw RuntimeError("expected number, got " + targetValue.asString(),
                            c.expression->location);
     }
     set(targetName, targetValue.asFloat() / value.asFloat());
@@ -443,7 +447,7 @@ Value Runtime::evaluateFunction(const RuntimeMessage &message) {
     if (fn != functions.end()) {
         return fn->second->valueOf(*this, message);
     }
-    return Value();
+    throw RuntimeError("unrecognized handler " + message.name);
 }
 
 #pragma mark - ExpressionVisitor
@@ -462,20 +466,30 @@ Value Runtime::valueOf(const FunctionCall &e) {
     return call(message, stack.top().target);
 }
 
-Value Runtime::valueOf(const Property &p) {
+Value Runtime::valueOf(const ast::Property &p) {
     auto message = RuntimeMessage(p.name->name);
     if (p.expression) {
         auto value = p.expression->evaluate(*this);
-        message.arguments.push_back(value);
+        if (value.isObject()) {
+            auto property = runtime::Property(p);
+            return value.asObject()->valueForProperty(property);
+        } else {
+            message.arguments.push_back(value);
+        }
     }
 
     // Property calls skip the message path.
     return call(message, nullptr);
 }
 
-Value Runtime::valueOf(const Descriptor &d) {
+Value Runtime::valueOf(const ast::Descriptor &d) {
     auto& name = d.name->name;
     if (!d.value) {
+        auto& name = d.name->name;
+        // Check for special "me" descriptor.
+        if (name == "me") {
+            return Value(stack.top().target);
+        }
         // Assume a variable lookup.
         return get(d.name->name);
     }
@@ -573,7 +587,7 @@ Value Runtime::valueOf(const Minus &e) {
     } else if (value.isFloat()) {
         return Value(-e.expression->evaluate(*this).asFloat());
     } else {
-        throw RuntimeError("Expected number; got \"" + value.asString() + "\"", e.location);
+        throw RuntimeError("expected number; got \"" + value.asString() + "\"", e.location);
     }
 }
 

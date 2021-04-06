@@ -15,6 +15,7 @@
 //
 
 #include "runtime/Value.h"
+#include "runtime/Object.h"
 
 #include <iostream>
 
@@ -138,6 +139,14 @@ std::string Value::asString() const {
         return *v ? "true" : "false";
     }
     throw RuntimeError("value has unexpected type");
+}
+
+bool Value::isObject() const {
+    return std::holds_alternative<Strong<Object>>(value);
+}
+
+Strong<Object> Value::asObject() const {
+    return std::get<Strong<Object>>(value);
 }
 
 bool Value::operator==(const Value &rhs) const {

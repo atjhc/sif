@@ -16,6 +16,7 @@
 
 #include "runtime/Object.h"
 #include "runtime/Runtime.h"
+#include "runtime/Property.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
@@ -32,7 +33,7 @@ Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object>
 
         auto i = map->find(name);
         if (i != map->end()) {
-            throw RuntimeError("Redefinition of handler " + name, handler->location);
+            throw RuntimeError("redefinition of handler " + name, handler->location);
         }
 
         map->insert({lowercase(name), *handler});
@@ -55,6 +56,17 @@ Optional<Ref<ast::Handler>> Object::functionFor(const RuntimeMessage &message) {
     }
 
     return std::make_optional(i->second);
+}
+
+Value Object::valueForProperty(const Property &p) const {
+    if (p.name == "name") {
+        return Value(_name);
+    }
+    throw RuntimeError("unrecognized property");
+}
+
+void Object::setValueForProperty(const Value &v, const Property &p) {
+    throw RuntimeError("unable to set property");
 }
 
 CH_RUNTIME_NAMESPACE_END

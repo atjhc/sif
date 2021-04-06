@@ -104,5 +104,8 @@ struct ResultFunction: RuntimeFunction {
     Value valueOf(Runtime &, const RuntimeMessage &m) const override;
 };
 
+struct TargetFunction: RuntimeFunction {
+    Value valueOf(Runtime &, const RuntimeMessage &m) const override;
+};
 
 CH_RUNTIME_NAMESPACE_END

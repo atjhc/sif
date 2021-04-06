@@ -38,8 +38,6 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-using namespace ast;
-
 class Object;
 class Runtime;
 
@@ -77,10 +75,11 @@ struct RuntimeStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    RuntimeStackFrame(const RuntimeMessage &m, const Strong<Object> &t = nullptr) : message(m), target(t) {}
+    RuntimeStackFrame(const RuntimeMessage &m, const Strong<Object> &t)
+        : message(m), target(t) {}
 };
 
-class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
+class Runtime : public ast::StatementVisitor, public ast::ExpressionVisitor, public ast::CommandVisitor {
     RuntimeConfig config;
 
     // State information
@@ -107,7 +106,7 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     void execute(const ast::Handler &handler, const std::vector<Value> &arguments);
     void execute(const ast::StatementList &statements);
 
-    runtime::Value evaluateFunction(const RuntimeMessage &message);
+    Value evaluateFunction(const RuntimeMessage &message);
 
 #if defined(DEBUG)
     void trace(const std::string &msg) const;
@@ -115,46 +114,46 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
 
 #pragma mark - StatementVisitor
 
-    void visit(const If &) override;
-    void visit(const Repeat &) override;
-    void visit(const RepeatCount &s) override;
-    void visit(const RepeatRange &s) override;
-    void visit(const RepeatCondition &s) override;
-    void visit(const ExitRepeat &) override;
-    void visit(const NextRepeat &) override;
-    void visit(const Exit &) override;
-    void visit(const Pass &) override;
-    void visit(const Global &) override;
-    void visit(const Return &) override;
-    void visit(const Do &) override;
-    void visit(const Command &) override;
+    void visit(const ast::If &) override;
+    void visit(const ast::Repeat &) override;
+    void visit(const ast::RepeatCount &s) override;
+    void visit(const ast::RepeatRange &s) override;
+    void visit(const ast::RepeatCondition &s) override;
+    void visit(const ast::ExitRepeat &) override;
+    void visit(const ast::NextRepeat &) override;
+    void visit(const ast::Exit &) override;
+    void visit(const ast::Pass &) override;
+    void visit(const ast::Global &) override;
+    void visit(const ast::Return &) override;
+    void visit(const ast::Do &) override;
+    void visit(const ast::Command &) override;
 
 #pragma mark CommandVisitor
 
-    void perform(const Put &) override;
-    void perform(const Get &) override;
-    void perform(const Ask &) override;
-    void perform(const Add &) override;
-    void perform(const Subtract &) override;
-    void perform(const Multiply &) override;
-    void perform(const Divide &) override;
+    void perform(const ast::Put &) override;
+    void perform(const ast::Get &) override;
+    void perform(const ast::Ask &) override;
+    void perform(const ast::Add &) override;
+    void perform(const ast::Subtract &) override;
+    void perform(const ast::Multiply &) override;
+    void perform(const ast::Divide &) override;
 
 #pragma mark - ExpressionVisitor
 
-    Value valueOf(const Identifier &) override;
-    Value valueOf(const FunctionCall &) override;
-    Value valueOf(const Property &) override;
-    Value valueOf(const Descriptor &) override;
-    Value valueOf(const BinaryOp &) override;
-    Value valueOf(const Not &) override;
-    Value valueOf(const Minus &) override;
-    Value valueOf(const FloatLiteral &) override;
-    Value valueOf(const IntLiteral &) override;
-    Value valueOf(const StringLiteral &) override;
-    Value valueOf(const RangeChunk &) override;
-    Value valueOf(const AnyChunk &) override;
-    Value valueOf(const LastChunk &) override;
-    Value valueOf(const MiddleChunk &) override;
+    Value valueOf(const ast::Identifier &) override;
+    Value valueOf(const ast::FunctionCall &) override;
+    Value valueOf(const ast::Property &) override;
+    Value valueOf(const ast::Descriptor &) override;
+    Value valueOf(const ast::BinaryOp &) override;
+    Value valueOf(const ast::Not &) override;
+    Value valueOf(const ast::Minus &) override;
+    Value valueOf(const ast::FloatLiteral &) override;
+    Value valueOf(const ast::IntLiteral &) override;
+    Value valueOf(const ast::StringLiteral &) override;
+    Value valueOf(const ast::RangeChunk &) override;
+    Value valueOf(const ast::AnyChunk &) override;
+    Value valueOf(const ast::LastChunk &) override;
+    Value valueOf(const ast::MiddleChunk &) override;
 
     friend ResultFunction;
     friend ParamFunction;
@@ -162,6 +161,7 @@ class Runtime : StatementVisitor, ExpressionVisitor, CommandVisitor {
     friend ParamsFunction;
     friend RandomFunction;
     friend ValueFunction;
+    friend TargetFunction;
 };
 
 CH_RUNTIME_NAMESPACE_END

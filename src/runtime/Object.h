@@ -19,9 +19,11 @@
 #include "Common.h"
 #include "ast/Script.h"
 #include "ast/Handler.h"
-#include "runtime/Runtime.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
+
+struct RuntimeMessage;
+struct Property;
 
 class Object {
     std::string _name;
@@ -33,6 +35,7 @@ class Object {
 
   public:
     Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &parent = nullptr);
+    virtual ~Object() = default;
 
     const std::string &name() const { return _name; }
     const Owned<ast::Script> &script() const { return _script; }
@@ -40,6 +43,9 @@ class Object {
 
     Optional<Ref<ast::Handler>> handlerFor(const RuntimeMessage &message);
     Optional<Ref<ast::Handler>> functionFor(const RuntimeMessage &message);
+
+    virtual Value valueForProperty(const Property &p) const;
+    virtual void setValueForProperty(const Value &v, const Property &p);
 };
 
 CH_RUNTIME_NAMESPACE_END

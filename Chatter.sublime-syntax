@@ -30,10 +30,10 @@ contexts:
     - match: '\b(if|else|then|repeat|end|on|function|pass|exit|return|do|next|put|get|it|global|is|a|an|in|not)\b'
       scope: keyword.control.c
       
-    - match: '\b(before|into|after|the|of)\b'
+    - match: '\b(before|into|after|the|of|to)\b'
       scope: keyword.control.c
 
-    - match: '\b(true|false|empty|tab|space|zero|one|two|three|four|five|six|seven|eight|nine|ten|quote)\b'
+    - match: '\b(true|false|empty|tab|space|zero|one|two|three|four|five|six|seven|eight|nine|ten|quote|pi)\b'
       scope: constant.numeric.c
 
     - match: '\b(-)?[0-9.]+\b'

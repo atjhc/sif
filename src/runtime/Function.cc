@@ -28,7 +28,7 @@ Value ValueFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
     auto expression = m.arguments[0];
 
 	Parser parser(ParserConfig("<runtime>", devnull));
-    Owned<Expression> result;
+    Owned<ast::Expression> result;
     if ((result = parser.parseExpression(expression.asString())) == nullptr) {
         return expression.asString();
     }
@@ -73,6 +73,10 @@ Value ParamCountFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
 
 Value ResultFunction::valueOf(Runtime &r, const RuntimeMessage &) const {
 	return r.stack.top().resultValue;
+}
+
+Value TargetFunction::valueOf(Runtime &r, const RuntimeMessage &) const {
+	return Value(r.stack.top().target);
 }
 
 CH_RUNTIME_NAMESPACE_END
