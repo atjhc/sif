@@ -1066,7 +1066,7 @@ constant
         $$ = MakeOwned<IntLiteral>(10);
     }
     | PI {
-        $$ = MakeOwned<IntLiteral>(M_PI);
+        $$ = MakeOwned<FloatLiteral>(M_PI);
     }
 ;
 
