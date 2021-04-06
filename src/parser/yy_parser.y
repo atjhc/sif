@@ -398,6 +398,10 @@ commandStatement
         $$ = MakeOwned<Command>($1);
         $$->location = @1.first;
     }
+    | IDENTIFIER expression {
+        $$ = MakeOwned<Command>($1, $2);
+        $$->location = @1.first;
+    }
     | IDENTIFIER expressionList {
         $$ = MakeOwned<Command>($1, $2);
         $$->location = @1.first;
@@ -613,22 +617,6 @@ factor
             $$ = nullptr;
         }
     }
-    | MINUS factor {
-        if ($2) {
-            $$ = MakeOwned<Minus>($2);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    } 
-    | NOT factor {
-        if ($2) {
-            $$ = MakeOwned<Not>($2);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
 ;
 
 literal
@@ -652,6 +640,22 @@ expression
             $$ = nullptr;
         }
     } 
+    | MINUS expression {
+        if ($2) {
+            $$ = MakeOwned<Minus>($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
+    | NOT expression {
+        if ($2) {
+            $$ = MakeOwned<Not>($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
     | expression PLUS expression {
         if ($1 && $3) {
             $$ = MakeOwned<BinaryOp>(BinaryOp::Plus, $1, $3);

@@ -51,7 +51,10 @@ struct Command : Statement {
 
     Command(Owned<Identifier> &n, Owned<ExpressionList> &args)
         : name(std::move(n)), arguments(std::move(args)) {}
-    
+
+    Command(Owned<Identifier> &n, Owned<Expression> &arg)
+        : name(std::move(n)), arguments(MakeOwned<ExpressionList>(arg)) {}
+
     Command(Owned<Identifier> &n)
         : name(std::move(n)), arguments(nullptr) {}
 

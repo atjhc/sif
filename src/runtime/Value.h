@@ -18,13 +18,14 @@
 
 #include "Common.h"
 #include "Utilities.h"
+#include "runtime/Error.h"
 
 #include <cstdlib>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
 #include <string>
-
+#include <variant>
 #include <iostream>
 
 CH_RUNTIME_NAMESPACE_BEGIN
@@ -32,62 +33,45 @@ CH_RUNTIME_NAMESPACE_BEGIN
 // TODO: Add exceptions for improper conversions.
 class Value {
   public:
-    std::string value;
+    std::variant<std::string, double, long, bool> value;
 
-    Value() : value("") {}
+    Value() : value(std::string("")) {}
+
     Value(const Value &v) : value(v.value) {}
-
-    Value(const std::string &s) : value(s) {}
-    Value(const char *s) : Value(std::string(s)) {}
-
-    Value(bool v) : value((v ? "true" : "false")) {}
-
-    Value(double v) {
-        std::ostringstream ss;
-        ss << v;
-        value = ss.str();
+    Value(Value &&v) : value(std::move(v.value)) {}
+    Value& operator=(const Value &v) {
+        value = v.value;
+        return *this;
     }
-    Value(float f) : Value(double(f)) {}
+    Value& operator=(Value &&v) {
+        value = std::move(v.value);
+        return *this;
+    }
 
     template<typename T>
-    Value(T v) : value(std::to_string(v)) {}
+    Value(const T &v) : value(v) {}
+    Value(const std::size_t &s) : value((long)s) {}
+    
+    bool isEmpty() const;
 
-    bool isEmpty() const {
-        return value.empty();
-    }
+    bool isBool() const;
+    bool asBool() const;
 
-    bool isBool() const {
-        auto lowercased = lowercase(value);
-        if (lowercased == "true" || lowercased == "false") {
-            return true;
-        }
-        return false;
-    }
+    bool isNumber() const;
 
-    bool asBool() const { return lowercase(value) == "true"; }
+    bool isInteger() const;
+    long asInteger() const;
 
-    bool isNumber() const { return isInteger() || isFloat(); }
+    bool isFloat() const;
+    double asFloat() const;
 
-    bool isInteger() const {
-        char *p;
-        strtol(value.c_str(), &p, 10);
-        return (*p == 0);
-    }
+    std::string asString() const;
 
-    int asInteger() const { return std::stoi(value); }
-
-    bool isFloat() const {
-        char *p;
-        strtof(value.c_str(), &p);
-        return (*p == 0);
-    }
-
-    float asFloat() const { return std::stof(value); }
-
-    const std::string &asString() const { return value; }
-
+    operator int() const { return asInteger(); }
+    operator long() const { return asInteger(); }
     operator float() const { return asFloat(); }
     operator double() const { return asFloat(); }
+    operator std::string() const { return asString(); }
 
     bool operator==(const Value &rhs) const;
     bool operator!=(const Value &rhs) const;
@@ -107,7 +91,7 @@ class Value {
 };
 
 static inline std::ostream &operator<<(std::ostream &out, const Value &v) {
-    out << v.value;
+    out << v.asString();
     return out;
 }
 

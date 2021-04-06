@@ -504,18 +504,19 @@ Value Runtime::valueOf(const BinaryOp &e) {
     auto rhs = e.right->evaluate(*this);
 
     if (e.op == BinaryOp::IsAn) {
-        auto typeName = lowercase(rhs.asString());
+        auto typeName = rhs.asString();
         if (typeName == "number") {
             return lhs.isNumber();
         }
         if (typeName == "integer") {
             return lhs.isInteger();
         }
-        if (typeName == "empty") {
-            return lhs.isEmpty();
-        }
         if (typeName == "logical") {
             return lhs.isBool();
+        }
+        // TODO: Hack since "empty" is a constant for empty string.
+        if (typeName == "empty" || typeName == "") {
+            return lhs.isEmpty();
         }
         // TODO: Check for additional host defined types.
         throw RuntimeError("unknown type name '" + rhs.asString() + "'", e.right->location);
@@ -555,9 +556,9 @@ Value Runtime::valueOf(const BinaryOp &e) {
     case BinaryOp::Mod:
         return lhs % rhs;
     case BinaryOp::Concat:
-        return lhs.value + rhs.value;
+        return lhs.asString() + rhs.asString();
     case BinaryOp::ConcatWithSpace:
-        return lhs.value + " " + rhs.value;
+        return lhs.asString() + " " + rhs.asString();
     default:
         return Value();
     }
@@ -596,35 +597,35 @@ static type chunk_type(Chunk::Type t) {
 }
 
 Value Runtime::valueOf(const RangeChunk &c) {
-    auto value = c.expression->evaluate(*this);
+    auto value = c.expression->evaluate(*this).asString();
     auto startValue = c.start->evaluate(*this);
 
     if (c.end) {
         auto endValue = c.end->evaluate(*this);
         return Value(range_chunk(chunk_type(c.type), startValue.asInteger() - 1,
-                                 endValue.asInteger() - 1, value.value)
+                                 endValue.asInteger() - 1, value)
                          .get());
     } else {
-        return Value(chunk(chunk_type(c.type), startValue.asInteger() - 1, value.value).get());
+        return Value(chunk(chunk_type(c.type), startValue.asInteger() - 1, value).get());
     }
 }
 
 Value Runtime::valueOf(const AnyChunk &c) {
-    auto value = c.expression->evaluate(*this);
+    auto value = c.expression->evaluate(*this).asString();
     return Value(
         random_chunk(
-            chunk_type(c.type), [this](int count) { return config.random() * count; }, value.value)
+            chunk_type(c.type), [this](int count) { return config.random() * count; }, value)
             .get());
 }
 
 Value Runtime::valueOf(const LastChunk &c) {
-    auto value = c.expression->evaluate(*this);
-    return Value(last_chunk(chunk_type(c.type), value.value).get());
+    auto value = c.expression->evaluate(*this).asString();
+    return Value(last_chunk(chunk_type(c.type), value).get());
 }
 
 Value Runtime::valueOf(const MiddleChunk &c) {
-    auto value = c.expression->evaluate(*this);
-    return Value(middle_chunk(chunk_type(c.type), value.value).get());
+    auto value = c.expression->evaluate(*this).asString();
+    return Value(middle_chunk(chunk_type(c.type), value).get());
 }
 
 CH_RUNTIME_NAMESPACE_END

@@ -1,0 +1,16 @@
+#!/usr/local/bin/chatter
+
+on begin
+  test 10, 10.5
+  test "10", 10.5
+  test 10, "10.5"
+  test "10", "10.5"
+end begin
+
+on test x, y
+  put x + y
+  put x - y
+  put x * y
+  put x / y
+  put x ^ y
+end test

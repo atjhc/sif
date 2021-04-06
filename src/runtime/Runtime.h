@@ -26,6 +26,7 @@
 #include "runtime/Value.h"
 #include "runtime/Function.h"
 #include "runtime/Message.h"
+#include "runtime/Error.h"
 
 #include <iostream>
 #include <optional>
@@ -41,13 +42,6 @@ using namespace ast;
 
 class Object;
 class Runtime;
-
-struct RuntimeError : std::runtime_error {
-    Location where;
-
-    RuntimeError(const std::string &_what, const Location &_where)
-        : std::runtime_error(_what), where(_where) {}
-};
 
 struct RuntimeConfig {
     std::ostream &stdout = std::cout;

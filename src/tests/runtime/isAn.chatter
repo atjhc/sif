@@ -1,0 +1,23 @@
+#!/usr/local/bin/chatter
+
+on begin
+  put empty into arg
+  test arg
+
+  put "hello" into arg
+  test arg
+
+  put 1 into arg
+  test arg
+  
+  put 1.1 into arg
+  test arg
+end begin
+
+on test arg
+  put "Checking: " & arg
+  put "logical: " & (arg is a logical)
+  put "number: " & (arg is a number)
+  put "integer: " & (arg is a integer)
+  put "empty: " & (arg is a empty)
+end test
