@@ -45,8 +45,15 @@ class Runtime;
 
 struct RuntimeConfig {
     std::ostream &stdout = std::cout;
-    std::istream &stdin = std::cin;
     std::ostream &stderr = std::cerr;
+    std::istream &stdin = std::cin;
+
+    RuntimeConfig()
+        : stdout(std::cout), stderr(std::cerr), stdin(std::cin) {}
+
+    RuntimeConfig(std::ostream &out, std::ostream &err, std::istream &in)
+        : stdout(out), stderr(err), stdin(in) {}    
+
     std::function<float()> random;
 
 #if defined(DEBUG)

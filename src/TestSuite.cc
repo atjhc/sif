@@ -18,6 +18,8 @@
 
 #include <sys/types.h>
 #include <dirent.h>
+#include <libgen.h>
+#include <sys/param.h>
 #include <fstream>
 #include <sstream>
 
@@ -149,6 +151,16 @@ std::string TestSuite::file_contents(const std::string &path) const {
     ss << file.rdbuf();
     contents = ss.str();
     return contents;
+}
+
+std::string TestSuite::basename(const std::string &path) const {
+    char buffer[MAXPATHLEN];
+    return std::string(basename_r(path.c_str(), buffer));
+}
+
+std::string TestSuite::dirname(const std::string &path) const {
+    char buffer[MAXPATHLEN];
+    return std::string(dirname_r(path.c_str(), buffer));
 }
 
 CH_NAMESPACE_END

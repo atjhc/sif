@@ -33,6 +33,7 @@ CH_NAMESPACE_BEGIN
     int _TEST_DISCARD(GROUP, NAME) = _NS::MainTestSuite().add(#GROUP, #NAME, _TEST_FN(GROUP, NAME)); \
     void _TEST_FN(GROUP, NAME) (_NS::TestSuite &suite)
 
+#define ASSERT_FAIL(M) suite._assert(false, M, __FILE__, __LINE__)
 #define ASSERT_TRUE(C) suite._assert((C), #C " == true", __FILE__, __LINE__)
 #define ASSERT_FALSE(C) suite._assert(!(C), #C " == false", __FILE__, __LINE__)
 #define ASSERT_NULL(V) suite._assert((V) == nullptr, #V " == nullptr", __FILE__, __LINE__)
@@ -78,6 +79,8 @@ struct TestSuite {
 
     std::vector<std::string> files_in(const std::string &path) const;
     std::string file_contents(const std::string &path) const;
+    std::string basename(const std::string &path) const;
+    std::string dirname(const std::string &path) const;
 
     void _assert(bool condition, const char *test, const char *file, int line);
 
