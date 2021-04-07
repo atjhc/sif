@@ -32,8 +32,8 @@ using namespace ast;
     #define trace(x)
 #endif
 
-Runtime::Runtime(const RuntimeConfig &c)
-    : config(c) {
+Runtime::Runtime(const RuntimeConfig &config)
+    : _config(config) {
 
     add("sin", new OneArgumentFunction<sinf>());
     add("cos", new OneArgumentFunction<cosf>());
@@ -85,23 +85,20 @@ bool Runtime::send(const Message &message, Strong<Object> target) {
     bool passing = true;
     auto handler = target->handlerFor(message);
     if (handler.has_value()) {
-        stack.push(RuntimeStackFrame(message, target));
+        _stack.push(RuntimeStackFrame(message, target));
         execute(*handler, message.arguments);
-        passing = stack.top().passing;
-        auto resultValue = stack.top().returningValue;
+        passing = _stack.top().passing;
+        auto resultValue = _stack.top().returningValue;
 
-        stack.pop();
-        if (stack.size()) {
-            stack.top().resultValue = resultValue;
+        _stack.pop();
+        if (_stack.size()) {
+            _stack.top().resultValue = resultValue;
         }
     }
 
     bool handled = true;
     if (passing) {
-        if (target) {
-            target = target->parent();
-        }
-        handled = send(message, target);
+        handled = send(message, target->parent());
     }
 
     return handled;
@@ -119,11 +116,11 @@ Value Runtime::call(const Message &message, Strong<Object> target) {
 
     auto handler = target->functionFor(message);
     if (handler.has_value()) {
-        stack.push(RuntimeStackFrame(message.name, target));
+        _stack.push(RuntimeStackFrame(message.name, target));
         execute(*handler, message.arguments);
-        passing = stack.top().passing;
-        result = stack.top().returningValue;
-        stack.pop();
+        passing = _stack.top().passing;
+        result = _stack.top().returningValue;
+        _stack.pop();
     }
 
     if (passing) {
@@ -133,29 +130,37 @@ Value Runtime::call(const Message &message, Strong<Object> target) {
     return result;
 }
 
+const RuntimeStackFrame& Runtime::currentFrame() {
+    return _stack.top();
+}
+
+std::function<float()> Runtime::random() {
+    return _config.random;
+}
+
 #pragma mark - Private
 
 void Runtime::add(const std::string &name, RuntimeFunction *fn) {
-    functions[lowercase(name)] = Owned<RuntimeFunction>(fn);
+    _functions[lowercase(name)] = Owned<RuntimeFunction>(fn);
 }
 
 void Runtime::set(const std::string &name, const Value &value) {
-    const auto &globalNames = stack.top().globals;
+    const auto &globalNames = _stack.top().globals;
     const auto &i = globalNames.find(name);
     if (i != globalNames.end()) {
-        globals.set(name, value);
+       _globals.set(name, value);
         return;
     }
-    return stack.top().variables.set(name, value);
+    return _stack.top().variables.set(name, value);
 }
 
 Value Runtime::get(const std::string &name) const {
-    const auto &globalNames = stack.top().globals;
+    const auto &globalNames = _stack.top().globals;
     const auto &i = globalNames.find(name);
     if (i != globalNames.end()) {
-        return globals.get(name);
+        return _globals.get(name);
     }
-    return stack.top().variables.get(name);
+    return _stack.top().variables.get(name);
 }
 
 void Runtime::execute(const ast::Handler &handler, const std::vector<Value> &values) {
@@ -170,7 +175,7 @@ void Runtime::execute(const ast::Handler &handler, const std::vector<Value> &val
         }
     }
 
-    stack.top().variables.insert(argumentNames, values);
+    _stack.top().variables.insert(argumentNames, values);
     execute(*handler.statements);
 }
 
@@ -178,7 +183,7 @@ void Runtime::execute(const ast::StatementList &statements) {
     for (auto &statement : statements.statements) {
         statement->accept(*this);
 
-        auto &frame = stack.top();
+        auto &frame = _stack.top();
         if (frame.passing || frame.exiting || frame.returning) {
             break;
         }
@@ -187,8 +192,8 @@ void Runtime::execute(const ast::StatementList &statements) {
 
 #if defined(DEBUG)
 void Runtime::trace(const std::string &msg) const {
-    if (config.enableTracing) {
-        config.stdout << "runtime: " << msg << std::endl;
+    if (_config.enableTracing) {
+       _config.stdout << "runtime: " << msg << std::endl;
     }
 }
 #endif
@@ -207,8 +212,8 @@ void Runtime::visit(const If &s) {
 void Runtime::visit(const Repeat &s) {
     while (true) {
         execute(*s.statements);
-        if (stack.top().exitingRepeat) {
-            stack.top().exitingRepeat = false;
+        if (_stack.top().exitingRepeat) {
+            _stack.top().exitingRepeat = false;
             break;
         }
     }
@@ -219,8 +224,8 @@ void Runtime::visit(const RepeatCount &s) {
     auto count = countValue.asInteger();
     for (int i = 0; i < count; i++) {
         execute(*s.statements);
-        if (stack.top().exitingRepeat) {
-            stack.top().exitingRepeat = false;
+        if (_stack.top().exitingRepeat) {
+            _stack.top().exitingRepeat = false;
             break;
         }
     }
@@ -233,10 +238,10 @@ void Runtime::visit(const RepeatRange &s) {
 
     auto i = startValue;
     while ((s.ascending ? i <= endValue : i >= endValue)) {
-        stack.top().variables.set(iteratorName, Value(i));
+        _stack.top().variables.set(iteratorName, Value(i));
         execute(*s.statements);
-        if (stack.top().exitingRepeat) {
-            stack.top().exitingRepeat = false;
+        if (_stack.top().exitingRepeat) {
+            _stack.top().exitingRepeat = false;
             break;
         }
         if (s.ascending) {
@@ -251,22 +256,22 @@ void Runtime::visit(const RepeatCondition &s) {
     auto conditionValue = s.condition->evaluate(*this).asBool();
     while (conditionValue == s.conditionValue) {
         execute(*s.statements);
-        if (stack.top().exitingRepeat) {
-            stack.top().exitingRepeat = false;
+        if (_stack.top().exitingRepeat) {
+            _stack.top().exitingRepeat = false;
             break;
         }
         conditionValue = s.condition->evaluate(*this).asBool();
     }
 }
 
-void Runtime::visit(const ExitRepeat &) { stack.top().exitingRepeat = true; }
+void Runtime::visit(const ExitRepeat &) { _stack.top().exitingRepeat = true; }
 
-void Runtime::visit(const NextRepeat &) { stack.top().skippingRepeat = true; }
+void Runtime::visit(const NextRepeat &) { _stack.top().skippingRepeat = true; }
 
 void Runtime::visit(const Exit &s) {
     trace("exit(" + s.messageKey->name + ")");
-    if (s.messageKey->name == stack.top().message.name) {
-        stack.top().exiting = true;
+    if (s.messageKey->name == _stack.top().message.name) {
+        _stack.top().exiting = true;
     } else {
         throw RuntimeError("unexpected identifier " + s.messageKey->name, s.location);
     }
@@ -274,8 +279,8 @@ void Runtime::visit(const Exit &s) {
 
 void Runtime::visit(const Pass &s) {
     trace("pass(" + s.messageKey->name + ")");
-    if (s.messageKey->name == stack.top().message.name) {
-        stack.top().passing = true;
+    if (s.messageKey->name == _stack.top().message.name) {
+        _stack.top().passing = true;
     } else {
         throw RuntimeError("unexpected identifier " + s.messageKey->name, s.location);
     }
@@ -287,14 +292,14 @@ void Runtime::visit(const Global &s) {
         globals.insert(identifier->name);
     }
     trace("global(" + describe(globals) + ")");
-    stack.top().globals.insert(globals.begin(), globals.end());
+    _stack.top().globals.insert(globals.begin(), globals.end());
 }
 
 void Runtime::visit(const Return &s) {
-    stack.top().returning = true;
+    _stack.top().returning = true;
     if (s.expression) {
         auto value = s.expression->evaluate(*this);
-        stack.top().returningValue = value;
+        _stack.top().returningValue = value;
     }
 }
 
@@ -308,7 +313,7 @@ void Runtime::visit(const Do &c) {
     auto value = c.expression->evaluate(*this);
     auto valueString = value.asString();
 
-    Parser parser(ParserConfig("<runtime>", config.stderr));
+    Parser parser(ParserConfig("<runtime>",_config.stderr));
     Owned<StatementList> result;
 
     if ((result = parser.parseStatements(valueString)) == nullptr) {
@@ -326,7 +331,7 @@ void Runtime::visit(const Command &c) {
         }
     }
 
-    bool handled = send(message, stack.top().target);
+    bool handled = send(message, _stack.top().target);
     if (!handled) {
         c.perform(*this);
     }
@@ -354,23 +359,23 @@ void Runtime::perform(const Put &s) {
             break;
         }
     } else {
-        config.stdout << value.asString() << std::endl;
+       _config.stdout << value.asString() << std::endl;
     }
 }
 
 void Runtime::perform(const Get &s) {
     auto result = s.expression->evaluate(*this);
-    stack.top().variables.set("it", result);
+    _stack.top().variables.set("it", result);
 }
 
 void Runtime::perform(const Ask &s) {
     auto question = s.expression->evaluate(*this);
 
-    config.stdout << question.value;
+   _config.stdout << question.value;
     std::string result;
-    std::getline(config.stdin, result);
+    std::getline(_config.stdin, result);
 
-    stack.top().variables.set("it", result);
+    _stack.top().variables.set("it", result);
 }
 
 void Runtime::perform(const Add &c) {
@@ -443,8 +448,8 @@ void Runtime::perform(const Divide &c) {
 #pragma mark - Functions
 
 Value Runtime::evaluateFunction(const Message &message) {
-    auto fn = functions.find(lowercase(message.name));
-    if (fn != functions.end()) {
+    auto fn = _functions.find(lowercase(message.name));
+    if (fn != _functions.end()) {
         return fn->second->valueOf(*this, message);
     }
     throw RuntimeError("unrecognized handler " + message.name);
@@ -463,7 +468,7 @@ Value Runtime::valueOf(const FunctionCall &e) {
         }
     }
 
-    return call(message, stack.top().target);
+    return call(message, _stack.top().target);
 }
 
 Value Runtime::valueOf(const ast::Property &p) {
@@ -488,7 +493,7 @@ Value Runtime::valueOf(const ast::Descriptor &d) {
         auto& name = d.name->name;
         // Check for special "me" descriptor.
         if (name == "me") {
-            return Value(stack.top().target);
+            return Value(_stack.top().target);
         }
         // Assume a variable lookup.
         return get(d.name->name);
@@ -496,15 +501,15 @@ Value Runtime::valueOf(const ast::Descriptor &d) {
 
     // Check the responder chain for a function handler.
     auto message = Message(d.name->name);
-    auto handler = stack.top().target->functionFor(message);
+    auto handler = _stack.top().target->functionFor(message);
     if (handler.has_value()) {
         message.arguments.push_back(d.value->evaluate(*this));
-        return call(message, stack.top().target);
+        return call(message, _stack.top().target);
     }
 
     // Check for a builtin function.
-    auto fn = functions.find(lowercase(message.name));
-    if (fn != functions.end()) {
+    auto fn = _functions.find(lowercase(message.name));
+    if (fn != _functions.end()) {
         message.arguments.push_back(d.value->evaluate(*this));
         return fn->second->valueOf(*this, message);
     }
@@ -628,7 +633,7 @@ Value Runtime::valueOf(const AnyChunk &c) {
     auto value = c.expression->evaluate(*this).asString();
     return Value(
         random_chunk(
-            chunk_type(c.type), [this](int count) { return config.random() * count; }, value)
+            chunk_type(c.type), [this](int count) { return _config.random() * count; }, value)
             .get());
 }
 

@@ -80,15 +80,6 @@ struct RuntimeStackFrame {
 };
 
 class Runtime : public ast::StatementVisitor, public ast::ExpressionVisitor, public ast::CommandVisitor {
-    RuntimeConfig config;
-
-    // State information
-    std::stack<RuntimeStackFrame> stack;
-    Variables globals;
-
-    // Runtime functions
-    Map<std::string, Owned<RuntimeFunction>> functions;
-
   public:
 
     Runtime(const RuntimeConfig &c = RuntimeConfig());
@@ -97,6 +88,9 @@ class Runtime : public ast::StatementVisitor, public ast::ExpressionVisitor, pub
     Value call(const Message &message, Strong<Object> target = nullptr);
 
     void add(const std::string &name, RuntimeFunction *fn);
+
+    const RuntimeStackFrame& currentFrame();
+    std::function<float()> random();
 
   private:
 
@@ -155,13 +149,13 @@ class Runtime : public ast::StatementVisitor, public ast::ExpressionVisitor, pub
     Value valueOf(const ast::LastChunk &) override;
     Value valueOf(const ast::MiddleChunk &) override;
 
-    friend ResultFunction;
-    friend ParamFunction;
-    friend ParamCountFunction;
-    friend ParamsFunction;
-    friend RandomFunction;
-    friend ValueFunction;
-    friend TargetFunction;
+  private:
+    RuntimeConfig _config;
+
+    Map<std::string, Owned<RuntimeFunction>> _functions;
+
+    std::stack<RuntimeStackFrame> _stack;
+    Variables _globals;
 };
 
 CH_RUNTIME_NAMESPACE_END

@@ -38,20 +38,20 @@ Value ValueFunction::valueOf(Runtime &r, const Message &m) const {
 
 Value RandomFunction::valueOf(Runtime &r, const Message &m) const {
     auto max = m.arguments[0].asInteger();
-    return long(r.config.random() * max) + 1;
+    return long(r.random()() * max) + 1;
 }
 
 Value ParamFunction::valueOf(Runtime &r, const Message &m) const {
 	auto index = m.arguments[0].asInteger();
 	if (index < 0) return Value();
-	if (index == 0) return r.stack.top().message.name;
-	if (index - 1 > r.stack.top().message.arguments.size()) return Value();
-	return r.stack.top().message.arguments[index - 1];
+	if (index == 0) return r.currentFrame().message.name;
+	if (index - 1 > r.currentFrame().message.arguments.size()) return Value();
+	return r.currentFrame().message.arguments[index - 1];
 }
 
 Value ParamsFunction::valueOf(Runtime &r, const Message &m) const {
 	std::ostringstream ss;
-	auto &message = r.stack.top().message;
+	auto &message = r.currentFrame().message;
 	ss << message.name;
 	if (message.arguments.size()) {
 		ss << " ";
@@ -68,15 +68,15 @@ Value ParamsFunction::valueOf(Runtime &r, const Message &m) const {
 }
 
 Value ParamCountFunction::valueOf(Runtime &r, const Message &m) const {
-	return r.stack.top().message.arguments.size();
+	return r.currentFrame().message.arguments.size();
 }
 
 Value ResultFunction::valueOf(Runtime &r, const Message &) const {
-	return r.stack.top().resultValue;
+	return r.currentFrame().resultValue;
 }
 
 Value TargetFunction::valueOf(Runtime &r, const Message &) const {
-	return Value(r.stack.top().target);
+	return Value(r.currentFrame().target);
 }
 
 CH_RUNTIME_NAMESPACE_END
