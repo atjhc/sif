@@ -73,10 +73,10 @@ dstroot:
 	mkdir -p $(DSTROOT)
 
 $(DSTROOT)/test: $(DSTROOT)/$(LIBNAME) $(TEST_OBJ) $(SRCROOT)/tools/tests.cc
-	$(CC) $(CPPFLAGS) -g -o $(DSTROOT)/test $(SRCROOT)/tools/tests.cc $(TEST_OBJ) $(DSTROOT)/$(LIBNAME)
+	$(CC) $(CPPFLAGS) -o $(DSTROOT)/test $(SRCROOT)/tools/tests.cc $(TEST_OBJ) $(DSTROOT)/$(LIBNAME)
 
-$(DSTROOT)/$(TOOLNAME): $(SRCROOT)/tools/chatter.cc $(DSTROOT)/$(LIBNAME)
-	$(CC) $(CPPFLAGS) -o $(DSTROOT)/$(TOOLNAME) $< $(DSTROOT)/$(LIBNAME)
+$(DSTROOT)/$(TOOLNAME): $(DSTROOT)/$(LIBNAME) $(SRCROOT)/tools/chatter.cc
+	$(CC) $(CPPFLAGS) -o $(DSTROOT)/$(TOOLNAME) $(SRCROOT)/tools/chatter.cc $(DSTROOT)/$(LIBNAME)
 
 $(DSTROOT)/$(LIBNAME): $(OBJ)
 	ar rc $(DSTROOT)/$(LIBNAME) $(OBJ)
