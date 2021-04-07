@@ -28,50 +28,50 @@ CH_RUNTIME_NAMESPACE_BEGIN
 
 class Runtime;
 
-struct RuntimeFunction {
-    virtual ~RuntimeFunction() = default;
+struct Function {
+    virtual ~Function() = default;
 
     virtual Value valueOf(Runtime &, const Message &) const = 0;
 };
 
 template <auto T>
-struct OneArgumentFunction : RuntimeFunction {
+struct OneArgumentFunction : Function {
     Value valueOf(Runtime &, const Message &m) const override {
         return Value(T(m.arguments[0]));
     }
 };
 
-struct MaxFunction: RuntimeFunction {
+struct MaxFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override {
         return *std::max_element(m.arguments.begin(), m.arguments.end());
     }
 };
 
-struct MinFunction: RuntimeFunction {
+struct MinFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override {
         return *std::min_element(m.arguments.begin(), m.arguments.end());
     }
 };
 
-struct SumFunction: RuntimeFunction {
+struct SumFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override {
         return std::accumulate(m.arguments.begin(), m.arguments.end(), Value(0));
     }
 };
 
-struct MeanFunction: RuntimeFunction {
+struct MeanFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override {
         return std::accumulate(m.arguments.begin(), m.arguments.end(), Value(0)) / Value(m.arguments.size());
     }
 };
 
-struct LengthFunction: RuntimeFunction {
+struct LengthFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override {
         return m.arguments[0].asString().length();
     }
 };
 
-struct OffsetFunction: RuntimeFunction {
+struct OffsetFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override {
         auto &v1 = m.arguments[0];
         auto &v2 = m.arguments[1];
@@ -80,31 +80,31 @@ struct OffsetFunction: RuntimeFunction {
     }
 };
 
-struct ValueFunction: RuntimeFunction {
+struct ValueFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override;
 };
 
-struct RandomFunction: RuntimeFunction {
+struct RandomFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override;
 };
 
-struct ParamFunction: RuntimeFunction {
+struct ParamFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override;
 };
 
-struct ParamsFunction: RuntimeFunction {
+struct ParamsFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override;
 };
 
-struct ParamCountFunction: RuntimeFunction {
+struct ParamCountFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override;
 };
 
-struct ResultFunction: RuntimeFunction {
+struct ResultFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override;
 };
 
-struct TargetFunction: RuntimeFunction {
+struct TargetFunction: Function {
     Value valueOf(Runtime &, const Message &m) const override;
 };
 

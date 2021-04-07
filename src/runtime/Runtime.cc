@@ -140,8 +140,8 @@ std::function<float()> Runtime::random() {
 
 #pragma mark - Private
 
-void Runtime::add(const std::string &name, RuntimeFunction *fn) {
-    _functions[lowercase(name)] = Owned<RuntimeFunction>(fn);
+void Runtime::add(const std::string &name, Function *fn) {
+    _functions[lowercase(name)] = Owned<Function>(fn);
 }
 
 void Runtime::set(const std::string &name, const Value &value) {
@@ -151,7 +151,7 @@ void Runtime::set(const std::string &name, const Value &value) {
        _globals.set(name, value);
         return;
     }
-    return _stack.top().variables.set(name, value);
+    return _stack.top().locals.set(name, value);
 }
 
 Value Runtime::get(const std::string &name) const {
@@ -160,7 +160,7 @@ Value Runtime::get(const std::string &name) const {
     if (i != globalNames.end()) {
         return _globals.get(name);
     }
-    return _stack.top().variables.get(name);
+    return _stack.top().locals.get(name);
 }
 
 void Runtime::execute(const ast::Handler &handler, const std::vector<Value> &values) {
@@ -175,7 +175,7 @@ void Runtime::execute(const ast::Handler &handler, const std::vector<Value> &val
         }
     }
 
-    _stack.top().variables.insert(argumentNames, values);
+    _stack.top().locals.insert(argumentNames, values);
     execute(*handler.statements);
 }
 
@@ -238,7 +238,7 @@ void Runtime::visit(const RepeatRange &s) {
 
     auto i = startValue;
     while ((s.ascending ? i <= endValue : i >= endValue)) {
-        _stack.top().variables.set(iteratorName, Value(i));
+        _stack.top().locals.set(iteratorName, Value(i));
         execute(*s.statements);
         if (_stack.top().exitingRepeat) {
             _stack.top().exitingRepeat = false;
@@ -365,17 +365,17 @@ void Runtime::perform(const Put &s) {
 
 void Runtime::perform(const Get &s) {
     auto result = s.expression->evaluate(*this);
-    _stack.top().variables.set("it", result);
+    _stack.top().locals.set("it", result);
 }
 
 void Runtime::perform(const Ask &s) {
     auto question = s.expression->evaluate(*this);
 
-   _config.stdout << question.value;
+    _config.stdout << question.asString();
     std::string result;
     std::getline(_config.stdin, result);
 
-    _stack.top().variables.set("it", result);
+    _stack.top().locals.set("it", result);
 }
 
 void Runtime::perform(const Add &c) {

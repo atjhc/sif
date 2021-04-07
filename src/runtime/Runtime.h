@@ -63,7 +63,7 @@ struct RuntimeStackFrame {
     Message message;
     Strong<Object> target;
 
-    Variables variables;
+    Variables locals;
     Set<std::string> globals;
     
     Value returningValue;
@@ -87,7 +87,7 @@ class Runtime : public ast::StatementVisitor, public ast::ExpressionVisitor, pub
     bool send(const Message &message, Strong<Object> target = nullptr);
     Value call(const Message &message, Strong<Object> target = nullptr);
 
-    void add(const std::string &name, RuntimeFunction *fn);
+    void add(const std::string &name, Function *fn);
 
     const RuntimeStackFrame& currentFrame();
     std::function<float()> random();
@@ -152,7 +152,7 @@ class Runtime : public ast::StatementVisitor, public ast::ExpressionVisitor, pub
   private:
     RuntimeConfig _config;
 
-    Map<std::string, Owned<RuntimeFunction>> _functions;
+    Map<std::string, Owned<Function>> _functions;
 
     std::stack<RuntimeStackFrame> _stack;
     Variables _globals;

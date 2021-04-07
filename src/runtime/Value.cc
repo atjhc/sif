@@ -28,6 +28,8 @@ bool Value::isEmpty() const {
     return false;
 }
 
+bool Value::isNumber() const { return isInteger() || isFloat(); }
+
 bool Value::isBool() const {
     if (std::holds_alternative<bool>(value)) {
         return true;
@@ -58,10 +60,8 @@ bool Value::asBool() const {
     throw RuntimeError("expected boolean type");
 }
 
-bool Value::isNumber() const { return isInteger() || isFloat(); }
-
 bool Value::isInteger() const {
-    if (std::holds_alternative<long>(value)) {
+    if (std::holds_alternative<int64_t>(value)) {
         return true;
     }
     if (auto v = std::get_if<std::string>(&value)) {
@@ -75,8 +75,8 @@ bool Value::isInteger() const {
     return false;
 }
 
-long Value::asInteger() const { 
-    if (auto v = std::get_if<long>(&value)) {
+int64_t Value::asInteger() const { 
+    if (auto v = std::get_if<int64_t>(&value)) {
         return *v;
     }
     if (auto v = std::get_if<std::string>(&value)) {
@@ -108,7 +108,7 @@ double Value::asFloat() const {
     if (auto v = std::get_if<double>(&value)) {
         return *v;
     }
-    if (auto v = std::get_if<long>(&value)) {
+    if (auto v = std::get_if<int64_t>(&value)) {
         return *v;
     }
     if (auto v = std::get_if<std::string>(&value)) {
@@ -121,11 +121,15 @@ double Value::asFloat() const {
     throw RuntimeError("expected floating point type");
 }
 
+bool Value::isString() const {
+    return std::holds_alternative<std::string>(value);
+}
+
 std::string Value::asString() const { 
     if (auto v = std::get_if<std::string>(&value)) {
         return *v;
     }
-    if (auto v = std::get_if<long>(&value)) {
+    if (auto v = std::get_if<int64_t>(&value)) {
         std::ostringstream ss;
         ss << *v;
         return ss.str();
@@ -146,7 +150,10 @@ bool Value::isObject() const {
 }
 
 Strong<Object> Value::asObject() const {
-    return std::get<Strong<Object>>(value);
+    if (auto o = std::get_if<Strong<Object>>(&value)) {
+        return *o;
+    }
+    throw RuntimeError("expected object type");
 }
 
 bool Value::operator==(const Value &rhs) const {

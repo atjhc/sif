@@ -33,13 +33,12 @@ CH_RUNTIME_NAMESPACE_BEGIN
 class Object;
 
 class Value {
-  public:
-    std::variant<std::string, double, long, bool, Strong<Object>> value;
+public:
+    Value() = default;
 
-    Value() : value(std::string("")) {}
+    Value(const Value &v) = default;
+    Value(Value &&v) = default;
 
-    Value(const Value &v) : value(v.value) {}
-    Value(Value &&v) : value(std::move(v.value)) {}
     Value& operator=(const Value &v) {
         value = v.value;
         return *this;
@@ -51,21 +50,21 @@ class Value {
 
     template<typename T>
     Value(const T &v) : value(v) {}
-    Value(const std::size_t &s) : value((long)s) {}
+    Value(const std::size_t &s) : value(static_cast<int64_t>(s)) {}
     
     bool isEmpty() const;
+    bool isNumber() const;
 
     bool isBool() const;
     bool asBool() const;
 
-    bool isNumber() const;
-
     bool isInteger() const;
-    long asInteger() const;
+    int64_t asInteger() const;
 
     bool isFloat() const;
     double asFloat() const;
 
+    bool isString() const;
     std::string asString() const;
 
     bool isObject() const;
@@ -86,12 +85,16 @@ class Value {
     bool operator&&(const Value &rhs) const;
     bool operator||(const Value &rhs) const;
     bool contains(const Value &rhs) const;
+
     Value operator+(const Value &rhs) const;
     Value operator-(const Value &rhs) const;
     Value operator*(const Value &rhs) const;
     Value operator/(const Value &rhs) const;
     Value operator%(const Value &rhs) const;
     Value operator^(const Value &rhs) const;
+
+private:
+    std::variant<std::string, double, int64_t, bool, Strong<Object>> value;
 };
 
 static inline std::ostream &operator<<(std::ostream &out, const Value &v) {
