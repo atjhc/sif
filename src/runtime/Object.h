@@ -26,15 +26,8 @@ struct Message;
 struct Property;
 
 class Object {
-    std::string _name;
-    Owned<ast::Script> _script;
-    Strong<Object> _parent;
-
-    Map<std::string, Ref<ast::Handler>> _handlers;
-    Map<std::string, Ref<ast::Handler>> _functions;
-
   public:
-    Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &parent = nullptr);
+    static Strong<Object> Make(const std::string &name, const std::string &script = "", const Strong<Object> &parent = nullptr);
     virtual ~Object() = default;
 
     const std::string &name() const { return _name; }
@@ -46,6 +39,17 @@ class Object {
 
     virtual Value valueForProperty(const Property &p) const;
     virtual void setValueForProperty(const Value &v, const Property &p);
+
+  private:
+    std::string _name;
+    Owned<ast::Script> _script;
+    Strong<Object> _parent;
+
+    Map<std::string, Ref<ast::Handler>> _handlers;
+    Map<std::string, Ref<ast::Handler>> _functions;
+
+    Object(const std::string &n, const Strong<Object> &parent = nullptr);
+    Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &parent = nullptr);
 };
 
 CH_RUNTIME_NAMESPACE_END

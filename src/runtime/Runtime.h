@@ -52,11 +52,13 @@ struct RuntimeConfig {
     RuntimeConfig(std::ostream &out, std::ostream &err, std::istream &in)
         : stdout(out), stderr(err), stdin(in) {}    
 
-    std::function<float()> random;
+    std::function<float()> random = defaultRandom();
 
 #if defined(DEBUG)
     bool enableTracing = false;
 #endif
+
+    static std::function<float()> defaultRandom();
 };
 
 struct RuntimeStackFrame {

@@ -20,9 +20,30 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &parent)
-    : _name(n), _script(std::move(s)), _parent(parent) {
+Strong<Object> Object::Make(const std::string &name, const std::string &source, const Strong<Object> &parent) {
+    if (source.empty()) {
+        return Strong<Object>(new Object(name, parent));
+    }
 
+    ParserConfig config;
+    config.fileName = name;
+
+    Parser parser(config);
+    Owned<ast::Script> result;
+    if ((result = parser.parseScript(source)) == nullptr) {
+        return nullptr;
+    }
+
+    return Strong<Object>(new Object(name, result, parent));
+}
+
+Object::Object(const std::string &n, const Strong<Object> &p)
+    : _name(n), _parent(p) {}
+
+Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &p)
+    : Object(n, p) {
+
+    _script = std::move(s);
     for (auto &handler : _script->handlers) {
         auto &name = handler->messageKey->name;
 

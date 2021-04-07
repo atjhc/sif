@@ -40,14 +40,13 @@ static int traceParsing = 0;
 static int traceRuntime = 0;
 #endif
 
-static int prettyPrint = 0;
-
-static int run(const std::string &fileName, const std::string &messageName,
-               const std::vector<std::string> &arguments) {
+static int prettyPrint(const std::string &fileName) {
     std::string source;
-    std::string contextName;
-
     ParserConfig config;
+
+#if defined(DEBUG)
+    config.enableTracing = traceParsing;
+#endif
 
     if (!fileName.empty()) {
         std::ifstream file(fileName);
@@ -56,19 +55,13 @@ static int run(const std::string &fileName, const std::string &messageName,
             ss << file.rdbuf();
             source = ss.str();
         }
-        contextName = fileName;
+        config.fileName = fileName;
     } else {
         std::ostringstream ss;
         ss << std::cin.rdbuf();
         source = ss.str();
-        contextName = "<stdin>";
+        config.fileName = "<stdin>";
     }
-
-    config.fileName = contextName;
-
-#if defined(DEBUG)
-    config.enableTracing = traceParsing;
-#endif
 
     Parser parser(config);
     Owned<Script> result;
@@ -77,10 +70,34 @@ static int run(const std::string &fileName, const std::string &messageName,
         return -1;
     }
 
-    if (prettyPrint) {
-        auto prettyPrintContext = PrettyPrintContext();
-        result->prettyPrint(std::cout, prettyPrintContext);
-        return 0;
+    auto prettyPrintContext = PrettyPrintContext();
+    result->prettyPrint(std::cout, prettyPrintContext);
+
+    return 0;
+}
+
+static int run(const std::string &fileName, const std::string &messageName,
+               const std::vector<std::string> &arguments) {
+    std::string source;
+    std::string contextName = fileName;
+
+    if (!fileName.empty()) {
+        std::ifstream file(fileName);
+        if (file) {
+            std::ostringstream ss;
+            ss << file.rdbuf();
+            source = ss.str();
+        }
+    } else {
+        std::ostringstream ss;
+        ss << std::cin.rdbuf();
+        source = ss.str();
+        contextName = "<stdin>";
+    }
+
+    auto object = Object::Make(fileName, source);
+    if (!object) {
+        return -1;
     }
 
     std::vector<Value> values;
@@ -89,20 +106,11 @@ static int run(const std::string &fileName, const std::string &messageName,
     }
 
     RuntimeConfig runtimeConfig;
-
 #if defined(DEBUG)
     runtimeConfig.enableTracing = traceRuntime;
 #endif    
-
-    // Configure the random number generator.
-    std::default_random_engine generator(
-        std::chrono::high_resolution_clock::now().time_since_epoch().count());
-    std::uniform_real_distribution<float> distribution(0.0, 1.0);
-    runtimeConfig.random = [&]() { return distribution(generator); };
-
     Runtime runtime(runtimeConfig);
 
-    auto object = MakeStrong<Object>(fileName, result);
     try {
         runtime.send(Message(messageName, values), object);
     } catch (RuntimeError &error) {
@@ -131,24 +139,25 @@ int usage(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+    std::string messageName = "begin";
+    bool shouldPrettyPrint = false;
+
     static struct option long_options[] = {
 #if defined(YYDEBUG)
         {"trace-parse", no_argument, &traceParsing, 1},
         {"trace-runtime", no_argument, &traceRuntime, 1},
 #endif
         {"message-name", required_argument, NULL, 'm'},
-        {"pretty-print", no_argument, &prettyPrint, 'p'},
+        {"pretty-print", no_argument, NULL, 'p'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
-
-    std::string messageName = "begin";
 
     int c, opt_index = 0;
     while ((c = getopt_long(argc, argv, "m:ph", long_options, &opt_index)) != -1) {
         switch (c) {
         case 'p':
-            prettyPrint = 1;
+            shouldPrettyPrint = true;
             break;
         case 'm':
             messageName = optarg;
@@ -167,10 +176,13 @@ int main(int argc, char *argv[]) {
         fileName = argv[0];
     }
 
+    if (shouldPrettyPrint) {
+        return prettyPrint(fileName);
+    }
+
     std::vector<std::string> arguments;
     for (int i = 1; i < argc; i++) {
         arguments.push_back(argv[i]);
     }
-
     return run(fileName, messageName, arguments);
 }

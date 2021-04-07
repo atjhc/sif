@@ -22,11 +22,21 @@
 #include "ast/Property.h"
 #include "ast/Descriptor.h"
 
-#include <cmath>
+#include <math.h>
+
+#include <random>
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
 using namespace ast;
+
+std::function<float()> RuntimeConfig::defaultRandom() {
+    static thread_local std::default_random_engine generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    return [&]() {
+        std::uniform_real_distribution<float> distribution(0.0, 1.0);
+        return distribution(generator);
+    };
+}
 
 #if !defined(DEBUG)
     #define trace(x)

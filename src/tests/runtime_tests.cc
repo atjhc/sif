@@ -35,22 +35,16 @@ TEST_CASE(Runtime, All) {
 
         auto name = std::string(path.begin(), path.begin() + pos);
         auto expectedResult = suite.file_contents(name + ".txt");
-
         ASSERT_NEQ(expectedResult, "");
 
-        chatter::ParserConfig config(path);
-        chatter::Parser parser(config);
-        auto source = suite.file_contents(path);
-        auto result = parser.parseScript(source);
-
-        ASSERT_NOT_NULL(result);
+        auto object = Object::Make(path, suite.file_contents(path));
+        ASSERT_NOT_NULL(object);
 
         std::ostringstream ss;
-        std::istringstream iss;
-        RuntimeConfig runtimeConfig(ss, devnull, iss);
+        RuntimeConfig runtimeConfig(ss, devnull, idevnull);
         runtimeConfig.random = [&]() { return 0; };
         Runtime runtime(runtimeConfig);
-        auto object = MakeStrong<Object>(path, result);
+
         try {
             runtime.send(Message("begin"), object);
         } catch (RuntimeError &error) {

@@ -31,18 +31,35 @@ template <class cT, class traits = std::char_traits<cT>>
 class basic_onullstream : public std::basic_ostream<cT, traits> {
   public:
     basic_onullstream()
-        : std::basic_ios<cT, traits>(&m_sbuf), std::basic_ostream<cT, traits>(&m_sbuf) {
-        std::basic_ostream<cT, traits>::init(&m_sbuf);
+        : std::basic_ios<cT, traits>(&_sbuf), std::basic_ostream<cT, traits>(&_sbuf) {
+        std::basic_ostream<cT, traits>::init(&_sbuf);
     }
 
   private:
-    basic_nullbuf<cT, traits> m_sbuf;
+    basic_nullbuf<cT, traits> _sbuf;
+};
+
+template <class cT, class traits = std::char_traits<cT>>
+class basic_inullstream : public std::basic_istream<cT, traits> {
+  public:
+    basic_inullstream()
+        : std::basic_ios<cT, traits>(&_sbuf), std::basic_istream<cT, traits>(&_sbuf) {
+        std::basic_istream<cT, traits>::init(&_sbuf);
+    }
+
+  private:
+    basic_nullbuf<cT, traits> _sbuf;
 };
 
 typedef basic_onullstream<char> onullstream;
 typedef basic_onullstream<wchar_t> wonullstream;
+typedef basic_inullstream<char> inullstream;
+typedef basic_inullstream<wchar_t> winullstream;
 
 extern onullstream devnull;
 extern wonullstream wdevnull;
+
+extern inullstream idevnull;
+extern winullstream widevnull;
 
 CH_NAMESPACE_END
