@@ -23,11 +23,11 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-struct RuntimeMessage {
+struct Message {
     std::string name;
     std::vector<Value> arguments;
 
-    RuntimeMessage(const std::string &n, const std::vector<Value> args = {})
+    Message(const std::string &n, const std::vector<Value> args = {})
         : name(lowercase(n)), arguments(args) {}
 };
 

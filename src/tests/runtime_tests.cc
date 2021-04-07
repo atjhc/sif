@@ -52,7 +52,7 @@ TEST_CASE(Runtime, All) {
         Runtime runtime(runtimeConfig);
         auto object = MakeStrong<Object>(path, result);
         try {
-            runtime.send(RuntimeMessage("begin"), object);
+            runtime.send(Message("begin"), object);
         } catch (RuntimeError &error) {
             ASSERT_FAIL("runtime exception thrown");
         }

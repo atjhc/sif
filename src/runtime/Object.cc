@@ -40,7 +40,7 @@ Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object>
     }
 }
 
-Optional<Ref<ast::Handler>> Object::handlerFor(const RuntimeMessage &message) {
+Optional<Ref<ast::Handler>> Object::handlerFor(const Message &message) {
     auto i = _handlers.find(message.name);
     if (i == _handlers.end()) {
         return std::nullopt;
@@ -49,7 +49,7 @@ Optional<Ref<ast::Handler>> Object::handlerFor(const RuntimeMessage &message) {
     return std::make_optional(i->second);
 }
 
-Optional<Ref<ast::Handler>> Object::functionFor(const RuntimeMessage &message) {
+Optional<Ref<ast::Handler>> Object::functionFor(const Message &message) {
     auto i = _functions.find(message.name);
     if (i == _functions.end()) {
         return std::nullopt;

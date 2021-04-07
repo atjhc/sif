@@ -104,7 +104,7 @@ static int run(const std::string &fileName, const std::string &messageName,
 
     auto object = MakeStrong<Object>(fileName, result);
     try {
-        runtime.send(RuntimeMessage(messageName, values), object);
+        runtime.send(Message(messageName, values), object);
     } catch (RuntimeError &error) {
         std::cerr << contextName << ":" << error.where << ": error: "
                   << error.what() << std::endl;

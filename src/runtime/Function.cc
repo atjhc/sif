@@ -24,7 +24,7 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Value ValueFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
+Value ValueFunction::valueOf(Runtime &r, const Message &m) const {
     auto expression = m.arguments[0];
 
 	Parser parser(ParserConfig("<runtime>", devnull));
@@ -36,12 +36,12 @@ Value ValueFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
     return result->evaluate(r);
 }
 
-Value RandomFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
+Value RandomFunction::valueOf(Runtime &r, const Message &m) const {
     auto max = m.arguments[0].asInteger();
     return long(r.config.random() * max) + 1;
 }
 
-Value ParamFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
+Value ParamFunction::valueOf(Runtime &r, const Message &m) const {
 	auto index = m.arguments[0].asInteger();
 	if (index < 0) return Value();
 	if (index == 0) return r.stack.top().message.name;
@@ -49,7 +49,7 @@ Value ParamFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
 	return r.stack.top().message.arguments[index - 1];
 }
 
-Value ParamsFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
+Value ParamsFunction::valueOf(Runtime &r, const Message &m) const {
 	std::ostringstream ss;
 	auto &message = r.stack.top().message;
 	ss << message.name;
@@ -67,15 +67,15 @@ Value ParamsFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
 	return ss.str();
 }
 
-Value ParamCountFunction::valueOf(Runtime &r, const RuntimeMessage &m) const {
+Value ParamCountFunction::valueOf(Runtime &r, const Message &m) const {
 	return r.stack.top().message.arguments.size();
 }
 
-Value ResultFunction::valueOf(Runtime &r, const RuntimeMessage &) const {
+Value ResultFunction::valueOf(Runtime &r, const Message &) const {
 	return r.stack.top().resultValue;
 }
 
-Value TargetFunction::valueOf(Runtime &r, const RuntimeMessage &) const {
+Value TargetFunction::valueOf(Runtime &r, const Message &) const {
 	return Value(r.stack.top().target);
 }
 

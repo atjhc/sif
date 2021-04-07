@@ -60,7 +60,7 @@ struct RuntimeConfig {
 };
 
 struct RuntimeStackFrame {
-    RuntimeMessage message;
+    Message message;
     Strong<Object> target;
 
     Variables variables;
@@ -75,7 +75,7 @@ struct RuntimeStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    RuntimeStackFrame(const RuntimeMessage &m, const Strong<Object> &t)
+    RuntimeStackFrame(const Message &m, const Strong<Object> &t)
         : message(m), target(t) {}
 };
 
@@ -93,8 +93,8 @@ class Runtime : public ast::StatementVisitor, public ast::ExpressionVisitor, pub
 
     Runtime(const RuntimeConfig &c = RuntimeConfig());
 
-    bool send(const RuntimeMessage &message, Strong<Object> target = nullptr);
-    Value call(const RuntimeMessage &message, Strong<Object> target = nullptr);
+    bool send(const Message &message, Strong<Object> target = nullptr);
+    Value call(const Message &message, Strong<Object> target = nullptr);
 
     void add(const std::string &name, RuntimeFunction *fn);
 
@@ -106,7 +106,7 @@ class Runtime : public ast::StatementVisitor, public ast::ExpressionVisitor, pub
     void execute(const ast::Handler &handler, const std::vector<Value> &arguments);
     void execute(const ast::StatementList &statements);
 
-    Value evaluateFunction(const RuntimeMessage &message);
+    Value evaluateFunction(const Message &message);
 
 #if defined(DEBUG)
     void trace(const std::string &msg) const;

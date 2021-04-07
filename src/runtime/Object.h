@@ -22,7 +22,7 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-struct RuntimeMessage;
+struct Message;
 struct Property;
 
 class Object {
@@ -41,8 +41,8 @@ class Object {
     const Owned<ast::Script> &script() const { return _script; }
     const Strong<Object> &parent() const { return _parent; }
 
-    Optional<Ref<ast::Handler>> handlerFor(const RuntimeMessage &message);
-    Optional<Ref<ast::Handler>> functionFor(const RuntimeMessage &message);
+    Optional<Ref<ast::Handler>> handlerFor(const Message &message);
+    Optional<Ref<ast::Handler>> functionFor(const Message &message);
 
     virtual Value valueForProperty(const Property &p) const;
     virtual void setValueForProperty(const Value &v, const Property &p);

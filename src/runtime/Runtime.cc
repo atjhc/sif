@@ -75,7 +75,7 @@ Runtime::Runtime(const RuntimeConfig &c)
     // runtime.add("compound", new OneArgumentFunction<float(float)>(fabs));
 }
 
-bool Runtime::send(const RuntimeMessage &message, Strong<Object> target) {
+bool Runtime::send(const Message &message, Strong<Object> target) {
     trace(std::string("send(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
@@ -107,7 +107,7 @@ bool Runtime::send(const RuntimeMessage &message, Strong<Object> target) {
     return handled;
 }
 
-Value Runtime::call(const RuntimeMessage &message, Strong<Object> target) {
+Value Runtime::call(const Message &message, Strong<Object> target) {
     trace(std::string("call(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
@@ -319,7 +319,7 @@ void Runtime::visit(const Do &c) {
 }
 
 void Runtime::visit(const Command &c) {
-    auto message = RuntimeMessage(c.name->name);
+    auto message = Message(c.name->name);
     if (c.arguments) {
         for (auto &expression : c.arguments->expressions) {
             message.arguments.push_back(expression->evaluate(*this));
@@ -442,7 +442,7 @@ void Runtime::perform(const Divide &c) {
 
 #pragma mark - Functions
 
-Value Runtime::evaluateFunction(const RuntimeMessage &message) {
+Value Runtime::evaluateFunction(const Message &message) {
     auto fn = functions.find(lowercase(message.name));
     if (fn != functions.end()) {
         return fn->second->valueOf(*this, message);
@@ -455,7 +455,7 @@ Value Runtime::evaluateFunction(const RuntimeMessage &message) {
 Value Runtime::valueOf(const Identifier &e) { return get(e.name); }
 
 Value Runtime::valueOf(const FunctionCall &e) {
-    auto message = RuntimeMessage(e.identifier->name);
+    auto message = Message(e.identifier->name);
     if (e.arguments) {
         for (auto &argument : e.arguments->expressions) {
             auto value = argument->evaluate(*this);
@@ -467,7 +467,7 @@ Value Runtime::valueOf(const FunctionCall &e) {
 }
 
 Value Runtime::valueOf(const ast::Property &p) {
-    auto message = RuntimeMessage(p.name->name);
+    auto message = Message(p.name->name);
     if (p.expression) {
         auto value = p.expression->evaluate(*this);
         if (value.isObject()) {
@@ -495,7 +495,7 @@ Value Runtime::valueOf(const ast::Descriptor &d) {
     }
 
     // Check the responder chain for a function handler.
-    auto message = RuntimeMessage(d.name->name);
+    auto message = Message(d.name->name);
     auto handler = stack.top().target->functionFor(message);
     if (handler.has_value()) {
         message.arguments.push_back(d.value->evaluate(*this));
