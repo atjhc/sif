@@ -19,7 +19,6 @@
 #include "Common.h"
 #include "ast/Node.h"
 #include "ast/Expression.h"
-#include "runtime/Value.h"
 
 #include <ostream>
 
@@ -33,8 +32,6 @@ struct Descriptor : Expression {
 
     Descriptor(Owned<Identifier> &n, Owned<Expression> &v);
     Descriptor(Owned<Identifier> &n);
-
-    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

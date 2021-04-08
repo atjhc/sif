@@ -14,15 +14,13 @@
 //  limitations under the License.
 //
 
-#include "Expression.h"
+#include "ast/Expression.h"
+#include "ast/Identifier.h"
 
 CH_AST_NAMESPACE_BEGIN
 
 ExpressionList::ExpressionList() {}
 ExpressionList::ExpressionList(Owned<Expression> &e) { add(e); }
-
-Identifier::Identifier(const std::string &n) : name(n) {}
-Identifier::Identifier(const char *n) : name(n) {}
 
 FunctionCall::FunctionCall(Owned<Identifier> &id, Owned<ExpressionList> &args)
     : identifier(std::move(id)), arguments(std::move(args)) {}

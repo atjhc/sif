@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "Chunk.h"
+#include "ast/Chunk.h"
 
 CH_AST_NAMESPACE_BEGIN
 

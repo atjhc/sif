@@ -19,6 +19,7 @@
 #include "Common.h"
 #include "ast/Script.h"
 #include "ast/Handler.h"
+#include "runtime/Value.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 

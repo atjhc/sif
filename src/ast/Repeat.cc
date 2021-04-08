@@ -14,7 +14,9 @@
 //  limitations under the License.
 //
 
-#include "Repeat.h"
+#include "ast/Repeat.h"
+#include "ast/Statement.h"
+#include "ast/Identifier.h"
 
 CH_AST_NAMESPACE_BEGIN
 

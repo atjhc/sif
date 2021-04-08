@@ -18,6 +18,7 @@
 
 #include "Common.h"
 #include "ast/Descriptor.h"
+#include "runtime/Value.h"
 
 #include <vector>
 #include <string>

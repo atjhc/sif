@@ -23,27 +23,7 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Expression;
 struct ExpressionList;
-
-struct Command;
-struct Put;
-struct Get;
-struct Ask;
-struct Add;
-struct Subtract;
-struct Multiply;
-struct Divide;
-
-struct CommandVisitor {
-    virtual void perform(const Put &) = 0;
-    virtual void perform(const Get &) = 0;
-    virtual void perform(const Ask &) = 0;
-    virtual void perform(const Add &) = 0;
-    virtual void perform(const Subtract &) = 0;
-    virtual void perform(const Multiply &) = 0;
-    virtual void perform(const Divide &) = 0;
-};
 
 struct Command : Statement {
     Owned<Identifier> name;
@@ -54,19 +34,13 @@ struct Command : Statement {
     Command(Owned<Identifier> &n);
     Command(Identifier *n);
     
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    virtual void perform(CommandVisitor &visitor) const { 
-        /* user commands are not executed by the runtime. */
-    }
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    virtual std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Preposition : Node {
     enum PrepositionType { Before, Into, After } type;
 
-    Preposition(PrepositionType t);
+    Preposition(PrepositionType type);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
@@ -78,10 +52,9 @@ struct Put : Command {
     Owned<Preposition> preposition;
     Owned<Identifier> target;
 
-    Put(Owned<Expression> &e, Owned<Preposition> &p, Owned<Identifier> &t);
-    Put(Owned<Expression> &e);
+    Put(Owned<Expression> &expression, Owned<Preposition> &preposition, Owned<Identifier> &target);
+    Put(Owned<Expression> &expression);
 
-    void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -90,7 +63,6 @@ struct Get : Command {
 
     Get(Owned<Expression> &e);
 
-    void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -99,7 +71,6 @@ struct Ask : Command {
 
     Ask(Owned<Expression> &e);
 
-    void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -109,7 +80,6 @@ struct Add : Command {
 
     Add(Owned<Expression> &e, Owned<Identifier> &d);
 
-    void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -119,7 +89,6 @@ struct Subtract : Command {
 
     Subtract(Owned<Expression> &e, Owned<Identifier> &d);
 
-    void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -127,9 +96,8 @@ struct Multiply : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Multiply(Owned<Expression> &e, Owned<Identifier> &d);
+    Multiply(Owned<Expression> &expression, Owned<Identifier> &destination);
 
-    void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -137,9 +105,8 @@ struct Divide : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Divide(Owned<Expression> &e, Owned<Identifier> &d);
+    Divide(Owned<Expression> &expression, Owned<Identifier> &destination);
 
-    void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 

@@ -14,7 +14,8 @@
 //  limitations under the License.
 //
 
-#include "Command.h"
+#include "ast/Command.h"
+#include "ast/Identifier.h"
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -52,5 +53,8 @@ Subtract::Subtract(Owned<Expression> &e, Owned<Identifier> &d)
 
 Multiply::Multiply(Owned<Expression> &e, Owned<Identifier> &d)
     : Command(new Identifier("multiply")), expression(std::move(e)), destination(std::move(d)) {}
+
+Divide::Divide(Owned<Expression> &e, Owned<Identifier> &d)
+    : Command(new Identifier("divide")), expression(std::move(e)), destination(std::move(d)) {}
 
 CH_AST_NAMESPACE_END

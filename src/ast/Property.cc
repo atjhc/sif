@@ -15,6 +15,7 @@
 //
 
 #include "ast/Property.h"
+#include "ast/Identifier.h"
 
 CH_AST_NAMESPACE_BEGIN
 

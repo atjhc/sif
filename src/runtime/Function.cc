@@ -33,7 +33,7 @@ Value ValueFunction::valueOf(Runtime &r, const Message &m) const {
         return expression.asString();
     }
 
-    return result->evaluate(r);
+    return std::any_cast<Value>(result->accept(r));
 }
 
 Value RandomFunction::valueOf(Runtime &r, const Message &m) const {

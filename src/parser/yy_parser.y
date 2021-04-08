@@ -24,6 +24,7 @@
 
 #include "Common.h"
 #include "parser/Parser.h"
+#include "Utilities.h"
 
 using namespace chatter;
 using namespace chatter::ast;

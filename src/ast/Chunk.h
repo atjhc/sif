@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-
+#include "ast/Node.h"
 #include "ast/Expression.h"
 
 CH_AST_NAMESPACE_BEGIN
@@ -40,7 +40,6 @@ struct RangeChunk : Chunk {
     RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee);
     RangeChunk(Type t, Owned<Expression> &se);
 
-    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -48,7 +47,6 @@ struct LastChunk : Chunk {
     LastChunk(Type t, Owned<Expression> &e);
     LastChunk(Type t);
 
-    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -56,7 +54,6 @@ struct MiddleChunk : Chunk {
     MiddleChunk(Type t, Owned<Expression> &e);
     MiddleChunk(Type t);
 
-    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -64,7 +61,6 @@ struct AnyChunk : Chunk {
     AnyChunk(Type t, Owned<Expression> &e);
     AnyChunk(Type t);
 
-    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 

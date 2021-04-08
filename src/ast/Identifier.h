@@ -18,21 +18,29 @@
 
 #include "Common.h"
 #include "ast/Node.h"
-#include "ast/Identifier.h"
-#include "ast/Statement.h"
+#include "ast/Expression.h"
 
 #include <vector>
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Handler : Node {
-    enum Kind { HandlerKind, FunctionKind } kind;
-    Owned<Identifier> messageKey;
-    Owned<IdentifierList> arguments;
-    Owned<StatementList> statements;
+struct Identifier : Expression {
+    std::string name;
 
-    Handler(Kind _kind, Owned<Identifier> &mk, Owned<IdentifierList> &args,
-            Owned<StatementList> &sl);
+    Identifier(const std::string &n);
+    Identifier(const char *n);
+
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+};
+
+struct IdentifierList : Node {
+    std::vector<Owned<Identifier>> identifiers;
+
+    IdentifierList();
+
+    void add(Owned<Identifier> &identifier) {
+        identifiers.push_back(std::move(identifier));
+    }
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

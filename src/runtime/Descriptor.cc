@@ -28,7 +28,7 @@ Descriptor::Descriptor(Runtime &r, const ast::Descriptor &d) {
             names.push_back(desc->name->name);
             v = desc->value.get();
         } else {
-            value = v->evaluate(r);
+            value = std::any_cast<Value>(v->accept(r));
             v = nullptr;
         }
     }

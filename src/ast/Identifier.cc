@@ -14,27 +14,13 @@
 //  limitations under the License.
 //
 
-#pragma once
-
-#include "Common.h"
-#include "ast/Node.h"
 #include "ast/Identifier.h"
-#include "ast/Statement.h"
-
-#include <vector>
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Handler : Node {
-    enum Kind { HandlerKind, FunctionKind } kind;
-    Owned<Identifier> messageKey;
-    Owned<IdentifierList> arguments;
-    Owned<StatementList> statements;
+Identifier::Identifier(const std::string &n) : name(n) {}
+Identifier::Identifier(const char *n) : name(n) {}
 
-    Handler(Kind _kind, Owned<Identifier> &mk, Owned<IdentifierList> &args,
-            Owned<StatementList> &sl);
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
-};
+IdentifierList::IdentifierList() {}
 
 CH_AST_NAMESPACE_END

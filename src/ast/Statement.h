@@ -17,7 +17,6 @@
 #pragma once
 
 #include "Common.h"
-
 #include "ast/Node.h"
 #include "ast/Expression.h"
 
@@ -26,50 +25,23 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-struct StatementList;
-struct Identifier;
-struct IdentifierList;
-struct Expression;
-struct Preposition;
-struct If;
-struct Repeat;
-struct RepeatCount;
-struct RepeatRange;
-struct RepeatCondition;
-struct ExitRepeat;
-struct NextRepeat;
-struct Exit;
-struct Pass;
-struct Global;
-struct Return;
-struct Do;
-struct Put;
-struct Get;
-struct Ask;
-struct Command;
-
-class StatementVisitor {
-  public:
-    virtual void visit(const If &) = 0;
-    virtual void visit(const Repeat &) = 0;
-    virtual void visit(const RepeatCount &) = 0;
-    virtual void visit(const RepeatRange &) = 0;
-    virtual void visit(const RepeatCondition &) = 0;
-    virtual void visit(const ExitRepeat &) = 0;
-    virtual void visit(const NextRepeat &) = 0;
-    virtual void visit(const Exit &) = 0;
-    virtual void visit(const Pass &) = 0;
-    virtual void visit(const Global &) = 0;
-    virtual void visit(const Return &) = 0;
-    virtual void visit(const Do &) = 0;
-    virtual void visit(const Command &) = 0;
-};
-
 struct Statement : Node {
     virtual ~Statement() = default;
 
-    virtual void accept(StatementVisitor &visitor) const = 0;
     virtual std::any accept(AnyVisitor &v) const = 0;
+};
+
+struct StatementList : Node {
+    std::vector<Owned<Statement>> statements;
+
+    StatementList();
+    StatementList(Owned<Statement> &statement);
+
+    void add(Owned<Statement> &statement) {
+        statements.push_back(std::move(statement));
+    }
+
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct If : Statement {
@@ -82,7 +54,6 @@ struct If : Statement {
     If(Owned<Expression> &c, Owned<Statement> &is);
     If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -91,7 +62,6 @@ struct Exit : Statement {
 
     Exit(Owned<Identifier> &m);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -100,7 +70,6 @@ struct Pass : Statement {
 
     Pass(Owned<Identifier> &m);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -109,7 +78,6 @@ struct Global : Statement {
 
     Global(Owned<IdentifierList> &v);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -118,7 +86,6 @@ struct Return : Statement {
 
     Return(Owned<Expression> &e);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -129,7 +96,6 @@ struct Do : Statement {
     Do(Owned<Expression> &expression);
     Do(Owned<Expression> &expression, Owned<Expression> &language);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 

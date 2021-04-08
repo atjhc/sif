@@ -14,9 +14,13 @@
 //  limitations under the License.
 //
 
-#include "Statement.h"
+#include "ast/Statement.h"
+#include "ast/Identifier.h"
 
 CH_AST_NAMESPACE_BEGIN
+
+StatementList::StatementList() {}
+StatementList::StatementList(Owned<Statement> &statement) { add(statement); }
 
 If::If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es)
     : condition(std::move(c)), ifStatements(std::move(is)), elseStatements(std::move(es)) {}

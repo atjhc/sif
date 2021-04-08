@@ -19,7 +19,6 @@
 #include "Common.h"
 #include "ast/Node.h"
 #include "ast/Expression.h"
-#include "runtime/Value.h"
 
 #include <ostream>
 
@@ -37,7 +36,6 @@ struct Property : Expression {
     Property(Owned<Identifier> &name, Owned<Expression> &expression);
     Property(Owned<Identifier> &adj, Owned<Identifier> &name, Owned<Expression> &expression);
 
-    runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 

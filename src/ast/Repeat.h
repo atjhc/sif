@@ -17,7 +17,6 @@
 #pragma once
 
 #include "Common.h"
-
 #include "ast/Node.h"
 #include "ast/Statement.h"
 
@@ -31,7 +30,6 @@ struct Repeat : Statement {
 
     Repeat(Owned<StatementList> &s);
 
-    virtual void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -40,7 +38,6 @@ struct RepeatCount : Repeat {
 
     RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -53,7 +50,6 @@ struct RepeatRange : Repeat {
     RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee,
                 bool asc, Owned<StatementList> &s);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
@@ -63,17 +59,14 @@ struct RepeatCondition : Repeat {
 
     RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl);
 
-    void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct ExitRepeat : Statement {
-    void accept(StatementVisitor &v) const override { v.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct NextRepeat : Statement {
-    void accept(StatementVisitor &v) const override { v.visit(*this); }
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 

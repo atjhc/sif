@@ -14,17 +14,13 @@
 //  limitations under the License.
 //
 
-#include "Handler.h"
+#include "ast/Handler.h"
+#include "ast/Identifier.h"
 
 CH_AST_NAMESPACE_BEGIN
 
 Handler::Handler(Kind _kind, Owned<Identifier> &mk, Owned<IdentifierList> &args,
         Owned<StatementList> &sl)
     : kind(_kind), messageKey(std::move(mk)), arguments(std::move(args)), statements(std::move(sl)) {}
-
-StatementList::StatementList() {}
-StatementList::StatementList(Owned<Statement> &statement) { add(statement); }
-
-IdentifierList::IdentifierList() {}
 
 CH_AST_NAMESPACE_END
