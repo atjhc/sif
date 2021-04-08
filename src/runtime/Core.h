@@ -40,17 +40,17 @@
 CH_RUNTIME_NAMESPACE_BEGIN
 
 class Object;
-class Runtime;
+class Core;
 
-struct RuntimeConfig {
+struct CoreConfig {
     std::ostream &stdout = std::cout;
     std::ostream &stderr = std::cerr;
     std::istream &stdin = std::cin;
 
-    RuntimeConfig()
+    CoreConfig()
         : stdout(std::cout), stderr(std::cerr), stdin(std::cin) {}
 
-    RuntimeConfig(std::ostream &out, std::ostream &err, std::istream &in)
+    CoreConfig(std::ostream &out, std::ostream &err, std::istream &in)
         : stdout(out), stderr(err), stdin(in) {}    
 
     std::function<float()> random = defaultRandom();
@@ -62,7 +62,7 @@ struct RuntimeConfig {
     static std::function<float()> defaultRandom();
 };
 
-struct RuntimeStackFrame {
+struct CoreStackFrame {
     Message message;
     Strong<Object> target;
 
@@ -78,21 +78,21 @@ struct RuntimeStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    RuntimeStackFrame(const Message &m, const Strong<Object> &t)
+    CoreStackFrame(const Message &m, const Strong<Object> &t)
         : message(m), target(t) {}
 };
 
-class Runtime : public ast::AnyVisitor {
+class Core : public ast::AnyVisitor {
   public:
 
-    Runtime(const RuntimeConfig &c = RuntimeConfig());
+    Core(const CoreConfig &c = CoreConfig());
 
     bool send(const Message &message, Strong<Object> target = nullptr);
     Value call(const Message &message, Strong<Object> target = nullptr);
 
     void add(const std::string &name, Function *fn);
 
-    const RuntimeStackFrame& currentFrame();
+    const CoreStackFrame& currentFrame();
     std::function<float()> random();
 
   private:
@@ -161,11 +161,11 @@ class Runtime : public ast::AnyVisitor {
     std::any visitAny(const ast::MiddleChunk &) override;
 
   private:
-    RuntimeConfig _config;
+    CoreConfig _config;
 
     Map<std::string, Owned<Function>> _functions;
 
-    std::stack<RuntimeStackFrame> _stack;
+    std::stack<CoreStackFrame> _stack;
     Variables _globals;
 };
 

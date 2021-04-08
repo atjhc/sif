@@ -25,16 +25,14 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class Runtime;
+class Core;
 
 struct Descriptor {
     std::vector<std::string> names;
     Optional<Value> value;
 
-    Descriptor(const std::vector<std::string> &n, const Optional<Value> &v)
-        : names(n), value(v) {}
-
-    Descriptor(Runtime &r, const ast::Descriptor &d);
+    Descriptor(const std::vector<std::string> &n, const Optional<Value> &v);
+    Descriptor(Core &r, const ast::Descriptor &d);
 };
 
 CH_RUNTIME_NAMESPACE_END

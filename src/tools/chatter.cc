@@ -16,7 +16,7 @@
 
 #include "parser/Parser.h"
 #include "ast/PrettyPrinter.h"
-#include "runtime/Runtime.h"
+#include "runtime/Core.h"
 #include "runtime/Object.h"
 
 #include <chrono>
@@ -106,14 +106,14 @@ static int run(const std::string &fileName, const std::string &messageName,
         values.push_back(Value(argument));
     }
 
-    RuntimeConfig runtimeConfig;
+    CoreConfig coreConfig;
 #if defined(DEBUG)
-    runtimeConfig.enableTracing = traceRuntime;
+    coreConfig.enableTracing = traceRuntime;
 #endif    
-    Runtime runtime(runtimeConfig);
+    Core core(coreConfig);
 
     try {
-        runtime.send(Message(messageName, values), object);
+        core.send(Message(messageName, values), object);
     } catch (RuntimeError &error) {
         std::cerr << contextName << ":" << error.where << ": error: "
                   << error.what() << std::endl;

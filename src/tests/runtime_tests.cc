@@ -17,7 +17,7 @@
 #include "TestSuite.h"
 
 #include "parser/Parser.h"
-#include "runtime/Runtime.h"
+#include "runtime/Core.h"
 #include "runtime/Object.h"
 #include "utilities/devnull.h"
 
@@ -26,7 +26,7 @@
 using namespace chatter;
 using namespace chatter::runtime;
 
-TEST_CASE(Runtime, All) {
+TEST_CASE(Core, All) {
     for (auto path : suite.files_in("runtime")) {
         auto pos = path.rfind(".chatter");
         if (pos == std::string::npos) {
@@ -41,12 +41,12 @@ TEST_CASE(Runtime, All) {
         ASSERT_NOT_NULL(object);
 
         std::ostringstream ss;
-        RuntimeConfig runtimeConfig(ss, devnull, idevnull);
-        runtimeConfig.random = [&]() { return 0; };
-        Runtime runtime(runtimeConfig);
+        CoreConfig coreConfig(ss, devnull, idevnull);
+        coreConfig.random = [&]() { return 0; };
+        Core core(coreConfig);
 
         try {
-            runtime.send(Message("begin"), object);
+            core.send(Message("begin"), object);
         } catch (RuntimeError &error) {
             ASSERT_FAIL("runtime exception thrown");
         }

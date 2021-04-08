@@ -26,53 +26,53 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class Runtime;
+class Core;
 
 struct Function {
     virtual ~Function() = default;
 
-    virtual Value valueOf(Runtime &, const Message &) const = 0;
+    virtual Value valueOf(Core &, const Message &) const = 0;
 };
 
 template <auto T>
 struct OneArgumentFunction : Function {
-    Value valueOf(Runtime &, const Message &m) const override {
+    Value valueOf(Core &, const Message &m) const override {
         return Value(T(m.arguments[0]));
     }
 };
 
 struct MaxFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override {
+    Value valueOf(Core &, const Message &m) const override {
         return *std::max_element(m.arguments.begin(), m.arguments.end());
     }
 };
 
 struct MinFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override {
+    Value valueOf(Core &, const Message &m) const override {
         return *std::min_element(m.arguments.begin(), m.arguments.end());
     }
 };
 
 struct SumFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override {
+    Value valueOf(Core &, const Message &m) const override {
         return std::accumulate(m.arguments.begin(), m.arguments.end(), Value(0));
     }
 };
 
 struct MeanFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override {
+    Value valueOf(Core &, const Message &m) const override {
         return std::accumulate(m.arguments.begin(), m.arguments.end(), Value(0)) / Value(m.arguments.size());
     }
 };
 
 struct LengthFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override {
+    Value valueOf(Core &, const Message &m) const override {
         return m.arguments[0].asString().length();
     }
 };
 
 struct OffsetFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override {
+    Value valueOf(Core &, const Message &m) const override {
         auto &v1 = m.arguments[0];
         auto &v2 = m.arguments[1];
         auto result = v2.asString().find(v1.asString());
@@ -81,31 +81,31 @@ struct OffsetFunction: Function {
 };
 
 struct ValueFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override;
+    Value valueOf(Core &, const Message &m) const override;
 };
 
 struct RandomFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override;
+    Value valueOf(Core &, const Message &m) const override;
 };
 
 struct ParamFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override;
+    Value valueOf(Core &, const Message &m) const override;
 };
 
 struct ParamsFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override;
+    Value valueOf(Core &, const Message &m) const override;
 };
 
 struct ParamCountFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override;
+    Value valueOf(Core &, const Message &m) const override;
 };
 
 struct ResultFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override;
+    Value valueOf(Core &, const Message &m) const override;
 };
 
 struct TargetFunction: Function {
-    Value valueOf(Runtime &, const Message &m) const override;
+    Value valueOf(Core &, const Message &m) const override;
 };
 
 CH_RUNTIME_NAMESPACE_END

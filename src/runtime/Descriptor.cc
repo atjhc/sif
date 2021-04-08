@@ -15,11 +15,14 @@
 //
 
 #include "runtime/Descriptor.h"
-#include "runtime/Runtime.h"
+#include "runtime/Core.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Descriptor::Descriptor(Runtime &r, const ast::Descriptor &d) {
+Descriptor::Descriptor(const std::vector<std::string> &n, const Optional<Value> &v)
+    : names(n), value(v) {}
+
+Descriptor::Descriptor(Core &r, const ast::Descriptor &d) {
     names.push_back(d.name->name);
 
     auto v = d.value.get();
