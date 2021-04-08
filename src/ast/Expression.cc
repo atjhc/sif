@@ -38,7 +38,7 @@ Not::Not(Owned<Expression> &e) : expression(std::move(e)) {}
 
 Minus::Minus(Owned<Expression> &e) : expression(std::move(e)) {}
 
-FloatLiteral::FloatLiteral(float v) : value(v) {}
+FloatLiteral::FloatLiteral(double v) : value(v) {}
 
 IntLiteral::IntLiteral(int i) : value(i) {}
 

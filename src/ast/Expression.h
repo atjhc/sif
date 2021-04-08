@@ -105,9 +105,9 @@ struct Minus : Expression {
 };
 
 struct FloatLiteral : Expression {
-    float value;
+    double value;
 
-    FloatLiteral(float v);
+    FloatLiteral(double v);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
