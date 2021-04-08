@@ -22,19 +22,22 @@
 #include "utilities/devnull.h"
 
 #include <string>
+#include <filesystem>
 
 using namespace chatter;
 using namespace chatter::runtime;
 
 TEST_CASE(Core, All) {
-    for (auto path : suite.files_in("runtime")) {
-        auto pos = path.rfind(".chatter");
-        if (pos == std::string::npos) {
+    for (auto pstr : suite.files_in("runtime")) {
+        auto path = std::filesystem::path(pstr);
+        if (path.extension() != "chatter") {
             continue;
         }
 
-        auto name = std::string(path.begin(), path.begin() + pos);
-        auto expectedResult = suite.file_contents(name + ".txt");
+        auto resultPath = path;
+        resultPath.replace_extension("txt");
+
+        auto expectedResult = suite.file_contents(resultPath);
         ASSERT_NEQ(expectedResult, "");
 
         auto object = Object::Make(path, suite.file_contents(path));

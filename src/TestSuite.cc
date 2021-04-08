@@ -17,9 +17,8 @@
 #include "TestSuite.h"
 
 #include <sys/types.h>
-#include <dirent.h>
-#include <libgen.h>
-#include <sys/param.h>
+
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -117,28 +116,25 @@ int TestSuite::add(const std::string &groupName, const std::string &name, std::f
 }
 
 std::vector<std::string> TestSuite::files_in(const std::string &path) const {
-    auto fullPath = config.resourcesPath + '/' + path;
-    DIR *directory = opendir(fullPath.c_str());
+    auto fullPath = std::filesystem::path(config.resourcesPath) / path;
+
     std::vector<std::string> paths;
 
-    if (!directory) {
-        config.out << "Could not open directory at path: " << fullPath << std::endl;
-        return paths;
-    }
-
-    while (struct dirent *entry = readdir(directory)) {
-        std::string name = entry->d_name;
-        if (name == "." || name == "..") {
+    for (auto it : std::filesystem::directory_iterator(fullPath)) {
+        std::string name = it.path().filename().string();
+        if (name.find(".") == 0) {
             continue;
         }
-        paths.push_back(path + '/' + name);
+
+        paths.push_back(it.path());
     }
 
     return paths;
 }
 
 std::string TestSuite::file_contents(const std::string &path) const {
-    auto fullPath = config.resourcesPath + '/' + path;
+    auto fullPath = std::filesystem::path(config.resourcesPath) / path;
+
     std::ifstream file(fullPath);
     std::string contents;
 
@@ -153,14 +149,15 @@ std::string TestSuite::file_contents(const std::string &path) const {
     return contents;
 }
 
-std::string TestSuite::basename(const std::string &path) const {
-    char buffer[MAXPATHLEN];
-    return std::string(basename_r(path.c_str(), buffer));
+std::string TestSuite::basename(const std::string &p) const {
+    auto path = std::filesystem::path(p);
+    return path.filename();
 }
 
-std::string TestSuite::dirname(const std::string &path) const {
-    char buffer[MAXPATHLEN];
-    return std::string(dirname_r(path.c_str(), buffer));
+std::string TestSuite::dirname(const std::string &p) const {
+    auto path = std::filesystem::path(p);
+    path.remove_filename();
+    return path;
 }
 
 CH_NAMESPACE_END
