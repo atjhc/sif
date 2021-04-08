@@ -52,7 +52,6 @@ class PrettyPrinter: AnyVisitor {
     std::any visitAny(const Global &) override;
     std::any visitAny(const Return &) override;
     std::any visitAny(const Do &) override;
-    std::any visitAny(const Preposition &) override;
     std::any visitAny(const Identifier &) override;
     std::any visitAny(const FunctionCall &) override;
     std::any visitAny(const Property &) override;

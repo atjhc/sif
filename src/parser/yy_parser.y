@@ -136,9 +136,10 @@ using namespace chatter::ast;
 %nterm <Owned<Expression>> factor literal expression ifCondition functionCall property ordinal constant
 %nterm <Owned<Descriptor>> descriptor
 %nterm <Owned<Chunk>> chunk
-%nterm <Chunk::Type> chunkType
 %nterm <Owned<ExpressionList>> expressionList
-%nterm <Owned<Preposition>> preposition
+
+%nterm <Chunk::Type> chunkType
+%nterm <Put::Preposition> preposition
 
 %start start
 
@@ -926,13 +927,13 @@ expressionList
 
 preposition
     : INTO {
-        $$ = MakeOwned<Preposition>(Preposition::Into);
+        $$ = Put::Into;
     }
     | BEFORE {
-        $$ = MakeOwned<Preposition>(Preposition::Before);
+        $$ = Put::Before;
     }
     | AFTER {
-        $$ = MakeOwned<Preposition>(Preposition::After);
+        $$ = Put::After;
     }
 ;
 

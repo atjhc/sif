@@ -31,15 +31,12 @@ Command::Command(Owned<Identifier> &n)
 Command::Command(Identifier *n)
     : name(n), arguments(nullptr) {}
 
-Preposition::Preposition(PrepositionType t) : type(t) {}
-
-Put::Put(Owned<Expression> &e, Owned<Preposition> &p, Owned<Identifier> &t)
-    : Command(new Identifier("put")), expression(std::move(e)), preposition(std::move(p)),
+Put::Put(Owned<Expression> &e, Preposition p, Owned<Identifier> &t)
+    : Command(new Identifier("put")), expression(std::move(e)), preposition(p),
         target(std::move(t)) {}
 
 Put::Put(Owned<Expression> &e)
-    : Command(new Identifier("put")), expression(std::move(e)), preposition(nullptr),
-        target(nullptr) {}
+    : Command(new Identifier("put")), expression(std::move(e)), target(nullptr) {}
 
 Get::Get(Owned<Expression> &e) : Command(new Identifier("get")), expression(std::move(e)) {}
 

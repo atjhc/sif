@@ -145,7 +145,6 @@ class Runtime : public ast::AnyVisitor {
 
 #pragma mark - ExpressionVisitor
 
-    std::any visitAny(const ast::Preposition &) override;
     std::any visitAny(const ast::Identifier &) override;
     std::any visitAny(const ast::FunctionCall &) override;
     std::any visitAny(const ast::Property &) override;

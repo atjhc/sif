@@ -40,7 +40,6 @@ struct Pass;
 struct Global;
 struct Return;
 struct Do;
-struct Preposition;
 struct Identifier;
 struct FunctionCall;
 struct Property;
@@ -82,7 +81,6 @@ struct AnyVisitor {
     virtual std::any visitAny(const Global &) = 0;
     virtual std::any visitAny(const Return &) = 0;
     virtual std::any visitAny(const Do &) = 0;
-    virtual std::any visitAny(const Preposition &) = 0;
     virtual std::any visitAny(const Identifier &) = 0;
     virtual std::any visitAny(const FunctionCall &) = 0;
     virtual std::any visitAny(const Property &) = 0;

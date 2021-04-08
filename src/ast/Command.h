@@ -37,22 +37,14 @@ struct Command : Statement {
     virtual std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
-struct Preposition : Node {
-    enum PrepositionType { Before, Into, After } type;
-
-    Preposition(PrepositionType type);
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
-};
-
 #pragma mark Messages
 
 struct Put : Command {
     Owned<Expression> expression;
-    Owned<Preposition> preposition;
+    enum Preposition { Before, Into, After } preposition;
     Owned<Identifier> target;
 
-    Put(Owned<Expression> &expression, Owned<Preposition> &preposition, Owned<Identifier> &target);
+    Put(Owned<Expression> &expression, Preposition preposition, Owned<Identifier> &target);
     Put(Owned<Expression> &expression);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }

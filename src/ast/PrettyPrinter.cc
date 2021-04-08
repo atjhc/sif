@@ -223,22 +223,6 @@ std::any PrettyPrinter::visitAny(const Do &s) {
 	return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Preposition &p) {
-    switch (p.type) {
-    case Preposition::Before:
-        out << "before";
-        break;
-    case Preposition::Into:
-        out << "into";
-        break;
-    case Preposition::After:
-        out << "after";
-        break;
-    }
-
-	return std::any();
-}
-
 std::any PrettyPrinter::visitAny(const Identifier &e) {
     out << e.name;
 
@@ -440,15 +424,19 @@ std::any PrettyPrinter::visitAny(const Command &c) {
 	return std::any();
 }
 
+std::string stringForPreposition(const Put::Preposition &p) {
+    switch (p) {
+    case Put::Before: return "before";
+    case Put::Into: return "into";
+    case Put::After: return "after";
+    }
+}
+
 std::any PrettyPrinter::visitAny(const Put &c) {
     out << "put ";
     c.expression->accept(*this);
-    if (c.preposition) {
-        out << " ";
-        c.preposition->accept(*this);
-    }
     if (c.target) {
-        out << " ";
+        out << " " << stringForPreposition(c.preposition) << " ";
         c.target->accept(*this);
     }
 

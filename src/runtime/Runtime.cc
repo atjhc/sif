@@ -404,18 +404,18 @@ std::any Runtime::visitAny(const Put &s) {
     auto value = std::any_cast<Value>(s.expression->accept(*this));
     if (s.target) {
         auto &name = s.target->name;
-        switch (s.preposition->type) {
-        case Preposition::Before: {
+        switch (s.preposition) {
+        case Put::Before: {
             auto targetValue = get(name);
             set(name, value.asString() + targetValue.asString());
             break;
         }
-        case Preposition::After: {
+        case Put::After: {
             auto targetValue = get(name);
             set(name, targetValue.asString() + value.asString());
             break;
         }
-        case Preposition::Into:
+        case Put::Into:
             set(name, value);
             break;
         }
@@ -531,10 +531,6 @@ Value Runtime::evaluateFunction(const Message &message) {
 }
 
 #pragma mark - ExpressionVisitor
-
-std::any Runtime::visitAny(const ast::Preposition &) {
-    return std::any();
-}
 
 std::any Runtime::visitAny(const Identifier &e) { return get(e.name); }
 
