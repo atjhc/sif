@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Base.h"
+#include "ast/Node.h"
 #include "ast/Expression.h"
 #include "runtime/Value.h"
 
@@ -32,21 +32,13 @@ struct Property : Expression {
     Owned<Identifier> name;
     Owned<Expression> expression;
 
-    Property(Owned<Identifier> &n)
-        : adjective(nullptr), name(std::move(n)), expression(nullptr) {}
-
-    Property(Owned<Identifier> &adj, Owned<Identifier> &n)
-        : adjective(std::move(adj)), name(std::move(n)), expression(nullptr) {}
-
-    Property(Owned<Identifier> &n, Owned<Expression> &e)
-        : adjective(nullptr), name(std::move(n)), expression(std::move(e)) {}
-
-    Property(Owned<Identifier> &adj, Owned<Identifier> &n, Owned<Expression> &e)
-        : adjective(std::move(adj)), name(std::move(n)), expression(std::move(e)) {}
+    Property(Owned<Identifier> &name);
+    Property(Owned<Identifier> &adj, Owned<Identifier> &name);
+    Property(Owned<Identifier> &name, Owned<Expression> &expression);
+    Property(Owned<Identifier> &adj, Owned<Identifier> &name, Owned<Expression> &expression);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

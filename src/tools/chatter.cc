@@ -15,6 +15,7 @@
 //
 
 #include "parser/Parser.h"
+#include "ast/PrettyPrinter.h"
 #include "runtime/Runtime.h"
 #include "runtime/Object.h"
 
@@ -70,8 +71,8 @@ static int prettyPrint(const std::string &fileName) {
         return -1;
     }
 
-    auto prettyPrintContext = PrettyPrintContext();
-    result->prettyPrint(std::cout, prettyPrintContext);
+    auto prettyPrinter = PrettyPrinter();
+    prettyPrinter.print(*result);
 
     return 0;
 }

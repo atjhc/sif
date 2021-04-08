@@ -18,13 +18,10 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void Descriptor::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    name->prettyPrint(out, context);
-    if (value) {
-        out << " (";
-        value->prettyPrint(out, context);
-        out << ")";
-    }
-}
+Descriptor::Descriptor(Owned<Identifier> &n, Owned<Expression> &v)
+    : name(std::move(n)), value(std::move(v)) {}
+
+Descriptor::Descriptor(Owned<Identifier> &n)
+    : name(std::move(n)), value(nullptr) {}
 
 CH_AST_NAMESPACE_END

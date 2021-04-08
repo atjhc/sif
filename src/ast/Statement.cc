@@ -18,57 +18,28 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void StatementList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    context.indentLevel += 1;
-    for (auto &statement : statements) {
-        out << context.indentString();
-        statement->prettyPrint(out, context);
-        out << std::endl;
-    }
-    context.indentLevel -= 1;
-}
+If::If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es)
+    : condition(std::move(c)), ifStatements(std::move(is)), elseStatements(std::move(es)) {}
 
-void If::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "if ";
-    condition->prettyPrint(out, context);
-    out << " then" << std::endl;
-    ifStatements->prettyPrint(out, context);
-    if (elseStatements) {
-        out << context.indentString() << "else" << std::endl;
-        elseStatements->prettyPrint(out, context);
-    }
-    out << context.indentString() << "end if";
-}
+If::If(Owned<Expression> &c, Owned<StatementList> &isl)
+    : condition(std::move(c)), ifStatements(std::move(isl)), elseStatements(nullptr) {}
 
-void Exit::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "exit ";
-    messageKey->prettyPrint(out, context);
-}
+If::If(Owned<Expression> &c, Owned<Statement> &is)
+    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(nullptr) {}
 
-void Pass::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "pass ";
-    messageKey->prettyPrint(out, context);
-}
+If::If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl)
+    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(std::move(esl)) {}
 
-void Global::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "global ";
-    variables->prettyPrint(out, context);
-}
+Exit::Exit(Owned<Identifier> &m) : messageKey(std::move(m)) {}
 
-void Return::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "return ";
-    if (expression) {
-        expression->prettyPrint(out, context);
-    }
-}
+Pass::Pass(Owned<Identifier> &m) : messageKey(std::move(m)) {}
 
-void Do::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "do ";
-    expression->prettyPrint(out, context);
-    if (language) {
-        out << " as ";
-        language->prettyPrint(out, context);
-    }
-}
+Global::Global(Owned<IdentifierList> &v) : variables(std::move(v)) {}
+
+Return::Return(Owned<Expression> &e) : expression(std::move(e)) {}
+
+Do::Do(Owned<Expression> &e) : expression(std::move(e)), language(nullptr) {}
+Do::Do(Owned<Expression> &e, Owned<Expression> &l)
+    : expression(std::move(e)), language(std::move(l)) {}
 
 CH_AST_NAMESPACE_END

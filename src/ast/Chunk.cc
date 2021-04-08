@@ -18,47 +18,25 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-std::string Chunk::ordinalName() const {
-    switch (type) {
-    case Char:
-        return "char";
-    case Word:
-        return "word";
-    case Item:
-        return "item";
-    case Line:
-        return "line";
-    }
-}
+Chunk::Chunk(Type t, Owned<Expression> &e) : type(t), expression(std::move(e)) {}
+Chunk::Chunk(Type t) : type(t), expression(nullptr) {}
 
-void Chunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << " of ";
-    expression->prettyPrint(out, context);
-}
+RangeChunk::RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee, Owned<Expression> &e)
+    : Chunk(t, e), start(std::move(se)), end(std::move(ee)) {}
 
-void RangeChunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << ordinalName() << " ";
-    start->prettyPrint(out, context);
-    if (end) {
-        out << " to ";
-        end->prettyPrint(out, context);
-    }
-    Chunk::prettyPrint(out, context);
-}
+RangeChunk::RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee)
+    : Chunk(t), start(std::move(se)), end(std::move(ee)) {}
 
-void LastChunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "the last " << ordinalName();
-    Chunk::prettyPrint(out, context);
-}
+RangeChunk::RangeChunk(Type t, Owned<Expression> &se)
+    : Chunk(t), start(std::move(se)) {}
 
-void MiddleChunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "the middle " << ordinalName();
-    Chunk::prettyPrint(out, context);
-}
+LastChunk::LastChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
+LastChunk::LastChunk(Type t) : Chunk(t) {}
 
-void AnyChunk::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "any " << ordinalName();
-    Chunk::prettyPrint(out, context);
-}
+MiddleChunk::MiddleChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
+MiddleChunk::MiddleChunk(Type t) : Chunk(t) {}
+
+AnyChunk::AnyChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
+AnyChunk::AnyChunk(Type t) : Chunk(t) {}
 
 CH_AST_NAMESPACE_END

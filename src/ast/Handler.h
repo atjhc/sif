@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "Base.h"
+#include "Node.h"
 #include "Common.h"
 #include "Expression.h"
 #include "Statement.h"
@@ -33,43 +33,40 @@ struct Identifier;
 struct Expression;
 
 struct Handler : Node {
-    enum Kind { HandlerKind, FunctionKind };
-
-    Kind kind;
-
+    enum Kind { HandlerKind, FunctionKind } kind;
     Owned<Identifier> messageKey;
     Owned<IdentifierList> arguments;
     Owned<StatementList> statements;
 
     Handler(Kind _kind, Owned<Identifier> &mk, Owned<IdentifierList> &args,
-            Owned<StatementList> &sl)
-        : kind(_kind), messageKey(std::move(mk)), arguments(std::move(args)), statements(std::move(sl)) {}
+            Owned<StatementList> &sl);
 
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct StatementList : Node {
     std::vector<Owned<Statement>> statements;
 
-    StatementList() {}
+    StatementList();
+    StatementList(Owned<Statement> &statement);
 
-    StatementList(Owned<Statement> &statement) { add(statement); }
+    void add(Owned<Statement> &statement) {
+        statements.push_back(std::move(statement));
+    }
 
-    void add(Owned<Statement> &statement) { statements.push_back(std::move(statement)); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct IdentifierList : Node {
     std::vector<Owned<Identifier>> identifiers;
 
-    IdentifierList() {}
+    IdentifierList();
 
     void add(Owned<Identifier> &identifier) {
         identifiers.push_back(std::move(identifier));
     }
 
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

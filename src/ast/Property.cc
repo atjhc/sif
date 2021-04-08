@@ -18,17 +18,16 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void Property::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "the ";
-    if (adjective) {
-        adjective->prettyPrint(out, context);
-        out << " ";
-    }
-    name->prettyPrint(out, context);
-    if (expression) {
-        out << " of ";
-        expression->prettyPrint(out, context);
-    }
-}
+Property::Property(Owned<Identifier> &n)
+    : adjective(nullptr), name(std::move(n)), expression(nullptr) {}
+
+Property::Property(Owned<Identifier> &adj, Owned<Identifier> &n)
+    : adjective(std::move(adj)), name(std::move(n)), expression(nullptr) {}
+
+Property::Property(Owned<Identifier> &n, Owned<Expression> &e)
+    : adjective(nullptr), name(std::move(n)), expression(std::move(e)) {}
+
+Property::Property(Owned<Identifier> &adj, Owned<Identifier> &n, Owned<Expression> &e)
+    : adjective(std::move(adj)), name(std::move(n)), expression(std::move(e)) {}
 
 CH_AST_NAMESPACE_END

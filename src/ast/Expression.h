@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Base.h"
+#include "ast/Node.h"
 #include "ast/Handler.h"
 #include "runtime/Value.h"
 
@@ -62,50 +62,44 @@ class ExpressionVisitor {
 
 struct Expression : Node {
     virtual ~Expression() = default;
+
     virtual runtime::Value evaluate(ExpressionVisitor &) const = 0;
+    virtual std::any accept(AnyVisitor &v) const = 0;
 };
 
 struct ExpressionList : Node {
     std::vector<Owned<Expression>> expressions;
 
-    ExpressionList() {}
-
-    ExpressionList(Owned<Expression> &e) { add(e); }
+    ExpressionList();
+    ExpressionList(Owned<Expression> &e);
 
     void add(Owned<Expression> &e) {
         expressions.push_back(std::move(e));
     }
 
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Identifier : Expression {
     std::string name;
 
-    Identifier(const std::string &n) : name(n) {}
-    Identifier(const char *n) : name(n) {}
+    Identifier(const std::string &n);
+    Identifier(const char *n);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct FunctionCall : Expression {
     Owned<Identifier> identifier;
     Owned<ExpressionList> arguments;
 
-    FunctionCall(Owned<Identifier> &id, Owned<ExpressionList> &args)
-        : identifier(std::move(id)), arguments(std::move(args)) {}
-
-    FunctionCall(Owned<Identifier> &id, Owned<Expression> &arg)
-        : identifier(std::move(id)), arguments(MakeOwned<ExpressionList>(arg)) {}
-
-    FunctionCall(Owned<Identifier> &id)
-        : identifier(std::move(id)), arguments(nullptr) {}
+    FunctionCall(Owned<Identifier> &id, Owned<ExpressionList> &args);
+    FunctionCall(Owned<Identifier> &id, Owned<Expression> &arg);
+    FunctionCall(Owned<Identifier> &id);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct BinaryOp : Expression {
@@ -134,62 +128,55 @@ struct BinaryOp : Expression {
     Operator op;
     Owned<Expression> left, right;
 
-    BinaryOp(Operator o, Owned<Expression> &l, Owned<Expression> &r)
-        : op(o), left(std::move(l)), right(std::move(r)) {}
+    BinaryOp(Operator op, Owned<Expression> &left, Owned<Expression> &right);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Not : Expression {
     Owned<Expression> expression;
 
-    Not(Owned<Expression> &e) : expression(std::move(e)) {}
+    Not(Owned<Expression> &expression);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Minus : Expression {
     Owned<Expression> expression;
 
-    Minus(Owned<Expression> &e) : expression(std::move(e)) {}
+    Minus(Owned<Expression> &expression);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct FloatLiteral : Expression {
     float value;
 
-    FloatLiteral(float v) : value(v) {}
+    FloatLiteral(float v);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct IntLiteral : Expression {
     int value;
 
-    IntLiteral(int i) : value(i) {}
+    IntLiteral(int i);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct StringLiteral : Expression {
     std::string value;
 
-    StringLiteral(const std::string &v) : value(v) {}
+    StringLiteral(const std::string &v);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

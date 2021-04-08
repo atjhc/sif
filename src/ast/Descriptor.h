@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Base.h"
+#include "ast/Node.h"
 #include "ast/Expression.h"
 #include "runtime/Value.h"
 
@@ -31,15 +31,12 @@ struct Descriptor : Expression {
     Owned<Identifier> name;
     Owned<Expression> value;
 
-    Descriptor(Owned<Identifier> &n, Owned<Expression> &v)
-        : name(std::move(n)), value(std::move(v)) {}
-
-    Descriptor(Owned<Identifier> &n)
-        : name(std::move(n)), value(nullptr) {}
+    Descriptor(Owned<Identifier> &n, Owned<Expression> &v);
+    Descriptor(Owned<Identifier> &n);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
 
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

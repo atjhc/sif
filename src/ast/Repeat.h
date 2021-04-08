@@ -18,7 +18,7 @@
 
 #include "Common.h"
 
-#include "ast/Base.h"
+#include "ast/Node.h"
 #include "ast/Statement.h"
 
 #include <ostream>
@@ -29,23 +29,19 @@ CH_AST_NAMESPACE_BEGIN
 struct Repeat : Statement {
     Owned<StatementList> statements;
 
-    Repeat(Owned<StatementList> &s) : statements(std::move(s)) {}
+    Repeat(Owned<StatementList> &s);
 
     virtual void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
-    virtual void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const {}
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct RepeatCount : Repeat {
     Owned<Expression> countExpression;
 
-    RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s)
-        : Repeat(s), countExpression(std::move(cs)) {}
+    RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct RepeatRange : Repeat {
@@ -55,37 +51,30 @@ struct RepeatRange : Repeat {
     bool ascending;
 
     RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee,
-                bool asc, Owned<StatementList> &s)
-        : Repeat(s), variable(std::move(v)), startExpression(std::move(se)),
-          endExpression(std::move(ee)), ascending(asc) {}
+                bool asc, Owned<StatementList> &s);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct RepeatCondition : Repeat {
     Owned<Expression> condition;
     bool conditionValue;
 
-    RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl)
-        : Repeat(sl), condition(std::move(c)), conditionValue(cv) {}
+    RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrintCondition(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct ExitRepeat : Statement {
     void accept(StatementVisitor &v) const override { v.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct NextRepeat : Statement {
     void accept(StatementVisitor &v) const override { v.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

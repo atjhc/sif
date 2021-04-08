@@ -18,7 +18,7 @@
 
 #include "Common.h"
 
-#include "ast/Base.h"
+#include "ast/Node.h"
 #include "ast/Expression.h"
 
 #include <ostream>
@@ -67,7 +67,9 @@ class StatementVisitor {
 
 struct Statement : Node {
     virtual ~Statement() = default;
+
     virtual void accept(StatementVisitor &visitor) const = 0;
+    virtual std::any accept(AnyVisitor &v) const = 0;
 };
 
 struct If : Statement {
@@ -75,75 +77,60 @@ struct If : Statement {
     Owned<StatementList> ifStatements;
     Owned<StatementList> elseStatements;
 
-    If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es)
-        : condition(std::move(c)), ifStatements(std::move(is)), elseStatements(std::move(es)) {}
-
-    If(Owned<Expression> &c, Owned<StatementList> &isl)
-        : condition(std::move(c)), ifStatements(std::move(isl)), elseStatements(nullptr) {}
-
-    If(Owned<Expression> &c, Owned<Statement> &is)
-        : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(nullptr) {}
-
-    If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl)
-        : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(std::move(esl)) {}
-
+    If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es);
+    If(Owned<Expression> &c, Owned<StatementList> &isl);
+    If(Owned<Expression> &c, Owned<Statement> &is);
+    If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Exit : Statement {
     Owned<Identifier> messageKey;
 
-    Exit(Owned<Identifier> &m) : messageKey(std::move(m)) {}
+    Exit(Owned<Identifier> &m);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Pass : Statement {
     Owned<Identifier> messageKey;
 
-    Pass(Owned<Identifier> &m) : messageKey(std::move(m)) {}
+    Pass(Owned<Identifier> &m);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Global : Statement {
     Owned<IdentifierList> variables;
 
-    Global(Owned<IdentifierList> &v) : variables(std::move(v)) {}
+    Global(Owned<IdentifierList> &v);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Return : Statement {
     Owned<Expression> expression;
 
-    Return(Owned<Expression> &e) : expression(std::move(e)) {}
+    Return(Owned<Expression> &e);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Do : Statement {
     Owned<Expression> expression;
     Owned<Expression> language;
 
-    Do(Owned<Expression> &e) : expression(std::move(e)), language(nullptr) {}
-    Do(Owned<Expression> &e, Owned<Expression> &l)
-        : expression(std::move(e)), language(std::move(l)) {}
+    Do(Owned<Expression> &expression);
+    Do(Owned<Expression> &expression, Owned<Expression> &language);
 
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

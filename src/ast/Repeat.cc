@@ -18,47 +18,17 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void Repeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "repeat";
-    prettyPrintCondition(out, context);
-    out << std::endl;
-    statements->prettyPrint(out, context);
-    out << context.indentString() << "end repeat";
-}
+Repeat::Repeat(Owned<StatementList> &s) : statements(std::move(s)) {}
 
-void RepeatRange::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-    out << " with ";
-    variable->prettyPrint(out, context);
-    out << " = ";
-    startExpression->prettyPrint(out, context);
-    if (ascending) {
-        out << " to ";
-    } else {
-        out << " down to ";
-    }
-    endExpression->prettyPrint(out, context);
-}
+RepeatCount::RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s)
+    : Repeat(s), countExpression(std::move(cs)) {}
 
-void RepeatCount::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-    out << " ";
-    countExpression->prettyPrint(out, context);
-}
+RepeatRange::RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee,
+            bool asc, Owned<StatementList> &s)
+    : Repeat(s), variable(std::move(v)), startExpression(std::move(se)),
+        endExpression(std::move(ee)), ascending(asc) {}
 
-void RepeatCondition::prettyPrintCondition(std::ostream &out, PrettyPrintContext &context) const {
-    if (conditionValue) {
-        out << " while ";
-    } else {
-        out << " until ";
-    }
-    condition->prettyPrint(out, context);
-}
-
-void NextRepeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "next repeat";
-}
-
-void ExitRepeat::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "exit repeat";
-}
+RepeatCondition::RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl)
+    : Repeat(sl), condition(std::move(c)), conditionValue(cv) {}
 
 CH_AST_NAMESPACE_END

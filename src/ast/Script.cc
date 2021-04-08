@@ -18,10 +18,6 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void Script::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    for (auto &handler : handlers) {
-        handler->prettyPrint(out, context);
-    }
-}
+Script::Script() {}
 
 CH_AST_NAMESPACE_END

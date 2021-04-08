@@ -18,40 +18,13 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void Handler::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    switch (kind) {
-    case HandlerKind:
-        out << context.indentString() << "on ";
-        break;
-    case FunctionKind:
-        out << context.indentString() << "function ";
-        break;
-    }
+Handler::Handler(Kind _kind, Owned<Identifier> &mk, Owned<IdentifierList> &args,
+        Owned<StatementList> &sl)
+    : kind(_kind), messageKey(std::move(mk)), arguments(std::move(args)), statements(std::move(sl)) {}
 
-    messageKey->prettyPrint(out, context);
-    if (arguments) {
-        out << " ";
-        arguments->prettyPrint(out, context);
-    }
-    out << std::endl;
-    if (statements) {
-        statements->prettyPrint(out, context);
-    }
-    out << context.indentString() << "end ";
-    messageKey->prettyPrint(out, context);
-    out << std::endl;
-}
+StatementList::StatementList() {}
+StatementList::StatementList(Owned<Statement> &statement) { add(statement); }
 
-void IdentifierList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    auto i = identifiers.begin();
-    while (i != identifiers.end()) {
-        (*i)->prettyPrint(out, context);
-
-        i++;
-        if (i != identifiers.end()) {
-            out << ", ";
-        }
-    }
-}
+IdentifierList::IdentifierList() {}
 
 CH_AST_NAMESPACE_END

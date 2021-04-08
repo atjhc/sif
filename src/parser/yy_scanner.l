@@ -206,7 +206,7 @@ pi                          LEX_RETURN(PI);
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
-    auto expression = new StringLiteral(std::string(yytext));
+    auto expression = new Identifier(std::string(yytext));
     yylval->emplace<Owned<Expression>>(expression);
     LEX_RETURN(IDENTIFIER); 
 }

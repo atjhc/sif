@@ -18,7 +18,7 @@
 
 #include "Common.h"
 
-#include "ast/Base.h"
+#include "ast/Node.h"
 #include "ast/Handler.h"
 
 #include <ostream>
@@ -29,11 +29,13 @@ CH_AST_NAMESPACE_BEGIN
 struct Script : Node {
     std::vector<Owned<Handler>> handlers;
 
-    Script() {}
+    Script();
 
-    void add(Owned<Handler> &handler) { handlers.push_back(std::move(handler)); }
+    void add(Owned<Handler> &handler) { 
+        handlers.push_back(std::move(handler));
+    }
 
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    virtual std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

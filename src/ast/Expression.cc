@@ -18,111 +18,32 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void BinaryOp::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "(";
-    left->prettyPrint(out, context);
-    switch (op) {
-    case Equal:
-        out << " = ";
-        break;
-    case NotEqual:
-        out << " <> ";
-        break;
-    case LessThan:
-        out << " < ";
-        break;
-    case GreaterThan:
-        out << " > ";
-        break;
-    case LessThanOrEqual:
-        out << " <= ";
-        break;
-    case GreaterThanOrEqual:
-        out << " >= ";
-        break;
-    case Plus:
-        out << " + ";
-        break;
-    case Minus:
-        out << " - ";
-        break;
-    case Multiply:
-        out << " * ";
-        break;
-    case Divide:
-        out << " / ";
-        break;
-    case Exponent:
-        out << " ^ ";
-        break;
-    case IsIn:
-        out << " is in ";
-        break;
-    case IsAn:
-        out << " is a ";
-        break;
-    case Contains:
-        out << " contains ";
-        break;
-    case Or:
-        out << " or ";
-        break;
-    case And:
-        out << " and ";
-        break;
-    case Mod:
-        out << " mod ";
-        break;
-    case Concat:
-        out << " & ";
-        break;
-    case ConcatWithSpace:
-        out << " && ";
-        break;
-    }
-    right->prettyPrint(out, context);
-    out << ")";
-}
+ExpressionList::ExpressionList() {}
+ExpressionList::ExpressionList(Owned<Expression> &e) { add(e); }
 
-void Not::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "not (";
-    expression->prettyPrint(out, context);
-    out << ")";
-}
+Identifier::Identifier(const std::string &n) : name(n) {}
+Identifier::Identifier(const char *n) : name(n) {}
 
-void Minus::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "-(";
-    expression->prettyPrint(out, context);
-    out << ")";
-}
+FunctionCall::FunctionCall(Owned<Identifier> &id, Owned<ExpressionList> &args)
+    : identifier(std::move(id)), arguments(std::move(args)) {}
 
-void FunctionCall::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    identifier->prettyPrint(out, context);
-    out << "(";
-    if (arguments) {
-        arguments->prettyPrint(out, context);
-    }
-    out << ")";
-}
+FunctionCall::FunctionCall(Owned<Identifier> &id, Owned<Expression> &arg)
+    : identifier(std::move(id)), arguments(MakeOwned<ExpressionList>(arg)) {}
 
-void FloatLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const { out << value; }
+FunctionCall::FunctionCall(Owned<Identifier> &id)
+    : identifier(std::move(id)), arguments(nullptr) {}
 
-void IntLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const { out << value; }
+BinaryOp::BinaryOp(Operator o, Owned<Expression> &l, Owned<Expression> &r)
+    : op(o), left(std::move(l)), right(std::move(r)) {}
 
-void StringLiteral::prettyPrint(std::ostream &out, PrettyPrintContext &) const { out << value; }
+Not::Not(Owned<Expression> &e) : expression(std::move(e)) {}
 
-void Identifier::prettyPrint(std::ostream &out, PrettyPrintContext &) const { out << name; }
+Minus::Minus(Owned<Expression> &e) : expression(std::move(e)) {}
 
-void ExpressionList::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    auto i = expressions.begin();
-    while (i < expressions.end()) {
-        (*i)->prettyPrint(out, context);
+FloatLiteral::FloatLiteral(float v) : value(v) {}
 
-        i++;
-        if (i != expressions.end()) {
-            out << ", ";
-        }
-    }
-}
+IntLiteral::IntLiteral(int i) : value(i) {}
+
+StringLiteral::StringLiteral(const std::string &v) : value(v) {}
 
 CH_AST_NAMESPACE_END

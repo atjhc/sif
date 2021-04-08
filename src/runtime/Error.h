@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Base.h"
+#include "ast/Node.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 

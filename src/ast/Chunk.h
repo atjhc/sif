@@ -23,63 +23,49 @@
 CH_AST_NAMESPACE_BEGIN
 
 struct Chunk : Expression {
-    enum Type { Char, Word, Item, Line };
-
-    Type type;
+    enum Type { Char, Word, Item, Line } type;
     Owned<Expression> expression;
 
-    Chunk(Type t, Owned<Expression> &e) : type(t), expression(std::move(e)) {}
+    Chunk(Type t, Owned<Expression> &e);
+    Chunk(Type t);
 
-    Chunk(Type t) : type(t), expression(nullptr) {}
-
-    std::string ordinalName() const;
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    virtual std::any accept(AnyVisitor &v) const override = 0;
 };
 
 struct RangeChunk : Chunk {
     Owned<Expression> start;
     Owned<Expression> end;
 
-    RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee, Owned<Expression> &e)
-        : Chunk(t, e), start(std::move(se)), end(std::move(ee)) {}
-
-    RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee)
-        : Chunk(t), start(std::move(se)), end(std::move(ee)) {}
-    
-    RangeChunk(Type t, Owned<Expression> &se)
-        : Chunk(t), start(std::move(se)) {}
+    RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee, Owned<Expression> &e);
+    RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee);
+    RangeChunk(Type t, Owned<Expression> &se);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct LastChunk : Chunk {
-    LastChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
-
-    LastChunk(Type t) : Chunk(t) {}
+    LastChunk(Type t, Owned<Expression> &e);
+    LastChunk(Type t);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct MiddleChunk : Chunk {
-    MiddleChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
-    MiddleChunk(Type t) : Chunk(t) {}
+    MiddleChunk(Type t, Owned<Expression> &e);
+    MiddleChunk(Type t);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct AnyChunk : Chunk {
-    AnyChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
-    AnyChunk(Type t) : Chunk(t) {}
+    AnyChunk(Type t, Owned<Expression> &e);
+    AnyChunk(Type t);
 
     runtime::Value evaluate(ExpressionVisitor &v) const override { return v.valueOf(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

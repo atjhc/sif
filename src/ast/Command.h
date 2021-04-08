@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Base.h"
+#include "ast/Node.h"
 #include "ast/Expression.h"
 #include "ast/Statement.h"
 
@@ -49,17 +49,10 @@ struct Command : Statement {
     Owned<Identifier> name;
     Owned<ExpressionList> arguments;
 
-    Command(Owned<Identifier> &n, Owned<ExpressionList> &args)
-        : name(std::move(n)), arguments(std::move(args)) {}
-
-    Command(Owned<Identifier> &n, Owned<Expression> &arg)
-        : name(std::move(n)), arguments(MakeOwned<ExpressionList>(arg)) {}
-
-    Command(Owned<Identifier> &n)
-        : name(std::move(n)), arguments(nullptr) {}
-
-    Command(Identifier *n)
-        : name(n), arguments(nullptr) {}
+    Command(Owned<Identifier> &n, Owned<ExpressionList> &args);
+    Command(Owned<Identifier> &n, Owned<Expression> &arg);
+    Command(Owned<Identifier> &n);
+    Command(Identifier *n);
     
     void accept(StatementVisitor &visitor) const override { visitor.visit(*this); }
 
@@ -67,17 +60,15 @@ struct Command : Statement {
         /* user commands are not executed by the runtime. */
     }
 
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Preposition : Node {
-    enum PrepositionType { Before, Into, After };
+    enum PrepositionType { Before, Into, After } type;
 
-    PrepositionType type;
+    Preposition(PrepositionType t);
 
-    Preposition(PrepositionType t) : type(t) {}
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 #pragma mark Messages
@@ -87,85 +78,69 @@ struct Put : Command {
     Owned<Preposition> preposition;
     Owned<Identifier> target;
 
-    Put(Owned<Expression> &e, Owned<Preposition> &p, Owned<Identifier> &t)
-        : Command(new Identifier("put")), expression(std::move(e)), preposition(std::move(p)),
-          target(std::move(t)) {}
-
-    Put(Owned<Expression> &e)
-        : Command(new Identifier("put")), expression(std::move(e)), preposition(nullptr),
-          target(nullptr) {}
+    Put(Owned<Expression> &e, Owned<Preposition> &p, Owned<Identifier> &t);
+    Put(Owned<Expression> &e);
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Get : Command {
     Owned<Expression> expression;
 
-    Get(Owned<Expression> &e) : Command(new Identifier("get")), expression(std::move(e)) {}
+    Get(Owned<Expression> &e);
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Ask : Command {
     Owned<Expression> expression;
 
-    Ask(Owned<Expression> &e) : Command(new Identifier("ask")), expression(std::move(e)) {}
+    Ask(Owned<Expression> &e);
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Add : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Add(Owned<Expression> &e, Owned<Identifier> &d)
-        : Command(new Identifier("add")), expression(std::move(e)), destination(std::move(d)) {}
+    Add(Owned<Expression> &e, Owned<Identifier> &d);
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Subtract : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Subtract(Owned<Expression> &e, Owned<Identifier> &d)
-        : Command(new Identifier("subtract")), expression(std::move(e)), destination(std::move(d)) {}
+    Subtract(Owned<Expression> &e, Owned<Identifier> &d);
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Multiply : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Multiply(Owned<Expression> &e, Owned<Identifier> &d)
-        : Command(new Identifier("multiply")), expression(std::move(e)), destination(std::move(d)) {}
+    Multiply(Owned<Expression> &e, Owned<Identifier> &d);
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Divide : Command {
     Owned<Expression> expression;
     Owned<Identifier> destination;
 
-    Divide(Owned<Expression> &e, Owned<Identifier> &d)
-        : Command(new Identifier("divide")), expression(std::move(e)), destination(std::move(d)) {}
+    Divide(Owned<Expression> &e, Owned<Identifier> &d);
 
     void perform(CommandVisitor &visitor) const override { visitor.perform(*this); }
-
-    void prettyPrint(std::ostream &, PrettyPrintContext &) const override;
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

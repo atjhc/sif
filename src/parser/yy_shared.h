@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "ast/Base.h"
+#include "ast/Node.h"
 
 struct ParseLocation {
     Location first;

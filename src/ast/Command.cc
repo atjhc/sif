@@ -18,72 +18,39 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-void Command::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << name->name;
-    if (arguments) {
-        arguments->prettyPrint(out, context);
-    }
-}
+Command::Command(Owned<Identifier> &n, Owned<ExpressionList> &args)
+    : name(std::move(n)), arguments(std::move(args)) {}
 
-void Preposition::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    switch (type) {
-    case Before:
-        out << "before";
-        break;
-    case Into:
-        out << "into";
-        break;
-    case After:
-        out << "after";
-        break;
-    }
-}
+Command::Command(Owned<Identifier> &n, Owned<Expression> &arg)
+    : name(std::move(n)), arguments(MakeOwned<ExpressionList>(arg)) {}
 
-void Put::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "put ";
-    expression->prettyPrint(out, context);
-    if (preposition) {
-        out << " ";
-        preposition->prettyPrint(out, context);
-    }
-    if (target) {
-        out << " ";
-        target->prettyPrint(out, context);
-    }
-}
+Command::Command(Owned<Identifier> &n)
+    : name(std::move(n)), arguments(nullptr) {}
 
-void Get::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "get ";
-    expression->prettyPrint(out, context);
-}
+Command::Command(Identifier *n)
+    : name(n), arguments(nullptr) {}
 
-void Ask::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "ask ";
-    expression->prettyPrint(out, context);
-}
+Preposition::Preposition(PrepositionType t) : type(t) {}
 
-void Add::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "add ";
-    expression->prettyPrint(out, context);
-    out << " to ";
-}
+Put::Put(Owned<Expression> &e, Owned<Preposition> &p, Owned<Identifier> &t)
+    : Command(new Identifier("put")), expression(std::move(e)), preposition(std::move(p)),
+        target(std::move(t)) {}
 
-void Subtract::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "subtract ";
-    expression->prettyPrint(out, context);
-    out << " from ";
-}
+Put::Put(Owned<Expression> &e)
+    : Command(new Identifier("put")), expression(std::move(e)), preposition(nullptr),
+        target(nullptr) {}
 
-void Multiply::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "multiply ";
-    expression->prettyPrint(out, context);
-    out << " by ";
-}
+Get::Get(Owned<Expression> &e) : Command(new Identifier("get")), expression(std::move(e)) {}
 
-void Divide::prettyPrint(std::ostream &out, PrettyPrintContext &context) const {
-    out << "divide ";
-    expression->prettyPrint(out, context);
-    out << " by ";
-}
+Ask::Ask(Owned<Expression> &e) : Command(new Identifier("ask")), expression(std::move(e)) {}
+
+Add::Add(Owned<Expression> &e, Owned<Identifier> &d)
+    : Command(new Identifier("add")), expression(std::move(e)), destination(std::move(d)) {}
+
+Subtract::Subtract(Owned<Expression> &e, Owned<Identifier> &d)
+    : Command(new Identifier("subtract")), expression(std::move(e)), destination(std::move(d)) {}
+
+Multiply::Multiply(Owned<Expression> &e, Owned<Identifier> &d)
+    : Command(new Identifier("multiply")), expression(std::move(e)), destination(std::move(d)) {}
 
 CH_AST_NAMESPACE_END
