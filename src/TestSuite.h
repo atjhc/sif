@@ -38,12 +38,43 @@ CH_NAMESPACE_BEGIN
 #define ASSERT_FALSE(C) suite._assert(!(C), #C " == false", __FILE__, __LINE__)
 #define ASSERT_NULL(V) suite._assert((V) == nullptr, #V " == nullptr", __FILE__, __LINE__)
 #define ASSERT_NOT_NULL(V) suite._assert((V) != nullptr, #V " != nullptr", __FILE__, __LINE__)
-#define ASSERT_EQ(LHS, RHS) suite._assert(LHS == RHS, #LHS " == " #RHS, __FILE__, __LINE__)
-#define ASSERT_NEQ(LHS, RHS) suite._assert(LHS != RHS, #LHS " != " #RHS, __FILE__, __LINE__)
-#define ASSERT_LT(LHS, RHS) suite._assert(LHS < RHS, #LHS " < " #RHS, __FILE__, __LINE__)
-#define ASSERT_GT(LHS, RHS) suite._assert(LHS > RHS, #LHS " > " #RHS, __FILE__, __LINE__)
-#define ASSERT_LTE(LHS, RHS) suite._assert(LHS <= RHS, #LHS " <= " #RHS, __FILE__, __LINE__)
-#define ASSERT_GTE(LHS, RHS) suite._assert(LHS >= RHS, #LHS " >= " #RHS, __FILE__, __LINE__)
+#define ASSERT_EQ(LHS, RHS) suite._assert((LHS) == (RHS), #LHS " == " #RHS, __FILE__, __LINE__)
+#define ASSERT_NEQ(LHS, RHS) suite._assert((LHS) != (RHS), #LHS " != " #RHS, __FILE__, __LINE__)
+#define ASSERT_LT(LHS, RHS) suite._assert((LHS) < (RHS), #LHS " < " #RHS, __FILE__, __LINE__)
+#define ASSERT_GT(LHS, RHS) suite._assert((LHS) > (RHS), #LHS " > " #RHS, __FILE__, __LINE__)
+#define ASSERT_LTE(LHS, RHS) suite._assert((LHS) <= (RHS), #LHS " <= " #RHS, __FILE__, __LINE__)
+#define ASSERT_GTE(LHS, RHS) suite._assert((LHS) >= (RHS), #LHS " >= " #RHS, __FILE__, __LINE__)
+#define ASSERT_NO_THROW(STMNT) \
+    do { \
+        bool throws = false; \
+        try { \
+            (STMNT); \
+        } catch (...) { \
+            throws = true; \
+        } \
+        suite._assert(!throws, #STMNT, __FILE__, __LINE__); \
+    } while (false)
+#define ASSERT_THROWS(STMNT) \
+    do { \
+        bool throws = false; \
+        try { \
+            (STMNT); \
+        } catch (const std::exception &e) { \
+            throws = true; \
+        } \
+        suite._assert(throws, #STMNT, __FILE__, __LINE__); \
+    } while (false)
+#define ASSERT_THROWS_SPECIFIC(STMNT, E) \
+    do { \
+        bool throws = false; \
+        try { \
+            (STMNT); \
+        } catch (const E &e) { \
+            throws = true; \
+        } \
+        suite._assert(throws, #STMNT, __FILE__, __LINE__); \
+    } while (false)
+
 
 struct TestSuite;
 
@@ -69,34 +100,34 @@ struct TestSuite {
 
     TestSuite(const TestSuiteConfig &c = TestSuiteConfig("src/tests")) : config(c) {}
 
-    int add(const std::string &group, 
-            const std::string &name, 
-            std::function<void(TestSuite &)> test);
-
-    int runAll();
-    int runGroup(const std::string &groupName);
-    int runTest(const std::string &groupName, const std::string &testName);
+    int run(const std::string &groupName, const std::string &testName);
 
     std::vector<std::string> files_in(const std::string &path) const;
     std::string file_contents(const std::string &path) const;
     std::string basename(const std::string &path) const;
     std::string dirname(const std::string &path) const;
 
-    void _assert(bool condition, const char *test, const char *file, int line);
+    std::ostream &_assert(bool condition, const char *test, const char *file, int line);
+
+    int add(const std::string &group, 
+        const std::string &name, 
+        std::function<void(TestSuite &)> test);
 
   private:
+    std::string _currentDateString() const;
+
+    bool _runGroup(const std::string &name, const std::vector<Ref<Test>> &tests, const std::string &testName);
+    bool _runTest(const Test &test);
+
     std::vector<Owned<Test>> tests;
     Map<std::string, std::vector<Ref<Test>>> testsByGroup;
 
-    int _summarize();
-    void _run(const std::string &name, const std::vector<Ref<Test>> &tests);
-    void _run(const Test &test);
-
-    int success_count = 0;
-    int failure_count = 0;
+    bool didPass = true;
+    int successCount = 0;
+    int failureCount = 0;
 };
 
 TestSuite &MainTestSuite();
-int RunAllTests();
+int RunAllTests(int argc, char *argv[]);
 
 CH_NAMESPACE_END

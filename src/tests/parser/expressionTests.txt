@@ -1,0 +1,28 @@
+on begin
+  return fun()
+  return fun (1)
+  return fun(1, 2)
+  return 1
+  return (1 + 2)
+  return (1 * 2)
+  return (1 / 2)
+  return (1 + (2 * 3))
+  return ((1 + 2) / 2)
+  return (1 = 2)
+  return (1 = 2)
+  return (1 <> 2)
+  return (1 = not (2))
+  return (1 <> 2)
+  return (1 or 2)
+  return (1 and 2)
+  return (1 < 2)
+  return (1 <= 2)
+  return (1 > 2)
+  return (1 >= 2)
+  return "string literal"
+  return the cos of 5
+  return cos (10)
+  return max(10, 20)
+  return (x & y)
+  return (x && y)
+end begin

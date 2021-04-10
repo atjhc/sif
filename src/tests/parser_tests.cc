@@ -15,20 +15,15 @@
 //
 
 #include "TestSuite.h"
-
 #include "parser/Parser.h"
-#include "runtime/Core.h"
-#include "runtime/Object.h"
-#include "utilities/devnull.h"
+#include "ast/PrettyPrinter.h"
 
-#include <string>
+#include <sstream>
 #include <filesystem>
+#include <iostream>
 
-using namespace chatter;
-using namespace chatter::runtime;
-
-TEST_CASE(Core, All) {
-    for (auto pstr : suite.files_in("runtime")) {
+TEST_CASE(ParserTests, All) {
+    for (auto pstr : suite.files_in("parser")) {
         auto path = std::filesystem::path(pstr);
         if (path.extension() != ".chatter") {
             continue;
@@ -38,17 +33,19 @@ TEST_CASE(Core, All) {
         resultPath.replace_extension(".txt");
 
         auto expectedResult = suite.file_contents(resultPath);
-        ASSERT_NEQ(expectedResult, "");
+        ASSERT_FALSE(expectedResult.empty());
 
-        auto object = Object::Make(path, suite.file_contents(path));
-        ASSERT_NOT_NULL(object);
+        auto parserConfig = chatter::ParserConfig(path);
+        auto parser = chatter::Parser(parserConfig);
+
+        auto source = suite.file_contents(path);
+        auto script = parser.parseScript(source);
 
         std::ostringstream ss;
-        CoreConfig coreConfig(ss, devnull, idevnull);
-        coreConfig.random = [&]() { return 0; };
-        Core core(coreConfig);
+        auto printerConfig = chatter::ast::PrettyPrinterConfig{ss, 2};
+        auto printer = chatter::ast::PrettyPrinter(printerConfig);
+        printer.print(*script);
 
-        ASSERT_NO_THROW(core.send(Message("begin"), object));
-        ASSERT_EQ(ss.str(), expectedResult);
+        ASSERT_EQ(ss.str(), expectedResult) << "Failed: " << path << std::endl;
     }
 }

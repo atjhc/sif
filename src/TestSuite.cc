@@ -15,12 +15,16 @@
 //
 
 #include "TestSuite.h"
+#include "utilities/devnull.h"
 
 #include <sys/types.h>
+#include <getopt.h>
+#include <libgen.h>
 
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 
 CH_NAMESPACE_BEGIN
 
@@ -29,76 +33,130 @@ TestSuite &MainTestSuite() {
     return mainTestSuite;
 }
 
-int RunAllTests() {
-    return MainTestSuite().runAll();
+static int usage(int argc, char *argv[]) {
+    std::cout << "Usage: " << basename(argv[0]) << " [options...] [file]" << std::endl
+              << " -t, --test"
+              << "\t Run a specific test, requires -g" << std::endl
+              << " -g, --group"
+              << "\t Specify a group to test" << std::endl
+              << " -h, --help"
+              << "\t Print out this help and exit" << std::endl;
+    return -1;
 }
 
-int TestSuite::runAll() {
-    config.out << "Running " << tests.size() << " test cases" << std::endl;
-    for (auto &group : testsByGroup) {
-        _run(group.first, group.second);
-    }
+int RunAllTests(int argc, char *argv[]) {
+static struct option long_options[] = {
+        {"group", required_argument, NULL, 'g'},
+        {"test", required_argument, NULL, 't'},
+        {"help", no_argument, NULL, 'h'},
+        {0, 0, 0, 0}
+    };
 
-    return _summarize();
-}
+    std::string groupName;
+    std::string testName;
 
-int TestSuite::runGroup(const std::string &groupName) {
-    auto g = testsByGroup.find(groupName);
-    if (g == testsByGroup.end()) {
-        config.out << "Could not find group named " << groupName << std::endl;
-        return -1;
-    }
-
-    config.out << "Running " << g->second.size() << " test cases" << std::endl;
-    _run(g->first, g->second);
-
-    return _summarize();
-}
-
-int TestSuite::runTest(const std::string &groupName, const std::string &testName) {
-    auto g = testsByGroup.find(groupName);
-    if (g == testsByGroup.end()) {
-        config.out << "Could not find group named " << groupName << std::endl;
-        return -1;
-    }
-
-    for (auto &test : g->second) {
-        if (test.get().name == testName) {
-            _run(test.get());
+    int c, opt_index = 0;
+    while ((c = getopt_long(argc, argv, "g:t:h", long_options, &opt_index)) != -1) {
+        switch (c) {
+        case 'g':
+            groupName = optarg;
+            break;
+        case 't':
+            testName = optarg;
+            break;
+        case 'h':
+            return usage(argc, argv);
+        default:
             break;
         }
     }
-
-    return _summarize();
-}
-
-int TestSuite::_summarize() {
-    config.out << "Ran " << failure_count + success_count << " tests with " << success_count
-               << " successes and " << failure_count << " failures." << std::endl;
-    return failure_count;
-}
-
-void TestSuite::_run(const std::string &name, const std::vector<Ref<Test>> &tests) {
-    config.out << "Running test group " << name << std::endl;
-    for (auto &test : tests) {
-        _run(test.get());
+    
+    if (!testName.empty() && groupName.empty()) {
+        std::cerr << "Requires group name" << std::endl;
+        return usage(argc, argv);
     }
-    config.out << "Finished test group " << name << std::endl;
+
+    return MainTestSuite().run(groupName, testName);
 }
 
-void TestSuite::_run(const Test &test) {
-    config.out << "Running test " << test.name << std::endl;
+int TestSuite::run(const std::string &groupName, const std::string &testName) {
+    auto start = std::chrono::steady_clock::now();
+    
+    for (auto &group : testsByGroup) {
+        if (!groupName.empty() && groupName != group.first) {
+            continue;
+        }
+        _runGroup(group.first, group.second, testName);
+    }
+
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsedSeconds = end - start;
+
+    config.out << "Executed " << failureCount + successCount << " tests with, " << failureCount
+               << (failureCount == 1 ? " failure in " : " failures in ") 
+               << std::setiosflags(std::ios::fixed) << std::setprecision(5) 
+               << elapsedSeconds.count() << " seconds." << std::endl;
+    return failureCount;
+}
+
+bool TestSuite::_runGroup(const std::string &name, const std::vector<Ref<Test>> &tests, const std::string &testName) {
+    config.out << "Test Group '" << name << "' started at " << _currentDateString() << std::endl;
+    bool passed = true;
+
+    for (auto &test : tests) {
+        if (!testName.empty() && testName != test.get().name) {
+            continue;
+        }
+        passed = passed && _runTest(test.get());
+    }
+    config.out << "Test Group '" << name << "' " << (passed ? "passed" : "failed")
+               << " at " << _currentDateString() << std::endl;
+
+    return passed;
+}
+
+bool TestSuite::_runTest(const Test &test) {
+    config.out << "Test Case '" << test.group << "." << test.name << "' started." << std::endl;
+    bool passed = true;
+
+    auto start = std::chrono::steady_clock::now();    
     test.test(*this);
-    config.out << "Finished test " << test.name << std::endl;
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsedSeconds = end - start;
+
+    passed = didPass;
+    didPass = true;
+
+    config.out << "Test Case '" << test.group << "." << test.name << "' "
+               << (passed ? "passed" : "failed") << " (" 
+               << std::setiosflags(std::ios::fixed) << std::setprecision(5) 
+               << elapsedSeconds.count() << " seconds)." << std::endl;
+
+    if (passed) {
+        successCount++;
+    } else {
+        failureCount++;
+    }
+    
+    return passed;
+}
+std::string TestSuite::_currentDateString() const {
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+    return ss.str();
 }
 
-void TestSuite::_assert(bool condition, const char *test, const char *file, int line) {
+std::ostream& TestSuite::_assert(bool condition, const char *test, const char *file, int line) {
     if (condition) {
-        success_count++;
+        return chatter::devnull;
     } else {
+        didPass = false;
         config.out << "Test \"" << test << "\" failed. (" << file << ":" << line << ")"
                    << std::endl;
-        failure_count++;
+        return std::cerr;
     }
 }
 
@@ -126,7 +184,7 @@ std::vector<std::string> TestSuite::files_in(const std::string &path) const {
             continue;
         }
 
-        paths.push_back(it.path());
+        paths.push_back(path / it.path().filename());
     }
 
     return paths;
