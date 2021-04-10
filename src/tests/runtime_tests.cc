@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "TestSuite.h"
+#include "tests/TestSuite.h"
 
 #include "parser/Parser.h"
 #include "runtime/Core.h"

@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "TestSuite.h"
+#include "tests/TestSuite.h"
 
 int main(int argc, char *argv[]) {
-    return chatter::RunAllTests(argc, argv);
+    return RunAllTests(argc, argv);
 }

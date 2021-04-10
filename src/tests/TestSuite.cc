@@ -15,7 +15,6 @@
 //
 
 #include "TestSuite.h"
-#include "utilities/devnull.h"
 
 #include <sys/types.h>
 #include <getopt.h>
@@ -26,7 +25,24 @@
 #include <sstream>
 #include <chrono>
 
-CH_NAMESPACE_BEGIN
+template <class cT, class traits = std::char_traits<cT>>
+class basic_nullbuf : public std::basic_streambuf<cT, traits> {
+    typename traits::int_type overflow(typename traits::int_type c) { return traits::not_eof(c); }
+};
+
+template <class cT, class traits = std::char_traits<cT>>
+class basic_onullstream : public std::basic_ostream<cT, traits> {
+  public:
+    basic_onullstream()
+        : std::basic_ios<cT, traits>(&_sbuf), std::basic_ostream<cT, traits>(&_sbuf) {
+        std::basic_ostream<cT, traits>::init(&_sbuf);
+    }
+
+  private:
+    basic_nullbuf<cT, traits> _sbuf;
+};
+
+static basic_onullstream<char> devnull;
 
 TestSuite &MainTestSuite() {
     static TestSuite mainTestSuite;
@@ -151,17 +167,16 @@ std::string TestSuite::_currentDateString() const {
 
 std::ostream& TestSuite::_assert(bool condition, const char *test, const char *file, int line) {
     if (condition) {
-        return chatter::devnull;
+        return devnull;
     } else {
         didPass = false;
-        config.out << "Test \"" << test << "\" failed. (" << file << ":" << line << ")"
-                   << std::endl;
-        return std::cerr;
+        config.out << file << ":" << line << ": error: \"" << test << "\" failed." << std::endl;
+        return config.out;
     }
 }
 
 int TestSuite::add(const std::string &groupName, const std::string &name, std::function<void(TestSuite &)> testFn) { 
-    auto test = tests.insert(tests.begin(), MakeOwned<Test>(Test{groupName, name, testFn}));
+    auto test = tests.insert(tests.begin(), std::make_unique<Test>(Test{groupName, name, testFn}));
     
     auto group = testsByGroup.find(groupName);
     if (group == testsByGroup.end()) {
@@ -217,5 +232,3 @@ std::string TestSuite::dirname(const std::string &p) const {
     path.remove_filename();
     return path;
 }
-
-CH_NAMESPACE_END

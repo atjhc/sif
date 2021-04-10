@@ -16,22 +16,18 @@
 
 #pragma once
 
-#include "Common.h"
-
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
-CH_NAMESPACE_BEGIN
-
-#define _NS chatter
 #define _TEST_FN(GROUP, NAME) _TEST_##GROUP##_##NAME
 #define _TEST_DISCARD(GROUP, NAME) _DISCARD_##GROUP##_##NAME
 
 #define TEST_CASE(GROUP, NAME) \
-    void _TEST_FN(GROUP, NAME) (_NS::TestSuite &suite); \
-    int _TEST_DISCARD(GROUP, NAME) = _NS::MainTestSuite().add(#GROUP, #NAME, _TEST_FN(GROUP, NAME)); \
-    void _TEST_FN(GROUP, NAME) (_NS::TestSuite &suite)
+    void _TEST_FN(GROUP, NAME) (TestSuite &suite); \
+    int _TEST_DISCARD(GROUP, NAME) = MainTestSuite().add(#GROUP, #NAME, _TEST_FN(GROUP, NAME)); \
+    void _TEST_FN(GROUP, NAME) (TestSuite &suite)
 
 #define ASSERT_FAIL(M) suite._assert(false, M, __FILE__, __LINE__)
 #define ASSERT_TRUE(C) suite._assert((C), #C " == true", __FILE__, __LINE__)
@@ -114,6 +110,13 @@ struct TestSuite {
         std::function<void(TestSuite &)> test);
 
   private:
+    template <class K, class V>
+    using Map = std::unordered_map<K, V>;
+    template <class T>
+    using Ref = std::reference_wrapper<T>;
+    template <class T>
+    using Owned = std::unique_ptr<T>;
+
     std::string _currentDateString() const;
 
     bool _runGroup(const std::string &name, const std::vector<Ref<Test>> &tests, const std::string &testName);
@@ -129,5 +132,3 @@ struct TestSuite {
 
 TestSuite &MainTestSuite();
 int RunAllTests(int argc, char *argv[]);
-
-CH_NAMESPACE_END

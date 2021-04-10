@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "TestSuite.h"
+#include "tests/TestSuite.h"
 #include "utilities/strings.h"
 
 TEST_CASE(Strings, Escape) {
