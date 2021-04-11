@@ -130,6 +130,7 @@ for                         LEX_RETURN(FOR);
 no                          LEX_RETURN(NO);
 in                          LEX_RETURN(IN);
 within                      LEX_RETURN(WITHIN);
+there                       LEX_RETURN(THERE);
 
 first                       LEX_RETURN(FIRST);
 second                      LEX_RETURN(SECOND);

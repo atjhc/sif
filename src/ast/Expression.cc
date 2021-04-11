@@ -16,6 +16,7 @@
 
 #include "ast/Expression.h"
 #include "ast/Identifier.h"
+#include "ast/Descriptor.h"
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -33,6 +34,8 @@ FunctionCall::FunctionCall(Owned<Identifier> &id)
 
 BinaryOp::BinaryOp(Operator o, Owned<Expression> &l, Owned<Expression> &r)
     : op(o), left(std::move(l)), right(std::move(r)) {}
+
+ThereIs::ThereIs(Owned<Descriptor> &d) : descriptor(std::move(d)) {}
 
 Not::Not(Owned<Expression> &e) : expression(std::move(e)) {}
 

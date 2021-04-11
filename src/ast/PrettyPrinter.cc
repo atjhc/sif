@@ -334,6 +334,13 @@ std::any PrettyPrinter::visitAny(const BinaryOp &e) {
 	return std::any();
 }
 
+std::any PrettyPrinter::visitAny(const ThereIs &e) {
+    out << "there is a ";
+    e.descriptor->accept(*this);
+
+    return std::any();
+}
+
 std::any PrettyPrinter::visitAny(const Not &n) {
     out << "not (";
     n.expression->accept(*this);

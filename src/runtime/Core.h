@@ -150,6 +150,7 @@ class Core : public ast::AnyVisitor {
     std::any visitAny(const ast::Property &) override;
     std::any visitAny(const ast::Descriptor &) override;
     std::any visitAny(const ast::BinaryOp &) override;
+    std::any visitAny(const ast::ThereIs &) override;
     std::any visitAny(const ast::Not &) override;
     std::any visitAny(const ast::Minus &) override;
     std::any visitAny(const ast::FloatLiteral &) override;

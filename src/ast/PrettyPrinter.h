@@ -57,6 +57,7 @@ class PrettyPrinter: AnyVisitor {
     std::any visitAny(const Property &) override;
     std::any visitAny(const Descriptor &) override;
     std::any visitAny(const BinaryOp &) override;
+    std::any visitAny(const ThereIs &) override;
     std::any visitAny(const Not &) override;
     std::any visitAny(const Minus &) override;
     std::any visitAny(const FloatLiteral &) override;

@@ -84,7 +84,7 @@ using namespace chatter::ast;
 // Keywords
 %token ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA "," GLOBAL NEXT PASS RETURN
 %token WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
-%token NOT THE AN NO IS IN WITHIN OF UP EOL AS
+%token NOT THE AN NO IS IN WITHIN OF UP EOL AS THERE
 
 // Commands
 %token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
@@ -656,6 +656,20 @@ expression
             $$->location = @1.first;
         } else {
             $$ = nullptr;
+        }
+    }
+    | THERE IS AN descriptor {
+        if ($4) {
+            $$ = MakeOwned<ThereIs>($4);
+            $$->location = @1.first;
+        }
+
+    }
+    | THERE IS NOT AN descriptor {
+        if ($5) {
+            Owned<Expression> thereIs = MakeOwned<ThereIs>($5);
+            $$ = MakeOwned<Not>(thereIs);
+            $$->location = @1.first;
         }
     }
     | expression PLUS expression {

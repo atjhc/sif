@@ -45,6 +45,7 @@ struct FunctionCall;
 struct Property;
 struct Descriptor;
 struct BinaryOp;
+struct ThereIs;
 struct Not;
 struct Minus;
 struct FloatLiteral;
@@ -86,6 +87,7 @@ struct AnyVisitor {
     virtual std::any visitAny(const Property &) = 0;
     virtual std::any visitAny(const Descriptor &) = 0;
     virtual std::any visitAny(const BinaryOp &) = 0;
+    virtual std::any visitAny(const ThereIs &) = 0;
     virtual std::any visitAny(const Not &) = 0;
     virtual std::any visitAny(const Minus &) = 0;
     virtual std::any visitAny(const FloatLiteral &) = 0;

@@ -660,6 +660,11 @@ std::any Core::visitAny(const BinaryOp &e) {
     }
 }
 
+std::any Core::visitAny(const ThereIs &e) {
+    auto value = std::any_cast<Value>(e.descriptor->accept(*this));
+    return Value(!value.isEmpty());
+}
+
 std::any Core::visitAny(const Not &e) { 
     auto value = std::any_cast<Value>(e.expression->accept(*this));
     return Value(!value.asBool());

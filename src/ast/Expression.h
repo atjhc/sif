@@ -88,6 +88,14 @@ struct BinaryOp : Expression {
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
+struct ThereIs : Expression {
+    Owned<Descriptor> descriptor;
+
+    ThereIs(Owned<Descriptor> &descriptor);
+
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+};
+
 struct Not : Expression {
     Owned<Expression> expression;
 
