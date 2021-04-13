@@ -41,10 +41,4 @@ Logical::Logical(Operator o, Owned<Expression> &l, Owned<Expression> &r)
 Unary::Unary(Operator o, Owned<Expression> &e)
     : unaryOperator(o), expression(std::move(e)) {}
 
-FloatLiteral::FloatLiteral(double v) : value(v) {}
-
-IntLiteral::IntLiteral(int i) : value(i) {}
-
-StringLiteral::StringLiteral(const std::string &v) : value(v) {}
-
 CH_AST_NAMESPACE_END

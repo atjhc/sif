@@ -50,9 +50,6 @@ struct Unary;
 struct ThereIsA;
 struct Not;
 struct Minus;
-struct FloatLiteral;
-struct IntLiteral;
-struct StringLiteral;
 struct RangeChunk;
 struct AnyChunk;
 struct LastChunk;
@@ -65,6 +62,12 @@ struct Add;
 struct Subtract;
 struct Multiply;
 struct Divide;
+
+template <typename Type>
+struct Literal;
+typedef Literal<double> FloatLiteral;
+typedef Literal<int64_t> IntLiteral;
+typedef Literal<std::string> StringLiteral;
 
 struct AnyVisitor {
     virtual std::any visitAny(const Script &) = 0;

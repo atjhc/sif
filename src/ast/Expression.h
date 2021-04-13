@@ -115,28 +115,17 @@ struct Unary : Expression {
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
-struct FloatLiteral : Expression {
-    double value;
+template <typename Type>
+struct Literal : Expression {
+    Type value;
 
-    FloatLiteral(double v);
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
-};
-
-struct IntLiteral : Expression {
-    int value;
-
-    IntLiteral(int i);
+    Literal(Type v) : value(v) {}
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
-struct StringLiteral : Expression {
-    std::string value;
-
-    StringLiteral(const std::string &v);
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
-};
+typedef Literal<double> FloatLiteral;
+typedef Literal<int64_t> IntLiteral;
+typedef Literal<std::string> StringLiteral;
 
 CH_AST_NAMESPACE_END
