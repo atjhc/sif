@@ -41,35 +41,35 @@
 #define ASSERT_LTE(LHS, RHS) suite._assert((LHS) <= (RHS), #LHS " <= " #RHS, __FILE__, __LINE__)
 #define ASSERT_GTE(LHS, RHS) suite._assert((LHS) >= (RHS), #LHS " >= " #RHS, __FILE__, __LINE__)
 #define ASSERT_NO_THROW(STMNT) \
-    do { \
+    ([&] () -> std::ostream& { \
         bool throws = false; \
         try { \
             (STMNT); \
         } catch (...) { \
             throws = true; \
         } \
-        suite._assert(!throws, #STMNT, __FILE__, __LINE__); \
-    } while (false)
+        return suite._assert(!throws, #STMNT, __FILE__, __LINE__); \
+    }())
 #define ASSERT_THROWS(STMNT) \
-    do { \
+    ([&] () -> std::ostream& { \
         bool throws = false; \
         try { \
             (STMNT); \
         } catch (const std::exception &e) { \
             throws = true; \
         } \
-        suite._assert(throws, #STMNT, __FILE__, __LINE__); \
-    } while (false)
+        return suite._assert(throws, #STMNT, __FILE__, __LINE__); \
+    }())
 #define ASSERT_THROWS_SPECIFIC(STMNT, E) \
-    do { \
+    ([&] () -> std::ostream& { \
         bool throws = false; \
         try { \
             (STMNT); \
         } catch (const E &e) { \
             throws = true; \
         } \
-        suite._assert(throws, #STMNT, __FILE__, __LINE__); \
-    } while (false)
+        return suite._assert(throws, #STMNT, __FILE__, __LINE__); \
+    }())
 
 
 struct TestSuite;

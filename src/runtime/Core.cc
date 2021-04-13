@@ -595,12 +595,18 @@ std::any Core::visitAny(const ast::Descriptor &d) {
     throw RuntimeError("unrecognized descriptor '" + name + "'", d.location);
 }
 
-std::any Core::visitAny(const BinaryOp &e) {
-    auto lhs = std::any_cast<Value>(e.left->accept(*this));
-    auto rhs = std::any_cast<Value>(e.right->accept(*this));
+void checkNumberOperand(const Value &value, const Location &location) {
+    if (!value.isNumber()) {
+        throw RuntimeError("expected number value here, got '" + value.asString() + "'", location);
+    }
+}
+
+std::any Core::visitAny(const Binary &e) {
+    auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
+    auto rhs = std::any_cast<Value>(e.rightExpression->accept(*this));
     
-    if (e.op == BinaryOp::IsAn) {
-        auto typeName = rhs.asString();
+    if (e.binaryOperator == Binary::IsA) {
+        auto typeName = lowercase(rhs.asString());
         if (typeName == "number") {
             return Value(lhs.isNumber());
         }
@@ -615,69 +621,117 @@ std::any Core::visitAny(const BinaryOp &e) {
             return Value(lhs.isEmpty());
         }
         // TODO: Check for additional host defined types.
-        throw RuntimeError("unknown type name '" + rhs.asString() + "'", e.right->location);
+        throw RuntimeError("unknown type name '" + rhs.asString() + "'", e.rightExpression->location);
     }
 
-    switch (e.op) {
-    case BinaryOp::Equal:
-        return Value(lhs == rhs);
-    case BinaryOp::NotEqual:
-        return Value(lhs != rhs);
-    case BinaryOp::LessThan:
-        return Value(lhs < rhs);
-    case BinaryOp::GreaterThan:
-        return Value(lhs > rhs);
-    case BinaryOp::LessThanOrEqual:
-        return Value(lhs <= rhs);
-    case BinaryOp::GreaterThanOrEqual:
-        return Value(lhs >= rhs);
-    case BinaryOp::Plus:
-        return Value(lhs + rhs);
-    case BinaryOp::Minus:
-        return Value(lhs - rhs);
-    case BinaryOp::Multiply:
-        return Value(lhs * rhs);
-    case BinaryOp::Divide:
-        return Value(lhs / rhs);
-    case BinaryOp::Exponent:
+    switch (e.binaryOperator) {
+    case Binary::Equal:
+        return (lhs == rhs);
+    case Binary::NotEqual:
+        return (lhs != rhs);
+    case Binary::LessThan:
+        return (lhs < rhs);
+    case Binary::GreaterThan:
+        return (lhs > rhs);
+    case Binary::LessThanOrEqual:
+        return (lhs <= rhs);
+    case Binary::GreaterThanOrEqual:
+        return (lhs >= rhs);
+    case Binary::Plus:
+        checkNumberOperand(lhs, e.leftExpression->location);
+        checkNumberOperand(rhs, e.rightExpression->location);
+        return (lhs + rhs);
+    case Binary::Minus:
+        checkNumberOperand(lhs, e.leftExpression->location);
+        checkNumberOperand(rhs, e.rightExpression->location);
+        return (lhs - rhs);
+    case Binary::Multiply:
+        checkNumberOperand(lhs, e.leftExpression->location);
+        checkNumberOperand(rhs, e.rightExpression->location);
+        return (lhs * rhs);
+    case Binary::Divide:
+        checkNumberOperand(lhs, e.leftExpression->location);
+        checkNumberOperand(rhs, e.rightExpression->location);
+        if (rhs.asFloat() == 0) {
+            throw RuntimeError("divide by zero", e.rightExpression->location);
+        }
+        return (lhs / rhs);
+    case Binary::Exponent:
+        checkNumberOperand(lhs, e.leftExpression->location);
+        checkNumberOperand(rhs, e.rightExpression->location);
         return Value(lhs ^ rhs);
-    case BinaryOp::IsIn:
-        return Value(rhs.contains(lhs));
-    case BinaryOp::Contains:
-        return Value(lhs.contains(rhs));
-    case BinaryOp::Or:
-        return Value(lhs || rhs);
-    case BinaryOp::And:
-        return Value(lhs && rhs);
-    case BinaryOp::Mod:
-        return Value(lhs % rhs);
-    case BinaryOp::Concat:
-        return Value(lhs.asString() + rhs.asString());
-    case BinaryOp::ConcatWithSpace:
-        return Value(lhs.asString() + " " + rhs.asString());
+    case Binary::Mod:
+        checkNumberOperand(lhs, e.leftExpression->location);
+        checkNumberOperand(rhs, e.rightExpression->location);
+        return (lhs % rhs);
+    case Binary::IsIn:
+        return rhs.contains(lhs);
+    case Binary::Contains:
+        return lhs.contains(rhs);
+    case Binary::Concat:
+        return lhs.concat(rhs);
+    case Binary::ConcatWithSpace:
+        return lhs.concatSpace(rhs);
     default:
         throw RuntimeError("unexpected operator", e.location);
     }
 }
 
-std::any Core::visitAny(const ThereIs &e) {
-    auto value = std::any_cast<Value>(e.descriptor->accept(*this));
-    return Value(!value.isEmpty());
+std::any Core::visitAny(const Logical &e) {
+    if (e.logicalOperator == Logical::And) {
+        auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
+        if (!lhs.isBool()) {
+            throw RuntimeError("expected a boolean value here", e.leftExpression->location);
+        }
+        if (!lhs.asBool()) {
+            return Value(false);
+        }
+
+        auto rhs = std::any_cast<Value>(e.rightExpression->accept(*this));
+        if (!rhs.isBool()) {
+            throw RuntimeError("expected a boolean value here", e.rightExpression->location);
+        }
+        return Value(rhs.asBool());
+    }
+
+    if (e.logicalOperator == Logical::Or) {
+        auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
+        if (!lhs.isBool()) {
+            throw RuntimeError("expected a boolean value here", e.leftExpression->location);
+        }
+        if (lhs.asBool()) {
+            return Value(true);
+        }
+
+        auto rhs = std::any_cast<Value>(e.rightExpression->accept(*this));
+        if (!rhs.isBool()) {
+            throw RuntimeError("expected a boolean value here", e.rightExpression->location);
+        }
+        return Value(rhs.asBool());
+    }
+
+    throw RuntimeError("unexpected operator", e.location);
 }
 
-std::any Core::visitAny(const Not &e) { 
+std::any Core::visitAny(const Unary &e) {
     auto value = std::any_cast<Value>(e.expression->accept(*this));
-    return Value(!value.asBool());
-}
 
-std::any Core::visitAny(const Minus &e) {
-    auto value = std::any_cast<Value>(e.expression->accept(*this));
-    if (value.isInteger()) {
-        return Value(-value.asInteger());
-    } else if (value.isFloat()) {
-        return Value(-value.asFloat());
-    } else {
-        throw RuntimeError("expected number; got \"" + value.asString() + "\"", e.location);
+    switch (e.unaryOperator) {
+    case Unary::ThereIsA:
+        return Value(!value.isEmpty());
+    case Unary::Not:
+        if (!value.isBool()) {
+            throw RuntimeError("expected a boolean value here", e.expression->location);
+        }
+        return Value(!value.asBool());
+    case Unary::Minus:
+        if (value.isInteger()) {
+            return Value(-value.asInteger());
+        } else if (value.isFloat()) {
+            return Value(-value.asFloat());
+        } else {
+            throw RuntimeError("expected a number value here", e.expression->location);
+        }
     }
 }
 

@@ -70,21 +70,24 @@ public:
     bool isObject() const;
     Strong<Object> asObject() const;
 
+    operator bool() const { return asBool(); }
     operator int() const { return asInteger(); }
     operator long() const { return asInteger(); }
     operator float() const { return asFloat(); }
     operator double() const { return asFloat(); }
     operator std::string() const { return asString(); }
 
-    bool operator==(const Value &rhs) const;
-    bool operator!=(const Value &rhs) const;
-    bool operator<(const Value &rhs) const;
-    bool operator>(const Value &rhs) const;
-    bool operator<=(const Value &rhs) const;
-    bool operator>=(const Value &rhs) const;
-    bool operator&&(const Value &rhs) const;
-    bool operator||(const Value &rhs) const;
-    bool contains(const Value &rhs) const;
+    Value operator==(const Value &rhs) const;
+    Value operator!=(const Value &rhs) const;
+    Value operator<(const Value &rhs) const;
+    Value operator>(const Value &rhs) const;
+    Value operator<=(const Value &rhs) const;
+    Value operator>=(const Value &rhs) const;
+    Value operator&&(const Value &rhs) const;
+    Value operator||(const Value &rhs) const;
+    Value contains(const Value &rhs) const;
+    Value concat(const Value &rhs) const;
+    Value concatSpace(const Value &rhs) const;
 
     Value operator+(const Value &rhs) const;
     Value operator-(const Value &rhs) const;

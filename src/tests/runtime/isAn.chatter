@@ -18,6 +18,6 @@ on test arg
   put "Checking: " & arg
   put "logical: " & (arg is a logical)
   put "number: " & (arg is a number)
-  put "integer: " & (arg is a integer)
-  put "empty: " & (arg is a empty)
+  put "integer: " & (arg is an integer)
+  put "empty: " & (arg is an empty)
 end test

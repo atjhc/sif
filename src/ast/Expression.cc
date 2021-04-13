@@ -32,14 +32,14 @@ FunctionCall::FunctionCall(Owned<Identifier> &id, Owned<Expression> &arg)
 FunctionCall::FunctionCall(Owned<Identifier> &id)
     : identifier(std::move(id)), arguments(nullptr) {}
 
-BinaryOp::BinaryOp(Operator o, Owned<Expression> &l, Owned<Expression> &r)
-    : op(o), left(std::move(l)), right(std::move(r)) {}
+Binary::Binary(Operator o, Owned<Expression> &l, Owned<Expression> &r)
+    : binaryOperator(o), leftExpression(std::move(l)), rightExpression(std::move(r)) {}
 
-ThereIs::ThereIs(Owned<Descriptor> &d) : descriptor(std::move(d)) {}
+Logical::Logical(Operator o, Owned<Expression> &l, Owned<Expression> &r)
+    : logicalOperator(o), leftExpression(std::move(l)), rightExpression(std::move(r)) {}
 
-Not::Not(Owned<Expression> &e) : expression(std::move(e)) {}
-
-Minus::Minus(Owned<Expression> &e) : expression(std::move(e)) {}
+Unary::Unary(Operator o, Owned<Expression> &e)
+    : unaryOperator(o), expression(std::move(e)) {}
 
 FloatLiteral::FloatLiteral(double v) : value(v) {}
 

@@ -266,95 +266,103 @@ std::any PrettyPrinter::visitAny(const Descriptor &d) {
 	return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const BinaryOp &e) {
+std::any PrettyPrinter::visitAny(const Binary &e) {
     out << "(";
-    e.left->accept(*this);
-    switch (e.op) {
-    case BinaryOp::Equal:
+    e.leftExpression->accept(*this);
+    switch (e.binaryOperator) {
+    case Binary::Equal:
         out << " = ";
         break;
-    case BinaryOp::NotEqual:
+    case Binary::NotEqual:
         out << " <> ";
         break;
-    case BinaryOp::LessThan:
+    case Binary::LessThan:
         out << " < ";
         break;
-    case BinaryOp::GreaterThan:
+    case Binary::GreaterThan:
         out << " > ";
         break;
-    case BinaryOp::LessThanOrEqual:
+    case Binary::LessThanOrEqual:
         out << " <= ";
         break;
-    case BinaryOp::GreaterThanOrEqual:
+    case Binary::GreaterThanOrEqual:
         out << " >= ";
         break;
-    case BinaryOp::Plus:
+    case Binary::Plus:
         out << " + ";
         break;
-    case BinaryOp::Minus:
+    case Binary::Minus:
         out << " - ";
         break;
-    case BinaryOp::Multiply:
+    case Binary::Multiply:
         out << " * ";
         break;
-    case BinaryOp::Divide:
+    case Binary::Divide:
         out << " / ";
         break;
-    case BinaryOp::Exponent:
+    case Binary::Exponent:
         out << " ^ ";
         break;
-    case BinaryOp::IsIn:
+    case Binary::IsIn:
         out << " is in ";
         break;
-    case BinaryOp::IsAn:
+    case Binary::IsA:
         out << " is a ";
         break;
-    case BinaryOp::Contains:
+    case Binary::Contains:
         out << " contains ";
         break;
-    case BinaryOp::Or:
-        out << " or ";
-        break;
-    case BinaryOp::And:
-        out << " and ";
-        break;
-    case BinaryOp::Mod:
+    case Binary::Mod:
         out << " mod ";
         break;
-    case BinaryOp::Concat:
+    case Binary::Concat:
         out << " & ";
         break;
-    case BinaryOp::ConcatWithSpace:
+    case Binary::ConcatWithSpace:
         out << " && ";
         break;
     }
-    e.right->accept(*this);
+    e.rightExpression->accept(*this);
     out << ")";
 
 	return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const ThereIs &e) {
-    out << "there is a ";
-    e.descriptor->accept(*this);
+std::any PrettyPrinter::visitAny(const Logical &e) {
+    out << "(";
+    e.leftExpression->accept(*this);
+    switch (e.logicalOperator) {
+    case Logical::Or:
+        out << " or ";
+        break;
+    case Logical::And:
+        out << " and ";
+        break;
+    }
+    e.rightExpression->accept(*this);
+    out << ")";
+
+	return std::any();
+}
+
+std::any PrettyPrinter::visitAny(const Unary &e) {
+    switch (e.unaryOperator) {
+    case Unary::ThereIsA:
+        out << "there is a";
+        break;
+    case Unary::Minus:
+        out << "-";
+        break;
+    case Unary::Not:
+        out << "not";
+        break;
+    }
+
+    out << " (";
+    e.expression->accept(*this);
+    out << ")";
 
     return std::any();
-}
-
-std::any PrettyPrinter::visitAny(const Not &n) {
-    out << "not (";
-    n.expression->accept(*this);
-    out << ")";
-
-	return std::any();
-}
-
-std::any PrettyPrinter::visitAny(const Minus &m) {
-    out << "-(";
-    m.expression->accept(*this);
-    out << ")";
-
-	return std::any();
 }
 
 std::any PrettyPrinter::visitAny(const FloatLiteral &f) {

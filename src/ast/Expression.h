@@ -57,57 +57,60 @@ struct FunctionCall : Expression {
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
-struct BinaryOp : Expression {
+struct Binary : Expression {
     enum Operator {
+        IsA,
         Equal,
         NotEqual,
         LessThan,
         GreaterThan,
         LessThanOrEqual,
         GreaterThanOrEqual,
-        IsIn,
-        IsAn,
-        Contains,
-        Or,
-        And,
         Plus,
         Minus,
         Multiply,
         Divide,
         Mod,
         Exponent,
+        IsIn,
+        Contains,
         Concat,
         ConcatWithSpace
     };
 
-    Operator op;
-    Owned<Expression> left, right;
+    Operator binaryOperator;
+    Owned<Expression> leftExpression, rightExpression;
 
-    BinaryOp(Operator op, Owned<Expression> &left, Owned<Expression> &right);
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
-};
-
-struct ThereIs : Expression {
-    Owned<Descriptor> descriptor;
-
-    ThereIs(Owned<Descriptor> &descriptor);
+    Binary(Operator binaryOperator, Owned<Expression> &leftExpression, Owned<Expression> &rightExpression);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
-struct Not : Expression {
+struct Logical : Expression {
+    enum Operator {
+        And,
+        Or
+    };
+
+    Operator logicalOperator;
+    Owned<Expression> leftExpression, rightExpression;
+
+    Logical(Operator logicalOperator, Owned<Expression> &leftExpression, Owned<Expression> &rightExpression);
+
+    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+};
+
+struct Unary : Expression {
+    enum Operator {
+        ThereIsA,
+        Minus,
+        Not
+    };
+
+    Operator unaryOperator;
     Owned<Expression> expression;
 
-    Not(Owned<Expression> &expression);
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
-};
-
-struct Minus : Expression {
-    Owned<Expression> expression;
-
-    Minus(Owned<Expression> &expression);
+    Unary(Operator unaryOperator, Owned<Expression> &expression);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

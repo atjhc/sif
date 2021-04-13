@@ -47,17 +47,17 @@ struct CoreConfig {
     std::ostream &stderr = std::cerr;
     std::istream &stdin = std::cin;
 
-    CoreConfig()
-        : stdout(std::cout), stderr(std::cerr), stdin(std::cin) {}
-
-    CoreConfig(std::ostream &out, std::ostream &err, std::istream &in)
-        : stdout(out), stderr(err), stdin(in) {}    
-
     std::function<float()> random = defaultRandom();
 
 #if defined(DEBUG)
     bool enableTracing = false;
 #endif
+
+    CoreConfig()
+        : stdout(std::cout), stderr(std::cerr), stdin(std::cin) {}
+
+    CoreConfig(std::ostream &out, std::ostream &err, std::istream &in)
+        : stdout(out), stderr(err), stdin(in) {}
 
     static std::function<float()> defaultRandom();
 };
@@ -149,10 +149,9 @@ class Core : public ast::AnyVisitor {
     std::any visitAny(const ast::FunctionCall &) override;
     std::any visitAny(const ast::Property &) override;
     std::any visitAny(const ast::Descriptor &) override;
-    std::any visitAny(const ast::BinaryOp &) override;
-    std::any visitAny(const ast::ThereIs &) override;
-    std::any visitAny(const ast::Not &) override;
-    std::any visitAny(const ast::Minus &) override;
+    std::any visitAny(const ast::Binary &) override;
+    std::any visitAny(const ast::Logical &) override;
+    std::any visitAny(const ast::Unary &) override;
     std::any visitAny(const ast::FloatLiteral &) override;
     std::any visitAny(const ast::IntLiteral &) override;
     std::any visitAny(const ast::StringLiteral &) override;

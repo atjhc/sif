@@ -48,7 +48,7 @@ TEST_CASE(Core, All) {
         coreConfig.random = [&]() { return 0; };
         Core core(coreConfig);
 
-        ASSERT_NO_THROW(core.send(Message("begin"), object));
-        ASSERT_EQ(ss.str(), expectedResult);
+        ASSERT_NO_THROW(core.send(Message("begin"), object)) << path << std::endl;
+        ASSERT_EQ(ss.str(), expectedResult) << path << std::endl;
     }
 }

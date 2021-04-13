@@ -142,7 +142,10 @@ std::string Value::asString() const {
     if (auto v = std::get_if<bool>(&value)) {
         return *v ? "true" : "false";
     }
-    throw RuntimeError("value has unexpected type");
+    if (auto v = std::get_if<Strong<Object>>(&value)) {
+        return v->get()->name();
+    }
+    assert(false);
 }
 
 bool Value::isObject() const {
@@ -156,119 +159,111 @@ Strong<Object> Value::asObject() const {
     throw RuntimeError("expected object type");
 }
 
-bool Value::operator==(const Value &rhs) const {
+Value Value::operator==(const Value &rhs) const {
     if (value.index() == rhs.value.index()) {
         return value == rhs.value;
     }
     return lowercase(asString()) == lowercase(rhs.asString());
 }
 
-bool Value::operator!=(const Value &rhs) const {
+Value Value::operator!=(const Value &rhs) const {
     if (value.index() == rhs.value.index()) {
         return value != rhs.value;
     }
     return lowercase(asString()) != lowercase(rhs.asString());
 }
 
-bool Value::operator<(const Value &rhs) const {
+Value Value::operator<(const Value &rhs) const {
     if (value.index() == rhs.value.index()) {
         return value < rhs.value;
     }
     return asFloat() < rhs.asFloat();
 }
 
-bool Value::operator>(const Value &rhs) const {
+Value Value::operator>(const Value &rhs) const {
     if (value.index() == rhs.value.index()) {
         return value > rhs.value;
     }
     return asFloat() > rhs.asFloat();
 }
 
-bool Value::operator<=(const Value &rhs) const {
+Value Value::operator<=(const Value &rhs) const {
     if (value.index() == rhs.value.index()) {
         return value <= rhs.value;
     }
     return asFloat() <= rhs.asFloat();
 }
 
-bool Value::operator>=(const Value &rhs) const {
+Value Value::operator>=(const Value &rhs) const {
     if (value.index() == rhs.value.index()) {
         return value >= rhs.value;
     }
     return asFloat() >= rhs.asFloat();
 }
 
-bool Value::operator&&(const Value &rhs) const {
+Value Value::operator&&(const Value &rhs) const {
     return asBool() && rhs.asBool();
 }
 
-bool Value::operator||(const Value &rhs) const {
+Value Value::operator||(const Value &rhs) const {
     return asBool() || rhs.asBool();
 }
 
-bool Value::contains(const Value &rhs) const {
+Value Value::contains(const Value &rhs) const {
     return asString().find(rhs.asString()) != std::string::npos;
 }
 
+Value Value::concat(const Value &rhs) const {
+    return Value(asString() + rhs.asString());
+}
+
+Value Value::concatSpace(const Value &rhs) const {
+    return Value(asString() + " " + rhs.asString());
+}
+
 Value Value::operator+(const Value &rhs) const {
-    if (isNumber() && rhs.isNumber()) {
-        if (isInteger() && rhs.isInteger()) {
-            return asInteger() + rhs.asInteger();
-        }
-        return asFloat() + rhs.asFloat();
-    } else {
-        throw RuntimeError("expected number");
+    assert(isNumber() && rhs.isNumber());
+    if (isInteger() && rhs.isInteger()) {
+        return asInteger() + rhs.asInteger();
     }
+    return asFloat() + rhs.asFloat();
 }
 
 Value Value::operator-(const Value &rhs) const {
-    if (isNumber() && rhs.isNumber()) {
-        if (isInteger() && rhs.isInteger()) {
-            return asInteger() - rhs.asInteger();
-        }
-        return asFloat() - rhs.asFloat();
-    } else {
-        throw RuntimeError("expected number");
+    assert(isNumber() && rhs.isNumber());
+    if (isInteger() && rhs.isInteger()) {
+        return asInteger() - rhs.asInteger();
     }
+    return asFloat() - rhs.asFloat();
 }
 
 Value Value::operator*(const Value &rhs) const {
-    if (isNumber() && rhs.isNumber()) {
-        if (isInteger() && rhs.isInteger()) {
-            return asInteger() * rhs.asInteger();
-        }
-        return asFloat() * rhs.asFloat();
-    } else {
-        throw RuntimeError("expected number");
+    assert(isNumber() && rhs.isNumber());
+    if (isInteger() && rhs.isInteger()) {
+        return asInteger() * rhs.asInteger();
     }
+    return asFloat() * rhs.asFloat();
 }
 
 Value Value::operator/(const Value &rhs) const {
-    if (isNumber() && rhs.isNumber()) {
-        // TODO: if needed, throw runtime exception for divide by zero
-        if (isInteger() && rhs.isInteger()) {
-            return asInteger() / rhs.asInteger();
-        }
-        return asFloat() / rhs.asFloat();
-    } else {
-        throw RuntimeError("expected number");
+    assert(isNumber() && rhs.isNumber());
+    if (isInteger() && rhs.isInteger()) {
+        return asInteger() / rhs.asInteger();
     }
+    return asFloat() / rhs.asFloat();
 }
 
 Value Value::operator%(const Value &rhs) const {
+    assert(isNumber() && rhs.isNumber());
     if (isInteger() && rhs.isInteger()) {
         return asInteger() % rhs.asInteger();
-    } else {
-        throw std::runtime_error("expected integer");
     }
+    return fmod(asFloat(), rhs.asFloat());
 }
 
 Value Value::operator^(const Value &rhs) const {
-    if (isNumber() && rhs.isNumber()) {
-        return powf(asFloat(), rhs.asFloat());
-    } else {
-        throw std::runtime_error("expected number");
-    }
+    assert(isNumber() && rhs.isNumber());
+    return pow(asFloat(), rhs.asFloat());
 }
 
 CH_RUNTIME_NAMESPACE_END

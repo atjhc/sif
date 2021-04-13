@@ -133,8 +133,7 @@ using namespace chatter::ast;
 %nterm <Owned<StatementList>> statementList maybeStatementList elseBlock
 %nterm <Owned<Statement>> statement ifStatement keywordStatement commandStatement
 %nterm <Owned<Statement>> repeatStatement repeatForever repeatCount repeatCondition repeatRange
-%nterm <Owned<Expression>> factor literal expression ifCondition functionCall property ordinal constant
-%nterm <Owned<Descriptor>> descriptor
+%nterm <Owned<Expression>> factor literal expression descriptor ifCondition functionCall property ordinal constant
 %nterm <Owned<Chunk>> chunk
 %nterm <Owned<ExpressionList>> expressionList
 
@@ -644,7 +643,7 @@ expression
     } 
     | MINUS expression {
         if ($2) {
-            $$ = MakeOwned<Minus>($2);
+            $$ = MakeOwned<Unary>(Unary::Minus, $2);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -652,7 +651,7 @@ expression
     } 
     | NOT expression {
         if ($2) {
-            $$ = MakeOwned<Not>($2);
+            $$ = MakeOwned<Unary>(Unary::Not, $2);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -660,21 +659,21 @@ expression
     }
     | THERE IS AN descriptor {
         if ($4) {
-            $$ = MakeOwned<ThereIs>($4);
+            $$ = MakeOwned<Unary>(Unary::ThereIsA, $4);
             $$->location = @1.first;
         }
 
     }
     | THERE IS NOT AN descriptor {
         if ($5) {
-            Owned<Expression> thereIs = MakeOwned<ThereIs>($5);
-            $$ = MakeOwned<Not>(thereIs);
+            Owned<Expression> thereIs = Owned<Expression>(new Unary(Unary::ThereIsA, $5));
+            $$ = MakeOwned<Unary>(Unary::Not, thereIs);
             $$->location = @1.first;
         }
     }
     | expression PLUS expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Plus, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Plus, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -682,7 +681,7 @@ expression
     }
     | expression MINUS expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Minus, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Minus, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -690,7 +689,7 @@ expression
     }
     | expression MULT expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Multiply, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Multiply, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -698,7 +697,7 @@ expression
     }
     | expression DIV expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Divide, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Divide, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -706,7 +705,7 @@ expression
     } 
     | expression IS expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Equal, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Equal, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -714,7 +713,7 @@ expression
     }
     | expression EQ expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Equal, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Equal, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -722,7 +721,7 @@ expression
     }
     | expression MOD expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Mod, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Mod, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -730,7 +729,7 @@ expression
     }
     | expression NEQ expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::NotEqual, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::NotEqual, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -738,7 +737,7 @@ expression
     }
     | expression OR expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Or, $1, $3);
+            $$ = MakeOwned<Logical>(Logical::Or, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -746,7 +745,7 @@ expression
     }
     | expression AND expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::And, $1, $3);
+            $$ = MakeOwned<Logical>(Logical::And, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -754,7 +753,7 @@ expression
     }
     | expression IS IN expression %prec AND {
         if ($1 && $4) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::IsIn, $1, $4);
+            $$ = MakeOwned<Binary>(Binary::IsIn, $1, $4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -762,8 +761,8 @@ expression
     }
     | expression IS NOT IN expression %prec IS {
         if ($1 && $5) {
-            Owned<Expression> isIn = MakeOwned<BinaryOp>(BinaryOp::IsIn, $1, $5);
-            $$ = MakeOwned<Not>(isIn);
+            Owned<Expression> isIn = MakeOwned<Binary>(Binary::IsIn, $1, $5);
+            $$ = MakeOwned<Unary>(Unary::Not, isIn);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -771,7 +770,7 @@ expression
     }
     | expression IS AN expression %prec IS {
         if ($1 && $4) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::IsAn, $1, $4);
+            $$ = MakeOwned<Binary>(Binary::IsA, $1, $4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -779,8 +778,8 @@ expression
     }
     | expression IS NOT AN expression %prec IS {
         if ($1 && $5) {
-            Owned<Expression> isAn = MakeOwned<BinaryOp>(BinaryOp::IsAn, $1, $5);
-            $$ = MakeOwned<Not>(isAn);
+            Owned<Expression> isAn = MakeOwned<Binary>(Binary::IsA, $1, $5);
+            $$ = MakeOwned<Unary>(Unary::Not, isAn);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -788,7 +787,7 @@ expression
     }
     | expression CONTAINS expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Contains, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Contains, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -796,7 +795,7 @@ expression
     }
     | expression LT expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::LessThan, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::LessThan, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -804,7 +803,7 @@ expression
     }
     | expression GT expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::GreaterThan, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::GreaterThan, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -812,7 +811,7 @@ expression
     } 
     | expression LTE expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::LessThanOrEqual, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::LessThanOrEqual, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -820,7 +819,7 @@ expression
     }
     | expression GTE expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::GreaterThanOrEqual, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::GreaterThanOrEqual, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -828,7 +827,7 @@ expression
     }
     | expression CONCAT expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Concat, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Concat, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -836,7 +835,7 @@ expression
     }
     | expression CONCAT_SPACE expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::ConcatWithSpace, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::ConcatWithSpace, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -844,7 +843,7 @@ expression
     }
     | expression CARROT expression {
         if ($1 && $3) {
-            $$ = MakeOwned<BinaryOp>(BinaryOp::Exponent, $1, $3);
+            $$ = MakeOwned<Binary>(Binary::Exponent, $1, $3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;

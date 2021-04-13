@@ -108,7 +108,7 @@ int TestSuite::run(const std::string &groupName, const std::string &testName) {
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsedSeconds = end - start;
 
-    config.out << "Executed " << failureCount + successCount << " tests with, " << failureCount
+    config.out << "\tExecuted " << failureCount + successCount << " tests with, " << failureCount
                << (failureCount == 1 ? " failure in " : " failures in ") 
                << std::setiosflags(std::ios::fixed) << std::setprecision(5) 
                << elapsedSeconds.count() << " seconds." << std::endl;
