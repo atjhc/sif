@@ -84,7 +84,7 @@ using namespace chatter::ast;
 // Keywords
 %token ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA "," GLOBAL NEXT PASS RETURN
 %token WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
-%token NOT THE AN NO IS IN WITHIN OF UP EOL AS THERE
+%token NOT THE AN NO IS IN WITHIN OF UP NL AS THERE
 
 // Commands
 %token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
@@ -163,7 +163,7 @@ script
             $$->add($1);
         } 
     }
-    | script EOL handler { 
+    | script NL handler {
         $$ = std::move($1);
         if ($3) {
             $$->add($3);
@@ -175,7 +175,7 @@ handler
     : %empty {
         $$ = nullptr;
     }
-    | ON messageKey maybeIdentifierList EOL
+    | ON messageKey maybeIdentifierList NL
         maybeStatementList
       END messageKey {
         if ($2 && $7) {
@@ -190,7 +190,7 @@ handler
             $$ = nullptr;
         }
     }
-    | FUNCTION messageKey maybeIdentifierList EOL
+    | FUNCTION messageKey maybeIdentifierList NL
         maybeStatementList
       END messageKey {
         if ($2 && $7) {
@@ -253,7 +253,7 @@ statementList
             $$ = nullptr;
         }
     }
-    | statementList EOL statement {
+    | statementList NL statement {
         if ($3) {
             $$ = std::move($1);
             $$->add($3);
@@ -261,7 +261,7 @@ statementList
             $$ = nullptr;
         }
     }
-    | statementList EOL {
+    | statementList NL {
         $$ = std::move($1);
     }
 ;
@@ -418,7 +418,7 @@ ifStatement
             $$ = nullptr;
         }
     }
-    | ifCondition THEN EOL statementList END IF {
+    | ifCondition THEN NL statementList END IF {
         if ($1 && $4) {
             $$ = MakeOwned<If>($1, $4);
             $$->location = @1.first;
@@ -434,7 +434,7 @@ ifStatement
             $$ = nullptr;
         }
     } 
-    | ifCondition THEN EOL statementList elseBlock {
+    | ifCondition THEN NL statementList elseBlock {
         if ($1 && $4 && $5) {
             $$ = MakeOwned<If>($1, $4, $5);
             $$->location = @1.first;
@@ -444,7 +444,7 @@ ifStatement
     }
 // TODO: The following construction is ambiguous, but valid
 //       in HyperTalk. For now, Chatter does not allow these.
-    //| ifCondition THEN statement EOL elseBlock {
+    //| ifCondition THEN statement NL elseBlock {
     //    if ($1 && $3 && $5) {
     //        $$ = MakeOwned<If>($1, $3, $5);
     //        $$->location = @1.first;
@@ -463,7 +463,7 @@ elseBlock
             $$ = nullptr;
         }
     }
-    | ELSE EOL statementList END IF {
+    | ELSE NL statementList END IF {
         $$ = std::move($3);
     }
 ;
@@ -472,7 +472,7 @@ ifCondition
     : IF expression {
         $$ = std::move($2);
     }
-    | IF expression EOL {
+    | IF expression NL {
         $$ = std::move($2);
     }
 ;
@@ -493,7 +493,7 @@ repeatStatement
 ;
 
 repeatForever
-    : REPEAT maybeForever EOL 
+    : REPEAT maybeForever NL
         statementList 
       END REPEAT {
         if ($4) {
@@ -506,7 +506,7 @@ repeatForever
 ;
 
 repeatCount
-    : REPEAT maybeFor expression maybeTimes EOL 
+    : REPEAT maybeFor expression maybeTimes NL
         statementList 
       END REPEAT {
         if ($3) {
@@ -519,7 +519,7 @@ repeatCount
 ;
 
 repeatCondition
-    : REPEAT WHILE expression EOL 
+    : REPEAT WHILE expression NL 
         statementList 
       END REPEAT {
         if ($3) {
@@ -529,7 +529,7 @@ repeatCondition
             $$ = nullptr;
         }
     }
-    | REPEAT UNTIL expression EOL 
+    | REPEAT UNTIL expression NL 
         statementList 
       END REPEAT {
         if ($3) {
@@ -542,7 +542,7 @@ repeatCondition
 ;
 
 repeatRange
-    : REPEAT WITH IDENTIFIER EQ expression TO expression EOL
+    : REPEAT WITH IDENTIFIER EQ expression TO expression NL
         statementList
       END REPEAT {
         if ($5 && $7) {
@@ -552,7 +552,7 @@ repeatRange
             $$ = nullptr;
         }
     }
-    | REPEAT WITH IDENTIFIER EQ expression DOWN TO expression EOL
+    | REPEAT WITH IDENTIFIER EQ expression DOWN TO expression NL
         statementList
       END REPEAT {
         if ($5 && $8) {
@@ -951,7 +951,7 @@ preposition
 ;
 
 chunk
-    : maybeThe ordinal chunkType {
+    : the ordinal chunkType {
         $$ = MakeOwned<RangeChunk>($3, $2);
         $$->location = @2.first;
     }
@@ -967,11 +967,11 @@ chunk
         $$ = MakeOwned<AnyChunk>($2);
         $$->location = @1.first;
     }
-    | maybeThe MIDDLE chunkType {
+    | the MIDDLE chunkType {
         $$ = MakeOwned<MiddleChunk>($3);
         $$->location = @2.first;
     }
-    | maybeThe LAST chunkType {
+    | the LAST chunkType {
         $$ = MakeOwned<LastChunk>($3);
         $$->location = @2.first;
     }
@@ -1085,7 +1085,7 @@ constant
     }
 ;
 
-maybeThe
+the
     : %empty
     | THE
 ;
@@ -1097,7 +1097,7 @@ static std::string symbolName(const yy::parser &parser, const yy::parser::symbol
         case yy::parser::symbol_kind::S_YYEOF: return "end of file";
         case yy::parser::symbol_kind::S_YYUNDEF: return "invalid token";
         case yy::parser::symbol_kind::S_IDENTIFIER: return "identifier";
-        case yy::parser::symbol_kind::S_EOL: return "new line";
+        case yy::parser::symbol_kind::S_NL: return "new line";
         case yy::parser::symbol_kind::S_INT_LITERAL: return "integer literal";
         case yy::parser::symbol_kind::S_FLOAT_LITERAL: return "float literal";
         case yy::parser::symbol_kind::S_STRING_LITERAL: return "string literal";

@@ -221,7 +221,7 @@ pi                          LEX_RETURN(PI);
 }
 
 \n+ {
-    LEX_RETURN(EOL);
+    LEX_RETURN(NL);
 }
 
 "--".*\n? {
