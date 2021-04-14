@@ -22,41 +22,39 @@ CH_RUNTIME_NAMESPACE_BEGIN
 
 Strong<Object> Object::Make(const std::string &name, const std::string &source, const Strong<Object> &parent) {
     if (source.empty()) {
-        return Strong<Object>(new Object(name, parent));
+        return Strong<Object>(new Object(name, source, nullptr, parent));
     }
 
     ParserConfig config;
     config.fileName = name;
 
     Parser parser(config);
-    Owned<ast::Program> result;
-    if ((result = parser.parseProgram(source)) == nullptr) {
+    Owned<ast::Program> program;
+    if ((program = parser.parseProgram(source)) == nullptr) {
         return nullptr;
     }
 
-    return Strong<Object>(new Object(name, result, parent));
+    return Strong<Object>(new Object(name, source, std::move(program), parent));
 }
 
-Object::Object(const std::string &n, const Strong<Object> &p)
-    : _name(n), _parent(p) {}
+Object::Object(const std::string &name, const std::string &source, Owned<ast::Program> program, const Strong<Object> &parent)
+    : _name(name), _source(source), _program(std::move(program)), _parent(parent) {
 
-Object::Object(const std::string &n, Owned<ast::Program> &s, const Strong<Object> &p)
-    : Object(n, p) {
+    if (_program) {
+        for (auto &handler : _program->handlers) {
+            auto &name = handler->messageKey->name;
 
-    _program = std::move(s);
-    for (auto &handler : _program->handlers) {
-        auto &name = handler->messageKey->name;
+            auto map = &_handlers;
+            if (handler->kind == ast::Handler::FunctionKind) {
+                map = &_functions;
+            }
 
-        auto map = &_handlers;
-        if (handler->kind == ast::Handler::FunctionKind) {
-            map = &_functions;
+            // TODO: catch handler redifinition errors in the parser.
+            if (map->find(name) != map->end()) {
+                throw RuntimeError("invalid redefinition of handler '" + name + "'", handler->location);
+            }
+            map->insert({lowercase(name), *handler});
         }
-
-        // TODO: catch handler redifinition errors in the parser.
-        if (map->find(name) != map->end()) {
-            throw RuntimeError("invalid redefinition of handler '" + name + "'", handler->location);
-        }
-        map->insert({lowercase(name), *handler});
     }
 }
 
@@ -65,7 +63,6 @@ Optional<Ref<ast::Handler>> Object::handlerFor(const Message &message) {
     if (i == _handlers.end()) {
         return Empty;
     }
-
     return i->second;
 }
 
@@ -74,7 +71,6 @@ Optional<Ref<ast::Handler>> Object::functionFor(const Message &message) {
     if (i == _functions.end()) {
         return Empty;
     }
-
     return i->second;
 }
 

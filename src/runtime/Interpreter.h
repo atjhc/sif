@@ -23,7 +23,7 @@
 #include "ast/Program.h"
 #include "ast/Node.h"
 #include "parser/Parser.h"
-#include "runtime/Variables.h"
+#include "runtime/Environment.h"
 #include "runtime/Value.h"
 #include "runtime/Function.h"
 #include "runtime/Message.h"
@@ -66,7 +66,7 @@ struct InterpreterStackFrame {
     Message message;
     Strong<Object> target;
 
-    Variables locals;
+    Environment locals;
     Set<std::string> globals;
     
     Value returningValue;
@@ -166,7 +166,7 @@ class Interpreter : public ast::AnyVisitor {
     Map<std::string, Owned<Function>> _functions;
 
     std::stack<InterpreterStackFrame> _stack;
-    Variables _globals;
+    Environment _globals;
 };
 
 CH_RUNTIME_NAMESPACE_END

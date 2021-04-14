@@ -73,10 +73,13 @@ Interpreter::Interpreter(const InterpreterConfig &config)
     add("value", new ValueFunction());
     add("target", new TargetFunction());
 
-    // TODO: Add these missing functions
+    // TODO: add missing functions
     // runtime.add("seconds", new OneArgumentFunction<float(float)>(roundf));
-    // runtime.add("ticks", new OneArgumentFunction<float(float)>(roundf));
     // runtime.add("time", new OneArgumentFunction<float(float)>(roundf));
+    // runtime.add("date", new OneArgumentFunction<float(float)>(roundf));
+
+    // Skipping these.
+    // runtime.add("ticks", new OneArgumentFunction<float(float)>(roundf));
     // runtime.add("ln1", new OneArgumentFunction<float(float)>(log2f));
     // runtime.add("exp1", new OneArgumentFunction<float(float)>(expf));
     // runtime.add("annuity", new OneArgumentFunction<float(float)>(fabs));
@@ -167,10 +170,15 @@ void Interpreter::set(const std::string &name, const Value &value) {
 Value Interpreter::get(const std::string &name) const {
     const auto &globalNames = _stack.top().globals;
     const auto &i = globalNames.find(name);
+
+    Optional<Value> value = Empty;
     if (i != globalNames.end()) {
-        return _globals.get(name);
+        value = _globals.get(name);
+    } else {
+        value = _stack.top().locals.get(name);
     }
-    return _stack.top().locals.get(name);
+
+    return value.value_or(Value(name));
 }
 
 void Interpreter::execute(const ast::Handler &handler, const std::vector<Value> &values) {

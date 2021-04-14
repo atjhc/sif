@@ -28,14 +28,16 @@ struct Property;
 
 class Object {
   public:
-    static Strong<Object> Make(const std::string &name, 
+    static Strong<Object> Make(
+        const std::string &name, 
         const std::string &source = "", 
-        const Strong<Object> &parent = nullptr);
+        const Strong<Object> &parent = nullptr
+    );
 
     virtual ~Object() = default;
 
     const std::string &name() const { return _name; }
-    const Owned<ast::Program> &program() const { return _program; }
+    const std::string &source() const { return _source; }
     const Strong<Object> &parent() const { return _parent; }
 
     Optional<Ref<ast::Handler>> handlerFor(const Message &message);
@@ -46,14 +48,14 @@ class Object {
 
   private:
     std::string _name;
+    std::string _source;
     Owned<ast::Program> _program;
     Strong<Object> _parent;
 
     Map<std::string, Ref<ast::Handler>> _handlers;
     Map<std::string, Ref<ast::Handler>> _functions;
 
-    Object(const std::string &n, const Strong<Object> &parent = nullptr);
-    Object(const std::string &n, Owned<ast::Program> &s, const Strong<Object> &parent = nullptr);
+    Object(const std::string &name, const std::string &source, Owned<ast::Program> program, const Strong<Object> &parent);
 };
 
 CH_RUNTIME_NAMESPACE_END

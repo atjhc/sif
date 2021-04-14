@@ -27,14 +27,14 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class Variables {
-    std::unordered_map<std::string, Value> _values;
+class Environment {
+    Map<std::string, Value> _values;
 
   public:
-    Value get(const std::string &name) const;
+    Optional<Value> get(const std::string &name) const;
     void set(const std::string &name, const Value &value);
 
-    void insert(const Variables &variables);
+    void insert(const Environment &environment);
     void insert(const std::vector<std::string> &names, const std::vector<Value> &values);
 };
 
