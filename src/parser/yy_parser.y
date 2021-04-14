@@ -130,10 +130,10 @@ using namespace chatter::ast;
 %nterm <Owned<Handler>> handler
 %nterm <Owned<Identifier>> messageKey
 %nterm <Owned<IdentifierList>> maybeIdentifierList identifierList
-%nterm <Owned<StatementList>> statementList maybeStatementList elseBlock
-%nterm <Owned<Statement>> statement ifStatement keywordStatement commandStatement
+%nterm <Owned<StatementList>> block matchedBlock unmatchedBlock elseMatched
+%nterm <Owned<Statement>> matched unmatched innerMatched simpleStatement keywordStatement commandStatement
 %nterm <Owned<Statement>> repeatStatement repeatForever repeatCount repeatCondition repeatRange
-%nterm <Owned<Expression>> factor literal expression descriptor ifCondition functionCall property ordinal constant
+%nterm <Owned<Expression>> factor literal expression descriptor ifThen functionCall property ordinal constant
 %nterm <Owned<Chunk>> chunk
 %nterm <Owned<ExpressionList>> expressionList
 
@@ -148,7 +148,7 @@ start
     : START_SCRIPT script { 
         ctx.script = std::move($2);
     }
-    | START_STATEMENT statementList {
+    | START_STATEMENT block {
         ctx.statements = std::move($2);
     }
     | START_EXPRESSION expression {
@@ -175,8 +175,8 @@ handler
     : %empty {
         $$ = nullptr;
     }
-    | ON messageKey maybeIdentifierList NL
-        maybeStatementList
+    | ON messageKey maybeIdentifierList nl
+        block
       END messageKey {
         if ($2 && $7) {
             if ($2->name == $7->name) {
@@ -190,8 +190,8 @@ handler
             $$ = nullptr;
         }
     }
-    | FUNCTION messageKey maybeIdentifierList NL
-        maybeStatementList
+    | FUNCTION messageKey maybeIdentifierList nl
+        block
       END messageKey {
         if ($2 && $7) {
             if ($2->name == $7->name) {
@@ -235,46 +235,6 @@ identifierList
     }
 ;
 
-maybeStatementList
-    : %empty {
-        $$ = nullptr;    
-    }
-    | statementList {
-        $$ = std::move($1);
-    }
-;
-
-statementList
-    : statement { 
-        if ($1) {
-            $$ = MakeOwned<StatementList>();
-            $$->add($1);
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | statementList NL statement {
-        if ($3) {
-            $$ = std::move($1);
-            $$->add($3);
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | statementList NL {
-        $$ = std::move($1);
-    }
-;
-
-statement
-    : keywordStatement { 
-        $$ = std::move($1);
-    } 
-    | commandStatement {
-        $$ = std::move($1);
-    }
-;
-
 messageKey
     : IDENTIFIER {
         $$ = std::move($1);
@@ -306,6 +266,54 @@ messageKey
     | DIVIDE {
         $$ = MakeOwned<Identifier>("divide");
         $$->location = @1.first;
+    }
+;
+
+nl
+    : NL
+    | nl NL
+;
+
+block
+    : %empty {
+        $$ = MakeOwned<StatementList>();
+    }
+    | matchedBlock { 
+        $$ = std::move($1);
+    }
+    | unmatchedBlock {
+        $$ = std::move($1);
+    }
+;
+
+matchedBlock
+    : block matched {
+        if ($1) {
+            $1->add($2);
+            $$ = std::move($1);
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+unmatchedBlock
+    : block unmatched {
+        if ($1) {
+            $1->add($2);
+            $$ = std::move($1);
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+simpleStatement
+    : keywordStatement { 
+        $$ = std::move($1);
+    } 
+    | commandStatement {
+        $$ = std::move($1);
     }
 ;
 
@@ -353,12 +361,6 @@ keywordStatement
         } else {
             $$ = nullptr;
         }
-    }
-    | ifStatement {
-        $$ = std::move($1);
-    }
-    | repeatStatement {
-        $$ = std::move($1);
     }
 ;
 
@@ -409,8 +411,41 @@ commandStatement
     }
 ;
 
-ifStatement
-    : ifCondition THEN statement {
+matched
+    : ifThen matched elseMatched {
+        if ($1 && $2 && $3) {
+            $$ = MakeOwned<If>($1, $2, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
+    | ifThen innerMatched elseMatched {
+        if ($1 && $2 && $3) {
+            $$ = MakeOwned<If>($1, $2, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
+    | ifThen nl matchedBlock elseMatched {
+        if ($1 && $3 && $4) {
+            $$ = MakeOwned<If>($1, $3, $4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | ifThen nl elseMatched {
+        if ($1 && $3) {
+            auto empty = MakeOwned<StatementList>();
+            $$ = MakeOwned<If>($1, empty, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | ifThen nl block END IF nl {
         if ($1 && $3) {
             $$ = MakeOwned<If>($1, $3);
             $$->location = @1.first;
@@ -418,44 +453,69 @@ ifStatement
             $$ = nullptr;
         }
     }
-    | ifCondition THEN NL statementList END IF {
-        if ($1 && $4) {
-            $$ = MakeOwned<If>($1, $4);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
+    | simpleStatement nl {
+        $$ = std::move($1);
     }
-    | ifCondition THEN statement elseBlock {
-        if ($1 && $3 && $4) {
-            $$ = MakeOwned<If>($1, $3, $4);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    } 
-    | ifCondition THEN NL statementList elseBlock {
-        if ($1 && $4 && $5) {
-            $$ = MakeOwned<If>($1, $4, $5);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
+    | repeatStatement nl {
+        $$ = std::move($1);
     }
-// TODO: The following construction is ambiguous, but valid
-//       in HyperTalk. For now, Chatter does not allow these.
-    //| ifCondition THEN statement NL elseBlock {
-    //    if ($1 && $3 && $5) {
-    //        $$ = MakeOwned<If>($1, $3, $5);
-    //        $$->location = @1.first;
-    //    } else {
-    //        $$ = nullptr;
-    //    }
-    //}
 ;
 
-elseBlock
-    : ELSE statement {
+innerMatched
+    : %empty {
+        $$ = nullptr;
+    }
+    | simpleStatement {
+        $$ = std::move($1);
+    }
+    | ifThen innerMatched ELSE innerMatched {
+        if ($1 && $2 && $4) {
+            $$ = MakeOwned<If>($1, $2, $4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+unmatched
+    : ifThen matched {
+        if ($1 && $2) {
+            $$ = MakeOwned<If>($1, $2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | ifThen unmatched {
+        if ($1 && $2) {
+            $$ = MakeOwned<If>($1, $2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | ifThen innerMatched ELSE unmatched {
+        if ($1 && $2 && $4) {
+            $$ = MakeOwned<If>($1, $2, $4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+
+    }
+    | ifThen matched ELSE unmatched {
+        if ($1 && $2 && $4) {
+            $$ = MakeOwned<If>($1, $2, $4);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+elseMatched
+    : ELSE matched {
         if ($2) {
             $$ = MakeOwned<StatementList>($2);
             $$->location = @2.first;
@@ -463,16 +523,16 @@ elseBlock
             $$ = nullptr;
         }
     }
-    | ELSE NL statementList END IF {
+    | ELSE nl block END IF nl {
         $$ = std::move($3);
     }
 ;
 
-ifCondition
-    : IF expression {
+ifThen
+    : IF expression THEN {
         $$ = std::move($2);
     }
-    | IF expression NL {
+    | IF expression nl THEN {
         $$ = std::move($2);
     }
 ;
@@ -493,8 +553,8 @@ repeatStatement
 ;
 
 repeatForever
-    : REPEAT maybeForever NL
-        statementList 
+    : REPEAT maybeForever nl
+        block
       END REPEAT {
         if ($4) {
             $$ = MakeOwned<Repeat>($4);
@@ -506,8 +566,8 @@ repeatForever
 ;
 
 repeatCount
-    : REPEAT maybeFor expression maybeTimes NL
-        statementList 
+    : REPEAT maybeFor expression maybeTimes nl
+        block
       END REPEAT {
         if ($3) {
             $$ = MakeOwned<RepeatCount>($3, $6);
@@ -519,8 +579,8 @@ repeatCount
 ;
 
 repeatCondition
-    : REPEAT WHILE expression NL 
-        statementList 
+    : REPEAT WHILE expression nl 
+        block 
       END REPEAT {
         if ($3) {
             $$ = MakeOwned<RepeatCondition>($3, true, $5);
@@ -529,8 +589,8 @@ repeatCondition
             $$ = nullptr;
         }
     }
-    | REPEAT UNTIL expression NL 
-        statementList 
+    | REPEAT UNTIL expression nl 
+        block 
       END REPEAT {
         if ($3) {
             $$ = MakeOwned<RepeatCondition>($3, false, $5);
@@ -542,8 +602,8 @@ repeatCondition
 ;
 
 repeatRange
-    : REPEAT WITH IDENTIFIER EQ expression TO expression NL
-        statementList
+    : REPEAT WITH IDENTIFIER EQ expression TO expression nl
+        block
       END REPEAT {
         if ($5 && $7) {
             $$ = MakeOwned<RepeatRange>($3, $5, $7, true, $9);
@@ -552,8 +612,8 @@ repeatRange
             $$ = nullptr;
         }
     }
-    | REPEAT WITH IDENTIFIER EQ expression DOWN TO expression NL
-        statementList
+    | REPEAT WITH IDENTIFIER EQ expression DOWN TO expression nl
+        block
       END REPEAT {
         if ($5 && $8) {
             $$ = MakeOwned<RepeatRange>($3, $5, $8, false, $10);

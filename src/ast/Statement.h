@@ -49,9 +49,10 @@ struct If : Statement {
     Owned<StatementList> ifStatements;
     Owned<StatementList> elseStatements;
 
-    If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es);
-    If(Owned<Expression> &c, Owned<StatementList> &isl);
     If(Owned<Expression> &c, Owned<Statement> &is);
+    If(Owned<Expression> &c, Owned<Statement> &is, Owned<Statement> &es);
+    If(Owned<Expression> &c, Owned<StatementList> &isl);
+    If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es);
     If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }

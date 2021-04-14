@@ -61,4 +61,9 @@ on begin
     pass begin
     pass begin
   end if
+  if "true" then
+    pass begin
+  else
+    pass begin
+  end if
 end begin

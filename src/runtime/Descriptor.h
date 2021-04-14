@@ -32,6 +32,8 @@ struct Descriptor {
     Optional<Value> value;
 
     Descriptor(const std::vector<std::string> &n, const Optional<Value> &v);
+
+    // TODO: Move this into Core since it does complex logic.
     Descriptor(Core &r, const ast::Descriptor &d);
 };
 

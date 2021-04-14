@@ -9,7 +9,7 @@ on begin
 
   put 1 into arg
   test arg
-  
+ 
   put 1.1 into arg
   test arg
 end begin
@@ -21,3 +21,4 @@ on test arg
   put "integer: " & (arg is an integer)
   put "empty: " & (arg is an empty)
 end test
+ 
