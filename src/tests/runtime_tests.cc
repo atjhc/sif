@@ -17,7 +17,7 @@
 #include "tests/TestSuite.h"
 
 #include "parser/Parser.h"
-#include "runtime/Core.h"
+#include "runtime/Interpreter.h"
 #include "runtime/Object.h"
 #include "utilities/devnull.h"
 
@@ -27,7 +27,7 @@
 using namespace chatter;
 using namespace chatter::runtime;
 
-TEST_CASE(Core, All) {
+TEST_CASE(Interpreter, All) {
     for (auto pstr : suite.files_in("runtime")) {
         auto path = std::filesystem::path(pstr);
         if (path.extension() != ".chatter") {
@@ -44,9 +44,9 @@ TEST_CASE(Core, All) {
         ASSERT_NOT_NULL(object);
 
         std::ostringstream ss;
-        CoreConfig coreConfig(ss, devnull, idevnull);
+        InterpreterConfig coreConfig(ss, devnull, idevnull);
         coreConfig.random = [&]() { return 0; };
-        Core core(coreConfig);
+        Interpreter core(coreConfig);
 
         ASSERT_NO_THROW(core.send(Message("begin"), object)) << path << std::endl;
         ASSERT_EQ(ss.str(), expectedResult) << path << std::endl;

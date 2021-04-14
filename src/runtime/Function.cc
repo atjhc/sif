@@ -16,7 +16,7 @@
 
 #include "Common.h"
 #include "runtime/Function.h"
-#include "runtime/Core.h"
+#include "runtime/Interpreter.h"
 #include "parser/Parser.h"
 #include "utilities/devnull.h"
 
@@ -24,10 +24,10 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Value ValueFunction::valueOf(Core &r, const Message &m) const {
+Value ValueFunction::valueOf(Interpreter &r, const Message &m) const {
     auto expression = m.arguments[0];
 
-	Parser parser(ParserConfig("<core>", devnull));
+	Parser parser(ParserConfig("<interpreter>", devnull));
     Owned<ast::Expression> result;
     if ((result = parser.parseExpression(expression.asString())) == nullptr) {
         return expression.asString();
@@ -36,12 +36,12 @@ Value ValueFunction::valueOf(Core &r, const Message &m) const {
     return std::any_cast<Value>(result->accept(r));
 }
 
-Value RandomFunction::valueOf(Core &r, const Message &m) const {
+Value RandomFunction::valueOf(Interpreter &r, const Message &m) const {
     auto max = m.arguments[0].asInteger();
     return long(r.random()() * max) + 1;
 }
 
-Value ParamFunction::valueOf(Core &r, const Message &m) const {
+Value ParamFunction::valueOf(Interpreter &r, const Message &m) const {
 	auto index = m.arguments[0].asInteger();
 	if (index < 0) return Value();
 	if (index == 0) return r.currentFrame().message.name;
@@ -49,7 +49,7 @@ Value ParamFunction::valueOf(Core &r, const Message &m) const {
 	return r.currentFrame().message.arguments[index - 1];
 }
 
-Value ParamsFunction::valueOf(Core &r, const Message &m) const {
+Value ParamsFunction::valueOf(Interpreter &r, const Message &m) const {
 	std::ostringstream ss;
 	auto &message = r.currentFrame().message;
 	ss << message.name;
@@ -67,15 +67,15 @@ Value ParamsFunction::valueOf(Core &r, const Message &m) const {
 	return ss.str();
 }
 
-Value ParamCountFunction::valueOf(Core &r, const Message &m) const {
+Value ParamCountFunction::valueOf(Interpreter &r, const Message &m) const {
 	return r.currentFrame().message.arguments.size();
 }
 
-Value ResultFunction::valueOf(Core &r, const Message &) const {
+Value ResultFunction::valueOf(Interpreter &r, const Message &) const {
 	return r.currentFrame().resultValue;
 }
 
-Value TargetFunction::valueOf(Core &r, const Message &) const {
+Value TargetFunction::valueOf(Interpreter &r, const Message &) const {
 	return Value(r.currentFrame().target);
 }
 

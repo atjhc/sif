@@ -25,7 +25,7 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class Core;
+class Interpreter;
 
 struct Descriptor {
     std::vector<std::string> names;
@@ -33,8 +33,8 @@ struct Descriptor {
 
     Descriptor(const std::vector<std::string> &n, const Optional<Value> &v);
 
-    // TODO: Move this into Core since it does complex logic.
-    Descriptor(Core &r, const ast::Descriptor &d);
+    // TODO: Move this into Interpreter since it does complex logic.
+    Descriptor(Interpreter &r, const ast::Descriptor &d);
 };
 
 CH_RUNTIME_NAMESPACE_END

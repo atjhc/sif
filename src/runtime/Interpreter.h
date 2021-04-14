@@ -40,9 +40,9 @@
 CH_RUNTIME_NAMESPACE_BEGIN
 
 class Object;
-class Core;
+class Interpreter;
 
-struct CoreConfig {
+struct InterpreterConfig {
     std::ostream &stdout = std::cout;
     std::ostream &stderr = std::cerr;
     std::istream &stdin = std::cin;
@@ -53,16 +53,16 @@ struct CoreConfig {
     bool enableTracing = false;
 #endif
 
-    CoreConfig()
+    InterpreterConfig()
         : stdout(std::cout), stderr(std::cerr), stdin(std::cin) {}
 
-    CoreConfig(std::ostream &out, std::ostream &err, std::istream &in)
+    InterpreterConfig(std::ostream &out, std::ostream &err, std::istream &in)
         : stdout(out), stderr(err), stdin(in) {}
 
     static std::function<float()> defaultRandom();
 };
 
-struct CoreStackFrame {
+struct InterpreterStackFrame {
     Message message;
     Strong<Object> target;
 
@@ -78,21 +78,21 @@ struct CoreStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    CoreStackFrame(const Message &m, const Strong<Object> &t)
+    InterpreterStackFrame(const Message &m, const Strong<Object> &t)
         : message(m), target(t) {}
 };
 
-class Core : public ast::AnyVisitor {
+class Interpreter : public ast::AnyVisitor {
   public:
 
-    Core(const CoreConfig &c = CoreConfig());
+    Interpreter(const InterpreterConfig &c = InterpreterConfig());
 
     bool send(const Message &message, Strong<Object> target = nullptr);
     Value call(const Message &message, Strong<Object> target = nullptr);
 
     void add(const std::string &name, Function *fn);
 
-    const CoreStackFrame& currentFrame();
+    const InterpreterStackFrame& currentFrame();
     std::function<float()> random();
 
   private:
@@ -161,11 +161,11 @@ class Core : public ast::AnyVisitor {
     std::any visitAny(const ast::MiddleChunk &) override;
 
   private:
-    CoreConfig _config;
+    InterpreterConfig _config;
 
     Map<std::string, Owned<Function>> _functions;
 
-    std::stack<CoreStackFrame> _stack;
+    std::stack<InterpreterStackFrame> _stack;
     Variables _globals;
 };
 

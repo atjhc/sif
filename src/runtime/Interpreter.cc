@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "runtime/Core.h"
+#include "runtime/Interpreter.h"
 #include "runtime/Object.h"
 #include "runtime/Property.h"
 #include "utilities/chunk.h"
@@ -30,7 +30,7 @@ CH_RUNTIME_NAMESPACE_BEGIN
 
 using namespace ast;
 
-std::function<float()> CoreConfig::defaultRandom() {
+std::function<float()> InterpreterConfig::defaultRandom() {
     static thread_local std::default_random_engine generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
     return [&]() {
         std::uniform_real_distribution<float> distribution(0.0, 1.0);
@@ -42,7 +42,7 @@ std::function<float()> CoreConfig::defaultRandom() {
     #define trace(x)
 #endif
 
-Core::Core(const CoreConfig &config)
+Interpreter::Interpreter(const InterpreterConfig &config)
     : _config(config) {
 
     add("sin", new OneArgumentFunction<sinf>());
@@ -85,7 +85,7 @@ Core::Core(const CoreConfig &config)
     // runtime.add("compound", new OneArgumentFunction<float(float)>(fabs));
 }
 
-bool Core::send(const Message &message, Strong<Object> target) {
+bool Interpreter::send(const Message &message, Strong<Object> target) {
     trace(std::string("send(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
@@ -95,7 +95,7 @@ bool Core::send(const Message &message, Strong<Object> target) {
     bool passing = true;
     auto handler = target->handlerFor(message);
     if (handler.has_value()) {
-        _stack.push(CoreStackFrame(message, target));
+        _stack.push(InterpreterStackFrame(message, target));
         execute(*handler, message.arguments);
         passing = _stack.top().passing;
         auto resultValue = _stack.top().returningValue;
@@ -114,7 +114,7 @@ bool Core::send(const Message &message, Strong<Object> target) {
     return handled;
 }
 
-Value Core::call(const Message &message, Strong<Object> target) {
+Value Interpreter::call(const Message &message, Strong<Object> target) {
     trace(std::string("call(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
@@ -126,7 +126,7 @@ Value Core::call(const Message &message, Strong<Object> target) {
 
     auto handler = target->functionFor(message);
     if (handler.has_value()) {
-        _stack.push(CoreStackFrame(message.name, target));
+        _stack.push(InterpreterStackFrame(message.name, target));
         execute(*handler, message.arguments);
         passing = _stack.top().passing;
         result = _stack.top().returningValue;
@@ -140,21 +140,21 @@ Value Core::call(const Message &message, Strong<Object> target) {
     return result;
 }
 
-const CoreStackFrame& Core::currentFrame() {
+const InterpreterStackFrame& Interpreter::currentFrame() {
     return _stack.top();
 }
 
-std::function<float()> Core::random() {
+std::function<float()> Interpreter::random() {
     return _config.random;
 }
 
 #pragma mark - Private
 
-void Core::add(const std::string &name, Function *fn) {
+void Interpreter::add(const std::string &name, Function *fn) {
     _functions[lowercase(name)] = Owned<Function>(fn);
 }
 
-void Core::set(const std::string &name, const Value &value) {
+void Interpreter::set(const std::string &name, const Value &value) {
     const auto &globalNames = _stack.top().globals;
     const auto &i = globalNames.find(name);
     if (i != globalNames.end()) {
@@ -164,7 +164,7 @@ void Core::set(const std::string &name, const Value &value) {
     return _stack.top().locals.set(name, value);
 }
 
-Value Core::get(const std::string &name) const {
+Value Interpreter::get(const std::string &name) const {
     const auto &globalNames = _stack.top().globals;
     const auto &i = globalNames.find(name);
     if (i != globalNames.end()) {
@@ -173,7 +173,7 @@ Value Core::get(const std::string &name) const {
     return _stack.top().locals.get(name);
 }
 
-void Core::execute(const ast::Handler &handler, const std::vector<Value> &values) {
+void Interpreter::execute(const ast::Handler &handler, const std::vector<Value> &values) {
     if (handler.statements == nullptr) {
         return;
     }
@@ -189,7 +189,7 @@ void Core::execute(const ast::Handler &handler, const std::vector<Value> &values
     execute(*handler.statements);
 }
 
-void Core::execute(const ast::StatementList &statements) {
+void Interpreter::execute(const ast::StatementList &statements) {
     for (auto &statement : statements.statements) {
         statement->accept(*this);
 
@@ -201,7 +201,7 @@ void Core::execute(const ast::StatementList &statements) {
 }
 
 #if defined(DEBUG)
-void Core::trace(const std::string &msg) const {
+void Interpreter::trace(const std::string &msg) const {
     if (_config.enableTracing) {
        _config.stdout << "core: " << msg << std::endl;
     }
@@ -210,29 +210,29 @@ void Core::trace(const std::string &msg) const {
 
 #pragma mark - Unused
 
-std::any Core::visitAny(const ast::Program &) {
+std::any Interpreter::visitAny(const ast::Program &) {
     return std::any();
 }
 
-std::any Core::visitAny(const ast::Handler &) {
+std::any Interpreter::visitAny(const ast::Handler &) {
     return std::any();
 }
 
-std::any Core::visitAny(const ast::StatementList &) {
+std::any Interpreter::visitAny(const ast::StatementList &) {
     return std::any();
 }
 
-std::any Core::visitAny(const ast::IdentifierList &) {
+std::any Interpreter::visitAny(const ast::IdentifierList &) {
     return std::any();
 }
 
-std::any Core::visitAny(const ast::ExpressionList &) {
+std::any Interpreter::visitAny(const ast::ExpressionList &) {
     return std::any();
 }
 
 #pragma mark - StatementVisitor
 
-std::any Core::visitAny(const If &s) {
+std::any Interpreter::visitAny(const If &s) {
     auto condition = std::any_cast<Value>(s.condition->accept(*this));
     if (condition.asBool()) {
         execute(*s.ifStatements);
@@ -243,7 +243,7 @@ std::any Core::visitAny(const If &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const Repeat &s) {
+std::any Interpreter::visitAny(const Repeat &s) {
     while (true) {
         execute(*s.statements);
         if (_stack.top().exitingRepeat) {
@@ -255,7 +255,7 @@ std::any Core::visitAny(const Repeat &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const RepeatCount &s) {
+std::any Interpreter::visitAny(const RepeatCount &s) {
     auto countValue = std::any_cast<Value>(s.countExpression->accept(*this));
     auto count = countValue.asInteger();
     for (int i = 0; i < count; i++) {
@@ -269,7 +269,7 @@ std::any Core::visitAny(const RepeatCount &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const RepeatRange &s) {
+std::any Interpreter::visitAny(const RepeatRange &s) {
     auto iteratorName = s.variable->name;
     auto startValue = std::any_cast<Value>(s.startExpression->accept(*this)).asInteger();
     auto endValue = std::any_cast<Value>(s.endExpression->accept(*this)).asInteger();
@@ -292,7 +292,7 @@ std::any Core::visitAny(const RepeatRange &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const RepeatCondition &s) {
+std::any Interpreter::visitAny(const RepeatCondition &s) {
     auto conditionValue = std::any_cast<Value>(s.condition->accept(*this)).asBool();
     while (conditionValue == s.conditionValue) {
         execute(*s.statements);
@@ -306,17 +306,17 @@ std::any Core::visitAny(const RepeatCondition &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const ExitRepeat &) { 
+std::any Interpreter::visitAny(const ExitRepeat &) { 
     _stack.top().exitingRepeat = true;
     return std::any();
 }
 
-std::any Core::visitAny(const NextRepeat &) { 
+std::any Interpreter::visitAny(const NextRepeat &) { 
     _stack.top().skippingRepeat = true;
     return std::any();
 }
 
-std::any Core::visitAny(const Exit &s) {
+std::any Interpreter::visitAny(const Exit &s) {
     trace("exit(" + s.messageKey->name + ")");
     if (s.messageKey->name == _stack.top().message.name) {
         _stack.top().exiting = true;
@@ -327,7 +327,7 @@ std::any Core::visitAny(const Exit &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const Pass &s) {
+std::any Interpreter::visitAny(const Pass &s) {
     trace("pass(" + s.messageKey->name + ")");
     if (s.messageKey->name == _stack.top().message.name) {
         _stack.top().passing = true;
@@ -338,7 +338,7 @@ std::any Core::visitAny(const Pass &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const Global &s) {
+std::any Interpreter::visitAny(const Global &s) {
     Set<std::string> globals;
     for (auto &identifier : s.variables->identifiers) {
         globals.insert(identifier->name);
@@ -349,7 +349,7 @@ std::any Core::visitAny(const Global &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const Return &s) {
+std::any Interpreter::visitAny(const Return &s) {
     _stack.top().returning = true;
     if (s.expression) {
         auto value = std::any_cast<Value>(s.expression->accept(*this));
@@ -359,7 +359,7 @@ std::any Core::visitAny(const Return &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const Do &c) {
+std::any Interpreter::visitAny(const Do &c) {
     if (c.language) {
         auto languageName = std::any_cast<Value>(c.language->accept(*this));
 
@@ -381,7 +381,7 @@ std::any Core::visitAny(const Do &c) {
     return std::any();
 }
 
-std::any Core::visitAny(const Command &c) {
+std::any Interpreter::visitAny(const Command &c) {
     auto message = Message(c.name->name);
     if (c.arguments) {
         for (auto &expression : c.arguments->expressions) {
@@ -400,7 +400,7 @@ std::any Core::visitAny(const Command &c) {
 
 #pragma mark - Commands
 
-std::any Core::visitAny(const Put &s) {
+std::any Interpreter::visitAny(const Put &s) {
     auto value = std::any_cast<Value>(s.expression->accept(*this));
     if (s.target) {
         auto &name = s.target->name;
@@ -426,14 +426,14 @@ std::any Core::visitAny(const Put &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const Get &s) {
+std::any Interpreter::visitAny(const Get &s) {
     auto result = std::any_cast<Value>(s.expression->accept(*this));
     _stack.top().locals.set("it", result);
 
     return std::any();
 }
 
-std::any Core::visitAny(const Ask &s) {
+std::any Interpreter::visitAny(const Ask &s) {
     auto question = std::any_cast<Value>(s.expression->accept(*this));
 
     _config.stdout << question.asString();
@@ -445,7 +445,7 @@ std::any Core::visitAny(const Ask &s) {
     return std::any();
 }
 
-std::any Core::visitAny(const Add &c) {
+std::any Interpreter::visitAny(const Add &c) {
     auto &targetName = c.destination->name;
 
     auto value = std::any_cast<Value>(c.expression->accept(*this));
@@ -465,7 +465,7 @@ std::any Core::visitAny(const Add &c) {
     return std::any();
 }
 
-std::any Core::visitAny(const Subtract &c) {
+std::any Interpreter::visitAny(const Subtract &c) {
     auto &targetName = c.destination->name;
 
     auto value = std::any_cast<Value>(c.expression->accept(*this));
@@ -484,7 +484,7 @@ std::any Core::visitAny(const Subtract &c) {
     return std::any();
 }
 
-std::any Core::visitAny(const Multiply &c) {
+std::any Interpreter::visitAny(const Multiply &c) {
     auto &targetName = c.destination->name;
 
     auto value = std::any_cast<Value>(c.expression->accept(*this));
@@ -503,7 +503,7 @@ std::any Core::visitAny(const Multiply &c) {
     return std::any();
 }
 
-std::any Core::visitAny(const Divide &c) {
+std::any Interpreter::visitAny(const Divide &c) {
     auto value = std::any_cast<Value>(c.expression->accept(*this));
     auto &targetName = c.destination->name;
     auto targetValue = get(targetName);
@@ -522,7 +522,7 @@ std::any Core::visitAny(const Divide &c) {
 
 #pragma mark - Functions
 
-Value Core::evaluateFunction(const Message &message) {
+Value Interpreter::evaluateFunction(const Message &message) {
     auto fn = _functions.find(lowercase(message.name));
     if (fn != _functions.end()) {
         return fn->second->valueOf(*this, message);
@@ -532,9 +532,9 @@ Value Core::evaluateFunction(const Message &message) {
 
 #pragma mark - ExpressionVisitor
 
-std::any Core::visitAny(const Identifier &e) { return get(e.name); }
+std::any Interpreter::visitAny(const Identifier &e) { return get(e.name); }
 
-std::any Core::visitAny(const FunctionCall &e) {
+std::any Interpreter::visitAny(const FunctionCall &e) {
     auto message = Message(e.identifier->name);
     if (e.arguments) {
         for (auto &argument : e.arguments->expressions) {
@@ -546,7 +546,7 @@ std::any Core::visitAny(const FunctionCall &e) {
     return call(message, _stack.top().target);
 }
 
-std::any Core::visitAny(const ast::Property &p) {
+std::any Interpreter::visitAny(const ast::Property &p) {
     auto message = Message(p.name->name);
     if (p.expression) {
         auto value = std::any_cast<Value>(p.expression->accept(*this));
@@ -562,7 +562,7 @@ std::any Core::visitAny(const ast::Property &p) {
     return call(message, nullptr);
 }
 
-std::any Core::visitAny(const ast::Descriptor &d) {
+std::any Interpreter::visitAny(const ast::Descriptor &d) {
     auto& name = d.name->name;
     if (!d.value) {
         auto& name = d.name->name;
@@ -601,7 +601,7 @@ void checkNumberOperand(const Value &value, const Location &location) {
     }
 }
 
-std::any Core::visitAny(const Binary &e) {
+std::any Interpreter::visitAny(const Binary &e) {
     auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
     auto rhs = std::any_cast<Value>(e.rightExpression->accept(*this));
     
@@ -677,7 +677,7 @@ std::any Core::visitAny(const Binary &e) {
     }
 }
 
-std::any Core::visitAny(const Logical &e) {
+std::any Interpreter::visitAny(const Logical &e) {
     if (e.logicalOperator == Logical::And) {
         auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
         if (!lhs.isBool()) {
@@ -713,7 +713,7 @@ std::any Core::visitAny(const Logical &e) {
     throw RuntimeError("unexpected operator", e.location);
 }
 
-std::any Core::visitAny(const Unary &e) {
+std::any Interpreter::visitAny(const Unary &e) {
     auto value = std::any_cast<Value>(e.expression->accept(*this));
 
     switch (e.unaryOperator) {
@@ -735,11 +735,11 @@ std::any Core::visitAny(const Unary &e) {
     }
 }
 
-std::any Core::visitAny(const FloatLiteral &e) { return Value(e.value); }
+std::any Interpreter::visitAny(const FloatLiteral &e) { return Value(e.value); }
 
-std::any Core::visitAny(const IntLiteral &e) { return Value(e.value); }
+std::any Interpreter::visitAny(const IntLiteral &e) { return Value(e.value); }
 
-std::any Core::visitAny(const StringLiteral &e) { return Value(e.value); }
+std::any Interpreter::visitAny(const StringLiteral &e) { return Value(e.value); }
 
 static type chunk_type(Chunk::Type t) {
     switch (t) {
@@ -754,7 +754,7 @@ static type chunk_type(Chunk::Type t) {
     }
 }
 
-std::any Core::visitAny(const RangeChunk &c) {
+std::any Interpreter::visitAny(const RangeChunk &c) {
     auto value = std::any_cast<Value>(c.expression->accept(*this)).asString();
     auto startValue = std::any_cast<Value>(c.start->accept(*this));
 
@@ -768,7 +768,7 @@ std::any Core::visitAny(const RangeChunk &c) {
     }
 }
 
-std::any Core::visitAny(const AnyChunk &c) {
+std::any Interpreter::visitAny(const AnyChunk &c) {
     auto value = std::any_cast<Value>(c.expression->accept(*this)).asString();
     return Value(
         random_chunk(
@@ -776,12 +776,12 @@ std::any Core::visitAny(const AnyChunk &c) {
             .get());
 }
 
-std::any Core::visitAny(const LastChunk &c) {
+std::any Interpreter::visitAny(const LastChunk &c) {
     auto value = std::any_cast<Value>(c.expression->accept(*this)).asString();
     return Value(last_chunk(chunk_type(c.type), value).get());
 }
 
-std::any Core::visitAny(const MiddleChunk &c) {
+std::any Interpreter::visitAny(const MiddleChunk &c) {
     auto value = std::any_cast<Value>(c.expression->accept(*this)).asString();
     return Value(middle_chunk(chunk_type(c.type), value).get());
 }

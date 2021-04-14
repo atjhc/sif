@@ -15,7 +15,7 @@
 //
 
 #include "runtime/Object.h"
-#include "runtime/Core.h"
+#include "runtime/Interpreter.h"
 #include "runtime/Property.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
