@@ -65,9 +65,9 @@ static int prettyPrint(const std::string &fileName) {
     }
 
     Parser parser(config);
-    Owned<Script> result;
+    Owned<Program> result;
 
-    if ((result = parser.parseScript(source)) == nullptr) {
+    if ((result = parser.parseProgram(source)) == nullptr) {
         return -1;
     }
 

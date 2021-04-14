@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Script.h"
+#include "ast/Program.h"
 
 #include <iostream>
 
@@ -37,7 +37,7 @@ struct ParserConfig {
 
 struct ParserContext {
     enum Mode {
-        Script,
+        Program,
         Statements,
         Expression
     };
@@ -48,12 +48,12 @@ struct ParserContext {
     std::string source;
 
     // Parsing state
-    Mode parsingMode = Script;
+    Mode parsingMode = Program;
     bool selectingMode = true;
     unsigned int numberOfErrors = 0;
 
     // Result
-    Owned<ast::Script> script = nullptr;
+    Owned<ast::Program> program = nullptr;
     Owned<ast::Expression> expression = nullptr;
     Owned<ast::StatementList> statements = nullptr;
 
@@ -66,7 +66,7 @@ class Parser {
   public:
     Parser(const ParserConfig &config) : _config(config) {}
  
-    Owned<ast::Script> parseScript(const std::string &source);
+    Owned<ast::Program> parseProgram(const std::string &source);
     Owned<ast::StatementList> parseStatements(const std::string &source);
     Owned<ast::Expression> parseExpression(const std::string &source);
 

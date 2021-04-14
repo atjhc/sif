@@ -19,7 +19,7 @@
 #include "ast/Chunk.h"
 #include "ast/Command.h"
 #include "ast/Repeat.h"
-#include "ast/Script.h"
+#include "ast/Program.h"
 #include "utilities/chunk.h"
 
 // clang-format off
@@ -85,17 +85,17 @@ void Parser::parse(ParserContext &context, const std::string &source) {
     }
 }
 
-Owned<ast::Script> Parser::parseScript(const std::string &source) {
+Owned<ast::Program> Parser::parseProgram(const std::string &source) {
     ParserContext context(_config, source);
-    context.parsingMode = ParserContext::Script;
+    context.parsingMode = ParserContext::Program;
 
     parse(context, source);
 
-    if (context.numberOfErrors && context.script) {
-        context.script = nullptr;
+    if (context.numberOfErrors && context.program) {
+        context.program = nullptr;
     }
 
-    return std::move(context.script);
+    return std::move(context.program);
 }
 
 Owned<ast::StatementList> Parser::parseStatements(const std::string &source) {

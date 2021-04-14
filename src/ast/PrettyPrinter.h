@@ -35,7 +35,7 @@ class PrettyPrinter: AnyVisitor {
     void print(const Node &node);
 
   private:
-    std::any visitAny(const Script &) override;
+    std::any visitAny(const Program &) override;
     std::any visitAny(const Handler &) override;
     std::any visitAny(const StatementList &) override;
     std::any visitAny(const IdentifierList &) override;

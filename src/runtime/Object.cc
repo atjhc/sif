@@ -29,8 +29,8 @@ Strong<Object> Object::Make(const std::string &name, const std::string &source, 
     config.fileName = name;
 
     Parser parser(config);
-    Owned<ast::Script> result;
-    if ((result = parser.parseScript(source)) == nullptr) {
+    Owned<ast::Program> result;
+    if ((result = parser.parseProgram(source)) == nullptr) {
         return nullptr;
     }
 
@@ -40,11 +40,11 @@ Strong<Object> Object::Make(const std::string &name, const std::string &source, 
 Object::Object(const std::string &n, const Strong<Object> &p)
     : _name(n), _parent(p) {}
 
-Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &p)
+Object::Object(const std::string &n, Owned<ast::Program> &s, const Strong<Object> &p)
     : Object(n, p) {
 
-    _script = std::move(s);
-    for (auto &handler : _script->handlers) {
+    _program = std::move(s);
+    for (auto &handler : _program->handlers) {
         auto &name = handler->messageKey->name;
 
         auto map = &_handlers;
@@ -52,11 +52,10 @@ Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object>
             map = &_functions;
         }
 
-        auto i = map->find(name);
-        if (i != map->end()) {
-            throw RuntimeError("redefinition of handler " + name, handler->location);
+        // TODO: catch handler redifinition errors in the parser.
+        if (map->find(name) != map->end()) {
+            throw RuntimeError("invalid redefinition of handler '" + name + "'", handler->location);
         }
-
         map->insert({lowercase(name), *handler});
     }
 }
@@ -64,30 +63,30 @@ Object::Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object>
 Optional<Ref<ast::Handler>> Object::handlerFor(const Message &message) {
     auto i = _handlers.find(message.name);
     if (i == _handlers.end()) {
-        return std::nullopt;
+        return Empty;
     }
 
-    return std::make_optional(i->second);
+    return i->second;
 }
 
 Optional<Ref<ast::Handler>> Object::functionFor(const Message &message) {
     auto i = _functions.find(message.name);
     if (i == _functions.end()) {
-        return std::nullopt;
+        return Empty;
     }
 
-    return std::make_optional(i->second);
+    return i->second;
 }
 
-Value Object::valueForProperty(const Property &p) const {
+Optional<Value> Object::valueForProperty(const Property &p) const {
     if (p.name == "name") {
         return Value(_name);
     }
-    throw RuntimeError("unrecognized property");
+    return Empty;
 }
 
-void Object::setValueForProperty(const Value &v, const Property &p) {
-    throw RuntimeError("unable to set property");
+bool Object::setValueForProperty(const Value &v, const Property &p) {
+    return false;
 }
 
 CH_RUNTIME_NAMESPACE_END

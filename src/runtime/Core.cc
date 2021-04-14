@@ -210,7 +210,7 @@ void Core::trace(const std::string &msg) const {
 
 #pragma mark - Unused
 
-std::any Core::visitAny(const ast::Script &) {
+std::any Core::visitAny(const ast::Program &) {
     return std::any();
 }
 

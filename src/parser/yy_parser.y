@@ -46,12 +46,13 @@ using namespace chatter::ast;
 
 %code requires { 
     #include "parser/yy_shared.h"
-    #include "ast/Script.h"
+    #include "ast/Program.h"
     #include "ast/Chunk.h"
     #include "ast/Command.h"
     #include "ast/Repeat.h"
     #include "ast/Property.h"
     #include "ast/Descriptor.h"
+    using namespace chatter;
 }
 
 // Use our custom location type.
@@ -77,7 +78,7 @@ using namespace chatter::ast;
 %expect 0
 
 // Virtual start tokens.
-%token START_SCRIPT
+%token START_PROGRAM
 %token START_STATEMENT
 %token START_EXPRESSION
 
@@ -126,7 +127,7 @@ using namespace chatter::ast;
 %token <Owned<Expression>> FLOAT_LITERAL INT_LITERAL STRING_LITERAL
 %token <Owned<Identifier>> IDENTIFIER
 
-%nterm <Owned<Script>> script
+%nterm <Owned<Program>> program
 %nterm <Owned<Handler>> handler
 %nterm <Owned<Identifier>> messageKey
 %nterm <Owned<IdentifierList>> maybeIdentifierList identifierList
@@ -145,8 +146,8 @@ using namespace chatter::ast;
 %%
 
 start
-    : START_SCRIPT script { 
-        ctx.script = std::move($2);
+    : START_PROGRAM program { 
+        ctx.program = std::move($2);
     }
     | START_STATEMENT block {
         ctx.statements = std::move($2);
@@ -156,14 +157,14 @@ start
     }
 ;
 
-script
+program
     : handler {
-        $$ = MakeOwned<Script>();
+        $$ = MakeOwned<Program>();
         if ($1) {
             $$->add($1);
         } 
     }
-    | script NL handler {
+    | program NL handler {
         $$ = std::move($1);
         if ($3) {
             $$->add($3);

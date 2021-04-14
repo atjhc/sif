@@ -20,7 +20,7 @@
 #include "ast/Chunk.h"
 #include "ast/Command.h"
 #include "ast/Repeat.h"
-#include "ast/Script.h"
+#include "ast/Program.h"
 #include "ast/Node.h"
 #include "parser/Parser.h"
 #include "runtime/Variables.h"
@@ -111,7 +111,7 @@ class Core : public ast::AnyVisitor {
 
 #pragma mark - Unused
 
-    std::any visitAny(const ast::Script &) override;
+    std::any visitAny(const ast::Program &) override;
     std::any visitAny(const ast::Handler &) override;
     std::any visitAny(const ast::StatementList &) override;
     std::any visitAny(const ast::IdentifierList &) override;

@@ -72,8 +72,8 @@ using namespace chatter::ast;
     if (context.selectingMode) {
         context.selectingMode = false;
         switch (context.parsingMode) {
-        case ParserContext::Script:
-            return yy::parser::token::START_SCRIPT;
+        case ParserContext::Program:
+            return yy::parser::token::START_PROGRAM;
         case ParserContext::Statements:
             return yy::parser::token::START_STATEMENT;
         case ParserContext::Expression:

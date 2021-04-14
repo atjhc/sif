@@ -25,10 +25,10 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Script : Node {
+struct Program : Node {
     std::vector<Owned<Handler>> handlers;
 
-    Script();
+    Program();
 
     void add(Owned<Handler> &handler) { 
         handlers.push_back(std::move(handler));

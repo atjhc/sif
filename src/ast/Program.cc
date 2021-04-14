@@ -14,10 +14,10 @@
 //  limitations under the License.
 //
 
-#include "ast/Script.h"
+#include "ast/Program.h"
 
 CH_AST_NAMESPACE_BEGIN
 
-Script::Script() {}
+Program::Program() {}
 
 CH_AST_NAMESPACE_END

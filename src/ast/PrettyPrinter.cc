@@ -16,7 +16,7 @@
 
 #include "ast/PrettyPrinter.h"
 
-#include "ast/Script.h"
+#include "ast/Program.h"
 #include "ast/Command.h"
 #include "ast/Property.h"
 #include "ast/Descriptor.h"
@@ -32,7 +32,7 @@ void PrettyPrinter::print(const Node &node) {
     node.accept(*this);
 }
 
-std::any PrettyPrinter::visitAny(const Script &script) {
+std::any PrettyPrinter::visitAny(const Program &script) {
     for (auto &handler : script.handlers) {
         handler->accept(*this);
     }

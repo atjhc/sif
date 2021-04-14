@@ -23,7 +23,7 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Script;
+struct Program;
 struct Handler;
 struct StatementList;
 struct IdentifierList;
@@ -70,7 +70,7 @@ typedef Literal<int64_t> IntLiteral;
 typedef Literal<std::string> StringLiteral;
 
 struct AnyVisitor {
-    virtual std::any visitAny(const Script &) = 0;
+    virtual std::any visitAny(const Program &) = 0;
     virtual std::any visitAny(const Handler &) = 0;
     virtual std::any visitAny(const StatementList &) = 0;
     virtual std::any visitAny(const IdentifierList &) = 0;

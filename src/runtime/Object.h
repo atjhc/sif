@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Script.h"
+#include "ast/Program.h"
 #include "ast/Handler.h"
 #include "runtime/Value.h"
 
@@ -28,29 +28,32 @@ struct Property;
 
 class Object {
   public:
-    static Strong<Object> Make(const std::string &name, const std::string &script = "", const Strong<Object> &parent = nullptr);
+    static Strong<Object> Make(const std::string &name, 
+        const std::string &source = "", 
+        const Strong<Object> &parent = nullptr);
+
     virtual ~Object() = default;
 
     const std::string &name() const { return _name; }
-    const Owned<ast::Script> &script() const { return _script; }
+    const Owned<ast::Program> &program() const { return _program; }
     const Strong<Object> &parent() const { return _parent; }
 
     Optional<Ref<ast::Handler>> handlerFor(const Message &message);
     Optional<Ref<ast::Handler>> functionFor(const Message &message);
 
-    virtual Value valueForProperty(const Property &p) const;
-    virtual void setValueForProperty(const Value &v, const Property &p);
+    virtual Optional<Value> valueForProperty(const Property &p) const;
+    virtual bool setValueForProperty(const Value &v, const Property &p);
 
   private:
     std::string _name;
-    Owned<ast::Script> _script;
+    Owned<ast::Program> _program;
     Strong<Object> _parent;
 
     Map<std::string, Ref<ast::Handler>> _handlers;
     Map<std::string, Ref<ast::Handler>> _functions;
 
     Object(const std::string &n, const Strong<Object> &parent = nullptr);
-    Object(const std::string &n, Owned<ast::Script> &s, const Strong<Object> &parent = nullptr);
+    Object(const std::string &n, Owned<ast::Program> &s, const Strong<Object> &parent = nullptr);
 };
 
 CH_RUNTIME_NAMESPACE_END

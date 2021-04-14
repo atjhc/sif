@@ -17,8 +17,28 @@
 #pragma once
 
 #include <string>
+#include <optional>
 #include <unordered_set>
 #include <unordered_map>
+
+#define CH_NAMESPACE_BEGIN namespace chatter {
+#define CH_NAMESPACE_END }
+
+#define CH_AST_NAMESPACE_BEGIN \
+    namespace chatter {        \
+    namespace ast {
+#define CH_AST_NAMESPACE_END \
+    }                        \
+    }
+
+#define CH_RUNTIME_NAMESPACE_BEGIN \
+    namespace chatter {        \
+    namespace runtime {
+#define CH_RUNTIME_NAMESPACE_END \
+    }                        \
+    }
+
+CH_NAMESPACE_BEGIN
 
 template <class T>
 using Strong = std::shared_ptr<T>;
@@ -41,6 +61,8 @@ using Ref = std::reference_wrapper<T>;
 template <class T>
 using Optional = std::optional<T>;
 
+inline constexpr std::nullopt_t Empty = std::nullopt;
+
 template<class T, class... Args>
 std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T>>
 MakeOwned(Args&&... args) {
@@ -53,19 +75,4 @@ MakeStrong(Args&&... args) {
     return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-#define CH_NAMESPACE_BEGIN namespace chatter {
-#define CH_NAMESPACE_END }
-
-#define CH_AST_NAMESPACE_BEGIN \
-    namespace chatter {        \
-    namespace ast {
-#define CH_AST_NAMESPACE_END \
-    }                        \
-    }
-
-#define CH_RUNTIME_NAMESPACE_BEGIN \
-    namespace chatter {        \
-    namespace runtime {
-#define CH_RUNTIME_NAMESPACE_END \
-    }                        \
-    }
+CH_NAMESPACE_END

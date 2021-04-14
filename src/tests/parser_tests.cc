@@ -39,7 +39,7 @@ TEST_CASE(ParserTests, All) {
         auto parser = chatter::Parser(parserConfig);
 
         auto source = suite.file_contents(path);
-        auto script = parser.parseScript(source);
+        auto script = parser.parseProgram(source);
 
         std::ostringstream ss;
         auto printerConfig = chatter::ast::PrettyPrinterConfig{ss, 2};
