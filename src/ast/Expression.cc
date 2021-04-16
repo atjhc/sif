@@ -15,8 +15,8 @@
 //
 
 #include "ast/Expression.h"
-#include "ast/Identifier.h"
 #include "ast/Descriptor.h"
+#include "ast/Identifier.h"
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -29,8 +29,7 @@ FunctionCall::FunctionCall(Owned<Identifier> &id, Owned<ExpressionList> &args)
 FunctionCall::FunctionCall(Owned<Identifier> &id, Owned<Expression> &arg)
     : identifier(std::move(id)), arguments(MakeOwned<ExpressionList>(arg)) {}
 
-FunctionCall::FunctionCall(Owned<Identifier> &id)
-    : identifier(std::move(id)), arguments(nullptr) {}
+FunctionCall::FunctionCall(Owned<Identifier> &id) : identifier(std::move(id)), arguments(nullptr) {}
 
 Binary::Binary(Operator o, Owned<Expression> &l, Owned<Expression> &r)
     : binaryOperator(o), leftExpression(std::move(l)), rightExpression(std::move(r)) {}
@@ -38,7 +37,6 @@ Binary::Binary(Operator o, Owned<Expression> &l, Owned<Expression> &r)
 Logical::Logical(Operator o, Owned<Expression> &l, Owned<Expression> &r)
     : logicalOperator(o), leftExpression(std::move(l)), rightExpression(std::move(r)) {}
 
-Unary::Unary(Operator o, Owned<Expression> &e)
-    : unaryOperator(o), expression(std::move(e)) {}
+Unary::Unary(Operator o, Owned<Expression> &e) : unaryOperator(o), expression(std::move(e)) {}
 
 CH_AST_NAMESPACE_END

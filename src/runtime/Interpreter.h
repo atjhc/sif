@@ -19,15 +19,15 @@
 #include "Common.h"
 #include "ast/Chunk.h"
 #include "ast/Command.h"
-#include "ast/Repeat.h"
-#include "ast/Program.h"
 #include "ast/Node.h"
+#include "ast/Program.h"
+#include "ast/Repeat.h"
 #include "parser/Parser.h"
 #include "runtime/Environment.h"
-#include "runtime/Value.h"
+#include "runtime/Error.h"
 #include "runtime/Function.h"
 #include "runtime/Message.h"
-#include "runtime/Error.h"
+#include "runtime/Value.h"
 
 #include <iostream>
 #include <optional>
@@ -53,8 +53,7 @@ struct InterpreterConfig {
     bool enableTracing = false;
 #endif
 
-    InterpreterConfig()
-        : stdout(std::cout), stderr(std::cerr), stdin(std::cin) {}
+    InterpreterConfig() : stdout(std::cout), stderr(std::cerr), stdin(std::cin) {}
 
     InterpreterConfig(std::ostream &out, std::ostream &err, std::istream &in)
         : stdout(out), stderr(err), stdin(in) {}
@@ -68,7 +67,7 @@ struct InterpreterStackFrame {
 
     Environment locals;
     Set<std::string> globals;
-    
+
     Value returningValue;
     Value resultValue;
 
@@ -78,25 +77,24 @@ struct InterpreterStackFrame {
     bool passing = false;
     bool exiting = false;
 
-    InterpreterStackFrame(const Message &m, const Strong<Object> &t)
-        : message(m), target(t) {}
+    InterpreterStackFrame(const Message &m, const Strong<Object> &t) : message(m), target(t) {}
 };
 
 class Interpreter : public ast::AnyVisitor {
   public:
-
     Interpreter(const InterpreterConfig &c = InterpreterConfig());
 
-    bool send(const Message &message, Strong<Object> target = nullptr, const ast::Location &location = ast::Location());
-    Value call(const Message &message, Strong<Object> target = nullptr, const ast::Location &location = ast::Location());
+    bool send(const Message &message, Strong<Object> target = nullptr,
+              const ast::Location &location = ast::Location());
+    Value call(const Message &message, Strong<Object> target = nullptr,
+               const ast::Location &location = ast::Location());
 
     void add(const std::string &name, Function *fn);
 
-    const InterpreterStackFrame& currentFrame();
+    const InterpreterStackFrame &currentFrame();
     std::function<float()> random();
 
   private:
-
     void set(const std::string &name, const Value &value);
     Value get(const std::string &name) const;
 

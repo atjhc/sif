@@ -14,13 +14,13 @@
 //  limitations under the License.
 //
 
-#include "tests/TestSuite.h"
-#include "parser/Parser.h"
 #include "ast/PrettyPrinter.h"
+#include "parser/Parser.h"
+#include "tests/TestSuite.h"
 
-#include <sstream>
 #include <filesystem>
 #include <iostream>
+#include <sstream>
 
 TEST_CASE(ParserTests, All) {
     for (auto pstr : suite.files_in("parser")) {

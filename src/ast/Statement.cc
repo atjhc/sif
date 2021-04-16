@@ -29,13 +29,16 @@ If::If(Owned<Expression> &c, Owned<StatementList> &isl)
     : condition(std::move(c)), ifStatements(std::move(isl)), elseStatements(nullptr) {}
 
 If::If(Owned<Expression> &c, Owned<Statement> &is)
-    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(nullptr) {}
+    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(nullptr) {
+}
 
 If::If(Owned<Expression> &c, Owned<Statement> &is, Owned<Statement> &es)
-    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(MakeOwned<StatementList>(es)) {}
+    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)),
+      elseStatements(MakeOwned<StatementList>(es)) {}
 
 If::If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl)
-    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(std::move(esl)) {}
+    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)),
+      elseStatements(std::move(esl)) {}
 
 Exit::Exit(Owned<Identifier> &m) : messageKey(std::move(m)) {}
 

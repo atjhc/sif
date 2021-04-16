@@ -16,6 +16,4 @@
 
 #include "tests/TestSuite.h"
 
-int main(int argc, char *argv[]) {
-    return RunAllTests(argc, argv);
-}
+int main(int argc, char *argv[]) { return RunAllTests(argc, argv); }

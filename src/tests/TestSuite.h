@@ -17,17 +17,17 @@
 #pragma once
 
 #include <iostream>
-#include <vector>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #define _TEST_FN(GROUP, NAME) _TEST_##GROUP##_##NAME
 #define _TEST_DISCARD(GROUP, NAME) _DISCARD_##GROUP##_##NAME
 
-#define TEST_CASE(GROUP, NAME) \
-    void _TEST_FN(GROUP, NAME) (TestSuite &suite); \
+#define TEST_CASE(GROUP, NAME)                                                                  \
+    void _TEST_FN(GROUP, NAME)(TestSuite & suite);                                              \
     int _TEST_DISCARD(GROUP, NAME) = MainTestSuite().add(#GROUP, #NAME, _TEST_FN(GROUP, NAME)); \
-    void _TEST_FN(GROUP, NAME) (TestSuite &suite)
+    void _TEST_FN(GROUP, NAME)(TestSuite & suite)
 
 #define ASSERT_FAIL(M) suite._assert(false, M, __FILE__, __LINE__)
 #define ASSERT_TRUE(C) suite._assert((C), #C " == true", __FILE__, __LINE__)
@@ -40,55 +40,52 @@
 #define ASSERT_GT(LHS, RHS) suite._assert((LHS) > (RHS), #LHS " > " #RHS, __FILE__, __LINE__)
 #define ASSERT_LTE(LHS, RHS) suite._assert((LHS) <= (RHS), #LHS " <= " #RHS, __FILE__, __LINE__)
 #define ASSERT_GTE(LHS, RHS) suite._assert((LHS) >= (RHS), #LHS " >= " #RHS, __FILE__, __LINE__)
-#define ASSERT_NO_THROW(STMNT) \
-    ([&] () -> std::ostream& { \
-        bool throws = false; \
-        try { \
-            (STMNT); \
-        } catch (...) { \
-            throws = true; \
-        } \
+#define ASSERT_NO_THROW(STMNT)                                     \
+    ([&]() -> std::ostream & {                                     \
+        bool throws = false;                                       \
+        try {                                                      \
+            (STMNT);                                               \
+        } catch (...) {                                            \
+            throws = true;                                         \
+        }                                                          \
         return suite._assert(!throws, #STMNT, __FILE__, __LINE__); \
     }())
-#define ASSERT_THROWS(STMNT) \
-    ([&] () -> std::ostream& { \
-        bool throws = false; \
-        try { \
-            (STMNT); \
-        } catch (const std::exception &e) { \
-            throws = true; \
-        } \
+#define ASSERT_THROWS(STMNT)                                      \
+    ([&]() -> std::ostream & {                                    \
+        bool throws = false;                                      \
+        try {                                                     \
+            (STMNT);                                              \
+        } catch (const std::exception &e) {                       \
+            throws = true;                                        \
+        }                                                         \
         return suite._assert(throws, #STMNT, __FILE__, __LINE__); \
     }())
-#define ASSERT_THROWS_SPECIFIC(STMNT, E) \
-    ([&] () -> std::ostream& { \
-        bool throws = false; \
-        try { \
-            (STMNT); \
-        } catch (const E &e) { \
-            throws = true; \
-        } \
+#define ASSERT_THROWS_SPECIFIC(STMNT, E)                          \
+    ([&]() -> std::ostream & {                                    \
+        bool throws = false;                                      \
+        try {                                                     \
+            (STMNT);                                              \
+        } catch (const E &e) {                                    \
+            throws = true;                                        \
+        }                                                         \
         return suite._assert(throws, #STMNT, __FILE__, __LINE__); \
     }())
-
 
 struct TestSuite;
 
 struct Test {
     std::string group;
     std::string name;
-    std::function<void(TestSuite&)> test;
+    std::function<void(TestSuite &)> test;
 };
 
 struct TestSuiteConfig {
     std::string resourcesPath;
     std::ostream &out;
 
-    TestSuiteConfig(const std::string &rpath, std::ostream &o)
-        : resourcesPath(rpath), out(o) {}
+    TestSuiteConfig(const std::string &rpath, std::ostream &o) : resourcesPath(rpath), out(o) {}
 
-    TestSuiteConfig(const std::string &rpath)
-        : resourcesPath(rpath), out(std::cout) {}
+    TestSuiteConfig(const std::string &rpath) : resourcesPath(rpath), out(std::cout) {}
 };
 
 struct TestSuite {
@@ -105,21 +102,18 @@ struct TestSuite {
 
     std::ostream &_assert(bool condition, const char *test, const char *file, int line);
 
-    int add(const std::string &group, 
-        const std::string &name, 
-        std::function<void(TestSuite &)> test);
+    int add(const std::string &group, const std::string &name,
+            std::function<void(TestSuite &)> test);
 
   private:
-    template <class K, class V>
-    using Map = std::unordered_map<K, V>;
-    template <class T>
-    using Ref = std::reference_wrapper<T>;
-    template <class T>
-    using Owned = std::unique_ptr<T>;
+    template <class K, class V> using Map = std::unordered_map<K, V>;
+    template <class T> using Ref = std::reference_wrapper<T>;
+    template <class T> using Owned = std::unique_ptr<T>;
 
     std::string _currentDateString() const;
 
-    bool _runGroup(const std::string &name, const std::vector<Ref<Test>> &tests, const std::string &testName);
+    bool _runGroup(const std::string &name, const std::vector<Ref<Test>> &tests,
+                   const std::string &testName);
     bool _runTest(const Test &test);
 
     std::vector<Owned<Test>> tests;

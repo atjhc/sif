@@ -20,7 +20,8 @@
 CH_AST_NAMESPACE_BEGIN
 
 Handler::Handler(Kind _kind, Owned<Identifier> &mk, Owned<IdentifierList> &args,
-        Owned<StatementList> &sl)
-    : kind(_kind), messageKey(std::move(mk)), arguments(std::move(args)), statements(std::move(sl)) {}
+                 Owned<StatementList> &sl)
+    : kind(_kind), messageKey(std::move(mk)), arguments(std::move(args)),
+      statements(std::move(sl)) {}
 
 CH_AST_NAMESPACE_END

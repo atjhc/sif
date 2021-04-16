@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Node.h"
 #include "ast/Expression.h"
+#include "ast/Node.h"
 
 #include <vector>
 
@@ -38,9 +38,7 @@ struct IdentifierList : Node {
 
     IdentifierList();
 
-    void add(Owned<Identifier> &identifier) {
-        identifiers.push_back(std::move(identifier));
-    }
+    void add(Owned<Identifier> &identifier) { identifiers.push_back(std::move(identifier)); }
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

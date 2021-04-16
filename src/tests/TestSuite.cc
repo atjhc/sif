@@ -16,14 +16,14 @@
 
 #include "TestSuite.h"
 
-#include <sys/types.h>
 #include <getopt.h>
 #include <libgen.h>
+#include <sys/types.h>
 
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-#include <chrono>
 
 template <class cT, class traits = std::char_traits<cT>>
 class basic_nullbuf : public std::basic_streambuf<cT, traits> {
@@ -61,12 +61,10 @@ static int usage(int argc, char *argv[]) {
 }
 
 int RunAllTests(int argc, char *argv[]) {
-static struct option long_options[] = {
-        {"group", required_argument, NULL, 'g'},
-        {"test", required_argument, NULL, 't'},
-        {"help", no_argument, NULL, 'h'},
-        {0, 0, 0, 0}
-    };
+    static struct option long_options[] = {{"group", required_argument, NULL, 'g'},
+                                           {"test", required_argument, NULL, 't'},
+                                           {"help", no_argument, NULL, 'h'},
+                                           {0, 0, 0, 0}};
 
     std::string groupName;
     std::string testName;
@@ -86,7 +84,7 @@ static struct option long_options[] = {
             break;
         }
     }
-    
+
     if (!testName.empty() && groupName.empty()) {
         std::cerr << "Requires group name" << std::endl;
         return usage(argc, argv);
@@ -97,7 +95,7 @@ static struct option long_options[] = {
 
 int TestSuite::run(const std::string &groupName, const std::string &testName) {
     auto start = std::chrono::steady_clock::now();
-    
+
     for (auto &group : testsByGroup) {
         if (!groupName.empty() && groupName != group.first) {
             continue;
@@ -109,13 +107,14 @@ int TestSuite::run(const std::string &groupName, const std::string &testName) {
     std::chrono::duration<double> elapsedSeconds = end - start;
 
     config.out << "\tExecuted " << failureCount + successCount << " tests with, " << failureCount
-               << (failureCount == 1 ? " failure in " : " failures in ") 
-               << std::setiosflags(std::ios::fixed) << std::setprecision(5) 
+               << (failureCount == 1 ? " failure in " : " failures in ")
+               << std::setiosflags(std::ios::fixed) << std::setprecision(5)
                << elapsedSeconds.count() << " seconds." << std::endl;
     return failureCount;
 }
 
-bool TestSuite::_runGroup(const std::string &name, const std::vector<Ref<Test>> &tests, const std::string &testName) {
+bool TestSuite::_runGroup(const std::string &name, const std::vector<Ref<Test>> &tests,
+                          const std::string &testName) {
     config.out << "Test Group '" << name << "' started at " << _currentDateString() << std::endl;
     bool passed = true;
 
@@ -125,8 +124,8 @@ bool TestSuite::_runGroup(const std::string &name, const std::vector<Ref<Test>> 
         }
         passed = passed && _runTest(test.get());
     }
-    config.out << "Test Group '" << name << "' " << (passed ? "passed" : "failed")
-               << " at " << _currentDateString() << std::endl;
+    config.out << "Test Group '" << name << "' " << (passed ? "passed" : "failed") << " at "
+               << _currentDateString() << std::endl;
 
     return passed;
 }
@@ -135,7 +134,7 @@ bool TestSuite::_runTest(const Test &test) {
     config.out << "Test Case '" << test.group << "." << test.name << "' started." << std::endl;
     bool passed = true;
 
-    auto start = std::chrono::steady_clock::now();    
+    auto start = std::chrono::steady_clock::now();
     test.test(*this);
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsedSeconds = end - start;
@@ -144,16 +143,15 @@ bool TestSuite::_runTest(const Test &test) {
     didPass = true;
 
     config.out << "Test Case '" << test.group << "." << test.name << "' "
-               << (passed ? "passed" : "failed") << " (" 
-               << std::setiosflags(std::ios::fixed) << std::setprecision(5) 
-               << elapsedSeconds.count() << " seconds)." << std::endl;
+               << (passed ? "passed" : "failed") << " (" << std::setiosflags(std::ios::fixed)
+               << std::setprecision(5) << elapsedSeconds.count() << " seconds)." << std::endl;
 
     if (passed) {
         successCount++;
     } else {
         failureCount++;
     }
-    
+
     return passed;
 }
 std::string TestSuite::_currentDateString() const {
@@ -165,7 +163,7 @@ std::string TestSuite::_currentDateString() const {
     return ss.str();
 }
 
-std::ostream& TestSuite::_assert(bool condition, const char *test, const char *file, int line) {
+std::ostream &TestSuite::_assert(bool condition, const char *test, const char *file, int line) {
     if (condition) {
         return devnull;
     } else {
@@ -175,9 +173,10 @@ std::ostream& TestSuite::_assert(bool condition, const char *test, const char *f
     }
 }
 
-int TestSuite::add(const std::string &groupName, const std::string &name, std::function<void(TestSuite &)> testFn) { 
+int TestSuite::add(const std::string &groupName, const std::string &name,
+                   std::function<void(TestSuite &)> testFn) {
     auto test = tests.insert(tests.begin(), std::make_unique<Test>(Test{groupName, name, testFn}));
-    
+
     auto group = testsByGroup.find(groupName);
     if (group == testsByGroup.end()) {
         testsByGroup.insert(group, {groupName, {*test->get()}});

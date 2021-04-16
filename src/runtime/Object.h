@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Program.h"
 #include "ast/Handler.h"
+#include "ast/Program.h"
 #include "runtime/Value.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
@@ -28,11 +28,8 @@ struct Property;
 
 class Object {
   public:
-    static Strong<Object> Make(
-        const std::string &name, 
-        const std::string &source = "", 
-        const Strong<Object> &parent = nullptr
-    );
+    static Strong<Object> Make(const std::string &name, const std::string &source = "",
+                               const Strong<Object> &parent = nullptr);
 
     virtual ~Object() = default;
 
@@ -55,7 +52,8 @@ class Object {
     Map<std::string, Ref<ast::Handler>> _handlers;
     Map<std::string, Ref<ast::Handler>> _functions;
 
-    Object(const std::string &name, const std::string &source, Owned<ast::Program> program, const Strong<Object> &parent);
+    Object(const std::string &name, const std::string &source, Owned<ast::Program> program,
+           const Strong<Object> &parent);
 };
 
 CH_RUNTIME_NAMESPACE_END

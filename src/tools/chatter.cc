@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "parser/Parser.h"
 #include "ast/PrettyPrinter.h"
+#include "parser/Parser.h"
 #include "runtime/Interpreter.h"
 #include "runtime/Object.h"
 
@@ -109,14 +109,13 @@ static int run(const std::string &fileName, const std::string &messageName,
     InterpreterConfig coreConfig;
 #if defined(DEBUG)
     coreConfig.enableTracing = traceRuntime;
-#endif    
+#endif
     Interpreter core(coreConfig);
 
     try {
         core.send(Message(messageName, values), object);
     } catch (RuntimeError &error) {
-        std::cerr << contextName << ":" << error.where << ": error: "
-                  << error.what() << std::endl;
+        std::cerr << contextName << ":" << error.where << ": error: " << error.what() << std::endl;
     }
 
     return 0;

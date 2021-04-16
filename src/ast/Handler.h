@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Node.h"
 #include "ast/Identifier.h"
+#include "ast/Node.h"
 #include "ast/Statement.h"
 
 #include <vector>

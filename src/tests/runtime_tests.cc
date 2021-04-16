@@ -21,8 +21,8 @@
 #include "runtime/Object.h"
 #include "utilities/devnull.h"
 
-#include <string>
 #include <filesystem>
+#include <string>
 
 using namespace chatter;
 using namespace chatter::runtime;
@@ -49,6 +49,7 @@ TEST_CASE(Interpreter, All) {
         Interpreter core(coreConfig);
 
         ASSERT_NO_THROW(core.send(Message("begin"), object)) << path << std::endl;
-        ASSERT_EQ(ss.str(), expectedResult) << path << std::endl << "Got: " << ss.str() << std::endl;
+        ASSERT_EQ(ss.str(), expectedResult) << path << std::endl
+                                            << "Got: " << ss.str() << std::endl;
     }
 }

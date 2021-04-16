@@ -47,8 +47,8 @@ struct RepeatRange : Repeat {
     Owned<Expression> endExpression;
     bool ascending;
 
-    RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee,
-                bool asc, Owned<StatementList> &s);
+    RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee, bool asc,
+                Owned<StatementList> &s);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

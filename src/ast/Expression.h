@@ -39,9 +39,7 @@ struct ExpressionList : Node {
     ExpressionList();
     ExpressionList(Owned<Expression> &e);
 
-    void add(Owned<Expression> &e) {
-        expressions.push_back(std::move(e));
-    }
+    void add(Owned<Expression> &e) { expressions.push_back(std::move(e)); }
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
@@ -81,31 +79,26 @@ struct Binary : Expression {
     Operator binaryOperator;
     Owned<Expression> leftExpression, rightExpression;
 
-    Binary(Operator binaryOperator, Owned<Expression> &leftExpression, Owned<Expression> &rightExpression);
+    Binary(Operator binaryOperator, Owned<Expression> &leftExpression,
+           Owned<Expression> &rightExpression);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Logical : Expression {
-    enum Operator {
-        And,
-        Or
-    };
+    enum Operator { And, Or };
 
     Operator logicalOperator;
     Owned<Expression> leftExpression, rightExpression;
 
-    Logical(Operator logicalOperator, Owned<Expression> &leftExpression, Owned<Expression> &rightExpression);
+    Logical(Operator logicalOperator, Owned<Expression> &leftExpression,
+            Owned<Expression> &rightExpression);
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct Unary : Expression {
-    enum Operator {
-        ThereIsA,
-        Minus,
-        Not
-    };
+    enum Operator { ThereIsA, Minus, Not };
 
     Operator unaryOperator;
     Owned<Expression> expression;
@@ -115,8 +108,7 @@ struct Unary : Expression {
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
-template <typename Type>
-struct Literal : Expression {
+template <typename Type> struct Literal : Expression {
     Type value;
 
     Literal(Type v) : value(v) {}

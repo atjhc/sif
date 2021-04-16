@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Node.h"
 #include "ast/Handler.h"
+#include "ast/Node.h"
 
 #include <ostream>
 #include <vector>
@@ -30,9 +30,7 @@ struct Program : Node {
 
     Program();
 
-    void add(Owned<Handler> &handler) { 
-        handlers.push_back(std::move(handler));
-    }
+    void add(Owned<Handler> &handler) { handlers.push_back(std::move(handler)); }
 
     virtual std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

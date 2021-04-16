@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Node.h"
 #include "ast/Expression.h"
+#include "ast/Node.h"
 
 #include <ostream>
 #include <vector>
@@ -37,9 +37,7 @@ struct StatementList : Node {
     StatementList();
     StatementList(Owned<Statement> &statement);
 
-    void add(Owned<Statement> &statement) {
-        statements.push_back(std::move(statement));
-    }
+    void add(Owned<Statement> &statement) { statements.push_back(std::move(statement)); }
 
     std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

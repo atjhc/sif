@@ -17,13 +17,13 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/Value.h"
-#include "runtime/Message.h"
 #include "ast/Node.h"
+#include "runtime/Message.h"
+#include "runtime/Value.h"
 
-#include <vector>
 #include <algorithm>
 #include <numeric>
+#include <vector>
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
@@ -33,14 +33,13 @@ struct Function {
     virtual ~Function() = default;
     virtual Value valueOf(Interpreter &, const Message &, const ast::Location &location) const = 0;
 
-protected:
+  protected:
     void expectArgumentCount(const Message &m, const ast::Location &location, int count) const;
     void expectArguments(const Message &m, const ast::Location &location) const;
     void expectNumberAt(const Message &m, const ast::Location &location, int index) const;
 };
 
-template <double F(double)>
-struct OneArgumentFunction: Function {
+template <double F(double)> struct OneArgumentFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override {
         expectArgumentCount(m, location, 1);
         expectNumberAt(m, location, 0);
@@ -49,59 +48,59 @@ struct OneArgumentFunction: Function {
     }
 };
 
-struct MaxFunction: Function {
+struct MaxFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct MinFunction: Function {
+struct MinFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct SumFunction: Function {
+struct SumFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct MeanFunction: Function {
+struct MeanFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct LengthFunction: Function {
+struct LengthFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct OffsetFunction: Function {
+struct OffsetFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct SecondsFunction: Function {
+struct SecondsFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct ValueFunction: Function {
+struct ValueFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct RandomFunction: Function {
+struct RandomFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct ParamFunction: Function {
+struct ParamFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct ParamsFunction: Function {
+struct ParamsFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct ParamCountFunction: Function {
+struct ParamCountFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct ResultFunction: Function {
+struct ResultFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 
-struct TargetFunction: Function {
+struct TargetFunction : Function {
     Value valueOf(Interpreter &, const Message &m, const ast::Location &location) const override;
 };
 

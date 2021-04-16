@@ -24,8 +24,7 @@ CH_RUNTIME_NAMESPACE_BEGIN
 struct RuntimeError : std::runtime_error {
     ast::Location where;
 
-    RuntimeError(const std::string &_what)
-        : std::runtime_error(_what) {}
+    RuntimeError(const std::string &_what) : std::runtime_error(_what) {}
 
     RuntimeError(const std::string &_what, const ast::Location &_where)
         : std::runtime_error(_what), where(_where) {}

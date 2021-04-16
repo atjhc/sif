@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Node.h"
 #include "ast/Expression.h"
+#include "ast/Node.h"
 
 #include <ostream>
 

@@ -37,4 +37,4 @@ static inline std::ostream &operator<<(std::ostream &out, const ParseLocation &l
         }                                                       \
     while (0)
 
-typedef void* yyscan_t;
+typedef void *yyscan_t;

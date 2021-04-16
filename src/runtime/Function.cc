@@ -14,26 +14,31 @@
 //  limitations under the License.
 //
 
-#include "Common.h"
 #include "runtime/Function.h"
-#include "runtime/Interpreter.h"
+#include "Common.h"
 #include "parser/Parser.h"
+#include "runtime/Interpreter.h"
 #include "utilities/devnull.h"
 
-#include <sstream>
 #include <chrono>
+#include <sstream>
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-void Function::expectArgumentCount(const Message &m, const ast::Location &location, int count) const {
+void Function::expectArgumentCount(const Message &m, const ast::Location &location,
+                                   int count) const {
     if (m.arguments.size() != count) {
-        throw RuntimeError(String("expected ", count, (count == 1 ? " argument" : " arguments"), " here, but got ", m.arguments.size()), location);
+        throw RuntimeError(String("expected ", count, (count == 1 ? " argument" : " arguments"),
+                                  " here, but got ", m.arguments.size()),
+                           location);
     }
 }
 
 void Function::expectNumberAt(const Message &m, const ast::Location &location, int index) const {
     if (!m.arguments[index].isNumber()) {
-        throw RuntimeError(String("expected number here, but got '", m.arguments[index].asString(), "'"), location);
+        throw RuntimeError(
+            String("expected number here, but got '", m.arguments[index].asString(), "'"),
+            location);
     }
 }
 
@@ -56,7 +61,8 @@ Value MaxFunction::valueOf(Interpreter &, const Message &m, const ast::Location 
             throw RuntimeError(String("expected number for argument ", i), location);
         }
 
-        if (max < arg) max = arg;
+        if (max < arg)
+            max = arg;
     }
     return max;
 }
@@ -74,7 +80,8 @@ Value MinFunction::valueOf(Interpreter &, const Message &m, const ast::Location 
             throw RuntimeError(String("expected number for argument ", i), location);
         }
 
-        if (min > arg) min = arg;
+        if (min > arg)
+            min = arg;
     }
     return min;
 }
@@ -115,12 +122,14 @@ Value MeanFunction::valueOf(Interpreter &, const Message &m, const ast::Location
     return Value(accum.asFloat() / (double)m.arguments.size());
 }
 
-Value LengthFunction::valueOf(Interpreter &, const Message &m, const ast::Location &location) const {
+Value LengthFunction::valueOf(Interpreter &, const Message &m,
+                              const ast::Location &location) const {
     expectArgumentCount(m, location, 1);
     return m.arguments[0].asString().length();
 }
 
-Value OffsetFunction::valueOf(Interpreter &, const Message &m, const ast::Location &location) const {
+Value OffsetFunction::valueOf(Interpreter &, const Message &m,
+                              const ast::Location &location) const {
     expectArgumentCount(m, location, 2);
     auto &v1 = m.arguments[0];
     auto &v2 = m.arguments[1];
@@ -129,15 +138,18 @@ Value OffsetFunction::valueOf(Interpreter &, const Message &m, const ast::Locati
     return result == std::string::npos ? Value(0) : Value(result);
 }
 
-Value SecondsFunction::valueOf(Interpreter &, const Message &m, const ast::Location &location) const {
+Value SecondsFunction::valueOf(Interpreter &, const Message &m,
+                               const ast::Location &location) const {
     expectArgumentCount(m, location, 0);
 
     std::chrono::system_clock::time_point timePoint = std::chrono::system_clock::now();
     std::chrono::system_clock::duration duration = timePoint.time_since_epoch();
-    return Value(duration.count() * std::chrono::system_clock::period::num / std::chrono::system_clock::period::den);
+    return Value(duration.count() * std::chrono::system_clock::period::num /
+                 std::chrono::system_clock::period::den);
 }
 
-Value ValueFunction::valueOf(Interpreter &r, const Message &m, const ast::Location &location) const {
+Value ValueFunction::valueOf(Interpreter &r, const Message &m,
+                             const ast::Location &location) const {
     expectArgumentCount(m, location, 1);
     auto expressionString = m.arguments[0].asString();
 
@@ -150,7 +162,8 @@ Value ValueFunction::valueOf(Interpreter &r, const Message &m, const ast::Locati
     return std::any_cast<Value>(result->accept(r));
 }
 
-Value RandomFunction::valueOf(Interpreter &r, const Message &m, const ast::Location &location) const {
+Value RandomFunction::valueOf(Interpreter &r, const Message &m,
+                              const ast::Location &location) const {
     expectArgumentCount(m, location, 1);
     expectNumberAt(m, location, 0);
     auto max = m.arguments[0].asInteger();
@@ -158,18 +171,23 @@ Value RandomFunction::valueOf(Interpreter &r, const Message &m, const ast::Locat
     return long(r.random()() * max) + 1;
 }
 
-Value ParamFunction::valueOf(Interpreter &interpreter, const Message &m, const ast::Location &location) const {
+Value ParamFunction::valueOf(Interpreter &interpreter, const Message &m,
+                             const ast::Location &location) const {
     expectArgumentCount(m, location, 1);
     expectNumberAt(m, location, 0);
     auto index = m.arguments[0].asInteger();
 
-    if (index < 0) return Value();
-    if (index == 0) return interpreter.currentFrame().message.name;
-    if (index - 1 >= interpreter.currentFrame().message.arguments.size()) return Value();
+    if (index < 0)
+        return Value();
+    if (index == 0)
+        return interpreter.currentFrame().message.name;
+    if (index - 1 >= interpreter.currentFrame().message.arguments.size())
+        return Value();
     return interpreter.currentFrame().message.arguments[index - 1];
 }
 
-Value ParamsFunction::valueOf(Interpreter &r, const Message &m, const ast::Location &location) const {
+Value ParamsFunction::valueOf(Interpreter &r, const Message &m,
+                              const ast::Location &location) const {
     std::ostringstream ss;
     auto &message = r.currentFrame().message;
     ss << message.name;
@@ -187,19 +205,22 @@ Value ParamsFunction::valueOf(Interpreter &r, const Message &m, const ast::Locat
     return ss.str();
 }
 
-Value ParamCountFunction::valueOf(Interpreter &r, const Message &m, const ast::Location &location) const {
+Value ParamCountFunction::valueOf(Interpreter &r, const Message &m,
+                                  const ast::Location &location) const {
     expectArgumentCount(m, location, 0);
 
     return r.currentFrame().message.arguments.size();
 }
 
-Value ResultFunction::valueOf(Interpreter &r, const Message &m, const ast::Location &location) const {
+Value ResultFunction::valueOf(Interpreter &r, const Message &m,
+                              const ast::Location &location) const {
     expectArgumentCount(m, location, 0);
 
     return r.currentFrame().resultValue;
 }
 
-Value TargetFunction::valueOf(Interpreter &r, const Message &m, const ast::Location &location) const {
+Value TargetFunction::valueOf(Interpreter &r, const Message &m,
+                              const ast::Location &location) const {
     expectArgumentCount(m, location, 0);
 
     return Value(r.currentFrame().target);

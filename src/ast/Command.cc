@@ -25,15 +25,13 @@ Command::Command(Owned<Identifier> &n, Owned<ExpressionList> &args)
 Command::Command(Owned<Identifier> &n, Owned<Expression> &arg)
     : name(std::move(n)), arguments(MakeOwned<ExpressionList>(arg)) {}
 
-Command::Command(Owned<Identifier> &n)
-    : name(std::move(n)), arguments(nullptr) {}
+Command::Command(Owned<Identifier> &n) : name(std::move(n)), arguments(nullptr) {}
 
-Command::Command(Identifier *n)
-    : name(n), arguments(nullptr) {}
+Command::Command(Identifier *n) : name(n), arguments(nullptr) {}
 
 Put::Put(Owned<Expression> &e, Preposition p, Owned<Identifier> &t)
     : Command(new Identifier("put")), expression(std::move(e)), preposition(p),
-        target(std::move(t)) {}
+      target(std::move(t)) {}
 
 Put::Put(Owned<Expression> &e)
     : Command(new Identifier("put")), expression(std::move(e)), target(nullptr) {}

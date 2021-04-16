@@ -27,8 +27,7 @@ RangeChunk::RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee, Own
 RangeChunk::RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee)
     : Chunk(t), start(std::move(se)), end(std::move(ee)) {}
 
-RangeChunk::RangeChunk(Type t, Owned<Expression> &se)
-    : Chunk(t), start(std::move(se)) {}
+RangeChunk::RangeChunk(Type t, Owned<Expression> &se) : Chunk(t), start(std::move(se)) {}
 
 LastChunk::LastChunk(Type t, Owned<Expression> &e) : Chunk(t, e) {}
 LastChunk::LastChunk(Type t) : Chunk(t) {}

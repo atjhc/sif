@@ -18,8 +18,8 @@
 
 #include "Common.h"
 
-#include <ostream>
 #include <any>
+#include <ostream>
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -63,8 +63,7 @@ struct Subtract;
 struct Multiply;
 struct Divide;
 
-template <typename Type>
-struct Literal;
+template <typename Type> struct Literal;
 typedef Literal<double> FloatLiteral;
 typedef Literal<int64_t> IntLiteral;
 typedef Literal<std::string> StringLiteral;

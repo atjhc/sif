@@ -20,8 +20,8 @@
 #include "ast/Descriptor.h"
 #include "runtime/Value.h"
 
-#include <vector>
 #include <string>
+#include <vector>
 
 CH_RUNTIME_NAMESPACE_BEGIN
 

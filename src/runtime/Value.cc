@@ -75,7 +75,7 @@ bool Value::isInteger() const {
     return false;
 }
 
-int64_t Value::asInteger() const { 
+int64_t Value::asInteger() const {
     if (auto v = std::get_if<int64_t>(&value)) {
         return *v;
     }
@@ -104,7 +104,7 @@ bool Value::isFloat() const {
     return false;
 }
 
-double Value::asFloat() const { 
+double Value::asFloat() const {
     if (auto v = std::get_if<double>(&value)) {
         return *v;
     }
@@ -121,11 +121,9 @@ double Value::asFloat() const {
     throw RuntimeError("expected floating point type");
 }
 
-bool Value::isString() const {
-    return std::holds_alternative<std::string>(value);
-}
+bool Value::isString() const { return std::holds_alternative<std::string>(value); }
 
-std::string Value::asString() const { 
+std::string Value::asString() const {
     if (auto v = std::get_if<std::string>(&value)) {
         return *v;
     }
@@ -148,9 +146,7 @@ std::string Value::asString() const {
     assert(false);
 }
 
-bool Value::isObject() const {
-    return std::holds_alternative<Strong<Object>>(value);
-}
+bool Value::isObject() const { return std::holds_alternative<Strong<Object>>(value); }
 
 Strong<Object> Value::asObject() const {
     if (auto o = std::get_if<Strong<Object>>(&value)) {
@@ -201,21 +197,15 @@ Value Value::operator>=(const Value &rhs) const {
     return asFloat() >= rhs.asFloat();
 }
 
-Value Value::operator&&(const Value &rhs) const {
-    return asBool() && rhs.asBool();
-}
+Value Value::operator&&(const Value &rhs) const { return asBool() && rhs.asBool(); }
 
-Value Value::operator||(const Value &rhs) const {
-    return asBool() || rhs.asBool();
-}
+Value Value::operator||(const Value &rhs) const { return asBool() || rhs.asBool(); }
 
 Value Value::contains(const Value &rhs) const {
     return asString().find(rhs.asString()) != std::string::npos;
 }
 
-Value Value::concat(const Value &rhs) const {
-    return Value(asString() + rhs.asString());
-}
+Value Value::concat(const Value &rhs) const { return Value(asString() + rhs.asString()); }
 
 Value Value::concatSpace(const Value &rhs) const {
     return Value(asString() + " " + rhs.asString());

@@ -28,7 +28,7 @@ struct PrettyPrinterConfig {
     unsigned int tabSize = 2;
 };
 
-class PrettyPrinter: AnyVisitor {
+class PrettyPrinter : AnyVisitor {
   public:
     PrettyPrinter(const PrettyPrinterConfig &config = PrettyPrinterConfig());
 

@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Node.h"
 #include "ast/Expression.h"
+#include "ast/Node.h"
 #include "ast/Statement.h"
 
 CH_AST_NAMESPACE_BEGIN
@@ -33,7 +33,7 @@ struct Command : Statement {
     Command(Owned<Identifier> &n, Owned<Expression> &arg);
     Command(Owned<Identifier> &n);
     Command(Identifier *n);
-    
+
     virtual std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 

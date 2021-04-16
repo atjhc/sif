@@ -20,7 +20,8 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Strong<Object> Object::Make(const std::string &name, const std::string &source, const Strong<Object> &parent) {
+Strong<Object> Object::Make(const std::string &name, const std::string &source,
+                            const Strong<Object> &parent) {
     if (source.empty()) {
         return Strong<Object>(new Object(name, source, nullptr, parent));
     }
@@ -37,7 +38,8 @@ Strong<Object> Object::Make(const std::string &name, const std::string &source, 
     return Strong<Object>(new Object(name, source, std::move(program), parent));
 }
 
-Object::Object(const std::string &name, const std::string &source, Owned<ast::Program> program, const Strong<Object> &parent)
+Object::Object(const std::string &name, const std::string &source, Owned<ast::Program> program,
+               const Strong<Object> &parent)
     : _name(name), _source(source), _program(std::move(program)), _parent(parent) {
 
     if (_program) {
@@ -51,7 +53,8 @@ Object::Object(const std::string &name, const std::string &source, Owned<ast::Pr
 
             // TODO: catch handler redifinition errors in the parser.
             if (map->find(name) != map->end()) {
-                throw RuntimeError("invalid redefinition of handler '" + name + "'", handler->location);
+                throw RuntimeError("invalid redefinition of handler '" + name + "'",
+                                   handler->location);
             }
             map->insert({lowercase(name), *handler});
         }
@@ -81,8 +84,6 @@ Optional<Value> Object::valueForProperty(const Property &p) const {
     return Empty;
 }
 
-bool Object::setValueForProperty(const Value &v, const Property &p) {
-    return false;
-}
+bool Object::setValueForProperty(const Value &v, const Property &p) { return false; }
 
 CH_RUNTIME_NAMESPACE_END

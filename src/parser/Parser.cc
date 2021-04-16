@@ -18,8 +18,8 @@
 
 #include "ast/Chunk.h"
 #include "ast/Command.h"
-#include "ast/Repeat.h"
 #include "ast/Program.h"
+#include "ast/Repeat.h"
 #include "utilities/chunk.h"
 
 // clang-format off
@@ -34,14 +34,12 @@ using namespace chatter::ast;
 
 CH_NAMESPACE_BEGIN
 
-ParserContext::ParserContext(const ParserConfig &c, const std::string &s) 
-    : config(c), source(s) {}
+ParserContext::ParserContext(const ParserConfig &c, const std::string &s) : config(c), source(s) {}
 
 void ParserContext::error(Location location, const std::string &msg) {
     numberOfErrors++;
 
-    config.err << config.fileName << ":" << location << ": error: "
-               << msg << std::endl;
+    config.err << config.fileName << ":" << location << ": error: " << msg << std::endl;
 
     auto lineChunk = chunk(line, location.lineNumber - 1, source);
     auto lineString = lineChunk.get();
@@ -80,8 +78,8 @@ void Parser::parse(ParserContext &context, const std::string &source) {
 
     if (context.numberOfErrors > 0) {
         context.config.err << context.numberOfErrors
-                   << (context.numberOfErrors > 1 ? " errors " : " error ") << "generated."
-                   << std::endl;
+                           << (context.numberOfErrors > 1 ? " errors " : " error ") << "generated."
+                           << std::endl;
     }
 }
 

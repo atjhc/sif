@@ -15,8 +15,8 @@
 //
 
 #include "ast/Repeat.h"
-#include "ast/Statement.h"
 #include "ast/Identifier.h"
+#include "ast/Statement.h"
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -26,9 +26,9 @@ RepeatCount::RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s)
     : Repeat(s), countExpression(std::move(cs)) {}
 
 RepeatRange::RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee,
-            bool asc, Owned<StatementList> &s)
+                         bool asc, Owned<StatementList> &s)
     : Repeat(s), variable(std::move(v)), startExpression(std::move(se)),
-        endExpression(std::move(ee)), ascending(asc) {}
+      endExpression(std::move(ee)), ascending(asc) {}
 
 RepeatCondition::RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl)
     : Repeat(sl), condition(std::move(c)), conditionValue(cv) {}

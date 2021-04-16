@@ -15,12 +15,12 @@
 //
 
 #include "runtime/Interpreter.h"
+#include "ast/Descriptor.h"
+#include "ast/Property.h"
 #include "runtime/Object.h"
 #include "runtime/Property.h"
 #include "utilities/chunk.h"
 #include "utilities/devnull.h"
-#include "ast/Property.h"
-#include "ast/Descriptor.h"
 
 #include <math.h>
 
@@ -31,7 +31,8 @@ CH_RUNTIME_NAMESPACE_BEGIN
 using namespace ast;
 
 std::function<float()> InterpreterConfig::defaultRandom() {
-    static thread_local std::default_random_engine generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    static thread_local std::default_random_engine generator(
+        std::chrono::high_resolution_clock::now().time_since_epoch().count());
     return [&]() {
         std::uniform_real_distribution<float> distribution(0.0, 1.0);
         return distribution(generator);
@@ -39,11 +40,10 @@ std::function<float()> InterpreterConfig::defaultRandom() {
 }
 
 #if !defined(DEBUG)
-    #define trace(x)
+#define trace(x)
 #endif
 
-Interpreter::Interpreter(const InterpreterConfig &config)
-    : _config(config) {
+Interpreter::Interpreter(const InterpreterConfig &config) : _config(config) {
 
     add("sin", new OneArgumentFunction<sin>());
     add("cos", new OneArgumentFunction<cos>());
@@ -64,13 +64,13 @@ Interpreter::Interpreter(const InterpreterConfig &config)
     add("max", new MaxFunction());
     add("min", new MinFunction());
     add("sum", new SumFunction());
-    add("average", new MeanFunction());    
+    add("average", new MeanFunction());
     add("length", new LengthFunction());
     add("offset", new OffsetFunction());
     add("random", new RandomFunction());
     add("params", new ParamsFunction());
     add("paramCount", new ParamCountFunction());
-    add("param", new ParamFunction());    
+    add("param", new ParamFunction());
     add("result", new ResultFunction());
     add("value", new ValueFunction());
     add("target", new TargetFunction());
@@ -81,7 +81,8 @@ Interpreter::Interpreter(const InterpreterConfig &config)
     // Skipping these: ticks, annuity, charToNum, numToChar, compound
 }
 
-bool Interpreter::send(const Message &message, Strong<Object> target, const ast::Location &location) {
+bool Interpreter::send(const Message &message, Strong<Object> target,
+                       const ast::Location &location) {
     trace(std::string("send(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
@@ -110,7 +111,8 @@ bool Interpreter::send(const Message &message, Strong<Object> target, const ast:
     return handled;
 }
 
-Value Interpreter::call(const Message &message, Strong<Object> target, const ast::Location &location) {
+Value Interpreter::call(const Message &message, Strong<Object> target,
+                        const ast::Location &location) {
     trace(std::string("call(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
@@ -136,13 +138,9 @@ Value Interpreter::call(const Message &message, Strong<Object> target, const ast
     return result;
 }
 
-const InterpreterStackFrame& Interpreter::currentFrame() {
-    return _stack.top();
-}
+const InterpreterStackFrame &Interpreter::currentFrame() { return _stack.top(); }
 
-std::function<float()> Interpreter::random() {
-    return _config.random;
-}
+std::function<float()> Interpreter::random() { return _config.random; }
 
 #pragma mark - Private
 
@@ -154,7 +152,7 @@ void Interpreter::set(const std::string &name, const Value &value) {
     const auto &globalNames = _stack.top().globals;
     const auto &i = globalNames.find(name);
     if (i != globalNames.end()) {
-       _globals.set(name, value);
+        _globals.set(name, value);
         return;
     }
     return _stack.top().locals.set(name, value);
@@ -204,32 +202,22 @@ void Interpreter::execute(const ast::StatementList &statements) {
 #if defined(DEBUG)
 void Interpreter::trace(const std::string &msg) const {
     if (_config.enableTracing) {
-       _config.stdout << "core: " << msg << std::endl;
+        _config.stdout << "core: " << msg << std::endl;
     }
 }
 #endif
 
 #pragma mark - Unused
 
-std::any Interpreter::visitAny(const ast::Program &) {
-    return std::any();
-}
+std::any Interpreter::visitAny(const ast::Program &) { return std::any(); }
 
-std::any Interpreter::visitAny(const ast::Handler &) {
-    return std::any();
-}
+std::any Interpreter::visitAny(const ast::Handler &) { return std::any(); }
 
-std::any Interpreter::visitAny(const ast::StatementList &) {
-    return std::any();
-}
+std::any Interpreter::visitAny(const ast::StatementList &) { return std::any(); }
 
-std::any Interpreter::visitAny(const ast::IdentifierList &) {
-    return std::any();
-}
+std::any Interpreter::visitAny(const ast::IdentifierList &) { return std::any(); }
 
-std::any Interpreter::visitAny(const ast::ExpressionList &) {
-    return std::any();
-}
+std::any Interpreter::visitAny(const ast::ExpressionList &) { return std::any(); }
 
 #pragma mark - StatementVisitor
 
@@ -307,12 +295,12 @@ std::any Interpreter::visitAny(const RepeatCondition &s) {
     return std::any();
 }
 
-std::any Interpreter::visitAny(const ExitRepeat &) { 
+std::any Interpreter::visitAny(const ExitRepeat &) {
     _stack.top().exitingRepeat = true;
     return std::any();
 }
 
-std::any Interpreter::visitAny(const NextRepeat &) { 
+std::any Interpreter::visitAny(const NextRepeat &) {
     _stack.top().skippingRepeat = true;
     return std::any();
 }
@@ -365,13 +353,14 @@ std::any Interpreter::visitAny(const Do &c) {
         auto languageName = std::any_cast<Value>(c.language->accept(*this));
 
         // TODO: Call out to another language.
-        throw RuntimeError("unrecognized language '" + languageName.asString() + "'", c.language->location);
+        throw RuntimeError("unrecognized language '" + languageName.asString() + "'",
+                           c.language->location);
     }
 
     auto value = std::any_cast<Value>(c.expression->accept(*this));
     auto valueString = value.asString();
 
-    Parser parser(ParserConfig("<runtime>",_config.stderr));
+    Parser parser(ParserConfig("<runtime>", _config.stderr));
     Owned<StatementList> result;
 
     if ((result = parser.parseStatements(valueString)) == nullptr) {
@@ -421,7 +410,7 @@ std::any Interpreter::visitAny(const Put &s) {
             break;
         }
     } else {
-       _config.stdout << value.asString() << std::endl;
+        _config.stdout << value.asString() << std::endl;
     }
 
     return std::any();
@@ -564,9 +553,9 @@ std::any Interpreter::visitAny(const ast::Property &p) {
 }
 
 std::any Interpreter::visitAny(const ast::Descriptor &d) {
-    auto& name = d.name->name;
+    auto &name = d.name->name;
     if (!d.value) {
-        auto& name = d.name->name;
+        auto &name = d.name->name;
         // Check for special "me" descriptor.
         if (name == "me") {
             return Value(_stack.top().target);
@@ -605,7 +594,7 @@ void checkNumberOperand(const Value &value, const Location &location) {
 std::any Interpreter::visitAny(const Binary &e) {
     auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
     auto rhs = std::any_cast<Value>(e.rightExpression->accept(*this));
-    
+
     if (e.binaryOperator == Binary::IsA) {
         auto typeName = lowercase(rhs.asString());
         if (typeName == "number") {
@@ -622,7 +611,8 @@ std::any Interpreter::visitAny(const Binary &e) {
             return Value(lhs.isEmpty());
         }
         // TODO: Check for additional host defined types.
-        throw RuntimeError("unknown type name '" + rhs.asString() + "'", e.rightExpression->location);
+        throw RuntimeError("unknown type name '" + rhs.asString() + "'",
+                           e.rightExpression->location);
     }
 
     switch (e.binaryOperator) {

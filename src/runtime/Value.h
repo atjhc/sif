@@ -22,36 +22,35 @@
 
 #include <cstdlib>
 #include <iomanip>
+#include <iostream>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <variant>
-#include <iostream>
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
 class Object;
 
 class Value {
-public:
+  public:
     Value() = default;
 
     Value(const Value &v) = default;
     Value(Value &&v) = default;
 
-    Value& operator=(const Value &v) {
+    Value &operator=(const Value &v) {
         value = v.value;
         return *this;
     }
-    Value& operator=(Value &&v) {
+    Value &operator=(Value &&v) {
         value = std::move(v.value);
         return *this;
     }
 
-    template<typename T>
-    Value(const T &v) : value(v) {}
+    template <typename T> Value(const T &v) : value(v) {}
     Value(const std::size_t &s) : value(static_cast<int64_t>(s)) {}
-    
+
     bool isEmpty() const;
     bool isNumber() const;
 
@@ -96,7 +95,7 @@ public:
     Value operator%(const Value &rhs) const;
     Value operator^(const Value &rhs) const;
 
-private:
+  private:
     std::variant<std::string, double, int64_t, bool, Strong<Object>> value;
 };
 

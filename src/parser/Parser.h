@@ -36,11 +36,7 @@ struct ParserConfig {
 };
 
 struct ParserContext {
-    enum Mode {
-        Program,
-        Statements,
-        Expression
-    };
+    enum Mode { Program, Statements, Expression };
 
     ParserConfig config;
 
@@ -65,7 +61,7 @@ struct ParserContext {
 class Parser {
   public:
     Parser(const ParserConfig &config) : _config(config) {}
- 
+
     Owned<ast::Program> parseProgram(const std::string &source);
     Owned<ast::StatementList> parseStatements(const std::string &source);
     Owned<ast::Expression> parseExpression(const std::string &source);
