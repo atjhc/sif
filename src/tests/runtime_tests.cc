@@ -49,6 +49,6 @@ TEST_CASE(Interpreter, All) {
         Interpreter core(coreConfig);
 
         ASSERT_NO_THROW(core.send(Message("begin"), object)) << path << std::endl;
-        ASSERT_EQ(ss.str(), expectedResult) << path << std::endl;
+        ASSERT_EQ(ss.str(), expectedResult) << path << std::endl << "Got: " << ss.str() << std::endl;
     }
 }

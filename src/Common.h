@@ -18,6 +18,7 @@
 
 #include <string>
 #include <optional>
+#include <sstream>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -73,6 +74,17 @@ template<class T, class... Args>
 std::shared_ptr<T>
 MakeStrong(Args&&... args) {
     return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+static inline std::string String() {
+    return std::string();
+}
+
+template <typename T, typename... Args>
+static inline std::string String(T first, Args... args) {
+    std::ostringstream ss;
+    ss << first << String(args...);
+    return ss.str();
 }
 
 CH_NAMESPACE_END

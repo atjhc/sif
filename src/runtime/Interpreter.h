@@ -87,8 +87,8 @@ class Interpreter : public ast::AnyVisitor {
 
     Interpreter(const InterpreterConfig &c = InterpreterConfig());
 
-    bool send(const Message &message, Strong<Object> target = nullptr);
-    Value call(const Message &message, Strong<Object> target = nullptr);
+    bool send(const Message &message, Strong<Object> target = nullptr, const ast::Location &location = ast::Location());
+    Value call(const Message &message, Strong<Object> target = nullptr, const ast::Location &location = ast::Location());
 
     void add(const std::string &name, Function *fn);
 
@@ -103,7 +103,7 @@ class Interpreter : public ast::AnyVisitor {
     void execute(const ast::Handler &handler, const std::vector<Value> &arguments);
     void execute(const ast::StatementList &statements);
 
-    Value evaluateFunction(const Message &message);
+    Value evaluateFunction(const Message &message, const ast::Location &location);
 
 #if defined(DEBUG)
     void trace(const std::string &msg) const;

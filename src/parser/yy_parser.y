@@ -185,7 +185,7 @@ handler
                 $$->location = @2.first;
             } else {
                 auto msg = "Expected " + $2->name + ", got " + $7->name;
-                error(@$, msg.c_str());
+                error(@7, msg.c_str());
             }
         } else {
             $$ = nullptr;

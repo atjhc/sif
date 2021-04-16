@@ -1,0 +1,20 @@
+on begin
+  put min(0, -100, 80, 100.3)
+  put max(-100.1, 10, 20, 30)
+  put sum(0.5, 10, 89)
+  put average(10, 30, 100)
+  put trunc(100.12345)
+  put round(0.5) && round(1.4)
+  put offset("world", "hello world")
+  put length("this is a string")
+  testParams one, two, three
+  put the result
+end begin
+
+on testParams
+  put the params
+  put param(0) && param(1) && param(2) && param(3) && param(4)
+  put the paramCount
+  put the target
+  return 10
+end testParams

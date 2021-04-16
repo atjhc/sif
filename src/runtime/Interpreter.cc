@@ -45,19 +45,21 @@ std::function<float()> InterpreterConfig::defaultRandom() {
 Interpreter::Interpreter(const InterpreterConfig &config)
     : _config(config) {
 
-    add("sin", new OneArgumentFunction<sinf>());
-    add("cos", new OneArgumentFunction<cosf>());
-    add("tan", new OneArgumentFunction<tanf>());
-    add("atan", new OneArgumentFunction<atanf>());
-    add("abs", new OneArgumentFunction<fabsf>());
-    add("exp", new OneArgumentFunction<expf>());
-    add("exp2", new OneArgumentFunction<exp2f>());
-    add("log2", new OneArgumentFunction<log2f>());
-    add("log10", new OneArgumentFunction<log10f>());
-    add("ln", new OneArgumentFunction<logf>());
-    add("round", new OneArgumentFunction<roundf>());
-    add("sqrt", new OneArgumentFunction<sqrtf>());
-    add("trunc", new OneArgumentFunction<truncf>());
+    add("sin", new OneArgumentFunction<sin>());
+    add("cos", new OneArgumentFunction<cos>());
+    add("tan", new OneArgumentFunction<tan>());
+    add("atan", new OneArgumentFunction<atan>());
+    add("abs", new OneArgumentFunction<fabs>());
+    add("exp", new OneArgumentFunction<exp>());
+    add("exp2", new OneArgumentFunction<exp2>());
+    add("exp1", new OneArgumentFunction<expm1>());
+    add("log2", new OneArgumentFunction<log2>());
+    add("log10", new OneArgumentFunction<log10>());
+    add("ln", new OneArgumentFunction<log>());
+    add("ln1", new OneArgumentFunction<log1p>());
+    add("round", new OneArgumentFunction<round>());
+    add("sqrt", new OneArgumentFunction<sqrt>());
+    add("trunc", new OneArgumentFunction<trunc>());
 
     add("max", new MaxFunction());
     add("min", new MinFunction());
@@ -72,23 +74,14 @@ Interpreter::Interpreter(const InterpreterConfig &config)
     add("result", new ResultFunction());
     add("value", new ValueFunction());
     add("target", new TargetFunction());
+    add("seconds", new SecondsFunction());
+    add("secs", new SecondsFunction());
 
-    // TODO: add missing functions
-    // runtime.add("seconds", new OneArgumentFunction<float(float)>(roundf));
-    // runtime.add("time", new OneArgumentFunction<float(float)>(roundf));
-    // runtime.add("date", new OneArgumentFunction<float(float)>(roundf));
-
-    // Skipping these.
-    // runtime.add("ticks", new OneArgumentFunction<float(float)>(roundf));
-    // runtime.add("ln1", new OneArgumentFunction<float(float)>(log2f));
-    // runtime.add("exp1", new OneArgumentFunction<float(float)>(expf));
-    // runtime.add("annuity", new OneArgumentFunction<float(float)>(fabs));
-    // runtime.add("charToNum", new OneArgumentFunction<float(float)>(fabs));
-    // runtime.add("numToChar", new OneArgumentFunction<float(float)>(fabs));
-    // runtime.add("compound", new OneArgumentFunction<float(float)>(fabs));
+    // TODO: add missing functions: date, time
+    // Skipping these: ticks, annuity, charToNum, numToChar, compound
 }
 
-bool Interpreter::send(const Message &message, Strong<Object> target) {
+bool Interpreter::send(const Message &message, Strong<Object> target, const ast::Location &location) {
     trace(std::string("send(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
@@ -111,17 +104,17 @@ bool Interpreter::send(const Message &message, Strong<Object> target) {
 
     bool handled = true;
     if (passing) {
-        handled = send(message, target->parent());
+        handled = send(message, target->parent(), location);
     }
 
     return handled;
 }
 
-Value Interpreter::call(const Message &message, Strong<Object> target) {
+Value Interpreter::call(const Message &message, Strong<Object> target, const ast::Location &location) {
     trace(std::string("call(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
-        return evaluateFunction(message);
+        return evaluateFunction(message, location);
     }
 
     Value result;
@@ -137,7 +130,7 @@ Value Interpreter::call(const Message &message, Strong<Object> target) {
     }
 
     if (passing) {
-        return call(message, target->parent());
+        return call(message, target->parent(), location);
     }
 
     return result;
@@ -530,12 +523,12 @@ std::any Interpreter::visitAny(const Divide &c) {
 
 #pragma mark - Functions
 
-Value Interpreter::evaluateFunction(const Message &message) {
+Value Interpreter::evaluateFunction(const Message &message, const ast::Location &location) {
     auto fn = _functions.find(lowercase(message.name));
     if (fn != _functions.end()) {
-        return fn->second->valueOf(*this, message);
+        return fn->second->valueOf(*this, message, location);
     }
-    throw RuntimeError("unrecognized handler " + message.name);
+    throw RuntimeError(String("unrecognized function '", message.name, "'"), location);
 }
 
 #pragma mark - ExpressionVisitor
@@ -596,7 +589,7 @@ std::any Interpreter::visitAny(const ast::Descriptor &d) {
     if (fn != _functions.end()) {
         auto arg = std::any_cast<Value>(d.value->accept(*this));
         message.arguments.push_back(arg);
-        return fn->second->valueOf(*this, message);
+        return fn->second->valueOf(*this, message, d.location);
     }
 
     // TODO: Find an object using the descriptor.
