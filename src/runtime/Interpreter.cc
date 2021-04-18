@@ -305,23 +305,13 @@ std::any Interpreter::visitAny(const NextRepeat &) {
 
 std::any Interpreter::visitAny(const Exit &s) {
     trace("exit(" + s.messageKey->name + ")");
-    if (s.messageKey->name == _stack.top().message.name) {
-        _stack.top().exiting = true;
-    } else {
-        throw RuntimeError("unexpected identifier " + s.messageKey->name, s.location);
-    }
-
+    _stack.top().exiting = true;
     return std::any();
 }
 
 std::any Interpreter::visitAny(const Pass &s) {
     trace("pass(" + s.messageKey->name + ")");
-    if (s.messageKey->name == _stack.top().message.name) {
-        _stack.top().passing = true;
-    } else {
-        throw RuntimeError("unexpected identifier " + s.messageKey->name, s.location);
-    }
-
+    _stack.top().passing = true;
     return std::any();
 }
 
@@ -359,12 +349,12 @@ std::any Interpreter::visitAny(const Do &c) {
     auto valueString = value.asString();
 
     Parser parser(ParserConfig("<runtime>", _config.stderr));
-    Owned<StatementList> result;
+    Owned<StatementList> statements;
 
-    if ((result = parser.parseStatements(valueString)) == nullptr) {
+    if ((statements = parser.parseStatements(valueString)) == nullptr) {
         throw RuntimeError("failed to parse script", c.location);
     }
-    execute(*result);
+    execute(*statements);
 
     return std::any();
 }

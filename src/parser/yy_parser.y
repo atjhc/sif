@@ -130,7 +130,7 @@ using namespace chatter::ast;
 %nterm <Owned<Program>> program
 %nterm <Owned<Handler>> handlerDecl handler
 %nterm <Owned<Identifier>> messageKey
-%nterm <Owned<IdentifierList>> maybeIdentifierList identifierList
+%nterm <Owned<IdentifierList>> identifierList
 %nterm <Owned<StatementList>> block matchedBlock unmatchedBlock elseMatched
 %nterm <Owned<Statement>> matched unmatched innerMatched simpleStatement keywordStatement commandStatement
 %nterm <Owned<Statement>> repeatStatement repeat repeatForever repeatCount repeatCondition repeatRange
@@ -187,16 +187,15 @@ handlerDecl
     }
 
 handler
-    : messageKey maybeIdentifierList nl
+    : messageKey { ctx.messageKey = $1->name; } identifierList nl
         block
       END messageKey {
-        if ($1 && $4 && $6) {
-            if ($1->name == $6->name) {
-                $$ = MakeOwned<Handler>(Handler::HandlerKind, $1, $2, $4);
+        if ($1 && $5 && $7) {
+            if ($1->name == $7->name) {
+                $$ = MakeOwned<Handler>(Handler::HandlerKind, $1, $3, $5);
                 $$->location = @1.first;
             } else {
-                auto msg = "Expected " + $1->name + ", got " + $6->name;
-                error(@6, msg.c_str());
+                error(@7, String("expected ", $1->name, ", got ", $7->name));
             }
         } else {
             $$ = nullptr;
@@ -204,17 +203,11 @@ handler
     }
 ;
 
-maybeIdentifierList
+identifierList
     : %empty {
         $$ = nullptr;
     }
-    | identifierList {
-        $$ = std::move($1);
-    }
-;
-
-identifierList
-    : IDENTIFIER {
+    | IDENTIFIER {
         if ($1) {
             $$ = MakeOwned<IdentifierList>();
             $$->add($1);
@@ -334,12 +327,22 @@ keywordStatement
         }
     }
     | EXIT messageKey {
-        $$ = MakeOwned<Exit>($2);
-        $$->location = @1.first;
+        if (ctx.messageKey == $2->name) {
+            $$ = MakeOwned<Exit>($2);
+            $$->location = @1.first;
+        } else {
+            error(@2, String("expected '", ctx.messageKey, "', but got '", $2->name, "'"));
+            $$ = nullptr;
+        }
     }
     | PASS messageKey { 
-        $$ = MakeOwned<Pass>($2);
-        $$->location = @1.first;
+        if (ctx.messageKey == $2->name) {
+            $$ = MakeOwned<Pass>($2);
+            $$->location = @1.first;
+        } else {
+            error(@2, String("expected '", ctx.messageKey, "', but got '", $2->name, "'"));
+            $$ = nullptr;
+        }
     }
     | GLOBAL identifierList {
         $$ = MakeOwned<Global>($2);

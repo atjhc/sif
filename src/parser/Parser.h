@@ -47,6 +47,7 @@ struct ParserContext {
     Mode parsingMode = Program;
     bool selectingMode = true;
     bool parsingRepeat = false;
+    std::string messageKey;
     unsigned int numberOfErrors = 0;
 
     // Result
