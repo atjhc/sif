@@ -132,7 +132,7 @@ using namespace chatter::ast;
 %nterm <Owned<Identifier>> messageKey
 %nterm <Owned<IdentifierList>> identifierList
 %nterm <Owned<StatementList>> block matchedBlock unmatchedBlock elseMatched
-%nterm <Owned<Statement>> matched unmatched innerMatched simpleStatement keywordStatement commandStatement
+%nterm <Owned<Statement>> matchedStatement unmatchedStatement innerMatched simpleStatement keywordStatement commandStatement
 %nterm <Owned<Statement>> repeatStatement repeat repeatForever repeatCount repeatCondition repeatRange
 %nterm <Owned<Expression>> factor literal expression descriptor ifThen functionCall property ordinal constant
 %nterm <Owned<Chunk>> chunk
@@ -277,7 +277,7 @@ block
 ;
 
 matchedBlock
-    : block matched {
+    : block matchedStatement {
         if ($1) {
             $1->add($2);
             $$ = std::move($1);
@@ -288,7 +288,7 @@ matchedBlock
 ;
 
 unmatchedBlock
-    : block unmatched {
+    : block unmatchedStatement {
         if ($1) {
             $1->add($2);
             $$ = std::move($1);
@@ -421,8 +421,8 @@ commandStatement
     }
 ;
 
-matched
-    : ifThen matched elseMatched {
+matchedStatement
+    : ifThen matchedStatement elseMatched {
         if ($1 && $2 && $3) {
             $$ = MakeOwned<If>($1, $2, $3);
             $$->location = @1.first;
@@ -488,8 +488,8 @@ innerMatched
     }
 ;
 
-unmatched
-    : ifThen matched {
+unmatchedStatement
+    : ifThen matchedStatement {
         if ($1 && $2) {
             $$ = MakeOwned<If>($1, $2);
             $$->location = @1.first;
@@ -497,7 +497,7 @@ unmatched
             $$ = nullptr;
         }
     }
-    | ifThen unmatched {
+    | ifThen unmatchedStatement {
         if ($1 && $2) {
             $$ = MakeOwned<If>($1, $2);
             $$->location = @1.first;
@@ -505,7 +505,7 @@ unmatched
             $$ = nullptr;
         }
     }
-    | ifThen innerMatched ELSE unmatched {
+    | ifThen innerMatched ELSE unmatchedStatement {
         if ($1 && $2 && $4) {
             $$ = MakeOwned<If>($1, $2, $4);
             $$->location = @1.first;
@@ -514,7 +514,7 @@ unmatched
         }
 
     }
-    | ifThen matched ELSE unmatched {
+    | ifThen matchedStatement ELSE unmatchedStatement {
         if ($1 && $2 && $4) {
             $$ = MakeOwned<If>($1, $2, $4);
             $$->location = @1.first;
@@ -525,7 +525,7 @@ unmatched
 ;
 
 elseMatched
-    : ELSE matched {
+    : ELSE matchedStatement {
         if ($2) {
             $$ = MakeOwned<StatementList>($2);
             $$->location = @2.first;
