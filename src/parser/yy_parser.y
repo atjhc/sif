@@ -128,7 +128,7 @@ using namespace chatter::ast;
 %token <Owned<Identifier>> IDENTIFIER
 
 %nterm <Owned<Program>> program
-%nterm <Owned<Handler>> handler
+%nterm <Owned<Handler>> handlerDecl handler
 %nterm <Owned<Identifier>> messageKey
 %nterm <Owned<IdentifierList>> maybeIdentifierList identifierList
 %nterm <Owned<StatementList>> block matchedBlock unmatchedBlock elseMatched
@@ -158,13 +158,13 @@ start
 ;
 
 program
-    : handler {
+    : handlerDecl {
         $$ = MakeOwned<Program>();
         if ($1) {
             $$->add($1);
         } 
     }
-    | program NL handler {
+    | program NL handlerDecl {
         $$ = std::move($1);
         if ($3) {
             $$->add($3);
@@ -172,35 +172,31 @@ program
     }
 ;
 
-handler
+handlerDecl
     : %empty {
         $$ = nullptr;
     }
-    | ON messageKey maybeIdentifierList nl
-        block
-      END messageKey {
-        if ($2 && $7) {
-            if ($2->name == $7->name) {
-                $$ = MakeOwned<Handler>(Handler::HandlerKind, $2, $3, $5);
-                $$->location = @2.first;
-            } else {
-                auto msg = "Expected " + $2->name + ", got " + $7->name;
-                error(@7, msg.c_str());
-            }
-        } else {
-            $$ = nullptr;
+    | ON handler {
+        $$ = std::move($2);
+    }
+    | FUNCTION handler {
+        if ($2) {
+            $2->kind = Handler::FunctionKind;
+            $$ = std::move($2);
         }
     }
-    | FUNCTION messageKey maybeIdentifierList nl
+
+handler
+    : messageKey maybeIdentifierList nl
         block
       END messageKey {
-        if ($2 && $7) {
-            if ($2->name == $7->name) {
-                $$ = MakeOwned<Handler>(Handler::FunctionKind, $2, $3, $5);
-                $$->location = @2.first;
+        if ($1 && $4 && $6) {
+            if ($1->name == $6->name) {
+                $$ = MakeOwned<Handler>(Handler::HandlerKind, $1, $2, $4);
+                $$->location = @1.first;
             } else {
-                auto msg = "Expected " + $2->name + ", got " + $7->name;
-                error(@$, msg.c_str());
+                auto msg = "Expected " + $1->name + ", got " + $6->name;
+                error(@6, msg.c_str());
             }
         } else {
             $$ = nullptr;
@@ -668,8 +664,13 @@ factor
     | functionCall {
         $$ = std::move($1);
     }
-    | property {
-        $$ = std::move($1);
+    | chunk OF factor {
+        if ($1 && $3) {
+            $1->expression = std::move($3);
+            $$ = std::move($1);
+        } else {
+            $$ = nullptr;
+        }
     }
     | LPAREN expression RPAREN {
         if ($2) {
@@ -702,6 +703,9 @@ expression
             $$ = nullptr;
         }
     } 
+    | property {
+        $$ = std::move($1);
+    }
     | MINUS expression {
         if ($2) {
             $$ = MakeOwned<Unary>(Unary::Minus, $2);
@@ -910,14 +914,6 @@ expression
             $$ = nullptr;
         }
     }
-    | chunk OF expression {
-        if ($1 && $3) {
-            $1->expression = std::move($3);
-            $$ = std::move($1);
-        } else {
-            $$ = nullptr;
-        }
-    }
 ;
 
 property
@@ -1016,11 +1012,11 @@ chunk
         $$ = MakeOwned<RangeChunk>($3, $2);
         $$->location = @2.first;
     }
-    | chunkType expression {
+    | chunkType factor {
         $$ = MakeOwned<RangeChunk>($1, $2);
         $$->location = @1.first;
     }
-    | chunkType expression TO expression {
+    | chunkType factor TO factor {
         $$ = MakeOwned<RangeChunk>($1, $2, $4);
         $$->location = @1.first;
     }

@@ -30,4 +30,15 @@ struct RuntimeError : std::runtime_error {
         : std::runtime_error(_what), where(_where) {}
 };
 
+struct ArgumentsError : RuntimeError {
+    ArgumentsError(const std::string &what) : RuntimeError(what) {}
+};
+
+struct InvalidArgumentError : ArgumentsError {
+    unsigned int argumentIndex;
+
+    InvalidArgumentError(const std::string &what, unsigned int index)
+        : ArgumentsError(what), argumentIndex(index) {}
+};
+
 CH_RUNTIME_NAMESPACE_END

@@ -25,122 +25,76 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-void Function::expectArgumentCount(const Message &m, const ast::Location &location,
-                                   int count) const {
+void Function::expectArgumentCount(const Message &m, int count) const {
     if (m.arguments.size() != count) {
-        throw RuntimeError(String("expected ", count, (count == 1 ? " argument" : " arguments"),
-                                  " here, but got ", m.arguments.size()),
-                           location);
+        throw ArgumentsError(String("expected ", count, (count == 1 ? " argument" : " arguments"),
+                                  " here, but got ", m.arguments.size()));
     }
 }
 
-void Function::expectNumberAt(const Message &m, const ast::Location &location, int index) const {
+void Function::expectNumberAt(const Message &m, int index) const {
     if (!m.arguments[index].isNumber()) {
-        throw RuntimeError(
+        throw InvalidArgumentError(
             String("expected number here, but got '", m.arguments[index].asString(), "'"),
-            location);
+            index);
     }
 }
 
-void Function::expectArguments(const Message &m, const ast::Location &location) const {
+void Function::expectArguments(const Message &m) const {
     if (m.arguments.size() == 0) {
-        throw RuntimeError(String("expected arguments for function '", m.name, "'"), location);
+        throw ArgumentsError(String("expected arguments for function '", m.name, "'"));
     }
 }
 
-Value MaxFunction::valueOf(Interpreter &, const Message &m, const ast::Location &location) const {
-    expectArguments(m, location);
-    auto max = m.arguments[0];
-    if (!max.isNumber()) {
-        throw RuntimeError(String("expected number for argument 0"), location);
-    }
-
-    for (int i = 1; i < m.arguments.size(); i++) {
+void Function::expectAllNumbers(const Message &m) const {
+    for (int i = 0; i < m.arguments.size(); i++) {
         auto &arg = m.arguments[i];
         if (!arg.isNumber()) {
-            throw RuntimeError(String("expected number for argument ", i), location);
+            throw InvalidArgumentError(String("expected number for argument ", i+1, ", but got '", arg.asString(), "'"), i);
         }
-
-        if (max < arg)
-            max = arg;
     }
-    return max;
 }
 
-Value MinFunction::valueOf(Interpreter &, const Message &m, const ast::Location &location) const {
-    expectArguments(m, location);
-    auto min = m.arguments[0];
-    if (!min.isNumber()) {
-        throw RuntimeError(String("expected number for argument 0"), location);
-    }
-
-    for (int i = 1; i < m.arguments.size(); i++) {
-        auto &arg = m.arguments[i];
-        if (!arg.isNumber()) {
-            throw RuntimeError(String("expected number for argument ", i), location);
-        }
-
-        if (min > arg)
-            min = arg;
-    }
-    return min;
+Value MaxFunction::valueOf(Interpreter &, const Message &m) const {
+    expectArguments(m);
+    expectAllNumbers(m);
+    return *std::max_element(m.arguments.begin(), m.arguments.end());
 }
 
-Value SumFunction::valueOf(Interpreter &, const Message &m, const ast::Location &location) const {
-    expectArguments(m, location);
-    auto accum = m.arguments[0];
-    if (!accum.isNumber()) {
-        throw RuntimeError(String("expected number for argument 0"), location);
-    }
-
-    for (int i = 1; i < m.arguments.size(); i++) {
-        auto &arg = m.arguments[i];
-        if (!arg.isNumber()) {
-            throw RuntimeError(String("expected number for argument ", i), location);
-        }
-
-        accum = accum + arg;
-    }
-    return accum;
+Value MinFunction::valueOf(Interpreter &, const Message &m) const {
+    expectArguments(m);
+    expectAllNumbers(m);
+    return *std::min_element(m.arguments.begin(), m.arguments.end());
 }
 
-Value MeanFunction::valueOf(Interpreter &, const Message &m, const ast::Location &location) const {
-    expectArguments(m, location);
-    auto accum = m.arguments[0];
-    if (!accum.isNumber()) {
-        throw RuntimeError(String("expected number for argument 0"), location);
-    }
-
-    for (int i = 1; i < m.arguments.size(); i++) {
-        auto &arg = m.arguments[i];
-        if (!arg.isNumber()) {
-            throw RuntimeError(String("expected number for argument ", i), location);
-        }
-
-        accum = accum + arg;
-    }
-    return Value(accum.asFloat() / (double)m.arguments.size());
+Value SumFunction::valueOf(Interpreter &, const Message &m) const {
+    expectArguments(m);
+    expectAllNumbers(m);
+    return std::accumulate(m.arguments.begin(), m.arguments.end(), Value(0));
 }
 
-Value LengthFunction::valueOf(Interpreter &, const Message &m,
-                              const ast::Location &location) const {
-    expectArgumentCount(m, location, 1);
+Value MeanFunction::valueOf(Interpreter &, const Message &m) const {
+    expectArguments(m);
+    expectAllNumbers(m);
+    return Value(std::accumulate(m.arguments.begin(), m.arguments.end(), Value(0)).asFloat() / (double)m.arguments.size());
+}
+
+Value LengthFunction::valueOf(Interpreter &, const Message &m) const {
+    expectArgumentCount(m, 1);
     return m.arguments[0].asString().length();
 }
 
-Value OffsetFunction::valueOf(Interpreter &, const Message &m,
-                              const ast::Location &location) const {
-    expectArgumentCount(m, location, 2);
+Value OffsetFunction::valueOf(Interpreter &, const Message &m) const {
+    expectArgumentCount(m, 2);
     auto &v1 = m.arguments[0];
     auto &v2 = m.arguments[1];
 
     auto result = v2.asString().find(v1.asString());
-    return result == std::string::npos ? Value(0) : Value(result);
+    return result == std::string::npos ? Value(0) : Value(result + 1);
 }
 
-Value SecondsFunction::valueOf(Interpreter &, const Message &m,
-                               const ast::Location &location) const {
-    expectArgumentCount(m, location, 0);
+Value SecondsFunction::valueOf(Interpreter &, const Message &m) const {
+    expectArgumentCount(m, 0);
 
     std::chrono::system_clock::time_point timePoint = std::chrono::system_clock::now();
     std::chrono::system_clock::duration duration = timePoint.time_since_epoch();
@@ -148,9 +102,8 @@ Value SecondsFunction::valueOf(Interpreter &, const Message &m,
                  std::chrono::system_clock::period::den);
 }
 
-Value ValueFunction::valueOf(Interpreter &r, const Message &m,
-                             const ast::Location &location) const {
-    expectArgumentCount(m, location, 1);
+Value ValueFunction::valueOf(Interpreter &interpreter, const Message &m) const {
+    expectArgumentCount(m, 1);
     auto expressionString = m.arguments[0].asString();
 
     Parser parser(ParserConfig("<interpreter>", devnull));
@@ -159,24 +112,22 @@ Value ValueFunction::valueOf(Interpreter &r, const Message &m,
         return expressionString;
     }
 
-    return std::any_cast<Value>(result->accept(r));
+    return std::any_cast<Value>(result->accept(interpreter));
 }
 
-Value RandomFunction::valueOf(Interpreter &r, const Message &m,
-                              const ast::Location &location) const {
-    expectArgumentCount(m, location, 1);
-    expectNumberAt(m, location, 0);
+Value RandomFunction::valueOf(Interpreter &interpreter, const Message &m) const {
+    expectArgumentCount(m, 1);
+    expectNumberAt(m, 0);
+
     auto max = m.arguments[0].asInteger();
-
-    return long(r.random()() * max) + 1;
+    return long(interpreter.random()() * max) + 1;
 }
 
-Value ParamFunction::valueOf(Interpreter &interpreter, const Message &m,
-                             const ast::Location &location) const {
-    expectArgumentCount(m, location, 1);
-    expectNumberAt(m, location, 0);
+Value ParamFunction::valueOf(Interpreter &interpreter, const Message &m) const {
+    expectArgumentCount(m, 1);
+    expectNumberAt(m, 0);
+    
     auto index = m.arguments[0].asInteger();
-
     if (index < 0)
         return Value();
     if (index == 0)
@@ -186,8 +137,7 @@ Value ParamFunction::valueOf(Interpreter &interpreter, const Message &m,
     return interpreter.currentFrame().message.arguments[index - 1];
 }
 
-Value ParamsFunction::valueOf(Interpreter &r, const Message &m,
-                              const ast::Location &location) const {
+Value ParamsFunction::valueOf(Interpreter &r, const Message &m) const {
     std::ostringstream ss;
     auto &message = r.currentFrame().message;
     ss << message.name;
@@ -205,23 +155,20 @@ Value ParamsFunction::valueOf(Interpreter &r, const Message &m,
     return ss.str();
 }
 
-Value ParamCountFunction::valueOf(Interpreter &r, const Message &m,
-                                  const ast::Location &location) const {
-    expectArgumentCount(m, location, 0);
+Value ParamCountFunction::valueOf(Interpreter &r, const Message &m) const {
+    expectArgumentCount(m, 0);
 
     return r.currentFrame().message.arguments.size();
 }
 
-Value ResultFunction::valueOf(Interpreter &r, const Message &m,
-                              const ast::Location &location) const {
-    expectArgumentCount(m, location, 0);
+Value ResultFunction::valueOf(Interpreter &r, const Message &m) const {
+    expectArgumentCount(m, 0);
 
     return r.currentFrame().resultValue;
 }
 
-Value TargetFunction::valueOf(Interpreter &r, const Message &m,
-                              const ast::Location &location) const {
-    expectArgumentCount(m, location, 0);
+Value TargetFunction::valueOf(Interpreter &r, const Message &m) const {
+    expectArgumentCount(m, 0);
 
     return Value(r.currentFrame().target);
 }

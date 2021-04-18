@@ -1,0 +1,8 @@
+on begin arg
+  put factorial(arg)
+end begin
+
+function factorial arg
+  if arg is 0 then return 1
+  return arg * factorial(arg - 1)
+end factorial

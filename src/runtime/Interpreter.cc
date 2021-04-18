@@ -81,8 +81,7 @@ Interpreter::Interpreter(const InterpreterConfig &config) : _config(config) {
     // Skipping these: ticks, annuity, charToNum, numToChar, compound
 }
 
-bool Interpreter::send(const Message &message, Strong<Object> target,
-                       const ast::Location &location) {
+bool Interpreter::send(const Message &message, Strong<Object> target) {
     trace(std::string("send(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
@@ -105,18 +104,17 @@ bool Interpreter::send(const Message &message, Strong<Object> target,
 
     bool handled = true;
     if (passing) {
-        handled = send(message, target->parent(), location);
+        handled = send(message, target->parent());
     }
 
     return handled;
 }
 
-Value Interpreter::call(const Message &message, Strong<Object> target,
-                        const ast::Location &location) {
+Optional<Value> Interpreter::call(const Message &message, Strong<Object> target) {
     trace(std::string("call(") + message.name + ", " + (target ? target->name() : "null") + ")");
 
     if (target == nullptr) {
-        return evaluateFunction(message, location);
+        return Empty;
     }
 
     Value result;
@@ -132,7 +130,7 @@ Value Interpreter::call(const Message &message, Strong<Object> target,
     }
 
     if (passing) {
-        return call(message, target->parent(), location);
+        return call(message, target->parent());
     }
 
     return result;
@@ -512,12 +510,12 @@ std::any Interpreter::visitAny(const Divide &c) {
 
 #pragma mark - Functions
 
-Value Interpreter::evaluateFunction(const Message &message, const ast::Location &location) {
+Value Interpreter::evaluateFunction(const Message &message) {
     auto fn = _functions.find(lowercase(message.name));
-    if (fn != _functions.end()) {
-        return fn->second->valueOf(*this, message, location);
+    if (fn == _functions.end()) {
+        throw RuntimeError(String("unrecognized function '", message.name, "'"));
     }
-    throw RuntimeError(String("unrecognized function '", message.name, "'"), location);
+    return fn->second->valueOf(*this, message);
 }
 
 #pragma mark - ExpressionVisitor
@@ -533,7 +531,20 @@ std::any Interpreter::visitAny(const FunctionCall &e) {
         }
     }
 
-    return call(message, _stack.top().target);
+    auto result = call(message, _stack.top().target);
+    if (result.has_value()) {
+        return result.value();
+    }
+
+    try {
+        return evaluateFunction(message);
+    } catch (InvalidArgumentError &error) {
+        error.where = e.arguments->expressions[error.argumentIndex]->location;
+        throw;
+    } catch (ArgumentsError &error) {
+        error.where = e.location;
+        throw;
+    }
 }
 
 std::any Interpreter::visitAny(const ast::Property &p) {
@@ -542,14 +553,24 @@ std::any Interpreter::visitAny(const ast::Property &p) {
         auto value = std::any_cast<Value>(p.expression->accept(*this));
         if (value.isObject()) {
             auto property = runtime::Property(p);
-            return value.asObject()->valueForProperty(property);
+            auto result = value.asObject()->valueForProperty(property);
+
+            if (!result.has_value()) {
+                throw RuntimeError(String("unknown property '", property.name, "' for object '", value.asString(), "'"), p.location);
+            }
+            return result.value();
         } else {
             message.arguments.push_back(value);
         }
     }
 
     // Property calls skip the message path.
-    return call(message, nullptr);
+    try {
+        return evaluateFunction(message);
+    } catch (ArgumentsError &error) {
+        error.where = p.location;
+        throw;
+    }
 }
 
 std::any Interpreter::visitAny(const ast::Descriptor &d) {
@@ -564,28 +585,35 @@ std::any Interpreter::visitAny(const ast::Descriptor &d) {
         return get(d.name->name);
     }
 
-    // Check the responder chain for a function handler.
     auto message = Message(d.name->name);
-    auto handler = _stack.top().target->functionFor(message);
-    if (handler.has_value()) {
-        auto arg = std::any_cast<Value>(d.value->accept(*this));
-        message.arguments.push_back(arg);
-        return call(message, _stack.top().target);
+    auto arg = std::any_cast<Value>(d.value->accept(*this));
+    message.arguments.push_back(arg);
+
+    // Check the responder chain for a function handler.
+    auto result = call(message, _stack.top().target);
+    if (result.has_value()) {
+        return result.value();
     }
 
     // Check for a builtin function.
     auto fn = _functions.find(lowercase(message.name));
     if (fn != _functions.end()) {
-        auto arg = std::any_cast<Value>(d.value->accept(*this));
-        message.arguments.push_back(arg);
-        return fn->second->valueOf(*this, message, d.location);
+        try {
+            return fn->second->valueOf(*this, message);
+        } catch (InvalidArgumentError &error) {
+            error.where = d.value->location;
+            throw;
+        } catch (ArgumentsError &error) {
+            error.where = d.location;
+            throw;
+        }
     }
 
     // TODO: Find an object using the descriptor.
     throw RuntimeError("unrecognized descriptor '" + name + "'", d.location);
 }
 
-void checkNumberOperand(const Value &value, const Location &location) {
+static void checkNumberOperand(const Value &value, const Location &location) {
     if (!value.isNumber()) {
         throw RuntimeError("expected number value here, got '" + value.asString() + "'", location);
     }

@@ -39,7 +39,7 @@ using namespace chatter::ast;
     for(int i = 0; yytext[i] != '\0'; i++) { \
         if(yytext[i] == '\n') { \
             yylloc->last.lineNumber++; \
-            yylloc->last.position = 0; \
+            yylloc->last.position = 1; \
         } \
         else { \
             yylloc->last.position++; \
@@ -189,12 +189,14 @@ pi                          LEX_RETURN(PI);
 
 ([0-9][0-9]*) {
     auto expression = new IntLiteral(atoi(yytext));
+    expression->location = yylloc->first;
     yylval->emplace<Expression*>(expression);
     LEX_RETURN(INT_LITERAL); 
 }
 
 ([0-9][0-9]*)(\.[0-9][0-9]*)? { 
     auto expression = new FloatLiteral(atof(yytext));
+    expression->location = yylloc->first;
     yylval->emplace<Owned<Expression>>(expression);
     LEX_RETURN(FLOAT_LITERAL); 
 }
@@ -202,12 +204,14 @@ pi                          LEX_RETURN(PI);
 \"([^\\\"]|\\.)*\" {
     auto value = string_from_escaped_string(std::string(yytext));
     auto expression = new StringLiteral(value.substr(1, value.length() - 2));
+    expression->location = yylloc->first;
     yylval->emplace<Owned<Expression>>(expression);
     LEX_RETURN(STRING_LITERAL);
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
     auto expression = new Identifier(std::string(yytext));
+    expression->location = yylloc->first;
     yylval->emplace<Owned<Expression>>(expression);
     LEX_RETURN(IDENTIFIER); 
 }

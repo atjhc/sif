@@ -1,0 +1,9 @@
+on begin
+  repeat with x = 1 to 100
+    if x mod 15 is 0 then put "FizzBuzz" else
+      if x mod 5 is 0 then put "Buzz" else
+        if x mod 3 is 0 then put "Fizz" else put x
+      end if
+    end if
+  end repeat
+end begin
