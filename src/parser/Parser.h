@@ -46,6 +46,7 @@ struct ParserContext {
     // Parsing state
     Mode parsingMode = Program;
     bool selectingMode = true;
+    bool parsingRepeat = false;
     unsigned int numberOfErrors = 0;
 
     // Result

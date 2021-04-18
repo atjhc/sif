@@ -133,7 +133,7 @@ using namespace chatter::ast;
 %nterm <Owned<IdentifierList>> maybeIdentifierList identifierList
 %nterm <Owned<StatementList>> block matchedBlock unmatchedBlock elseMatched
 %nterm <Owned<Statement>> matched unmatched innerMatched simpleStatement keywordStatement commandStatement
-%nterm <Owned<Statement>> repeatStatement repeatForever repeatCount repeatCondition repeatRange
+%nterm <Owned<Statement>> repeatStatement repeat repeatForever repeatCount repeatCondition repeatRange
 %nterm <Owned<Expression>> factor literal expression descriptor ifThen functionCall property ordinal constant
 %nterm <Owned<Chunk>> chunk
 %nterm <Owned<ExpressionList>> expressionList
@@ -316,12 +316,22 @@ simpleStatement
 
 keywordStatement
     : EXIT REPEAT { 
-        $$ = MakeOwned<ExitRepeat>();
-        $$->location = @1.first;
+        if (ctx.parsingRepeat) {
+            $$ = MakeOwned<ExitRepeat>();
+            $$->location = @1.first;
+        } else {
+            error(@$, "'exit repeat' outside repeat loop");
+            $$ = nullptr;
+        }
     }
-    | NEXT REPEAT { 
-        $$ = MakeOwned<NextRepeat>();
-        $$->location = @1.first;
+    | NEXT REPEAT {
+        if (ctx.parsingRepeat) {
+            $$ = MakeOwned<NextRepeat>();
+            $$->location = @1.first;
+        } else {
+            error(@$, "'next repeat' outside repeat loop");
+            $$ = nullptr;
+        }
     }
     | EXIT messageKey {
         $$ = MakeOwned<Exit>($2);
@@ -535,6 +545,17 @@ ifThen
 ;
 
 repeatStatement
+    : REPEAT <bool>{ 
+        $$ = ctx.parsingRepeat;
+        ctx.parsingRepeat = true;
+    } repeat {
+        ctx.parsingRepeat = $2;
+        $$ = std::move($3);
+        $$->location = @$.first;
+    }
+;
+
+repeat
     : repeatForever {
         $$ = std::move($1);
     }
@@ -550,11 +571,11 @@ repeatStatement
 ;
 
 repeatForever
-    : REPEAT maybeForever nl
+    : forever nl
         block
       END REPEAT {
-        if ($4) {
-            $$ = MakeOwned<Repeat>($4);
+        if ($3) {
+            $$ = MakeOwned<Repeat>($3);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -563,11 +584,11 @@ repeatForever
 ;
 
 repeatCount
-    : REPEAT maybeFor expression maybeTimes nl
+    : for expression times nl
         block
       END REPEAT {
-        if ($3) {
-            $$ = MakeOwned<RepeatCount>($3, $6);
+        if ($2) {
+            $$ = MakeOwned<RepeatCount>($2, $5);
             $$->location = @1.first;
        } else {
             $$ = nullptr;
@@ -576,21 +597,21 @@ repeatCount
 ;
 
 repeatCondition
-    : REPEAT WHILE expression nl 
+    : WHILE expression nl 
         block 
       END REPEAT {
-        if ($3) {
-            $$ = MakeOwned<RepeatCondition>($3, true, $5);
+        if ($2) {
+            $$ = MakeOwned<RepeatCondition>($2, true, $4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
     }
-    | REPEAT UNTIL expression nl 
+    | UNTIL expression nl 
         block 
       END REPEAT {
-        if ($3) {
-            $$ = MakeOwned<RepeatCondition>($3, false, $5);
+        if ($2) {
+            $$ = MakeOwned<RepeatCondition>($2, false, $4);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -599,21 +620,21 @@ repeatCondition
 ;
 
 repeatRange
-    : REPEAT WITH IDENTIFIER EQ expression TO expression nl
+    : WITH IDENTIFIER EQ expression TO expression nl
         block
       END REPEAT {
-        if ($5 && $7) {
-            $$ = MakeOwned<RepeatRange>($3, $5, $7, true, $9);
+        if ($4 && $6) {
+            $$ = MakeOwned<RepeatRange>($2, $4, $6, true, $8);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
         }
     }
-    | REPEAT WITH IDENTIFIER EQ expression DOWN TO expression nl
+    | WITH IDENTIFIER EQ expression DOWN TO expression nl
         block
       END REPEAT {
-        if ($5 && $8) {
-            $$ = MakeOwned<RepeatRange>($3, $5, $8, false, $10);
+        if ($4 && $7) {
+            $$ = MakeOwned<RepeatRange>($2, $4, $7, false, $9);
             $$->location = @1.first;
         } else {
             $$ = nullptr;
@@ -621,17 +642,17 @@ repeatRange
     }
 ;
 
-maybeForever
+forever
     : %empty
     | FOREVER
 ;
 
-maybeFor
+for
     : %empty
     | FOR
 ;
 
-maybeTimes
+times
     : %empty
     | TIMES
 ;

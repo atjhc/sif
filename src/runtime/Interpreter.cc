@@ -191,7 +191,7 @@ void Interpreter::execute(const ast::StatementList &statements) {
         statement->accept(*this);
 
         auto &frame = _stack.top();
-        if (frame.passing || frame.exiting || frame.returning) {
+        if (frame.passing || frame.exiting || frame.exitingRepeat || frame.skippingRepeat || frame.returning) {
             break;
         }
     }
@@ -238,7 +238,7 @@ std::any Interpreter::visitAny(const Repeat &s) {
             break;
         }
     }
-
+    _stack.top().skippingRepeat = false;
     return std::any();
 }
 
@@ -252,7 +252,7 @@ std::any Interpreter::visitAny(const RepeatCount &s) {
             break;
         }
     }
-
+    _stack.top().skippingRepeat = false;
     return std::any();
 }
 
@@ -275,7 +275,7 @@ std::any Interpreter::visitAny(const RepeatRange &s) {
             i--;
         }
     }
-
+    _stack.top().skippingRepeat = false;
     return std::any();
 }
 
@@ -289,7 +289,7 @@ std::any Interpreter::visitAny(const RepeatCondition &s) {
         }
         conditionValue = std::any_cast<Value>(s.condition->accept(*this)).asBool();
     }
-
+    _stack.top().skippingRepeat = false;
     return std::any();
 }
 
