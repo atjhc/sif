@@ -33,8 +33,6 @@ struct Handler : Node {
 
     Handler(Kind _kind, Owned<Identifier> &mk, Owned<IdentifierList> &args,
             Owned<StatementList> &sl);
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

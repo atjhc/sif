@@ -33,7 +33,7 @@ struct Descriptor : Expression {
     Descriptor(Owned<Identifier> &n, Owned<Expression> &v);
     Descriptor(Owned<Identifier> &n);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

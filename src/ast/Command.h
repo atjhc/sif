@@ -34,7 +34,7 @@ struct Command : Statement {
     Command(Owned<Identifier> &n);
     Command(Identifier *n);
 
-    virtual std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 #pragma mark Messages
@@ -47,7 +47,7 @@ struct Put : Command {
     Put(Owned<Expression> &expression, Preposition preposition, Owned<Identifier> &target);
     Put(Owned<Expression> &expression);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Get : Command {
@@ -55,7 +55,7 @@ struct Get : Command {
 
     Get(Owned<Expression> &e);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Ask : Command {
@@ -63,7 +63,7 @@ struct Ask : Command {
 
     Ask(Owned<Expression> &e);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Add : Command {
@@ -72,7 +72,7 @@ struct Add : Command {
 
     Add(Owned<Expression> &e, Owned<Identifier> &d);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Subtract : Command {
@@ -81,7 +81,7 @@ struct Subtract : Command {
 
     Subtract(Owned<Expression> &e, Owned<Identifier> &d);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Multiply : Command {
@@ -90,7 +90,7 @@ struct Multiply : Command {
 
     Multiply(Owned<Expression> &expression, Owned<Identifier> &destination);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Divide : Command {
@@ -99,7 +99,7 @@ struct Divide : Command {
 
     Divide(Owned<Expression> &expression, Owned<Identifier> &destination);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 CH_AST_NAMESPACE_END

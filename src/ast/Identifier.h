@@ -30,7 +30,7 @@ struct Identifier : Expression {
     Identifier(const std::string &n);
     Identifier(const char *n);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct IdentifierList : Node {
@@ -39,8 +39,6 @@ struct IdentifierList : Node {
     IdentifierList();
 
     void add(Owned<Identifier> &identifier) { identifiers.push_back(std::move(identifier)); }
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

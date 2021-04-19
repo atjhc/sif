@@ -44,7 +44,6 @@ std::function<float()> InterpreterConfig::defaultRandom() {
 #endif
 
 Interpreter::Interpreter(const InterpreterConfig &config) : _config(config) {
-
     add("sin", new OneArgumentFunction<sin>());
     add("cos", new OneArgumentFunction<cos>());
     add("tan", new OneArgumentFunction<tan>());
@@ -197,6 +196,14 @@ void Interpreter::execute(const ast::StatementList &statements) {
     }
 }
 
+Value Interpreter::evaluateFunction(const Message &message) {
+    auto fn = _functions.find(lowercase(message.name));
+    if (fn == _functions.end()) {
+        throw RuntimeError(String("unrecognized function '", message.name, "'"));
+    }
+    return fn->second->valueOf(*this, message);
+}
+
 #if defined(DEBUG)
 void Interpreter::trace(const std::string &msg) const {
     if (_config.enableTracing) {
@@ -205,32 +212,18 @@ void Interpreter::trace(const std::string &msg) const {
 }
 #endif
 
-#pragma mark - Unused
+#pragma mark - Statement::Visitor
 
-std::any Interpreter::visitAny(const ast::Program &) { return std::any(); }
-
-std::any Interpreter::visitAny(const ast::Handler &) { return std::any(); }
-
-std::any Interpreter::visitAny(const ast::StatementList &) { return std::any(); }
-
-std::any Interpreter::visitAny(const ast::IdentifierList &) { return std::any(); }
-
-std::any Interpreter::visitAny(const ast::ExpressionList &) { return std::any(); }
-
-#pragma mark - StatementVisitor
-
-std::any Interpreter::visitAny(const If &s) {
-    auto condition = std::any_cast<Value>(s.condition->accept(*this));
+void Interpreter::visit(const If &s) {
+    auto condition = s.condition->accept(*this);
     if (condition.asBool()) {
         execute(*s.ifStatements);
     } else if (s.elseStatements) {
         execute(*s.elseStatements);
     }
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Repeat &s) {
+void Interpreter::visit(const Repeat &s) {
     while (true) {
         execute(*s.statements);
         if (_stack.top().exitingRepeat) {
@@ -239,11 +232,10 @@ std::any Interpreter::visitAny(const Repeat &s) {
         }
     }
     _stack.top().skippingRepeat = false;
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const RepeatCount &s) {
-    auto countValue = std::any_cast<Value>(s.countExpression->accept(*this));
+void Interpreter::visit(const RepeatCount &s) {
+    auto countValue = s.countExpression->accept(*this);
     auto count = countValue.asInteger();
     for (int i = 0; i < count; i++) {
         execute(*s.statements);
@@ -253,13 +245,12 @@ std::any Interpreter::visitAny(const RepeatCount &s) {
         }
     }
     _stack.top().skippingRepeat = false;
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const RepeatRange &s) {
+void Interpreter::visit(const RepeatRange &s) {
     auto iteratorName = s.variable->name;
-    auto startValue = std::any_cast<Value>(s.startExpression->accept(*this)).asInteger();
-    auto endValue = std::any_cast<Value>(s.endExpression->accept(*this)).asInteger();
+    auto startValue = s.startExpression->accept(*this).asInteger();
+    auto endValue = s.endExpression->accept(*this).asInteger();
 
     auto i = startValue;
     while ((s.ascending ? i <= endValue : i >= endValue)) {
@@ -276,76 +267,66 @@ std::any Interpreter::visitAny(const RepeatRange &s) {
         }
     }
     _stack.top().skippingRepeat = false;
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const RepeatCondition &s) {
-    auto conditionValue = std::any_cast<Value>(s.condition->accept(*this)).asBool();
+void Interpreter::visit(const RepeatCondition &s) {
+    auto conditionValue = s.condition->accept(*this).asBool();
     while (conditionValue == s.conditionValue) {
         execute(*s.statements);
         if (_stack.top().exitingRepeat) {
             _stack.top().exitingRepeat = false;
             break;
         }
-        conditionValue = std::any_cast<Value>(s.condition->accept(*this)).asBool();
+        conditionValue = s.condition->accept(*this).asBool();
     }
     _stack.top().skippingRepeat = false;
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const ExitRepeat &) {
+void Interpreter::visit(const ExitRepeat &) {
     _stack.top().exitingRepeat = true;
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const NextRepeat &) {
+void Interpreter::visit(const NextRepeat &) {
     _stack.top().skippingRepeat = true;
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Exit &s) {
+void Interpreter::visit(const Exit &s) {
     trace("exit(" + s.messageKey->name + ")");
     _stack.top().exiting = true;
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Pass &s) {
+void Interpreter::visit(const Pass &s) {
     trace("pass(" + s.messageKey->name + ")");
     _stack.top().passing = true;
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Global &s) {
+void Interpreter::visit(const Global &s) {
     Set<std::string> globals;
     for (auto &identifier : s.variables->identifiers) {
         globals.insert(identifier->name);
     }
     trace("global(" + describe(globals) + ")");
     _stack.top().globals.insert(globals.begin(), globals.end());
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Return &s) {
+void Interpreter::visit(const Return &s) {
     _stack.top().returning = true;
     if (s.expression) {
-        auto value = std::any_cast<Value>(s.expression->accept(*this));
+        auto value = s.expression->accept(*this);
         _stack.top().returningValue = value;
     }
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Do &c) {
+void Interpreter::visit(const Do &c) {
     if (c.language) {
-        auto languageName = std::any_cast<Value>(c.language->accept(*this));
+        auto languageName = c.language->accept(*this);
 
         // TODO: Call out to another language.
         throw RuntimeError("unrecognized language '" + languageName.asString() + "'",
                            c.language->location);
     }
 
-    auto value = std::any_cast<Value>(c.expression->accept(*this));
+    auto value = c.expression->accept(*this);
     auto valueString = value.asString();
 
     Parser parser(ParserConfig("<runtime>", _config.stderr));
@@ -355,15 +336,13 @@ std::any Interpreter::visitAny(const Do &c) {
         throw RuntimeError("failed to parse script", c.location);
     }
     execute(*statements);
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Command &c) {
+void Interpreter::visit(const Command &c) {
     auto message = Message(c.name->name);
     if (c.arguments) {
         for (auto &expression : c.arguments->expressions) {
-            auto arg = std::any_cast<Value>(std::any_cast<Value>(expression->accept(*this)));
+            auto arg = expression->accept(*this);
             message.arguments.push_back(arg);
         }
     }
@@ -372,14 +351,10 @@ std::any Interpreter::visitAny(const Command &c) {
     if (!handled) {
         c.accept(*this);
     }
-
-    return std::any();
 }
 
-#pragma mark - Commands
-
-std::any Interpreter::visitAny(const Put &s) {
-    auto value = std::any_cast<Value>(s.expression->accept(*this));
+void Interpreter::visit(const Put &s) {
+    auto value = s.expression->accept(*this);
     if (s.target) {
         auto &name = s.target->name;
         switch (s.preposition) {
@@ -400,33 +375,27 @@ std::any Interpreter::visitAny(const Put &s) {
     } else {
         _config.stdout << value.asString() << std::endl;
     }
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Get &s) {
-    auto result = std::any_cast<Value>(s.expression->accept(*this));
+void Interpreter::visit(const Get &s) {
+    auto result = s.expression->accept(*this);
     _stack.top().locals.set("it", result);
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Ask &s) {
-    auto question = std::any_cast<Value>(s.expression->accept(*this));
+void Interpreter::visit(const Ask &s) {
+    auto question = s.expression->accept(*this);
 
     _config.stdout << question.asString();
     std::string result;
     std::getline(_config.stdin, result);
 
     _stack.top().locals.set("it", result);
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Add &c) {
+void Interpreter::visit(const Add &c) {
     auto &targetName = c.destination->name;
 
-    auto value = std::any_cast<Value>(c.expression->accept(*this));
+    auto value = c.expression->accept(*this);
     auto targetValue = get(targetName);
 
     if (!targetValue.isNumber()) {
@@ -439,14 +408,12 @@ std::any Interpreter::visitAny(const Add &c) {
     }
 
     set(targetName, targetValue.asFloat() + value.asFloat());
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Subtract &c) {
+void Interpreter::visit(const Subtract &c) {
     auto &targetName = c.destination->name;
 
-    auto value = std::any_cast<Value>(c.expression->accept(*this));
+    auto value = c.expression->accept(*this);
     auto targetValue = get(targetName);
 
     if (!targetValue.isNumber()) {
@@ -458,14 +425,12 @@ std::any Interpreter::visitAny(const Subtract &c) {
                            c.expression->location);
     }
     set(targetName, targetValue.asFloat() - value.asFloat());
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Multiply &c) {
+void Interpreter::visit(const Multiply &c) {
     auto &targetName = c.destination->name;
 
-    auto value = std::any_cast<Value>(c.expression->accept(*this));
+    auto value = c.expression->accept(*this);
     auto targetValue = get(targetName);
 
     if (!targetValue.isNumber()) {
@@ -477,12 +442,10 @@ std::any Interpreter::visitAny(const Multiply &c) {
                            c.expression->location);
     }
     set(targetName, targetValue.asFloat() * value.asFloat());
-
-    return std::any();
 }
 
-std::any Interpreter::visitAny(const Divide &c) {
-    auto value = std::any_cast<Value>(c.expression->accept(*this));
+void Interpreter::visit(const Divide &c) {
+    auto value = c.expression->accept(*this);
     auto &targetName = c.destination->name;
     auto targetValue = get(targetName);
     if (!targetValue.isNumber()) {
@@ -494,29 +457,17 @@ std::any Interpreter::visitAny(const Divide &c) {
                            c.expression->location);
     }
     set(targetName, targetValue.asFloat() / value.asFloat());
-
-    return std::any();
 }
 
-#pragma mark - Functions
+#pragma mark - Expression::Visitor<Value>
 
-Value Interpreter::evaluateFunction(const Message &message) {
-    auto fn = _functions.find(lowercase(message.name));
-    if (fn == _functions.end()) {
-        throw RuntimeError(String("unrecognized function '", message.name, "'"));
-    }
-    return fn->second->valueOf(*this, message);
-}
+Value Interpreter::visit(const Identifier &e) { return get(e.name); }
 
-#pragma mark - ExpressionVisitor
-
-std::any Interpreter::visitAny(const Identifier &e) { return get(e.name); }
-
-std::any Interpreter::visitAny(const FunctionCall &e) {
+Value Interpreter::visit(const FunctionCall &e) {
     auto message = Message(e.identifier->name);
     if (e.arguments) {
         for (auto &argument : e.arguments->expressions) {
-            auto value = std::any_cast<Value>(argument->accept(*this));
+            auto value = argument->accept(*this);
             message.arguments.push_back(value);
         }
     }
@@ -537,10 +488,10 @@ std::any Interpreter::visitAny(const FunctionCall &e) {
     }
 }
 
-std::any Interpreter::visitAny(const ast::Property &p) {
+Value Interpreter::visit(const ast::Property &p) {
     auto message = Message(p.name->name);
     if (p.expression) {
-        auto value = std::any_cast<Value>(p.expression->accept(*this));
+        auto value = p.expression->accept(*this);
         if (value.isObject()) {
             auto property = runtime::Property(p);
             auto result = value.asObject()->valueForProperty(property);
@@ -563,7 +514,7 @@ std::any Interpreter::visitAny(const ast::Property &p) {
     }
 }
 
-std::any Interpreter::visitAny(const ast::Descriptor &d) {
+Value Interpreter::visit(const ast::Descriptor &d) {
     auto &name = d.name->name;
     if (!d.value) {
         auto &name = d.name->name;
@@ -576,7 +527,7 @@ std::any Interpreter::visitAny(const ast::Descriptor &d) {
     }
 
     auto message = Message(d.name->name);
-    auto arg = std::any_cast<Value>(d.value->accept(*this));
+    auto arg = d.value->accept(*this);
     message.arguments.push_back(arg);
 
     // Check the responder chain for a function handler.
@@ -609,9 +560,9 @@ static void checkNumberOperand(const Value &value, const Location &location) {
     }
 }
 
-std::any Interpreter::visitAny(const Binary &e) {
-    auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
-    auto rhs = std::any_cast<Value>(e.rightExpression->accept(*this));
+Value Interpreter::visit(const Binary &e) {
+    auto lhs = e.leftExpression->accept(*this);
+    auto rhs = e.rightExpression->accept(*this);
 
     if (e.binaryOperator == Binary::IsA) {
         auto typeName = lowercase(rhs.asString());
@@ -686,9 +637,9 @@ std::any Interpreter::visitAny(const Binary &e) {
     }
 }
 
-std::any Interpreter::visitAny(const Logical &e) {
+Value Interpreter::visit(const Logical &e) {
     if (e.logicalOperator == Logical::And) {
-        auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
+        auto lhs = e.leftExpression->accept(*this);
         if (!lhs.isBool()) {
             throw RuntimeError("expected a boolean value here", e.leftExpression->location);
         }
@@ -696,7 +647,7 @@ std::any Interpreter::visitAny(const Logical &e) {
             return Value(false);
         }
 
-        auto rhs = std::any_cast<Value>(e.rightExpression->accept(*this));
+        auto rhs = e.rightExpression->accept(*this);
         if (!rhs.isBool()) {
             throw RuntimeError("expected a boolean value here", e.rightExpression->location);
         }
@@ -704,7 +655,7 @@ std::any Interpreter::visitAny(const Logical &e) {
     }
 
     if (e.logicalOperator == Logical::Or) {
-        auto lhs = std::any_cast<Value>(e.leftExpression->accept(*this));
+        auto lhs = e.leftExpression->accept(*this);
         if (!lhs.isBool()) {
             throw RuntimeError("expected a boolean value here", e.leftExpression->location);
         }
@@ -712,7 +663,7 @@ std::any Interpreter::visitAny(const Logical &e) {
             return Value(true);
         }
 
-        auto rhs = std::any_cast<Value>(e.rightExpression->accept(*this));
+        auto rhs = e.rightExpression->accept(*this);
         if (!rhs.isBool()) {
             throw RuntimeError("expected a boolean value here", e.rightExpression->location);
         }
@@ -722,8 +673,8 @@ std::any Interpreter::visitAny(const Logical &e) {
     throw RuntimeError("unexpected operator", e.location);
 }
 
-std::any Interpreter::visitAny(const Unary &e) {
-    auto value = std::any_cast<Value>(e.expression->accept(*this));
+Value Interpreter::visit(const Unary &e) {
+    auto value = e.expression->accept(*this);
 
     switch (e.unaryOperator) {
     case Unary::ThereIsA:
@@ -744,11 +695,11 @@ std::any Interpreter::visitAny(const Unary &e) {
     }
 }
 
-std::any Interpreter::visitAny(const FloatLiteral &e) { return Value(e.value); }
+Value Interpreter::visit(const FloatLiteral &e) { return Value(e.value); }
 
-std::any Interpreter::visitAny(const IntLiteral &e) { return Value(e.value); }
+Value Interpreter::visit(const IntLiteral &e) { return Value(e.value); }
 
-std::any Interpreter::visitAny(const StringLiteral &e) { return Value(e.value); }
+Value Interpreter::visit(const StringLiteral &e) { return Value(e.value); }
 
 static type chunk_type(Chunk::Type t) {
     switch (t) {
@@ -763,12 +714,12 @@ static type chunk_type(Chunk::Type t) {
     }
 }
 
-std::any Interpreter::visitAny(const RangeChunk &c) {
-    auto value = std::any_cast<Value>(c.expression->accept(*this)).asString();
-    auto startValue = std::any_cast<Value>(c.start->accept(*this));
+Value Interpreter::visit(const RangeChunk &c) {
+    std::string value = c.expression->accept(*this).asString();
+    auto startValue = c.start->accept(*this);
 
     if (c.end) {
-        auto endValue = std::any_cast<Value>(c.end->accept(*this));
+        auto endValue = c.end->accept(*this);
         return Value(range_chunk(chunk_type(c.type), startValue.asInteger() - 1,
                                  endValue.asInteger() - 1, value)
                          .get());
@@ -777,21 +728,21 @@ std::any Interpreter::visitAny(const RangeChunk &c) {
     }
 }
 
-std::any Interpreter::visitAny(const AnyChunk &c) {
-    auto value = std::any_cast<Value>(c.expression->accept(*this)).asString();
+Value Interpreter::visit(const AnyChunk &c) {
+    auto value = c.expression->accept(*this).asString();
     return Value(
         random_chunk(
             chunk_type(c.type), [this](int count) { return _config.random() * count; }, value)
             .get());
 }
 
-std::any Interpreter::visitAny(const LastChunk &c) {
-    auto value = std::any_cast<Value>(c.expression->accept(*this)).asString();
+Value Interpreter::visit(const LastChunk &c) {
+    auto value = c.expression->accept(*this).asString();
     return Value(last_chunk(chunk_type(c.type), value).get());
 }
 
-std::any Interpreter::visitAny(const MiddleChunk &c) {
-    auto value = std::any_cast<Value>(c.expression->accept(*this)).asString();
+Value Interpreter::visit(const MiddleChunk &c) {
+    auto value = c.expression->accept(*this).asString();
     return Value(middle_chunk(chunk_type(c.type), value).get());
 }
 

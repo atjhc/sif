@@ -30,7 +30,7 @@ struct Repeat : Statement {
 
     Repeat(Owned<StatementList> &s);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 struct RepeatCount : Repeat {
@@ -38,7 +38,7 @@ struct RepeatCount : Repeat {
 
     RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 struct RepeatRange : Repeat {
@@ -50,7 +50,7 @@ struct RepeatRange : Repeat {
     RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee, bool asc,
                 Owned<StatementList> &s);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 struct RepeatCondition : Repeat {
@@ -59,15 +59,15 @@ struct RepeatCondition : Repeat {
 
     RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 struct ExitRepeat : Statement {
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 struct NextRepeat : Statement {
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 CH_AST_NAMESPACE_END

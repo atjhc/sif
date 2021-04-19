@@ -25,10 +25,54 @@
 
 CH_AST_NAMESPACE_BEGIN
 
+struct If;
+struct Repeat;
+struct RepeatCount;
+struct RepeatRange;
+struct RepeatCondition;
+struct ExitRepeat;
+struct NextRepeat;
+struct Exit;
+struct Pass;
+struct Global;
+struct Return;
+struct Do;
+struct Command;
+struct Put;
+struct Get;
+struct Ask;
+struct Add;
+struct Subtract;
+struct Multiply;
+struct Divide;
+
 struct Statement : Node {
+    struct Visitor {
+        virtual void visit(const If &) = 0;
+        virtual void visit(const Repeat &) = 0;
+        virtual void visit(const RepeatCount &) = 0;
+        virtual void visit(const RepeatRange &) = 0;
+        virtual void visit(const RepeatCondition &) = 0;
+        virtual void visit(const ExitRepeat &) = 0;
+        virtual void visit(const NextRepeat &) = 0;
+        virtual void visit(const Exit &) = 0;
+        virtual void visit(const Pass &) = 0;
+        virtual void visit(const Global &) = 0;
+        virtual void visit(const Return &) = 0;
+        virtual void visit(const Do &) = 0;
+        virtual void visit(const Command &) = 0;
+        virtual void visit(const Put &) = 0;
+        virtual void visit(const Get &) = 0;
+        virtual void visit(const Ask &) = 0;
+        virtual void visit(const Add &) = 0;
+        virtual void visit(const Subtract &) = 0;
+        virtual void visit(const Multiply &) = 0;
+        virtual void visit(const Divide &) = 0;
+    };
+
     virtual ~Statement() = default;
 
-    virtual std::any accept(AnyVisitor &v) const = 0;
+    virtual void accept(Visitor &v) const = 0;
 };
 
 struct StatementList : Node {
@@ -38,8 +82,6 @@ struct StatementList : Node {
     StatementList(Owned<Statement> &statement);
 
     void add(Owned<Statement> &statement) { statements.push_back(std::move(statement)); }
-
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct If : Statement {
@@ -53,7 +95,7 @@ struct If : Statement {
     If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es);
     If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Exit : Statement {
@@ -61,7 +103,7 @@ struct Exit : Statement {
 
     Exit(Owned<Identifier> &m);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Pass : Statement {
@@ -69,7 +111,7 @@ struct Pass : Statement {
 
     Pass(Owned<Identifier> &m);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Global : Statement {
@@ -77,7 +119,7 @@ struct Global : Statement {
 
     Global(Owned<IdentifierList> &v);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Return : Statement {
@@ -85,7 +127,7 @@ struct Return : Statement {
 
     Return(Owned<Expression> &e);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Do : Statement {
@@ -95,7 +137,7 @@ struct Do : Statement {
     Do(Owned<Expression> &expression);
     Do(Owned<Expression> &expression, Owned<Expression> &language);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 CH_AST_NAMESPACE_END

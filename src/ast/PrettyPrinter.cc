@@ -27,16 +27,13 @@ CH_AST_NAMESPACE_BEGIN
 
 PrettyPrinter::PrettyPrinter(const PrettyPrinterConfig &c) : _config(c), out(c.out) {}
 
-void PrettyPrinter::print(const Node &node) { node.accept(*this); }
-
-std::any PrettyPrinter::visitAny(const Program &script) {
+void PrettyPrinter::print(const Program &script) {
     for (auto &handler : script.handlers) {
-        handler->accept(*this);
+        print(*handler);
     }
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Handler &handler) {
+void PrettyPrinter::print(const Handler &handler) {
     switch (handler.kind) {
     case Handler::HandlerKind:
         out << indentString() << "on ";
@@ -49,20 +46,18 @@ std::any PrettyPrinter::visitAny(const Handler &handler) {
     handler.messageKey->accept(*this);
     if (handler.arguments) {
         out << " ";
-        handler.arguments->accept(*this);
+        print(*handler.arguments);
     }
     out << std::endl;
     if (handler.statements) {
-        handler.statements->accept(*this);
+        print(*handler.statements);
     }
     out << indentString() << "end ";
     handler.messageKey->accept(*this);
     out << std::endl;
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const StatementList &sl) {
+void PrettyPrinter::print(const StatementList &sl) {
     _indentLevel += 1;
     for (auto &statement : sl.statements) {
         out << indentString();
@@ -70,11 +65,9 @@ std::any PrettyPrinter::visitAny(const StatementList &sl) {
         out << std::endl;
     }
     _indentLevel -= 1;
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const IdentifierList &il) {
+void PrettyPrinter::print(const IdentifierList &il) {
     auto i = il.identifiers.begin();
     while (i != il.identifiers.end()) {
         (*i)->accept(*this);
@@ -84,11 +77,9 @@ std::any PrettyPrinter::visitAny(const IdentifierList &il) {
             out << ", ";
         }
     }
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const ExpressionList &el) {
+void PrettyPrinter::print(const ExpressionList &el) {
     auto i = el.expressions.begin();
     while (i < el.expressions.end()) {
         (*i)->accept(*this);
@@ -98,43 +89,35 @@ std::any PrettyPrinter::visitAny(const ExpressionList &el) {
             out << ", ";
         }
     }
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const If &ifs) {
+void PrettyPrinter::visit(const If &ifs) {
     out << "if ";
     ifs.condition->accept(*this);
     out << " then" << std::endl;
-    ifs.ifStatements->accept(*this);
+    print(*ifs.ifStatements);
     if (ifs.elseStatements) {
         out << indentString() << "else" << std::endl;
-        ifs.elseStatements->accept(*this);
+        print(*ifs.elseStatements);
     }
     out << indentString() << "end if";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Repeat &r) {
+void PrettyPrinter::visit(const Repeat &r) {
     out << "repeat" << std::endl;
-    r.statements->accept(*this);
+    print(*r.statements);
     out << indentString() << "end repeat";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const RepeatCount &r) {
+void PrettyPrinter::visit(const RepeatCount &r) {
     out << "repeat ";
     r.countExpression->accept(*this);
     out << std::endl;
-    r.statements->accept(*this);
+    print(*r.statements);
     out << indentString() << "end repeat";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const RepeatRange &r) {
+void PrettyPrinter::visit(const RepeatRange &r) {
     out << "repeat with ";
     r.variable->accept(*this);
     out << " = ";
@@ -146,13 +129,11 @@ std::any PrettyPrinter::visitAny(const RepeatRange &r) {
     }
     r.endExpression->accept(*this);
     out << std::endl;
-    r.statements->accept(*this);
+    print(*r.statements);
     out << indentString() << "end repeat";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const RepeatCondition &r) {
+void PrettyPrinter::visit(const RepeatCondition &r) {
     out << "repeat";
     if (r.conditionValue) {
         out << " while ";
@@ -161,83 +142,63 @@ std::any PrettyPrinter::visitAny(const RepeatCondition &r) {
     }
     r.condition->accept(*this);
     out << std::endl;
-    r.statements->accept(*this);
+    print(*r.statements);
     out << indentString() << "end repeat";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const ExitRepeat &) {
+void PrettyPrinter::visit(const ExitRepeat &) {
     out << "exit repeat";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const NextRepeat &) {
+void PrettyPrinter::visit(const NextRepeat &) {
     out << "next repeat";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Exit &s) {
+void PrettyPrinter::visit(const Exit &s) {
     out << "exit ";
     s.messageKey->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Pass &s) {
+void PrettyPrinter::visit(const Pass &s) {
     out << "pass ";
     s.messageKey->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Global &s) {
+void PrettyPrinter::visit(const Global &s) {
     out << "global ";
-    s.variables->accept(*this);
-
-    return std::any();
+    print(*s.variables);
 }
 
-std::any PrettyPrinter::visitAny(const Return &s) {
+void PrettyPrinter::visit(const Return &s) {
     out << "return ";
     if (s.expression) {
         s.expression->accept(*this);
     }
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Do &s) {
+void PrettyPrinter::visit(const Do &s) {
     out << "do ";
     s.expression->accept(*this);
     if (s.language) {
         out << " as ";
         s.language->accept(*this);
     }
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Identifier &e) {
+void PrettyPrinter::visit(const Identifier &e) {
     out << e.name;
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const FunctionCall &e) {
+void PrettyPrinter::visit(const FunctionCall &e) {
     e.identifier->accept(*this);
     out << "(";
     if (e.arguments) {
-        e.arguments->accept(*this);
+        print(*e.arguments);
     }
     out << ")";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Property &p) {
+void PrettyPrinter::visit(const Property &p) {
     out << "the ";
     if (p.adjective) {
         p.adjective->accept(*this);
@@ -248,22 +209,18 @@ std::any PrettyPrinter::visitAny(const Property &p) {
         out << " of ";
         p.expression->accept(*this);
     }
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Descriptor &d) {
+void PrettyPrinter::visit(const Descriptor &d) {
     d.name->accept(*this);
     if (d.value) {
         out << " (";
         d.value->accept(*this);
         out << ")";
     }
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Binary &e) {
+void PrettyPrinter::visit(const Binary &e) {
     out << "(";
     e.leftExpression->accept(*this);
     switch (e.binaryOperator) {
@@ -321,11 +278,9 @@ std::any PrettyPrinter::visitAny(const Binary &e) {
     }
     e.rightExpression->accept(*this);
     out << ")";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Logical &e) {
+void PrettyPrinter::visit(const Logical &e) {
     out << "(";
     e.leftExpression->accept(*this);
     switch (e.logicalOperator) {
@@ -338,11 +293,9 @@ std::any PrettyPrinter::visitAny(const Logical &e) {
     }
     e.rightExpression->accept(*this);
     out << ")";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Unary &e) {
+void PrettyPrinter::visit(const Unary &e) {
     switch (e.unaryOperator) {
     case Unary::ThereIsA:
         out << "there is a";
@@ -358,26 +311,18 @@ std::any PrettyPrinter::visitAny(const Unary &e) {
     out << " (";
     e.expression->accept(*this);
     out << ")";
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const FloatLiteral &f) {
+void PrettyPrinter::visit(const FloatLiteral &f) {
     out << f.value;
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const IntLiteral &i) {
+void PrettyPrinter::visit(const IntLiteral &i) {
     out << i.value;
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const StringLiteral &s) {
+void PrettyPrinter::visit(const StringLiteral &s) {
     out << "\"" << s.value << "\"";
-
-    return std::any();
 }
 
 static std::string ordinalName(const Chunk &c) {
@@ -393,7 +338,7 @@ static std::string ordinalName(const Chunk &c) {
     }
 }
 
-std::any PrettyPrinter::visitAny(const RangeChunk &c) {
+void PrettyPrinter::visit(const RangeChunk &c) {
     out << ordinalName(c) << " ";
     c.start->accept(*this);
     if (c.end) {
@@ -402,38 +347,28 @@ std::any PrettyPrinter::visitAny(const RangeChunk &c) {
     }
     out << " of ";
     c.expression->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const AnyChunk &c) {
+void PrettyPrinter::visit(const AnyChunk &c) {
     out << "any " << ordinalName(c) << " of ";
     c.expression->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const LastChunk &c) {
+void PrettyPrinter::visit(const LastChunk &c) {
     out << "the last " << ordinalName(c) << " of ";
     c.expression->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const MiddleChunk &c) {
+void PrettyPrinter::visit(const MiddleChunk &c) {
     out << "any " << ordinalName(c) << " of ";
     c.expression->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Command &c) {
+void PrettyPrinter::visit(const Command &c) {
     c.name->accept(*this);
     if (c.arguments) {
-        c.arguments->accept(*this);
+        print(*c.arguments);
     }
-
-    return std::any();
 }
 
 std::string stringForPreposition(const Put::Preposition &p) {
@@ -447,64 +382,51 @@ std::string stringForPreposition(const Put::Preposition &p) {
     }
 }
 
-std::any PrettyPrinter::visitAny(const Put &c) {
+void PrettyPrinter::visit(const Put &c) {
     out << "put ";
     c.expression->accept(*this);
     if (c.target) {
         out << " " << stringForPreposition(c.preposition) << " ";
         c.target->accept(*this);
     }
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Get &c) {
+void PrettyPrinter::visit(const Get &c) {
     out << "get ";
     c.expression->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Ask &c) {
+void PrettyPrinter::visit(const Ask &c) {
     out << "ask ";
     c.expression->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Add &c) {
+void PrettyPrinter::visit(const Add &c) {
     out << "add ";
     c.expression->accept(*this);
     out << " to ";
     c.destination->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Subtract &c) {
+void PrettyPrinter::visit(const Subtract &c) {
     out << "subtract ";
     c.expression->accept(*this);
     out << " from ";
     c.destination->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Multiply &c) {
+void PrettyPrinter::visit(const Multiply &c) {
     out << "multiply ";
     c.expression->accept(*this);
     out << " by ";
     c.destination->accept(*this);
-
-    return std::any();
 }
 
-std::any PrettyPrinter::visitAny(const Divide &c) {
+void PrettyPrinter::visit(const Divide &c) {
     out << "divide ";
     c.expression->accept(*this);
     out << " by ";
     c.destination->accept(*this);
-    return std::any();
 }
 
 CH_AST_NAMESPACE_END

@@ -23,93 +23,6 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Program;
-struct Handler;
-struct StatementList;
-struct IdentifierList;
-struct ExpressionList;
-struct If;
-struct Repeat;
-struct RepeatCount;
-struct RepeatRange;
-struct RepeatCondition;
-struct ExitRepeat;
-struct NextRepeat;
-struct Exit;
-struct Pass;
-struct Global;
-struct Return;
-struct Do;
-struct Identifier;
-struct FunctionCall;
-struct Property;
-struct Descriptor;
-struct Binary;
-struct Logical;
-struct Unary;
-struct ThereIsA;
-struct Not;
-struct Minus;
-struct RangeChunk;
-struct AnyChunk;
-struct LastChunk;
-struct MiddleChunk;
-struct Command;
-struct Put;
-struct Get;
-struct Ask;
-struct Add;
-struct Subtract;
-struct Multiply;
-struct Divide;
-
-template <typename Type> struct Literal;
-typedef Literal<double> FloatLiteral;
-typedef Literal<int64_t> IntLiteral;
-typedef Literal<std::string> StringLiteral;
-
-struct AnyVisitor {
-    virtual std::any visitAny(const Program &) = 0;
-    virtual std::any visitAny(const Handler &) = 0;
-    virtual std::any visitAny(const StatementList &) = 0;
-    virtual std::any visitAny(const IdentifierList &) = 0;
-    virtual std::any visitAny(const ExpressionList &) = 0;
-    virtual std::any visitAny(const If &) = 0;
-    virtual std::any visitAny(const Repeat &) = 0;
-    virtual std::any visitAny(const RepeatCount &) = 0;
-    virtual std::any visitAny(const RepeatRange &) = 0;
-    virtual std::any visitAny(const RepeatCondition &) = 0;
-    virtual std::any visitAny(const ExitRepeat &) = 0;
-    virtual std::any visitAny(const NextRepeat &) = 0;
-    virtual std::any visitAny(const Exit &) = 0;
-    virtual std::any visitAny(const Pass &) = 0;
-    virtual std::any visitAny(const Global &) = 0;
-    virtual std::any visitAny(const Return &) = 0;
-    virtual std::any visitAny(const Do &) = 0;
-    virtual std::any visitAny(const Identifier &) = 0;
-    virtual std::any visitAny(const FunctionCall &) = 0;
-    virtual std::any visitAny(const Property &) = 0;
-    virtual std::any visitAny(const Descriptor &) = 0;
-    virtual std::any visitAny(const Binary &) = 0;
-    virtual std::any visitAny(const Logical &) = 0;
-    virtual std::any visitAny(const Unary &) = 0;
-    virtual std::any visitAny(const FloatLiteral &) = 0;
-    virtual std::any visitAny(const IntLiteral &) = 0;
-    virtual std::any visitAny(const StringLiteral &) = 0;
-    virtual std::any visitAny(const RangeChunk &) = 0;
-    virtual std::any visitAny(const AnyChunk &) = 0;
-    virtual std::any visitAny(const LastChunk &) = 0;
-    virtual std::any visitAny(const MiddleChunk &) = 0;
-    virtual std::any visitAny(const Command &) = 0;
-    virtual std::any visitAny(const Put &) = 0;
-    virtual std::any visitAny(const Get &) = 0;
-    virtual std::any visitAny(const Ask &) = 0;
-    virtual std::any visitAny(const Add &) = 0;
-    virtual std::any visitAny(const Subtract &) = 0;
-    virtual std::any visitAny(const Multiply &) = 0;
-    virtual std::any visitAny(const Divide &) = 0;
-};
-
 struct Location {
     unsigned int position = 1;
     unsigned int lineNumber = 1;
@@ -119,8 +32,6 @@ struct Node {
     Location location;
 
     virtual ~Node() = default;
-
-    virtual std::any accept(AnyVisitor &v) const = 0;
 };
 
 static inline std::ostream &operator<<(std::ostream &out, const Location &location) {

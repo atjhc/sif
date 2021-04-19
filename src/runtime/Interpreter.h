@@ -80,7 +80,7 @@ struct InterpreterStackFrame {
     InterpreterStackFrame(const Message &m, const Strong<Object> &t) : message(m), target(t) {}
 };
 
-class Interpreter : public ast::AnyVisitor {
+class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visitor<Value> {
   public:
     Interpreter(const InterpreterConfig &c = InterpreterConfig());
 
@@ -105,56 +105,45 @@ class Interpreter : public ast::AnyVisitor {
     void trace(const std::string &msg) const;
 #endif
 
-#pragma mark - Unused
+#pragma mark - Statement::Visitor
 
-    std::any visitAny(const ast::Program &) override;
-    std::any visitAny(const ast::Handler &) override;
-    std::any visitAny(const ast::StatementList &) override;
-    std::any visitAny(const ast::IdentifierList &) override;
-    std::any visitAny(const ast::ExpressionList &) override;
+    void visit(const ast::If &) override;
+    void visit(const ast::Repeat &) override;
+    void visit(const ast::RepeatCount &) override;
+    void visit(const ast::RepeatRange &) override;
+    void visit(const ast::RepeatCondition &) override;
+    void visit(const ast::ExitRepeat &) override;
+    void visit(const ast::NextRepeat &) override;
+    void visit(const ast::Exit &) override;
+    void visit(const ast::Pass &) override;
+    void visit(const ast::Global &) override;
+    void visit(const ast::Return &) override;
+    void visit(const ast::Do &) override;
+    void visit(const ast::Command &) override;
+    void visit(const ast::Put &) override;
+    void visit(const ast::Get &) override;
+    void visit(const ast::Ask &) override;
+    void visit(const ast::Add &) override;
+    void visit(const ast::Subtract &) override;
+    void visit(const ast::Multiply &) override;
+    void visit(const ast::Divide &) override;
 
-#pragma mark - StatementVisitor
+#pragma mark - Expression::Visitor<Value>
 
-    std::any visitAny(const ast::If &) override;
-    std::any visitAny(const ast::Repeat &) override;
-    std::any visitAny(const ast::RepeatCount &) override;
-    std::any visitAny(const ast::RepeatRange &) override;
-    std::any visitAny(const ast::RepeatCondition &) override;
-    std::any visitAny(const ast::ExitRepeat &) override;
-    std::any visitAny(const ast::NextRepeat &) override;
-    std::any visitAny(const ast::Exit &) override;
-    std::any visitAny(const ast::Pass &) override;
-    std::any visitAny(const ast::Global &) override;
-    std::any visitAny(const ast::Return &) override;
-    std::any visitAny(const ast::Do &) override;
-    std::any visitAny(const ast::Command &) override;
-
-#pragma mark CommandVisitor
-
-    std::any visitAny(const ast::Put &) override;
-    std::any visitAny(const ast::Get &) override;
-    std::any visitAny(const ast::Ask &) override;
-    std::any visitAny(const ast::Add &) override;
-    std::any visitAny(const ast::Subtract &) override;
-    std::any visitAny(const ast::Multiply &) override;
-    std::any visitAny(const ast::Divide &) override;
-
-#pragma mark - ExpressionVisitor
-
-    std::any visitAny(const ast::Identifier &) override;
-    std::any visitAny(const ast::FunctionCall &) override;
-    std::any visitAny(const ast::Property &) override;
-    std::any visitAny(const ast::Descriptor &) override;
-    std::any visitAny(const ast::Binary &) override;
-    std::any visitAny(const ast::Logical &) override;
-    std::any visitAny(const ast::Unary &) override;
-    std::any visitAny(const ast::FloatLiteral &) override;
-    std::any visitAny(const ast::IntLiteral &) override;
-    std::any visitAny(const ast::StringLiteral &) override;
-    std::any visitAny(const ast::RangeChunk &) override;
-    std::any visitAny(const ast::AnyChunk &) override;
-    std::any visitAny(const ast::LastChunk &) override;
-    std::any visitAny(const ast::MiddleChunk &) override;
+    Value visit(const ast::Identifier &) override;
+    Value visit(const ast::FunctionCall &) override;
+    Value visit(const ast::Property &) override;
+    Value visit(const ast::Descriptor &) override;
+    Value visit(const ast::Binary &) override;
+    Value visit(const ast::Logical &) override;
+    Value visit(const ast::Unary &) override;
+    Value visit(const ast::FloatLiteral &) override;
+    Value visit(const ast::IntLiteral &) override;
+    Value visit(const ast::StringLiteral &) override;
+    Value visit(const ast::RangeChunk &) override;
+    Value visit(const ast::AnyChunk &) override;
+    Value visit(const ast::LastChunk &) override;
+    Value visit(const ast::MiddleChunk &) override;
 
   private:
     InterpreterConfig _config;

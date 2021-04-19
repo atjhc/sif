@@ -36,7 +36,7 @@ struct Property : Expression {
     Property(Owned<Identifier> &name, Owned<Expression> &expression);
     Property(Owned<Identifier> &adj, Owned<Identifier> &name, Owned<Expression> &expression);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

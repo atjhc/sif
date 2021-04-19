@@ -17,63 +17,69 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Node.h"
+#include "ast/Statement.h"
+#include "ast/Expression.h"
 
 #include <iostream>
 
 CH_AST_NAMESPACE_BEGIN
+
+struct Program;
+struct Handler;
+struct StatementList;
+struct IdentifierList;
 
 struct PrettyPrinterConfig {
     std::ostream &out = std::cout;
     unsigned int tabSize = 2;
 };
 
-class PrettyPrinter : AnyVisitor {
+class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor {
   public:
     PrettyPrinter(const PrettyPrinterConfig &config = PrettyPrinterConfig());
 
-    void print(const Node &node);
+    void print(const Program &);
 
   private:
-    std::any visitAny(const Program &) override;
-    std::any visitAny(const Handler &) override;
-    std::any visitAny(const StatementList &) override;
-    std::any visitAny(const IdentifierList &) override;
-    std::any visitAny(const ExpressionList &) override;
-    std::any visitAny(const If &) override;
-    std::any visitAny(const Repeat &) override;
-    std::any visitAny(const RepeatCount &) override;
-    std::any visitAny(const RepeatRange &) override;
-    std::any visitAny(const RepeatCondition &) override;
-    std::any visitAny(const ExitRepeat &) override;
-    std::any visitAny(const NextRepeat &) override;
-    std::any visitAny(const Exit &) override;
-    std::any visitAny(const Pass &) override;
-    std::any visitAny(const Global &) override;
-    std::any visitAny(const Return &) override;
-    std::any visitAny(const Do &) override;
-    std::any visitAny(const Identifier &) override;
-    std::any visitAny(const FunctionCall &) override;
-    std::any visitAny(const Property &) override;
-    std::any visitAny(const Descriptor &) override;
-    std::any visitAny(const Binary &) override;
-    std::any visitAny(const Logical &e) override;
-    std::any visitAny(const Unary &e) override;
-    std::any visitAny(const FloatLiteral &) override;
-    std::any visitAny(const IntLiteral &) override;
-    std::any visitAny(const StringLiteral &) override;
-    std::any visitAny(const RangeChunk &) override;
-    std::any visitAny(const AnyChunk &) override;
-    std::any visitAny(const LastChunk &) override;
-    std::any visitAny(const MiddleChunk &) override;
-    std::any visitAny(const Command &) override;
-    std::any visitAny(const Put &) override;
-    std::any visitAny(const Get &) override;
-    std::any visitAny(const Ask &) override;
-    std::any visitAny(const Add &) override;
-    std::any visitAny(const Subtract &) override;
-    std::any visitAny(const Multiply &) override;
-    std::any visitAny(const Divide &) override;
+    void print(const Handler &);
+    void print(const StatementList &);
+    void print(const IdentifierList &);
+    void print(const ExpressionList &);
+
+    void visit(const If &) override;
+    void visit(const Repeat &) override;
+    void visit(const RepeatCount &) override;
+    void visit(const RepeatRange &) override;
+    void visit(const RepeatCondition &) override;
+    void visit(const ExitRepeat &) override;
+    void visit(const NextRepeat &) override;
+    void visit(const Exit &) override;
+    void visit(const Pass &) override;
+    void visit(const Global &) override;
+    void visit(const Return &) override;
+    void visit(const Do &) override;
+    void visit(const Identifier &) override;
+    void visit(const FunctionCall &) override;
+    void visit(const Property &) override;
+    void visit(const Descriptor &) override;
+    void visit(const Binary &) override;
+    void visit(const Logical &e) override;
+    void visit(const Unary &e) override;
+    void visit(const FloatLiteral &) override;
+    void visit(const IntLiteral &) override;
+    void visit(const StringLiteral &) override;
+    void visit(const RangeChunk &) override;
+    void visit(const AnyChunk &) override;
+    void visit(const LastChunk &) override;
+    void visit(const MiddleChunk &) override;
+    void visit(const Command &) override;
+    void visit(const Put &) override;
+    void visit(const Get &) override;
+    void visit(const Ask &) override;
+    void visit(const Add &) override;
+    void visit(const Subtract &) override;
+    void visit(const Multiply &) override;
+    void visit(const Divide &) override;
 
   private:
     PrettyPrinterConfig _config = PrettyPrinterConfig();

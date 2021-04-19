@@ -31,8 +31,6 @@ struct Program : Node {
     Program();
 
     void add(Owned<Handler> &handler) { handlers.push_back(std::move(handler)); }
-
-    virtual std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END

@@ -29,7 +29,7 @@ struct Chunk : Expression {
     Chunk(Type t, Owned<Expression> &e);
     Chunk(Type t);
 
-    virtual std::any accept(AnyVisitor &v) const override = 0;
+    virtual std::any acceptAny(AnyVisitor &v) const override = 0;
 };
 
 struct RangeChunk : Chunk {
@@ -40,28 +40,28 @@ struct RangeChunk : Chunk {
     RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee);
     RangeChunk(Type t, Owned<Expression> &se);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct LastChunk : Chunk {
     LastChunk(Type t, Owned<Expression> &e);
     LastChunk(Type t);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct MiddleChunk : Chunk {
     MiddleChunk(Type t, Owned<Expression> &e);
     MiddleChunk(Type t);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct AnyChunk : Chunk {
     AnyChunk(Type t, Owned<Expression> &e);
     AnyChunk(Type t);
 
-    std::any accept(AnyVisitor &v) const override { return v.visitAny(*this); }
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 CH_AST_NAMESPACE_END
