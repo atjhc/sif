@@ -45,6 +45,7 @@ struct Add;
 struct Subtract;
 struct Multiply;
 struct Divide;
+struct Delete;
 
 struct Statement : Node {
     struct Visitor {
@@ -68,6 +69,7 @@ struct Statement : Node {
         virtual void visit(const Subtract &) = 0;
         virtual void visit(const Multiply &) = 0;
         virtual void visit(const Divide &) = 0;
+        virtual void visit(const Delete &) = 0;
     };
 
     virtual ~Statement() = default;

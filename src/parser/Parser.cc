@@ -41,7 +41,7 @@ void ParserContext::error(Location location, const std::string &msg) {
 
     config.err << config.fileName << ":" << location << ": error: " << msg << std::endl;
 
-    auto lineChunk = chunk(line, location.lineNumber - 1, source);
+    auto lineChunk = index_chunk(chunk::line, location.lineNumber - 1, source);
     auto lineString = lineChunk.get();
     config.err << lineString << std::endl;
 

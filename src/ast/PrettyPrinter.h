@@ -19,6 +19,7 @@
 #include "Common.h"
 #include "ast/Statement.h"
 #include "ast/Expression.h"
+#include "ast/Chunk.h"
 
 #include <iostream>
 
@@ -28,13 +29,14 @@ struct Program;
 struct Handler;
 struct StatementList;
 struct IdentifierList;
+struct Container;
 
 struct PrettyPrinterConfig {
     std::ostream &out = std::cout;
     unsigned int tabSize = 2;
 };
 
-class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor {
+class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor, public Chunk::VoidVisitor {
   public:
     PrettyPrinter(const PrettyPrinterConfig &config = PrettyPrinterConfig());
 
@@ -45,6 +47,8 @@ class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor 
     void print(const StatementList &);
     void print(const IdentifierList &);
     void print(const ExpressionList &);
+
+#pragma mark - Statement::Visitor
 
     void visit(const If &) override;
     void visit(const Repeat &) override;
@@ -58,6 +62,18 @@ class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor 
     void visit(const Global &) override;
     void visit(const Return &) override;
     void visit(const Do &) override;
+    void visit(const Command &) override;
+    void visit(const Put &) override;
+    void visit(const Get &) override;
+    void visit(const Ask &) override;
+    void visit(const Add &) override;
+    void visit(const Subtract &) override;
+    void visit(const Multiply &) override;
+    void visit(const Divide &) override;
+    void visit(const Delete &) override;
+
+#pragma mark - Expression::VoidVisitor
+
     void visit(const Identifier &) override;
     void visit(const FunctionCall &) override;
     void visit(const Property &) override;
@@ -68,18 +84,14 @@ class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor 
     void visit(const FloatLiteral &) override;
     void visit(const IntLiteral &) override;
     void visit(const StringLiteral &) override;
+    void visit(const ChunkExpression &) override;
+
+#pragma mark - Chunk::VoidVisitor
+
     void visit(const RangeChunk &) override;
     void visit(const AnyChunk &) override;
     void visit(const LastChunk &) override;
     void visit(const MiddleChunk &) override;
-    void visit(const Command &) override;
-    void visit(const Put &) override;
-    void visit(const Get &) override;
-    void visit(const Ask &) override;
-    void visit(const Add &) override;
-    void visit(const Subtract &) override;
-    void visit(const Multiply &) override;
-    void visit(const Divide &) override;
 
   private:
     PrettyPrinterConfig _config = PrettyPrinterConfig();

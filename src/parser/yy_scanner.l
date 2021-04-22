@@ -131,6 +131,7 @@ no                          LEX_RETURN(NO);
 in                          LEX_RETURN(IN);
 within                      LEX_RETURN(WITHIN);
 there                       LEX_RETURN(THERE);
+delete                      LEX_RETURN(DELETE);
 
 first                       LEX_RETURN(FIRST);
 second                      LEX_RETURN(SECOND);

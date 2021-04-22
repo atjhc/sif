@@ -32,13 +32,11 @@ struct Descriptor;
 struct Binary;
 struct Logical;
 struct Unary;
+struct ChunkExpression;
 struct ThereIsA;
 struct Not;
 struct Minus;
-struct RangeChunk;
-struct AnyChunk;
-struct LastChunk;
-struct MiddleChunk;
+struct Chunk;
 
 template <typename Type> struct Literal;
 typedef Literal<double> FloatLiteral;
@@ -54,13 +52,10 @@ struct Expression : Node {
         virtual std::any visitAny(const Binary &) = 0;
         virtual std::any visitAny(const Logical &) = 0;
         virtual std::any visitAny(const Unary &) = 0;
+        virtual std::any visitAny(const ChunkExpression &) = 0;
         virtual std::any visitAny(const FloatLiteral &) = 0;
         virtual std::any visitAny(const IntLiteral &) = 0;
         virtual std::any visitAny(const StringLiteral &) = 0;
-        virtual std::any visitAny(const RangeChunk &) = 0;
-        virtual std::any visitAny(const AnyChunk &) = 0;
-        virtual std::any visitAny(const LastChunk &) = 0;
-        virtual std::any visitAny(const MiddleChunk &) = 0;
     };
 
     template <typename T>
@@ -72,13 +67,10 @@ struct Expression : Node {
         std::any visitAny(const Binary &e) { return visit(e); }
         std::any visitAny(const Logical &e) { return visit(e); }
         std::any visitAny(const Unary &e) { return visit(e); }
+        std::any visitAny(const ChunkExpression &e) { return visit(e); }
         std::any visitAny(const FloatLiteral &e) { return visit(e); }
         std::any visitAny(const IntLiteral &e) { return visit(e); }
         std::any visitAny(const StringLiteral &e) { return visit(e); }
-        std::any visitAny(const RangeChunk &e) { return visit(e); }
-        std::any visitAny(const AnyChunk &e) { return visit(e); }
-        std::any visitAny(const LastChunk &e) { return visit(e); }
-        std::any visitAny(const MiddleChunk &e) { return visit(e); }
 
         virtual T visit(const Identifier &) = 0;
         virtual T visit(const FunctionCall &) = 0;
@@ -87,13 +79,10 @@ struct Expression : Node {
         virtual T visit(const Binary &) = 0;
         virtual T visit(const Logical &) = 0;
         virtual T visit(const Unary &) = 0;
+        virtual T visit(const ChunkExpression &) = 0;
         virtual T visit(const FloatLiteral &) = 0;
         virtual T visit(const IntLiteral &) = 0;
         virtual T visit(const StringLiteral &) = 0;
-        virtual T visit(const RangeChunk &) = 0;
-        virtual T visit(const AnyChunk &) = 0;
-        virtual T visit(const LastChunk &) = 0;
-        virtual T visit(const MiddleChunk &) = 0;
     };
 
     struct VoidVisitor : AnyVisitor {
@@ -104,13 +93,10 @@ struct Expression : Node {
         std::any visitAny(const Binary &e) { visit(e); return std::any(); }
         std::any visitAny(const Logical &e) { visit(e); return std::any(); }
         std::any visitAny(const Unary &e) { visit(e); return std::any(); }
+        std::any visitAny(const ChunkExpression &e) { visit(e); return std::any(); }
         std::any visitAny(const FloatLiteral &e) { visit(e); return std::any(); }
         std::any visitAny(const IntLiteral &e) { visit(e); return std::any(); }
         std::any visitAny(const StringLiteral &e) { visit(e); return std::any(); }
-        std::any visitAny(const RangeChunk &e) { visit(e); return std::any(); }
-        std::any visitAny(const AnyChunk &e) { visit(e); return std::any(); }
-        std::any visitAny(const LastChunk &e) { visit(e); return std::any(); }
-        std::any visitAny(const MiddleChunk &e) { visit(e); return std::any(); }
 
         virtual void visit(const Identifier &) = 0;
         virtual void visit(const FunctionCall &) = 0;
@@ -119,22 +105,20 @@ struct Expression : Node {
         virtual void visit(const Binary &) = 0;
         virtual void visit(const Logical &) = 0;
         virtual void visit(const Unary &) = 0;
+        virtual void visit(const ChunkExpression &) = 0;
         virtual void visit(const FloatLiteral &) = 0;
         virtual void visit(const IntLiteral &) = 0;
         virtual void visit(const StringLiteral &) = 0;
-        virtual void visit(const RangeChunk &) = 0;
-        virtual void visit(const AnyChunk &) = 0;
-        virtual void visit(const LastChunk &) = 0;
-        virtual void visit(const MiddleChunk &) = 0;
     };
+
     virtual ~Expression() = default;
 
 	template <typename T>
-	T accept(Visitor<T> &v) {
+	T accept(Visitor<T> &v) const {
 		return std::any_cast<T>(acceptAny(v));
 	}
 
-	void accept(VoidVisitor &v) {
+	void accept(VoidVisitor &v) const {
 		acceptAny(v);
 	}
 
@@ -210,6 +194,15 @@ struct Unary : Expression {
     Owned<Expression> expression;
 
     Unary(Operator unaryOperator, Owned<Expression> &expression);
+
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
+};
+
+struct ChunkExpression : Expression {
+    Owned<Chunk> chunk;
+    Owned<Expression> expression;
+
+    ChunkExpression(Owned<Chunk> &chunk, Owned<Expression> &expression);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

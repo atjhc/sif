@@ -87,6 +87,9 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
     bool send(const Message &message, Strong<Object> target = nullptr);
     Optional<Value> call(const Message &message, Strong<Object> target = nullptr);
 
+    Value evaluate(const ast::Expression &expression);
+    Value evaluateBuiltin(const Message &message);
+
     void add(const std::string &name, Function *fn);
 
     const InterpreterStackFrame &currentFrame();
@@ -94,16 +97,18 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
 
   private:
     void set(const std::string &name, const Value &value);
-    Value get(const std::string &name) const;
+    Optional<Value> get(const std::string &name) const;
 
     void execute(const ast::Handler &handler, const std::vector<Value> &arguments);
     void execute(const ast::StatementList &statements);
 
-    Value evaluateFunction(const Message &message);
-
 #if defined(DEBUG)
     void trace(const std::string &msg) const;
 #endif
+
+    void performArith(const Owned<ast::Expression> &expression,
+                      const Owned<ast::Expression> &container,
+                      const std::function<Value(Value, Value)> &fn);
 
 #pragma mark - Statement::Visitor
 
@@ -127,6 +132,7 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
     void visit(const ast::Subtract &) override;
     void visit(const ast::Multiply &) override;
     void visit(const ast::Divide &) override;
+    void visit(const ast::Delete &) override;
 
 #pragma mark - Expression::Visitor<Value>
 
@@ -137,14 +143,11 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
     Value visit(const ast::Binary &) override;
     Value visit(const ast::Logical &) override;
     Value visit(const ast::Unary &) override;
+    Value visit(const ast::ChunkExpression &) override;
     Value visit(const ast::FloatLiteral &) override;
     Value visit(const ast::IntLiteral &) override;
     Value visit(const ast::StringLiteral &) override;
-    Value visit(const ast::RangeChunk &) override;
-    Value visit(const ast::AnyChunk &) override;
-    Value visit(const ast::LastChunk &) override;
-    Value visit(const ast::MiddleChunk &) override;
-
+    
   private:
     InterpreterConfig _config;
 

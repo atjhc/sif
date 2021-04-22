@@ -325,6 +325,12 @@ void PrettyPrinter::visit(const StringLiteral &s) {
     out << "\"" << s.value << "\"";
 }
 
+void PrettyPrinter::visit(const ChunkExpression &e) {
+    e.chunk->accept(*this);
+    out << " of ";
+    e.expression->accept(*this);
+}
+
 static std::string ordinalName(const Chunk &c) {
     switch (c.type) {
     case Chunk::Char:
@@ -345,23 +351,18 @@ void PrettyPrinter::visit(const RangeChunk &c) {
         out << " to ";
         c.end->accept(*this);
     }
-    out << " of ";
-    c.expression->accept(*this);
 }
 
 void PrettyPrinter::visit(const AnyChunk &c) {
-    out << "any " << ordinalName(c) << " of ";
-    c.expression->accept(*this);
+    out << "any " << ordinalName(c);
 }
 
 void PrettyPrinter::visit(const LastChunk &c) {
-    out << "the last " << ordinalName(c) << " of ";
-    c.expression->accept(*this);
+    out << "the last " << ordinalName(c);
 }
 
 void PrettyPrinter::visit(const MiddleChunk &c) {
-    out << "any " << ordinalName(c) << " of ";
-    c.expression->accept(*this);
+    out << "the middle " << ordinalName(c);
 }
 
 void PrettyPrinter::visit(const Command &c) {
@@ -405,28 +406,33 @@ void PrettyPrinter::visit(const Add &c) {
     out << "add ";
     c.expression->accept(*this);
     out << " to ";
-    c.destination->accept(*this);
+    c.container->accept(*this);
 }
 
 void PrettyPrinter::visit(const Subtract &c) {
     out << "subtract ";
     c.expression->accept(*this);
     out << " from ";
-    c.destination->accept(*this);
+    c.container->accept(*this);
 }
 
 void PrettyPrinter::visit(const Multiply &c) {
     out << "multiply ";
     c.expression->accept(*this);
     out << " by ";
-    c.destination->accept(*this);
+    c.container->accept(*this);
 }
 
 void PrettyPrinter::visit(const Divide &c) {
     out << "divide ";
     c.expression->accept(*this);
     out << " by ";
-    c.destination->accept(*this);
+    c.container->accept(*this);
+}
+
+void PrettyPrinter::visit(const Delete &c) {
+    out << "delete ";
+    c.container->accept(*this);
 }
 
 CH_AST_NAMESPACE_END

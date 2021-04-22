@@ -14,22 +14,22 @@
 //  limitations under the License.
 //
 
+#pragma once
+
+#include "Common.h"
 #include "ast/Chunk.h"
 #include "ast/Expression.h"
 
-CH_AST_NAMESPACE_BEGIN
+#include <string>
+#include <vector>
 
-Chunk::Chunk(Type t) : type(t) {}
+CH_RUNTIME_NAMESPACE_BEGIN
 
-RangeChunk::RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee)
-    : Chunk(t), start(std::move(se)), end(std::move(ee)) {}
+struct Container {
+    std::vector<Ref<ast::Chunk>> chunkList;
+    std::string name;
 
-RangeChunk::RangeChunk(Type t, Owned<Expression> &se) : Chunk(t), start(std::move(se)) {}
+    Container(const Owned<ast::Expression> &e);
+};
 
-LastChunk::LastChunk(Type t) : Chunk(t) {}
-
-MiddleChunk::MiddleChunk(Type t) : Chunk(t) {}
-
-AnyChunk::AnyChunk(Type t) : Chunk(t) {}
-
-CH_AST_NAMESPACE_END
+CH_RUNTIME_NAMESPACE_END

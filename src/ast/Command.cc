@@ -29,7 +29,7 @@ Command::Command(Owned<Identifier> &n) : name(std::move(n)), arguments(nullptr) 
 
 Command::Command(Identifier *n) : name(n), arguments(nullptr) {}
 
-Put::Put(Owned<Expression> &e, Preposition p, Owned<Identifier> &t)
+Put::Put(Owned<Expression> &e, Preposition p, Owned<Expression> &t)
     : Command(new Identifier("put")), expression(std::move(e)), preposition(p),
       target(std::move(t)) {}
 
@@ -40,16 +40,19 @@ Get::Get(Owned<Expression> &e) : Command(new Identifier("get")), expression(std:
 
 Ask::Ask(Owned<Expression> &e) : Command(new Identifier("ask")), expression(std::move(e)) {}
 
-Add::Add(Owned<Expression> &e, Owned<Identifier> &d)
-    : Command(new Identifier("add")), expression(std::move(e)), destination(std::move(d)) {}
+Add::Add(Owned<Expression> &expression, Owned<Expression> &container)
+    : Command(new Identifier("add")), expression(std::move(expression)), container(std::move(container)) {}
 
-Subtract::Subtract(Owned<Expression> &e, Owned<Identifier> &d)
-    : Command(new Identifier("subtract")), expression(std::move(e)), destination(std::move(d)) {}
+Subtract::Subtract(Owned<Expression> &expression, Owned<Expression> &container)
+    : Command(new Identifier("subtract")), expression(std::move(expression)), container(std::move(container)) {}
 
-Multiply::Multiply(Owned<Expression> &e, Owned<Identifier> &d)
-    : Command(new Identifier("multiply")), expression(std::move(e)), destination(std::move(d)) {}
+Multiply::Multiply(Owned<Expression> &expression, Owned<Expression> &container)
+    : Command(new Identifier("multiply")), expression(std::move(expression)), container(std::move(container)) {}
 
-Divide::Divide(Owned<Expression> &e, Owned<Identifier> &d)
-    : Command(new Identifier("divide")), expression(std::move(e)), destination(std::move(d)) {}
+Divide::Divide(Owned<Expression> &expression, Owned<Expression> &container)
+    : Command(new Identifier("divide")), expression(std::move(expression)), container(std::move(container)) {}
+
+Delete::Delete(Owned<Expression> &container)
+    : Command(new Identifier("delete")), container(std::move(container)) {}
 
 CH_AST_NAMESPACE_END

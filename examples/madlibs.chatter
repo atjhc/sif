@@ -1,20 +1,20 @@
 on begin
-  put "Enter a story. A blank line marks the end of the story."
-  put "Use <noun>, <verb>, etc. to mark inputs:"
   readStory
   put the result into story
-  
-  repeat one times
+  repeat
     put offset("<", story) into startIndex
-    if start is 0 then exit repeat
+    if startIndex is 0 then exit repeat
     put offset(">", story) into endIndex
     put character startIndex to endIndex of story into prompt
     ask "Enter a " & prompt & ": "
-    --put it into character startIndex to endIndex of story
+    put it into character startIndex to endIndex of story
   end repeat
+  put story
 end begin
 
 on readStory
+  put "Enter a story. A blank line marks the end of the story."
+  put "Use <noun>, <verb>, etc. to mark inputs:"
   put empty into input
   repeat
     ask ""

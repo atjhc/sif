@@ -37,14 +37,12 @@ struct Command : Statement {
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
-#pragma mark Messages
-
 struct Put : Command {
     Owned<Expression> expression;
     enum Preposition { Before, Into, After } preposition;
-    Owned<Identifier> target;
+    Owned<Expression> target;
 
-    Put(Owned<Expression> &expression, Preposition preposition, Owned<Identifier> &target);
+    Put(Owned<Expression> &expression, Preposition preposition, Owned<Expression> &target);
     Put(Owned<Expression> &expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -68,36 +66,44 @@ struct Ask : Command {
 
 struct Add : Command {
     Owned<Expression> expression;
-    Owned<Identifier> destination;
+    Owned<Expression> container;
 
-    Add(Owned<Expression> &e, Owned<Identifier> &d);
+    Add(Owned<Expression> &expression, Owned<Expression> &container);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Subtract : Command {
     Owned<Expression> expression;
-    Owned<Identifier> destination;
+    Owned<Expression> container;
 
-    Subtract(Owned<Expression> &e, Owned<Identifier> &d);
+    Subtract(Owned<Expression> &expression, Owned<Expression> &container);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Multiply : Command {
     Owned<Expression> expression;
-    Owned<Identifier> destination;
+    Owned<Expression> container;
 
-    Multiply(Owned<Expression> &expression, Owned<Identifier> &destination);
+    Multiply(Owned<Expression> &expression, Owned<Expression> &container);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Divide : Command {
     Owned<Expression> expression;
-    Owned<Identifier> destination;
+    Owned<Expression> container;
 
-    Divide(Owned<Expression> &expression, Owned<Identifier> &destination);
+    Divide(Owned<Expression> &expression, Owned<Expression> &container);
+
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
+};
+
+struct Delete : Command {
+    Owned<Expression> container;
+
+    Delete(Owned<Expression> &container);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };

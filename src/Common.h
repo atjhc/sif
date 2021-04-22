@@ -74,4 +74,51 @@ template <typename T, typename... Args> static inline std::string String(T first
     return ss.str();
 }
 
+template <typename T>
+class range {
+    typename T::iterator _begin;
+    typename T::iterator _end;
+    
+public:
+    range(T &i) 
+        : _begin(i.begin()), _end(i.end()) {}
+
+    range(typename T::iterator begin, typename T::iterator end) 
+        : _begin(begin), _end(end) {}
+
+    typename T::iterator begin() const {
+        return _begin;
+    }
+    
+    typename T::iterator end() const {
+        return _end;
+    }
+};
+
+template <typename T>
+range<T> make_range(T &x) {
+    return range<T>(x);
+}
+
+template <typename T>
+class reversed_range {
+	T &i;
+	
+public:
+	reversed_range(T &i) : i(i) {}
+	
+	decltype(i.rbegin()) begin() const {
+		return i.rbegin();
+	}
+	
+	decltype(i.rend()) end() const {
+		return i.rend();
+	}
+};
+
+template <typename T>
+reversed_range<T> reversed(T &x) {
+	return reversed_range<T>(x);
+}
+
 CH_NAMESPACE_END

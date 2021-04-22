@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "TestSuite.h"
+#include "tests/TestSuite.h"
 #include "utilities/chunk.h"
 
 TEST_CASE(ChunkTests, GetChunks) {
@@ -22,57 +22,57 @@ TEST_CASE(ChunkTests, GetChunks) {
                          "then, line 2\n"
                          "lastly, line 3 of the string\n";
 
-    ASSERT_EQ(chatter::chunk(chatter::character, 0, string).get(), "f");
-    ASSERT_EQ(chatter::chunk(chatter::character, 5, string).get(), "l");
-    ASSERT_EQ(chatter::chunk(chatter::character, 100, string).get(), "");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::character, 0, string).get(), "f");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::character, 5, string).get(), "l");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::character, 100, string).get(), "");
 
-    ASSERT_EQ(chatter::range_chunk(chatter::character, 0, 6, string).get(), "firstly");
-    ASSERT_EQ(chatter::range_chunk(chatter::character, 9, 12, string).get(), "line");
-    ASSERT_EQ(chatter::range_chunk(chatter::character, 51, 100, string).get(),
-              "line 3 of the string\n");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::character, 0, 6, string).get(), "firstly");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::character, 9, 12, string).get(), "line");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::character, 51, 100, string).get(),
+                "line 3 of the string\n");
 
-    ASSERT_EQ(chatter::last_chunk(chatter::character, string).get(), "\n");
+    ASSERT_EQ(chatter::last_chunk(chatter::chunk::character, string).get(), "\n");
 
-    ASSERT_EQ(chatter::chunk(chatter::word, 0, string).get(), "firstly,");
-    ASSERT_EQ(chatter::chunk(chatter::word, 5, string).get(), "string");
-    ASSERT_EQ(chatter::chunk(chatter::word, 100, string).get(), "");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::word, 0, string).get(), "firstly,");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::word, 5, string).get(), "string");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::word, 100, string).get(), "");
 
-    ASSERT_EQ(chatter::range_chunk(chatter::word, 0, 5, string).get(),
-              "firstly, line 1 of the string");
-    ASSERT_EQ(chatter::range_chunk(chatter::word, 6, 7, string).get(), "then, line");
-    ASSERT_EQ(chatter::range_chunk(chatter::word, 9, 100, string).get(),
-              "lastly, line 3 of the string\n");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::word, 0, 5, string).get(),
+                "firstly, line 1 of the string");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::word, 6, 7, string).get(), "then, line");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::word, 9, 100, string).get(),
+                "lastly, line 3 of the string\n");
 
-    ASSERT_EQ(chatter::last_chunk(chatter::word, string).get(), "string");
+    ASSERT_EQ(chatter::last_chunk(chatter::chunk::word, string).get(), "string");
 
-    ASSERT_EQ(chatter::chunk(chatter::item, 0, string).get(), "firstly");
-    ASSERT_EQ(chatter::chunk(chatter::item, 2, string).get(), " line 2\nlastly");
-    ASSERT_EQ(chatter::chunk(chatter::item, 100, string).get(), "");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::item, 0, string).get(), "firstly");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::item, 2, string).get(), " line 2\nlastly");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::item, 100, string).get(), "");
 
-    ASSERT_EQ(chatter::range_chunk(chatter::item, 0, 1, string).get(),
-              "firstly, line 1 of the string\nthen");
-    ASSERT_EQ(chatter::range_chunk(chatter::item, 1, 2, string).get(),
-              " line 1 of the string\nthen, line 2\nlastly");
-    ASSERT_EQ(chatter::range_chunk(chatter::item, 2, 100, string).get(),
-              " line 2\nlastly, line 3 of the string\n");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::item, 0, 1, string).get(),
+                "firstly, line 1 of the string\nthen");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::item, 1, 2, string).get(),
+                " line 1 of the string\nthen, line 2\nlastly");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::item, 2, 100, string).get(),
+                " line 2\nlastly, line 3 of the string\n");
 
-    ASSERT_EQ(chatter::last_chunk(chatter::item, string).get(), " line 3 of the string\n");
+    ASSERT_EQ(chatter::last_chunk(chatter::chunk::item, string).get(), " line 3 of the string\n");
 
-    ASSERT_EQ(chatter::chunk(chatter::line, 0, string).get(), "firstly, line 1 of the string");
-    ASSERT_EQ(chatter::chunk(chatter::line, 2, string).get(), "lastly, line 3 of the string");
-    ASSERT_EQ(chatter::chunk(chatter::line, 100, string).get(), "");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::line, 0, string).get(), "firstly, line 1 of the string");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::line, 2, string).get(), "lastly, line 3 of the string");
+    ASSERT_EQ(chatter::index_chunk(chatter::chunk::line, 100, string).get(), "");
 
-    ASSERT_EQ(chatter::range_chunk(chatter::line, 0, 1, string).get(),
-              "firstly, line 1 of the string\nthen, line 2");
-    ASSERT_EQ(chatter::range_chunk(chatter::line, 1, 2, string).get(),
-              "then, line 2\nlastly, line 3 of the string");
-    ASSERT_EQ(chatter::range_chunk(chatter::line, 2, 100, string).get(),
-              "lastly, line 3 of the string\n");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::line, 0, 1, string).get(),
+                "firstly, line 1 of the string\nthen, line 2");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::line, 1, 2, string).get(),
+                "then, line 2\nlastly, line 3 of the string");
+    ASSERT_EQ(chatter::range_chunk(chatter::chunk::line, 2, 100, string).get(),
+                "lastly, line 3 of the string\n");
 
-    ASSERT_EQ(chatter::last_chunk(chatter::line, string).get(), "lastly, line 3 of the string");
+    ASSERT_EQ(chatter::last_chunk(chatter::chunk::line, string).get(), "lastly, line 3 of the string");
 
     ASSERT_EQ(chatter::random_chunk(
-                  chatter::line, [](int count) { return 1; }, string)
-                  .get(),
-              "then, line 2");
+                    chatter::chunk::line, [](int count) { return 1; }, string)
+                    .get(),
+                "then, line 2");
 }

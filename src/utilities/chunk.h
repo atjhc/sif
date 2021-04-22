@@ -23,17 +23,19 @@
 
 CH_NAMESPACE_BEGIN
 
-enum type { character, word, item, line };
+struct chunk {
+    enum type { character, word, item, line };
 
-struct base_chunk {
-    base_chunk(type type, std::string &source)
+    chunk(type type, std::string &source)
         : _type(type), _begin(source.begin()), _end(source.end()) {}
+    chunk(const chunk &) = default;
 
     template <class T>
-    base_chunk(type type, T source) : _type(type), _begin(source.begin()), _end(source.end()) {}
+    chunk(type type, T source) : _type(type), _begin(source.begin()), _end(source.end()) {}
+
+    chunk& operator=(const chunk &) = default;
 
     std::string::iterator begin() { return _begin; }
-
     std::string::iterator end() { return _end; }
 
     std::string get() { return std::string(begin(), end()); }
@@ -42,16 +44,16 @@ struct base_chunk {
     std::string::iterator scan(std::string::iterator it, size_t count);
     std::string::iterator scan_end(std::string::iterator it);
 
-    const type _type;
+    type _type;
     std::string::iterator _begin, _end;
 };
 
-struct chunk : public base_chunk {
-    chunk(type type, size_t location, std::string &source) : base_chunk(type, source) {
+struct index_chunk : public chunk {
+    index_chunk(type type, size_t location, std::string &source) : chunk(type, source) {
         _seek(location);
     }
 
-    chunk(type type, size_t location, const base_chunk &source) : base_chunk(type, source) {
+    index_chunk(type type, size_t location, const chunk &source) : chunk(type, source) {
         _seek(location);
     }
 
@@ -62,14 +64,14 @@ struct chunk : public base_chunk {
     }
 };
 
-struct range_chunk : public base_chunk {
+struct range_chunk : public chunk {
     range_chunk(type type, size_t begin, size_t end, std::string &source)
-        : base_chunk(type, source) {
+        : chunk(type, source) {
         _seek(begin, end);
     }
 
-    range_chunk(type type, size_t begin, size_t end, const base_chunk &source)
-        : base_chunk(type, source) {
+    range_chunk(type type, size_t begin, size_t end, const chunk &source)
+        : chunk(type, source) {
         _seek(begin, end);
     }
 
@@ -81,14 +83,14 @@ struct range_chunk : public base_chunk {
     }
 };
 
-struct random_chunk : public base_chunk {
+struct random_chunk : public chunk {
     random_chunk(type type, const std::function<int(int)> &random, std::string &source)
-        : base_chunk(type, source) {
+        : chunk(type, source) {
         _seek(random);
     }
 
-    random_chunk(type type, const std::function<int(int)> &random, const base_chunk &source)
-        : base_chunk(type, source) {
+    random_chunk(type type, const std::function<int(int)> &random, const chunk &source)
+        : chunk(type, source) {
         _seek(random);
     }
 
@@ -107,10 +109,10 @@ struct random_chunk : public base_chunk {
     }
 };
 
-struct last_chunk : public base_chunk {
-    last_chunk(type type, std::string &source) : base_chunk(type, source) { _seek(); }
+struct last_chunk : public chunk {
+    last_chunk(type type, std::string &source) : chunk(type, source) { _seek(); }
 
-    last_chunk(type type, const base_chunk &source) : base_chunk(type, source) { _seek(); }
+    last_chunk(type type, const chunk &source) : chunk(type, source) { _seek(); }
 
   private:
     void _seek() {
@@ -126,10 +128,10 @@ struct last_chunk : public base_chunk {
     }
 };
 
-struct middle_chunk : public base_chunk {
-    middle_chunk(type type, std::string &source) : base_chunk(type, source) { _seek(); }
+struct middle_chunk : public chunk {
+    middle_chunk(type type, std::string &source) : chunk(type, source) { _seek(); }
 
-    middle_chunk(type type, const base_chunk &source) : base_chunk(type, source) { _seek(); }
+    middle_chunk(type type, const chunk &source) : chunk(type, source) { _seek(); }
 
   private:
     void _seek() {

@@ -8,6 +8,6 @@ on begin
   put line 1 to 2 of foo
   put item 1 of line 1 to 2 of foo
   put any line of foo
-  put any line of foo
+  put the middle line of foo
   put the last line of foo
 end begin

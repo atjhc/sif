@@ -88,7 +88,7 @@ using namespace chatter::ast;
 %token NOT THE AN NO IS IN WITHIN OF UP NL AS THERE
 
 // Commands
-%token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE
+%token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE DELETE
 
 // Prepositions
 %token INTO BEFORE AFTER
@@ -134,7 +134,7 @@ using namespace chatter::ast;
 %nterm <Owned<StatementList>> block matchedBlock unmatchedBlock elseMatched
 %nterm <Owned<Statement>> matchedStatement unmatchedStatement innerMatched simpleStatement keywordStatement commandStatement
 %nterm <Owned<Statement>> repeatStatement repeat repeatForever repeatCount repeatCondition repeatRange
-%nterm <Owned<Expression>> factor literal expression descriptor ifThen functionCall property ordinal constant
+%nterm <Owned<Expression>> container factor literal expression descriptor ifThen functionCall property ordinal constant
 %nterm <Owned<Chunk>> chunk
 %nterm <Owned<ExpressionList>> expressionList
 
@@ -255,6 +255,10 @@ messageKey
     }
     | DIVIDE {
         $$ = MakeOwned<Identifier>("divide");
+        $$->location = @1.first;
+    } 
+    | DELETE {
+        $$ = MakeOwned<Identifier>("delete");
         $$->location = @1.first;
     }
 ;
@@ -379,7 +383,7 @@ commandStatement
         $$ = MakeOwned<Put>($2);
         $$->location = @1.first;
     }
-    | PUT expression preposition IDENTIFIER {
+    | PUT expression preposition container {
         $$ = MakeOwned<Put>($2, $3, $4);
         $$->location = @1.first;
     }
@@ -391,20 +395,24 @@ commandStatement
         $$ = MakeOwned<Ask>($2);
         $$->location = @1.first;
     }
-    | ADD expression TO IDENTIFIER {
+    | ADD expression TO container {
         $$ = MakeOwned<Add>($2, $4);
         $$->location = @1.first;
     }
-    | SUBTRACT expression FROM IDENTIFIER {
+    | SUBTRACT expression FROM container {
         $$ = MakeOwned<Subtract>($2, $4);
         $$->location = @1.first;
     }
-    | MULTIPLY IDENTIFIER BY expression {
+    | MULTIPLY container BY expression {
         $$ = MakeOwned<Multiply>($4, $2);
         $$->location = @1.first;
     }
-    | DIVIDE IDENTIFIER BY expression {
+    | DIVIDE container BY expression {
         $$ = MakeOwned<Divide>($4, $2);
+        $$->location = @1.first;
+    }
+    | DELETE container {
+        $$ = MakeOwned<Delete>($2);
         $$->location = @1.first;
     }
     | IDENTIFIER {
@@ -660,6 +668,20 @@ times
     | TIMES
 ;
 
+container
+    : IDENTIFIER {
+        $$ = std::move($1);
+    }
+    | chunk OF container {
+        if ($1 && $3) {
+            $$ = MakeOwned<ChunkExpression>($1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
 descriptor
     : IDENTIFIER {
         $$ = MakeOwned<Descriptor>($1);
@@ -690,8 +712,8 @@ factor
     }
     | chunk OF factor {
         if ($1 && $3) {
-            $1->expression = std::move($3);
-            $$ = std::move($1);
+            $$ = MakeOwned<ChunkExpression>($1, $3);
+            $$->location = @1.first;
         } else {
             $$ = nullptr;
         }

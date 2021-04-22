@@ -19,6 +19,8 @@
 #include "ast/Property.h"
 #include "runtime/Object.h"
 #include "runtime/Property.h"
+#include "runtime/Container.h"
+#include "runtime/ChunkResolver.h"
 #include "utilities/chunk.h"
 #include "utilities/devnull.h"
 
@@ -155,7 +157,7 @@ void Interpreter::set(const std::string &name, const Value &value) {
     return _stack.top().locals.set(name, value);
 }
 
-Value Interpreter::get(const std::string &name) const {
+Optional<Value> Interpreter::get(const std::string &name) const {
     const auto &globalNames = _stack.top().globals;
     const auto &i = globalNames.find(name);
 
@@ -166,7 +168,7 @@ Value Interpreter::get(const std::string &name) const {
         value = _stack.top().locals.get(name);
     }
 
-    return value.value_or(Value(name));
+    return value;
 }
 
 void Interpreter::execute(const ast::Handler &handler, const std::vector<Value> &values) {
@@ -196,7 +198,11 @@ void Interpreter::execute(const ast::StatementList &statements) {
     }
 }
 
-Value Interpreter::evaluateFunction(const Message &message) {
+Value Interpreter::evaluate(const ast::Expression &expression) {
+    return expression.accept(*this);
+}
+
+Value Interpreter::evaluateBuiltin(const Message &message) {
     auto fn = _functions.find(lowercase(message.name));
     if (fn == _functions.end()) {
         throw RuntimeError(String("unrecognized function '", message.name, "'"));
@@ -353,28 +359,30 @@ void Interpreter::visit(const Command &c) {
     }
 }
 
-void Interpreter::visit(const Put &s) {
-    auto value = s.expression->accept(*this);
-    if (s.target) {
-        auto &name = s.target->name;
-        switch (s.preposition) {
-        case Put::Before: {
-            auto targetValue = get(name);
-            set(name, value.asString() + targetValue.asString());
-            break;
-        }
-        case Put::After: {
-            auto targetValue = get(name);
-            set(name, targetValue.asString() + value.asString());
-            break;
-        }
-        case Put::Into:
-            set(name, value);
-            break;
-        }
-    } else {
+void Interpreter::visit(const Put &statement) {
+    auto value = evaluate(*statement.expression);
+    if (!statement.target) {
         _config.stdout << value.asString() << std::endl;
+        return;
     }
+
+    auto container = Container(statement.target);
+    std::string targetValue = get(container.name).value_or(Value()).asString();
+    chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, targetValue);
+
+    switch (statement.preposition) {
+    case Put::Before:
+        targetValue.replace(targetChunk.begin(), targetChunk.begin(), value.asString());
+        break;
+    case Put::After:
+        targetValue.replace(targetChunk.end(), targetChunk.end(), value.asString());
+        break;
+    case Put::Into:
+        targetValue.replace(targetChunk.begin(), targetChunk.end(), value.asString());
+        break;
+    }
+
+    set(container.name, targetValue);
 }
 
 void Interpreter::visit(const Get &s) {
@@ -392,76 +400,77 @@ void Interpreter::visit(const Ask &s) {
     _stack.top().locals.set("it", result);
 }
 
-void Interpreter::visit(const Add &c) {
-    auto &targetName = c.destination->name;
-
-    auto value = c.expression->accept(*this);
-    auto targetValue = get(targetName);
-
-    if (!targetValue.isNumber()) {
-        throw RuntimeError("expected number, got " + targetValue.asString(),
-                           c.destination->location);
-    }
+static void expectNumber(const Value &value, const Location &location) {
     if (!value.isNumber()) {
-        throw RuntimeError("expected number, got " + targetValue.asString(),
-                           c.expression->location);
+        throw RuntimeError(String("expected number, got '", value.asString(), "'"), location);
     }
-
-    set(targetName, targetValue.asFloat() + value.asFloat());
 }
 
-void Interpreter::visit(const Subtract &c) {
-    auto &targetName = c.destination->name;
+void Interpreter::performArith(const Owned<Expression> &expression,
+                               const Owned<Expression> &destination,
+                               const std::function<Value(Value, Value)> &fn) {
+    auto value = evaluate(*expression);
+    auto container = Container(destination);
 
-    auto value = c.expression->accept(*this);
-    auto targetValue = get(targetName);
+    auto targetValue = get(container.name).value_or(Value());
+    if (container.chunkList.size() == 0) {
+        expectNumber(value, expression->location);
+        expectNumber(targetValue, destination->location);
+        return set(container.name, fn(targetValue, value));
+    }
 
-    if (!targetValue.isNumber()) {
-        throw RuntimeError("expected number, got " + targetValue.asString(),
-                           c.destination->location);
-    }
-    if (!value.isNumber()) {
-        throw RuntimeError("expected number, got " + targetValue.asString(),
-                           c.expression->location);
-    }
-    set(targetName, targetValue.asFloat() - value.asFloat());
+    auto targetString = targetValue.asString();
+    chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, targetString);
+    targetValue = Value(targetChunk.get());
+    
+    expectNumber(value, expression->location);
+    expectNumber(targetValue, destination->location);
+
+    targetValue = fn(targetValue, value);
+    targetString.replace(targetChunk.begin(), targetChunk.end(), targetValue.asString());
+
+    set(container.name, targetString);                         
 }
 
-void Interpreter::visit(const Multiply &c) {
-    auto &targetName = c.destination->name;
-
-    auto value = c.expression->accept(*this);
-    auto targetValue = get(targetName);
-
-    if (!targetValue.isNumber()) {
-        throw RuntimeError("expected number, got " + targetValue.asString(),
-                           c.destination->location);
-    }
-    if (!value.isNumber()) {
-        throw RuntimeError("expected number, got " + targetValue.asString(),
-                           c.expression->location);
-    }
-    set(targetName, targetValue.asFloat() * value.asFloat());
+void Interpreter::visit(const Add &statement) {
+    performArith(statement.expression, statement.container, [](Value lhs, Value rhs) {
+        return lhs + rhs;
+    });
 }
 
-void Interpreter::visit(const Divide &c) {
-    auto value = c.expression->accept(*this);
-    auto &targetName = c.destination->name;
-    auto targetValue = get(targetName);
-    if (!targetValue.isNumber()) {
-        throw RuntimeError("expected number, got " + targetValue.asString(),
-                           c.destination->location);
-    }
-    if (!value.isNumber()) {
-        throw RuntimeError("expected number, got " + targetValue.asString(),
-                           c.expression->location);
-    }
-    set(targetName, targetValue.asFloat() / value.asFloat());
+void Interpreter::visit(const Subtract &statement) {
+    performArith(statement.expression, statement.container, [](Value lhs, Value rhs) {
+        return lhs - rhs;
+    });
+}
+
+void Interpreter::visit(const Multiply &statement) {
+    performArith(statement.expression, statement.container, [](Value lhs, Value rhs) {
+        return lhs * rhs;
+    });
+}
+
+void Interpreter::visit(const Divide &statement) {
+    performArith(statement.expression, statement.container, [&statement](Value lhs, Value rhs) {
+        if (rhs.asFloat() == 0) {
+            throw RuntimeError("divide by zero", statement.expression->location);
+        }
+        return lhs / rhs;
+    });
+}
+
+void Interpreter::visit(const Delete &statement) {
+    auto container = Container(statement.container);
+    std::string targetValue = get(container.name).value_or(Value()).asString();
+    chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, targetValue);
+    
+    targetValue.erase(targetChunk.begin(), targetChunk.end());
+    set(container.name, targetValue);
 }
 
 #pragma mark - Expression::Visitor<Value>
 
-Value Interpreter::visit(const Identifier &e) { return get(e.name); }
+Value Interpreter::visit(const Identifier &e) { return get(e.name).value_or(Value(e.name)); }
 
 Value Interpreter::visit(const FunctionCall &e) {
     auto message = Message(e.identifier->name);
@@ -478,7 +487,7 @@ Value Interpreter::visit(const FunctionCall &e) {
     }
 
     try {
-        return evaluateFunction(message);
+        return evaluateBuiltin(message);
     } catch (InvalidArgumentError &error) {
         error.where = e.arguments->expressions[error.argumentIndex]->location;
         throw;
@@ -507,7 +516,7 @@ Value Interpreter::visit(const ast::Property &p) {
 
     // Property calls skip the message path.
     try {
-        return evaluateFunction(message);
+        return evaluateBuiltin(message);
     } catch (ArgumentsError &error) {
         error.where = p.location;
         throw;
@@ -523,7 +532,7 @@ Value Interpreter::visit(const ast::Descriptor &d) {
             return Value(_stack.top().target);
         }
         // Assume a variable lookup.
-        return get(d.name->name);
+        return get(d.name->name).value_or(Value(d.name->name));
     }
 
     auto message = Message(d.name->name);
@@ -695,55 +704,16 @@ Value Interpreter::visit(const Unary &e) {
     }
 }
 
+Value Interpreter::visit(const ChunkExpression &e) {
+    auto value = evaluate(*e.expression).asString();
+    auto resolver = runtime::ChunkResolver(*this, value);
+    return resolver.resolve(*e.chunk).get();
+}
+
 Value Interpreter::visit(const FloatLiteral &e) { return Value(e.value); }
 
 Value Interpreter::visit(const IntLiteral &e) { return Value(e.value); }
 
 Value Interpreter::visit(const StringLiteral &e) { return Value(e.value); }
-
-static type chunk_type(Chunk::Type t) {
-    switch (t) {
-    case Chunk::Char:
-        return character;
-    case Chunk::Word:
-        return word;
-    case Chunk::Item:
-        return item;
-    case Chunk::Line:
-        return line;
-    }
-}
-
-Value Interpreter::visit(const RangeChunk &c) {
-    std::string value = c.expression->accept(*this).asString();
-    auto startValue = c.start->accept(*this);
-
-    if (c.end) {
-        auto endValue = c.end->accept(*this);
-        return Value(range_chunk(chunk_type(c.type), startValue.asInteger() - 1,
-                                 endValue.asInteger() - 1, value)
-                         .get());
-    } else {
-        return Value(chunk(chunk_type(c.type), startValue.asInteger() - 1, value).get());
-    }
-}
-
-Value Interpreter::visit(const AnyChunk &c) {
-    auto value = c.expression->accept(*this).asString();
-    return Value(
-        random_chunk(
-            chunk_type(c.type), [this](int count) { return _config.random() * count; }, value)
-            .get());
-}
-
-Value Interpreter::visit(const LastChunk &c) {
-    auto value = c.expression->accept(*this).asString();
-    return Value(last_chunk(chunk_type(c.type), value).get());
-}
-
-Value Interpreter::visit(const MiddleChunk &c) {
-    auto value = c.expression->accept(*this).asString();
-    return Value(middle_chunk(chunk_type(c.type), value).get());
-}
 
 CH_RUNTIME_NAMESPACE_END

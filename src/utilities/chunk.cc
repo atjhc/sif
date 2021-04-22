@@ -4,7 +4,7 @@ CH_NAMESPACE_BEGIN
 
 static bool iswhite(int c) { return isblank(c) || c == '\n'; }
 
-std::string::iterator base_chunk::scan(std::string::iterator it, size_t location) {
+std::string::iterator chunk::scan(std::string::iterator it, size_t location) {
     if (_type == character) {
         return min(_end, it + location);
     }
@@ -32,7 +32,7 @@ std::string::iterator base_chunk::scan(std::string::iterator it, size_t location
     return it;
 }
 
-std::string::iterator base_chunk::scan_end(std::string::iterator it) {
+std::string::iterator chunk::scan_end(std::string::iterator it) {
     if (_type == character && it < _end) {
         return min(_end, it + 1);
     }

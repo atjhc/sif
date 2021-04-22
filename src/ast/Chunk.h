@@ -17,49 +17,89 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Expression.h"
 #include "ast/Node.h"
 
 CH_AST_NAMESPACE_BEGIN
 
-struct Chunk : Expression {
+struct Expression;
+struct RangeChunk;
+struct AnyChunk;
+struct LastChunk;
+struct MiddleChunk;
+
+struct Chunk : Node {
+    struct AnyVisitor {
+        virtual std::any visitAny(const RangeChunk &) = 0;
+        virtual std::any visitAny(const AnyChunk &) = 0;
+        virtual std::any visitAny(const LastChunk &) = 0;
+        virtual std::any visitAny(const MiddleChunk &) = 0;
+    };
+
+    template <typename T>
+    struct Visitor : AnyVisitor {
+        std::any visitAny(const RangeChunk &e) { return visit(e); }
+        std::any visitAny(const AnyChunk &e) { return visit(e); }
+        std::any visitAny(const LastChunk &e) { return visit(e); }
+        std::any visitAny(const MiddleChunk &e) { return visit(e); }
+
+        virtual T visit(const RangeChunk &) = 0;
+        virtual T visit(const AnyChunk &) = 0;
+        virtual T visit(const LastChunk &) = 0;
+        virtual T visit(const MiddleChunk &) = 0;
+    };
+
+    struct VoidVisitor : AnyVisitor {
+        std::any visitAny(const RangeChunk &e) { visit(e); return std::any(); }
+        std::any visitAny(const AnyChunk &e) { visit(e); return std::any(); }
+        std::any visitAny(const LastChunk &e) { visit(e); return std::any(); }
+        std::any visitAny(const MiddleChunk &e) { visit(e); return std::any(); }
+
+        virtual void visit(const RangeChunk &) = 0;
+        virtual void visit(const AnyChunk &) = 0;
+        virtual void visit(const LastChunk &) = 0;
+        virtual void visit(const MiddleChunk &) = 0;
+    };
+
     enum Type { Char, Word, Item, Line } type;
-    Owned<Expression> expression;
 
-    Chunk(Type t, Owned<Expression> &e);
-    Chunk(Type t);
+    Chunk(Type type);
 
-    virtual std::any acceptAny(AnyVisitor &v) const override = 0;
+	template <typename T>
+	T accept(Visitor<T> &v) const {
+		return std::any_cast<T>(acceptAny(v));
+	}
+
+	void accept(VoidVisitor &v) const {
+		acceptAny(v);
+	}
+
+    virtual std::any acceptAny(AnyVisitor &v) const = 0;
 };
 
 struct RangeChunk : Chunk {
     Owned<Expression> start;
     Owned<Expression> end;
 
-    RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee, Owned<Expression> &e);
-    RangeChunk(Type t, Owned<Expression> &se, Owned<Expression> &ee);
-    RangeChunk(Type t, Owned<Expression> &se);
+    RangeChunk(Type type, Owned<Expression> &start, Owned<Expression> &end);
+    RangeChunk(Type type, Owned<Expression> &start);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct LastChunk : Chunk {
-    LastChunk(Type t, Owned<Expression> &e);
-    LastChunk(Type t);
+    LastChunk(Type type);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct MiddleChunk : Chunk {
-    MiddleChunk(Type t, Owned<Expression> &e);
-    MiddleChunk(Type t);
+    MiddleChunk(Type type);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
 
 struct AnyChunk : Chunk {
-    AnyChunk(Type t, Owned<Expression> &e);
-    AnyChunk(Type t);
+    AnyChunk(Type type);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

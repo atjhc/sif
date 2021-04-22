@@ -17,6 +17,7 @@
 #include "ast/Expression.h"
 #include "ast/Descriptor.h"
 #include "ast/Identifier.h"
+#include "ast/Chunk.h"
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -38,5 +39,8 @@ Logical::Logical(Operator o, Owned<Expression> &l, Owned<Expression> &r)
     : logicalOperator(o), leftExpression(std::move(l)), rightExpression(std::move(r)) {}
 
 Unary::Unary(Operator o, Owned<Expression> &e) : unaryOperator(o), expression(std::move(e)) {}
+
+ChunkExpression::ChunkExpression(Owned<Chunk> &c, Owned<Expression> &e) 
+    : chunk(std::move(c)), expression(std::move(e)) {}
 
 CH_AST_NAMESPACE_END
