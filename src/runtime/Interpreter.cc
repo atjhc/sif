@@ -367,6 +367,13 @@ void Interpreter::visit(const Put &statement) {
     }
 
     auto container = Container(statement.target);
+
+    // Optimization for simple assignment.
+    if (statement.preposition == Put::Into && container.chunkList.size() == 0) {
+        set(container.name, value);
+        return;
+    }
+
     std::string targetValue = get(container.name).value_or(Value()).asString();
     chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, targetValue);
 
