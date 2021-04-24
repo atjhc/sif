@@ -65,6 +65,7 @@ class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor,
     void visit(const Command &) override;
     void visit(const Put &) override;
     void visit(const Get &) override;
+    void visit(const Set &) override;
     void visit(const Ask &) override;
     void visit(const Add &) override;
     void visit(const Subtract &) override;

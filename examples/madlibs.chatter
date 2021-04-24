@@ -1,3 +1,5 @@
+-- http://rosettacode.org/wiki/Mad_Libs
+
 on begin
   readStory
   put the result into story

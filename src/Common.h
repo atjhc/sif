@@ -68,10 +68,11 @@ template <class T, class... Args> std::shared_ptr<T> MakeStrong(Args &&...args) 
 
 static inline std::string String() { return std::string(); }
 
-template <typename T, typename... Args> static inline std::string String(T first, Args... args) {
-    std::ostringstream ss;
-    ss << first << String(args...);
-    return ss.str();
+template <typename... Args> 
+static inline std::string String(Args... args) {
+	std::ostringstream ss;
+	(ss << ... << args);
+	return ss.str();
 }
 
 template <typename T>

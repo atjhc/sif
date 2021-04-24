@@ -88,7 +88,7 @@ using namespace chatter::ast;
 %token NOT THE AN NO IS IN WITHIN OF UP NL AS THERE
 
 // Commands
-%token PUT GET ASK ADD SUBTRACT MULTIPLY DIVIDE DELETE
+%token PUT GET SET ASK ADD SUBTRACT MULTIPLY DIVIDE DELETE
 
 // Prepositions
 %token INTO BEFORE AFTER
@@ -390,6 +390,16 @@ commandStatement
     | GET expression {
         $$ = MakeOwned<Get>($2);
         $$->location = @1.first;
+    }
+    | SET property TO expression {
+        auto p = dynamic_cast<Property*>($2.get());
+        if (p) $2.release();
+
+        auto property = Owned<Property>(p);
+        if (property && $4) {
+            $$ = MakeOwned<ast::Set>(property, $4);
+            $$->location = @1.first;
+        }
     }
     | ASK expression {
         $$ = MakeOwned<Ask>($2);
@@ -718,6 +728,9 @@ factor
             $$ = nullptr;
         }
     }
+    | property {
+        $$ = std::move($1);
+    }
     | LPAREN expression RPAREN {
         if ($2) {
             $$ = std::move($2);
@@ -749,9 +762,6 @@ expression
             $$ = nullptr;
         }
     } 
-    | property {
-        $$ = std::move($1);
-    }
     | MINUS expression {
         if ($2) {
             $$ = MakeOwned<Unary>(Unary::Minus, $2);

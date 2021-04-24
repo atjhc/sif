@@ -1,3 +1,5 @@
+-- http://rosettacode.org/wiki/Magic_8-ball
+
 on begin
   put ¬
 "It is certain

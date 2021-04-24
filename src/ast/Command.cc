@@ -16,6 +16,7 @@
 
 #include "ast/Command.h"
 #include "ast/Identifier.h"
+#include "ast/Property.h"
 
 CH_AST_NAMESPACE_BEGIN
 
@@ -38,6 +39,9 @@ Put::Put(Owned<Expression> &e)
 
 Get::Get(Owned<Expression> &e) : Command(new Identifier("get")), expression(std::move(e)) {}
 
+Set::Set(Owned<Property> &property, Owned<Expression> &expression) : 
+    Command(new Identifier("set")), property(std::move(property)), expression(std::move(expression)) {}
+
 Ask::Ask(Owned<Expression> &e) : Command(new Identifier("ask")), expression(std::move(e)) {}
 
 Add::Add(Owned<Expression> &expression, Owned<Expression> &container)
@@ -52,7 +56,7 @@ Multiply::Multiply(Owned<Expression> &expression, Owned<Expression> &container)
 Divide::Divide(Owned<Expression> &expression, Owned<Expression> &container)
     : Command(new Identifier("divide")), expression(std::move(expression)), container(std::move(container)) {}
 
-Delete::Delete(Owned<Expression> &container)
-    : Command(new Identifier("delete")), container(std::move(container)) {}
+Delete::Delete(Owned<Expression> &expression)
+    : Command(new Identifier("delete")), expression(std::move(expression)) {}
 
 CH_AST_NAMESPACE_END

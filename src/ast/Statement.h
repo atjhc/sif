@@ -40,6 +40,7 @@ struct Do;
 struct Command;
 struct Put;
 struct Get;
+struct Set;
 struct Ask;
 struct Add;
 struct Subtract;
@@ -64,6 +65,7 @@ struct Statement : Node {
         virtual void visit(const Command &) = 0;
         virtual void visit(const Put &) = 0;
         virtual void visit(const Get &) = 0;
+        virtual void visit(const Set &) = 0;
         virtual void visit(const Ask &) = 0;
         virtual void visit(const Add &) = 0;
         virtual void visit(const Subtract &) = 0;

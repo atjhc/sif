@@ -48,8 +48,9 @@ class Value {
         return *this;
     }
 
-    template <typename T> Value(const T &v) : value(v) {}
     Value(const std::size_t &s) : value(static_cast<int64_t>(s)) {}
+    Value(const Strong<Object> &obj) : value(obj) {}
+    template <typename T> Value(const T &v) : value(v) {}
 
     bool isEmpty() const;
     bool isNumber() const;

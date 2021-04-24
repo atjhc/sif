@@ -127,6 +127,7 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
     void visit(const ast::Command &) override;
     void visit(const ast::Put &) override;
     void visit(const ast::Get &) override;
+    void visit(const ast::Set &) override;
     void visit(const ast::Ask &) override;
     void visit(const ast::Add &) override;
     void visit(const ast::Subtract &) override;

@@ -94,6 +94,7 @@ else                        LEX_RETURN(ELSE);
 of                          LEX_RETURN(OF);
 put                         LEX_RETURN(PUT);
 get                         LEX_RETURN(GET);
+set                         LEX_RETURN(SET);
 ask                         LEX_RETURN(ASK);
 into                        LEX_RETURN(INTO);
 after                       LEX_RETURN(AFTER);

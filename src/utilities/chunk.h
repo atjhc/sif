@@ -40,6 +40,8 @@ struct chunk {
 
     std::string get() { return std::string(begin(), end()); }
 
+    type chunk_type() const { return _type; }
+
   protected:
     std::string::iterator scan(std::string::iterator it, size_t count);
     std::string::iterator scan_end(std::string::iterator it);

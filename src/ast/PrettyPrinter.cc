@@ -397,6 +397,13 @@ void PrettyPrinter::visit(const Get &c) {
     c.expression->accept(*this);
 }
 
+void PrettyPrinter::visit(const Set &c) {
+    out << "set ";
+    c.property->accept(*this);
+    out << " to ";
+    c.expression->accept(*this);
+}
+
 void PrettyPrinter::visit(const Ask &c) {
     out << "ask ";
     c.expression->accept(*this);
@@ -432,7 +439,7 @@ void PrettyPrinter::visit(const Divide &c) {
 
 void PrettyPrinter::visit(const Delete &c) {
     out << "delete ";
-    c.container->accept(*this);
+    c.expression->accept(*this);
 }
 
 CH_AST_NAMESPACE_END

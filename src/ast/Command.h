@@ -56,6 +56,15 @@ struct Get : Command {
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
+struct Set : Command {
+    Owned<Property> property;
+    Owned<Expression> expression;
+
+    Set(Owned<Property> &property, Owned<Expression> &expression);
+
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
+};
+
 struct Ask : Command {
     Owned<Expression> expression;
 
@@ -101,9 +110,9 @@ struct Divide : Command {
 };
 
 struct Delete : Command {
-    Owned<Expression> container;
+    Owned<Expression> expression;
 
-    Delete(Owned<Expression> &container);
+    Delete(Owned<Expression> &expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };

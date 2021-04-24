@@ -141,7 +141,7 @@ std::string Value::asString() const {
         return *v ? "true" : "false";
     }
     if (auto v = std::get_if<Strong<Object>>(&value)) {
-        return v->get()->name();
+        return v->get()->asString().value_or(v->get()->name());
     }
     assert(false);
 }

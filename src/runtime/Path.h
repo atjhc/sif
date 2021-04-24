@@ -17,30 +17,25 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Property.h"
+#include "runtime/Object.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-struct Property {
-    std::string adjective;
-    std::string name;
+class Path : public Object {
+  public:
 
-    Property(const std::string &a, const std::string &n)
-        : adjective(lowercase(a)), name(lowercase(name)) {}
+    ~Path() = default;
 
-    Property(const ast::Property &p) : name(lowercase(p.name->name)) {
-        if (p.adjective) {
-            adjective = lowercase(p.adjective->name);
-        }
-    }
+    virtual Optional<Value> valueForProperty(const Property &p) const override;
+    virtual bool setValueForProperty(const Value &v, const Property &p) override;
 
-    bool is(const std::string &n) const {
-        return adjective.empty() && name == lowercase(n);
-    }
+    virtual bool exists() const override;
+    virtual Optional<std::string> asString() const override;
 
-    bool is(const std::string &adj, const std::string &n) const {
-        return adjective == lowercase(adj) && name == lowercase(n);
-    }
+  protected:
+    std::string _path;
+
+    Path(const std::string &path);
 };
 
 CH_RUNTIME_NAMESPACE_END

@@ -40,7 +40,7 @@ Strong<Object> Object::Make(const std::string &name, const std::string &source,
 
 Object::Object(const std::string &name, const std::string &source, Owned<ast::Program> program,
                const Strong<Object> &parent)
-    : _name(name), _source(source), _program(std::move(program)), _parent(parent) {
+    : _source(source), _program(std::move(program)), _parent(parent), _name(name) {
 
     if (_program) {
         for (auto &handler : _program->handlers) {
@@ -78,12 +78,20 @@ Optional<Ref<ast::Handler>> Object::functionFor(const Message &message) {
 }
 
 Optional<Value> Object::valueForProperty(const Property &p) const {
-    if (p.name == "name") {
+    if (p.is("name")) {
         return Value(_name);
     }
     return Empty;
 }
 
 bool Object::setValueForProperty(const Value &v, const Property &p) { return false; }
+
+Optional<std::string> Object::asString() const {
+    return _name;
+}
+
+bool Object::exists() const {
+    return true;
+}
 
 CH_RUNTIME_NAMESPACE_END

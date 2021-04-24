@@ -43,14 +43,19 @@ class Object {
     virtual Optional<Value> valueForProperty(const Property &p) const;
     virtual bool setValueForProperty(const Value &v, const Property &p);
 
+    virtual bool exists() const;
+    virtual Optional<std::string> asString() const;
+
   private:
-    std::string _name;
     std::string _source;
     Owned<ast::Program> _program;
     Strong<Object> _parent;
 
     Map<std::string, Ref<ast::Handler>> _handlers;
     Map<std::string, Ref<ast::Handler>> _functions;
+  
+  protected:
+    std::string _name;
 
     Object(const std::string &name, const std::string &source, Owned<ast::Program> program,
            const Strong<Object> &parent);
