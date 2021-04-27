@@ -11,8 +11,9 @@ on begin
 	return 1 = 2
 	return 1 is 2
 	return 1 ≠ 2
-	return 1 is not 2
 	return 1 <> 2
+	return 1 is not 2
+	return 1 = not 2
 	return 1 or 2
 	return 1 and 2
 	return 1 < 2

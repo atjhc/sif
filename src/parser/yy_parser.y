@@ -77,6 +77,10 @@ using namespace chatter::ast;
 %locations
 %expect 0
 
+%left IDENTIFIER
+%left THE
+%left OF
+
 // Virtual start tokens.
 %token START_PROGRAM
 %token START_STATEMENT
@@ -94,9 +98,9 @@ using namespace chatter::ast;
 %token INTO BEFORE AFTER
 
 // Expressions
-%token LPAREN "(" RPAREN ")" PLUS "+" MINUS "-" MULT "*" DIV "/" LT "<" GT ">" LTE "<=" GTE ">=" CARROT "^"
-%token CONCAT "&" CONCAT_SPACE "&&" EQ "=" NEQ "<>" AND OR CONTAINS
-
+%token LPAREN "(" RPAREN ")" PLUS "+" MINUS "-" MULT "*" DIV "/" DIV_TRUNC "div" LT "<" GT ">"
+%token LTE "<=" GTE ">=" CARROT "^" CONCAT "&" CONCAT_SPACE "&&" EQ "=" NEQ "<>" AND OR CONTAINS MOD
+%token IS_AN "is an" IS_NOT_AN "is not an" IS_IN "is in" IS_NOT_IN "is not in"
 // Constants
 %token EMPTY FALSE QUOTE SPACE TAB TRUE PI
 %token ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN
@@ -108,33 +112,18 @@ using namespace chatter::ast;
 // Chunks
 %token CHAR WORD LINE ITEM
 
-%nonassoc IDENTIFIER 
-%nonassoc OF
-
-%left OR AND
-%left IS EQ NEQ
-%left NOT
-%left CONTAINS
-%left LT GT LTE GTE
-%left CONCAT CONCAT_SPACE
-%left PLUS MINUS
-%left MULT DIV DIV_TRUNC MOD
-%left CARROT
-
-%nonassoc THEN
-%nonassoc ELSE
-
 %token <Owned<Expression>> FLOAT_LITERAL INT_LITERAL STRING_LITERAL
 %token <Owned<Identifier>> IDENTIFIER
 
 %nterm <Owned<Program>> program
 %nterm <Owned<Handler>> handlerDecl handler
 %nterm <Owned<Identifier>> messageKey
-%nterm <Owned<IdentifierList>> identifierList
+%nterm <Owned<IdentifierList>> identifierList identifiers
 %nterm <Owned<StatementList>> block matchedBlock unmatchedBlock elseMatched
 %nterm <Owned<Statement>> matchedStatement unmatchedStatement innerMatched simpleStatement keywordStatement commandStatement
 %nterm <Owned<Statement>> repeatStatement repeat repeatForever repeatCount repeatCondition repeatRange
-%nterm <Owned<Expression>> container factor literal expression descriptor ifThen functionCall property ordinal constant
+%nterm <Owned<Expression>> container literal descriptor ifThen functionCall property ordinal constant
+%nterm <Owned<Expression>> primary grouping unary exponent factor term concat comparison equality unary_existence logical expression
 %nterm <Owned<Chunk>> chunk
 %nterm <Owned<ExpressionList>> expressionList
 
@@ -429,10 +418,6 @@ commandStatement
         $$ = MakeOwned<Command>($1);
         $$->location = @1.first;
     }
-    | IDENTIFIER expression {
-        $$ = MakeOwned<Command>($1, $2);
-        $$->location = @1.first;
-    }
     | IDENTIFIER expressionList {
         $$ = MakeOwned<Command>($1, $2);
         $$->location = @1.first;
@@ -692,12 +677,23 @@ container
     }
 ;
 
-descriptor
+identifiers
     : IDENTIFIER {
+        $$ = MakeOwned<IdentifierList>();
+        $$->add($1);
+    }
+    | IDENTIFIER identifiers {
+        $2->identifiers.insert($2->identifiers.begin(), std::move($1));
+        $$ = std::move($2);
+    }
+;
+
+descriptor
+    : identifiers %prec IDENTIFIER {
         $$ = MakeOwned<Descriptor>($1);
         $$->location = @1.first;
     }
-    | IDENTIFIER factor {
+    | identifiers literal {
         if ($2) {
             $$ = MakeOwned<Descriptor>($1, $2);
             $$->location = @1.first;
@@ -705,315 +701,6 @@ descriptor
             $$ = nullptr;
         }
     }
-;
-
-factor
-    : literal {
-        $$ = std::move($1);
-    }
-    | constant {
-        $$ = std::move($1);
-    }
-    | descriptor {
-        $$ = std::move($1);
-    }
-    | functionCall {
-        $$ = std::move($1);
-    }
-    | chunk OF factor {
-        if ($1 && $3) {
-            $$ = MakeOwned<ChunkExpression>($1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | property {
-        $$ = std::move($1);
-    }
-    | LPAREN expression RPAREN {
-        if ($2) {
-            $$ = std::move($2);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-;
-
-literal
-    : INT_LITERAL {
-        $$ = std::move($1);
-    }
-    | FLOAT_LITERAL {
-        $$ = std::move($1);
-    }
-    | STRING_LITERAL {
-        $$ = std::move($1);
-    }
-;
-
-expression
-    : factor {
-        if ($1) {
-            $$ = std::move($1);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    } 
-    | MINUS expression {
-        if ($2) {
-            $$ = MakeOwned<Unary>(Unary::Minus, $2);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    } 
-    | NOT expression {
-        if ($2) {
-            $$ = MakeOwned<Unary>(Unary::Not, $2);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | THERE IS AN descriptor {
-        if ($4) {
-            $$ = MakeOwned<Unary>(Unary::ThereIsA, $4);
-            $$->location = @1.first;
-        }
-
-    }
-    | THERE IS NOT AN descriptor {
-        if ($5) {
-            Owned<Expression> thereIs = Owned<Expression>(new Unary(Unary::ThereIsA, $5));
-            $$ = MakeOwned<Unary>(Unary::Not, thereIs);
-            $$->location = @1.first;
-        }
-    }
-    | expression PLUS expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Plus, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression MINUS expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Minus, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression MULT expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Multiply, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression DIV expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Divide, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    } 
-    | expression IS expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Equal, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression EQ expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Equal, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression MOD expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Mod, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression NEQ expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::NotEqual, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression OR expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Logical>(Logical::Or, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression AND expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Logical>(Logical::And, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression IS IN expression %prec AND {
-        if ($1 && $4) {
-            $$ = MakeOwned<Binary>(Binary::IsIn, $1, $4);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression IS NOT IN expression %prec IS {
-        if ($1 && $5) {
-            Owned<Expression> isIn = MakeOwned<Binary>(Binary::IsIn, $1, $5);
-            $$ = MakeOwned<Unary>(Unary::Not, isIn);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression IS AN expression %prec IS {
-        if ($1 && $4) {
-            $$ = MakeOwned<Binary>(Binary::IsA, $1, $4);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression IS NOT AN expression %prec IS {
-        if ($1 && $5) {
-            Owned<Expression> isAn = MakeOwned<Binary>(Binary::IsA, $1, $5);
-            $$ = MakeOwned<Unary>(Unary::Not, isAn);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression CONTAINS expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Contains, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression LT expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::LessThan, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression GT expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::GreaterThan, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    } 
-    | expression LTE expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::LessThanOrEqual, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression GTE expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::GreaterThanOrEqual, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression CONCAT expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Concat, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression CONCAT_SPACE expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::ConcatWithSpace, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | expression CARROT expression {
-        if ($1 && $3) {
-            $$ = MakeOwned<Binary>(Binary::Exponent, $1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-;
-
-property
-    : THE IDENTIFIER {
-        $$ = MakeOwned<Property>($2);
-        $$->location = @2.first;
-    }
-    | THE IDENTIFIER IDENTIFIER {
-        $$ = MakeOwned<Property>($2, $3);
-        $$->location = @2.first;
-    }
-    | THE IDENTIFIER OF factor {
-        if ($4) {
-            $$ = MakeOwned<Property>($2, $4);
-            $$->location = @2.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | IDENTIFIER OF factor {
-        if ($3) {
-            $$ = MakeOwned<Property>($1, $3);
-            $$->location = @1.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    | THE IDENTIFIER IDENTIFIER OF factor {
-        if ($5) {
-            $$ = MakeOwned<Property>($2, $3, $5);
-            $$->location = @2.first;
-        } else {
-            $$ = nullptr;
-        }
-    }
-    // TODO: Disabled for now due to conflicts.
-    // | IDENTIFIER IDENTIFIER OF factor {
-    //     if ($4) {
-    //         $$ = MakeOwned<Property>($1, $2, $4);
-    //         $$->location = @1.first;
-    //     } else {
-    //         $$ = nullptr;
-    //     }
-    // }
 ;
 
 functionCall
@@ -1031,12 +718,369 @@ functionCall
     }
 ;
 
-expressionList
-    : expression COMMA expression {
+literal
+    : constant {
+        $$ = std::move($1);
+    }
+    | INT_LITERAL {
+        $$ = std::move($1);
+    }
+    | FLOAT_LITERAL {
+        $$ = std::move($1);
+    }
+    | STRING_LITERAL {
+        $$ = std::move($1);
+    }
+;
+
+grouping
+    : literal {
+        $$ = std::move($1);
+    }
+    | LPAREN expression RPAREN {
+        if ($2) {
+            $$ = std::move($2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+primary
+    : grouping {
+        $$ = std::move($1);
+    }
+    | descriptor {
+        $$ = std::move($1);
+    }
+    | functionCall {
+        $$ = std::move($1);
+    }
+    | chunk OF primary {
         if ($1 && $3) {
+            $$ = MakeOwned<ChunkExpression>($1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+property
+    : primary {
+        $$ = std::move($1);
+    }
+    | THE identifiers {
+        $$ = MakeOwned<Property>($2);
+        $$->location = @2.first;
+    }
+    | identifiers OF primary {
+        if ($3) {
+            $$ = MakeOwned<Property>($1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | THE identifiers OF primary {
+        if ($4) {
+            $$ = MakeOwned<Property>($2, $4);
+            $$->location = @2.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+unary
+    : property {
+        $$ = std::move($1);
+    }
+    | MINUS unary {
+        if ($2) {
+            $$ = MakeOwned<Unary>(Unary::Minus, $2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
+    | NOT unary {
+        if ($2) {
+            $$ = MakeOwned<Unary>(Unary::Not, $2);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+exponent
+    : unary {
+        $$ = std::move($1);
+    }
+    | exponent CARROT unary {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Exponent, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+factor
+    : exponent {
+        $$ = std::move($1);
+    }
+    | factor MULT exponent {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Multiply, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | factor DIV exponent {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Divide, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | factor DIV_TRUNC exponent {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Divide, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
+    | factor MOD exponent {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Mod, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+term
+    : factor {
+        $$ = std::move($1);
+    }
+    | term PLUS factor {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Plus, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | term MINUS factor {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Minus, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+concat
+    : term {
+        $$ = std::move($1);
+    }
+    | concat CONCAT term {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Concat, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | concat CONCAT_SPACE term {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::ConcatWithSpace, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+comparison
+    : concat {
+        $$ = std::move($1);
+    }
+    | comparison IS_IN concat {
+        if ($1, $3) {
+            $$ = MakeOwned<Binary>(Binary::IsIn, $1, $3);
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | comparison IS_NOT_IN concat {
+        if ($1, $3) {
+            Owned<Expression> isIn = MakeOwned<Binary>(Binary::IsIn, $1, $3);
+            $$ = MakeOwned<Unary>(Unary::Not, isIn);
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | comparison IS_AN concat {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::IsA, $1, $3);
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | comparison IS_NOT_AN concat {
+        if ($1 && $3) {
+            Owned<Expression> isAn = MakeOwned<Binary>(Binary::IsA, $1, $3);
+            $$ = MakeOwned<Unary>(Unary::Not, isAn);
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | comparison LT concat {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::LessThan, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | comparison GT concat {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::GreaterThan, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    } 
+    | comparison LTE concat {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::LessThanOrEqual, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | comparison GTE concat {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::GreaterThanOrEqual, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+
+    | comparison CONTAINS concat {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Contains, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+equality
+    : comparison {
+        $$ = std::move($1);
+    }
+    | equality EQ comparison {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Equal, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | equality NEQ comparison {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::NotEqual, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | equality IS comparison {
+        if ($1 && $3) {
+            $$ = MakeOwned<Binary>(Binary::Equal, $1, $3);
+        } else {
+            $$ = nullptr;
+        }
+    }
+    // TODO: disabled due to the conflict with `NOT unary`.
+    // We could solve this using matched/unmatched expressions,
+    // but that would add a ton of new rules, so instead we
+    // collapse IS NOT into one token (NEQ) in the lexer.
+    // | equality IS NOT comparison {
+    //     if ($1 && $4) {
+    //         $$ = MakeOwned<Binary>(Binary::NotEqual, $1, $4);
+    //     } else {
+    //         $$ = nullptr;
+    //     }
+    // }
+;
+
+unary_existence
+    : equality {
+        $$ = std::move($1);
+    }
+    | THERE IS AN descriptor {
+        if ($4) {
+            $$ = MakeOwned<Unary>(Unary::ThereIsA, $4);
+            $$->location = @1.first;
+        }
+
+    }
+    | THERE IS NOT AN descriptor {
+        if ($5) {
+            Owned<Expression> thereIs = Owned<Expression>(new Unary(Unary::ThereIsA, $5));
+            $$ = MakeOwned<Unary>(Unary::Not, thereIs);
+            $$->location = @1.first;
+        }
+    }
+;
+
+logical
+    : unary_existence {
+        $$ = std::move($1);
+    }
+    | logical OR unary_existence {
+        if ($1 && $3) {
+            $$ = MakeOwned<Logical>(Logical::Or, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | logical AND unary_existence {
+        if ($1 && $3) {
+            $$ = MakeOwned<Logical>(Logical::And, $1, $3);
+            $$->location = @1.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+;
+
+expression
+    : logical {
+        $$ = std::move($1);
+    }
+;
+
+expressionList
+    : expression {
+        if ($1) {
             $$ = MakeOwned<ExpressionList>();
             $$->add($1);
-            $$->add($3);
         } else {
             $$ = nullptr;
         }
@@ -1068,11 +1112,11 @@ chunk
         $$ = MakeOwned<RangeChunk>($3, $2);
         $$->location = @2.first;
     }
-    | chunkType factor {
+    | chunkType primary {
         $$ = MakeOwned<RangeChunk>($1, $2);
         $$->location = @1.first;
     }
-    | chunkType factor TO factor {
+    | chunkType primary TO primary {
         $$ = MakeOwned<RangeChunk>($1, $2, $4);
         $$->location = @1.first;
     }

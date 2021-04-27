@@ -28,6 +28,8 @@
 #include "runtime/Function.h"
 #include "runtime/Message.h"
 #include "runtime/Value.h"
+#include "runtime/Property.h"
+#include "runtime/Descriptor.h"
 
 #include <iostream>
 #include <optional>
@@ -82,15 +84,18 @@ struct InterpreterStackFrame {
 
 class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visitor<Value> {
   public:
+    using ObjectFactory = std::function<Strong<Object>(Optional<Value>)>;
+
     Interpreter(const InterpreterConfig &c = InterpreterConfig());
 
     bool send(const Message &message, Strong<Object> target = nullptr);
     Optional<Value> call(const Message &message, Strong<Object> target = nullptr);
 
     Value evaluate(const ast::Expression &expression);
-    Value evaluateBuiltin(const Message &message);
+    Value evaluateBuiltin(const Property &property, const std::vector<Value> &arguments);
 
-    void add(const std::string &name, Function *fn);
+    void add(const Property &property, Function *fn);
+    void add(const Descriptor &descriptor, const ObjectFactory &factory);
 
     const InterpreterStackFrame &currentFrame();
     std::function<float()> random();
@@ -152,7 +157,8 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
   private:
     InterpreterConfig _config;
 
-    Map<std::string, Owned<Function>> _functions;
+    Map<Property, Owned<Function>> _functions;
+    Map<Descriptor, ObjectFactory> _factories;
 
     std::stack<InterpreterStackFrame> _stack;
     Environment _globals;

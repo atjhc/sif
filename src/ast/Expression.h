@@ -135,12 +135,11 @@ struct ExpressionList : Node {
 };
 
 struct FunctionCall : Expression {
-    Owned<Identifier> identifier;
+    Owned<Identifier> name;
     Owned<ExpressionList> arguments;
 
-    FunctionCall(Owned<Identifier> &id, Owned<ExpressionList> &args);
-    FunctionCall(Owned<Identifier> &id, Owned<Expression> &arg);
-    FunctionCall(Owned<Identifier> &id);
+    FunctionCall(Owned<Identifier> &name, Owned<ExpressionList> &args);
+    FunctionCall(Owned<Identifier> &name);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
@@ -171,6 +170,8 @@ struct Binary : Expression {
 
     Binary(Operator binaryOperator, Owned<Expression> &leftExpression,
            Owned<Expression> &rightExpression);
+
+    Binary(Operator binaryOperator, Owned<Expression> &rightExpression);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

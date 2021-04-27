@@ -45,7 +45,7 @@ class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor,
   private:
     void print(const Handler &);
     void print(const StatementList &);
-    void print(const IdentifierList &);
+    void print(const IdentifierList &, const std::string &sep);
     void print(const ExpressionList &);
 
 #pragma mark - Statement::Visitor

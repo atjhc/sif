@@ -19,16 +19,10 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-Property::Property(Owned<Identifier> &n)
-    : adjective(nullptr), name(std::move(n)), expression(nullptr) {}
+Property::Property(Owned<IdentifierList> &identifiers)
+    : identifiers(std::move(identifiers)), expression(nullptr) {}
 
-Property::Property(Owned<Identifier> &adj, Owned<Identifier> &n)
-    : adjective(std::move(adj)), name(std::move(n)), expression(nullptr) {}
-
-Property::Property(Owned<Identifier> &n, Owned<Expression> &e)
-    : adjective(nullptr), name(std::move(n)), expression(std::move(e)) {}
-
-Property::Property(Owned<Identifier> &adj, Owned<Identifier> &n, Owned<Expression> &e)
-    : adjective(std::move(adj)), name(std::move(n)), expression(std::move(e)) {}
+Property::Property(Owned<IdentifierList> &identifiers, Owned<Expression> &expression)
+    : identifiers(std::move(identifiers)), expression(std::move(expression)) {}
 
 CH_AST_NAMESPACE_END

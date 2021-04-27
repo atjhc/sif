@@ -22,6 +22,7 @@
 #include "runtime/Folder.h"
 #include "runtime/Property.h"
 #include "runtime/Container.h"
+#include "runtime/Descriptor.h"
 #include "runtime/ChunkResolver.h"
 #include "utilities/chunk.h"
 #include "utilities/devnull.h"
@@ -46,40 +47,51 @@ std::function<float()> InterpreterConfig::defaultRandom() {
 #endif
 
 Interpreter::Interpreter(const InterpreterConfig &config) : _config(config) {
-    add("sin", new OneArgumentFunction<sin>());
-    add("cos", new OneArgumentFunction<cos>());
-    add("tan", new OneArgumentFunction<tan>());
-    add("atan", new OneArgumentFunction<atan>());
-    add("abs", new OneArgumentFunction<fabs>());
-    add("exp", new OneArgumentFunction<exp>());
-    add("exp2", new OneArgumentFunction<exp2>());
-    add("exp1", new OneArgumentFunction<expm1>());
-    add("log2", new OneArgumentFunction<log2>());
-    add("log10", new OneArgumentFunction<log10>());
-    add("ln", new OneArgumentFunction<log>());
-    add("ln1", new OneArgumentFunction<log1p>());
-    add("round", new OneArgumentFunction<round>());
-    add("sqrt", new OneArgumentFunction<sqrt>());
-    add("trunc", new OneArgumentFunction<trunc>());
+    add(Property("sin"), new OneArgumentFunction<sin>());
+    add(Property("cos"), new OneArgumentFunction<cos>());
+    add(Property("tan"), new OneArgumentFunction<tan>());
+    add(Property("atan"), new OneArgumentFunction<atan>());
+    add(Property("abs"), new OneArgumentFunction<fabs>());
+    add(Property("exp"), new OneArgumentFunction<exp>());
+    add(Property("exp2"), new OneArgumentFunction<exp2>());
+    add(Property("exp1"), new OneArgumentFunction<expm1>());
+    add(Property("log2"), new OneArgumentFunction<log2>());
+    add(Property("log10"), new OneArgumentFunction<log10>());
+    add(Property("ln"), new OneArgumentFunction<log>());
+    add(Property("ln1"), new OneArgumentFunction<log1p>());
+    add(Property("round"), new OneArgumentFunction<round>());
+    add(Property("sqrt"), new OneArgumentFunction<sqrt>());
+    add(Property("trunc"), new OneArgumentFunction<trunc>());
 
-    add("max", new MaxFunction());
-    add("min", new MinFunction());
-    add("sum", new SumFunction());
-    add("average", new MeanFunction());
-    add("length", new LengthFunction());
-    add("offset", new OffsetFunction());
-    add("random", new RandomFunction());
-    add("params", new ParamsFunction());
-    add("paramCount", new ParamCountFunction());
-    add("param", new ParamFunction());
-    add("result", new ResultFunction());
-    add("value", new ValueFunction());
-    add("target", new TargetFunction());
-    add("seconds", new SecondsFunction());
-    add("secs", new SecondsFunction());
+    add(Property("max"), new MaxFunction());
+    add(Property("min"), new MinFunction());
+    add(Property("sum"), new SumFunction());
+    add(Property("average"), new MeanFunction());
+    add(Property("length"), new LengthFunction());
+    add(Property("offset"), new OffsetFunction());
+    add(Property("random"), new RandomFunction());
+    add(Property("params"), new ParamsFunction());
+    add(Property("paramcount"), new ParamCountFunction());
+    add(Property("param"), new ParamFunction());
+    add(Property("result"), new ResultFunction());
+    add(Property("value"), new ValueFunction());
+    add(Property("target"), new TargetFunction());
+    add(Property("seconds"), new SecondsFunction());
+    add(Property("secs"), new SecondsFunction());
 
     // TODO: add missing functions: date, time
     // Skipping these: ticks, annuity, charToNum, numToChar, compound
+
+    add(Descriptor("file"), [=](Optional<Value> value) -> Strong<Object> {
+        return std::static_pointer_cast<Object>(File::Make(value.value().asString()));
+    });
+
+    auto directoryFactory = [=](Optional<Value> value) -> Strong<Object> {
+        return std::static_pointer_cast<Object>(Folder::Make(value.value().asString()));
+    };
+    add(Descriptor("folder"), directoryFactory);
+    add(Descriptor("directory"), directoryFactory);
+
 }
 
 bool Interpreter::send(const Message &message, Strong<Object> target) {
@@ -143,8 +155,12 @@ std::function<float()> Interpreter::random() { return _config.random; }
 
 #pragma mark - Private
 
-void Interpreter::add(const std::string &name, Function *fn) {
-    _functions[lowercase(name)] = Owned<Function>(fn);
+void Interpreter::add(const Property &property, Function *fn) {
+    _functions[property] = Owned<Function>(fn);
+}
+
+void Interpreter::add(const Descriptor &descriptor, const ObjectFactory &factory) {
+    _factories[descriptor] = factory;
 }
 
 void Interpreter::set(const std::string &name, const Value &value) {
@@ -202,11 +218,16 @@ Value Interpreter::evaluate(const ast::Expression &expression) {
     return expression.accept(*this);
 }
 
-Value Interpreter::evaluateBuiltin(const Message &message) {
-    auto fn = _functions.find(lowercase(message.name));
+Value Interpreter::evaluateBuiltin(const Property &property, const std::vector<Value> &arguments) {
+    auto fn = _functions.find(property);
     if (fn == _functions.end()) {
-        throw RuntimeError(String("unrecognized function '", message.name, "'"));
+        if (property.names.size() == 1) {
+            throw RuntimeError(String("unrecognized function or property '", property.description(), "'"));
+        } else if (property.names.size() > 1) {
+            throw RuntimeError(String("unrecognized property '", property.description(), "'"));
+        }
     }
+    auto message = Message(property.description(), arguments);
     return fn->second->valueOf(*this, message);
 }
 
@@ -504,10 +525,10 @@ void Interpreter::visit(const ast::Delete &statement) {
 
 Value Interpreter::visit(const ast::Identifier &e) { return get(e.name).value_or(Value(e.name)); }
 
-Value Interpreter::visit(const ast::FunctionCall &e) {
-    auto message = Message(e.identifier->name);
-    if (e.arguments) {
-        for (auto &argument : e.arguments->expressions) {
+Value Interpreter::visit(const ast::FunctionCall &fn) {
+    auto message = Message(fn.name->name);
+    if (fn.arguments) {
+        for (auto &argument : fn.arguments->expressions) {
             auto value = argument->accept(*this);
             message.arguments.push_back(value);
         }
@@ -519,18 +540,18 @@ Value Interpreter::visit(const ast::FunctionCall &e) {
     }
 
     try {
-        return evaluateBuiltin(message);
+        return evaluateBuiltin(Property(fn), message.arguments);
     } catch (InvalidArgumentError &error) {
-        error.where = e.arguments->expressions[error.argumentIndex]->location;
+        error.where = fn.arguments->expressions[error.argumentIndex]->location;
         throw;
     } catch (RuntimeError &error) {
-        error.where = e.location;
+        error.where = fn.location;
         throw;
     }
 }
 
 Value Interpreter::visit(const ast::Property &p) {
-    auto message = Message(p.name->name);
+    std::vector<Value> arguments;
     if (p.expression) {
         auto value = evaluate(*p.expression);
         if (value.isObject()) {
@@ -545,17 +566,17 @@ Value Interpreter::visit(const ast::Property &p) {
             }
 
             if (!result.has_value()) {
-                throw RuntimeError(String("unknown property '", property.name, "' for object '", value.asString(), "'"), p.location);
+                throw RuntimeError(String("unknown property '", property.description(), "' for object '", value.asString(), "'"), p.location);
             }
             return result.value();
         } else {
-            message.arguments.push_back(value);
+            arguments.push_back(value);
         }
     }
 
     // Property calls skip the message path.
     try {
-        return evaluateBuiltin(message);
+        return evaluateBuiltin(Property(p), arguments);
     } catch (RuntimeError &error) {
         error.where = p.location;
         throw;
@@ -563,50 +584,28 @@ Value Interpreter::visit(const ast::Property &p) {
 }
 
 Value Interpreter::visit(const ast::Descriptor &d) {
-    auto &name = d.name->name;
-    if (!d.value) {
-        auto &name = d.name->name;
-        // Check for special "me" descriptor.
-        if (name == "me") {
-            return Value(_stack.top().target);
-        }
-        // Assume a variable lookup.
-        return get(d.name->name).value_or(Value(d.name->name));
+    auto descriptor = Descriptor(d);
+
+    if (!d.value && descriptor.is("me")) {
+        return Value(_stack.top().target);
+    }
+    if (!d.value && descriptor.names.size() == 1) {
+        return get(descriptor.names[0]).value_or(Value(descriptor.names[0]));
     }
 
-    auto message = Message(d.name->name);
-    auto arg = d.value->accept(*this);
-    message.arguments.push_back(arg);
-
-    // Check the responder chain for a function handler.
-    auto result = call(message, _stack.top().target);
-    if (result.has_value()) {
-        return result.value();
+    Optional<Value> value;
+    if (d.value) {
+        value = evaluate(*d.value);
+    } else {
+        value = get(descriptor.names.back()).value_or(Value(descriptor.names.back()));
+        descriptor.names.pop_back();
     }
 
-    // Check for a builtin function.
-    auto fn = _functions.find(lowercase(message.name));
-    if (fn != _functions.end()) {
-        try {
-            return fn->second->valueOf(*this, message);
-        } catch (InvalidArgumentError &error) {
-            error.where = d.value->location;
-            throw;
-        } catch (RuntimeError &error) {
-            error.where = d.location;
-            throw;
-        }
+    const auto &it = _factories.find(descriptor);
+    if (it == _factories.end()) {
+        throw RuntimeError(String("unrecognized descriptor '", descriptor.description(), "'"), d.location);
     }
-
-    // TODO: Use descriptor factories.
-    if (lowercase(name) == "file") {
-        return Value(std::static_pointer_cast<Object>(File::Make(arg.asString())));
-    }
-    if (lowercase(name) == "folder" || lowercase(name) == "directory") {
-        return Value(std::static_pointer_cast<Object>(Folder::Make(arg.asString())));
-    }
-
-    throw RuntimeError(String("unrecognized descriptor '", name, "'"), d.location);
+    return it->second(value);
 }
 
 static void checkNumberOperand(const Value &value, const ast::Location &location) {

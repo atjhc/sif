@@ -43,8 +43,13 @@ bool Folder::setValueForProperty(const Value &v, const Property &p) {
 
 Optional<std::string> Folder::asString() const {
     std::ostringstream ss;
-    for(auto &p: fs::directory_iterator(_path)) {
-        ss << p.path().string() << '\n';
+    auto it = fs::directory_iterator(_path);
+    while (it != fs::end(it)) {
+        ss << it->path().string();
+        it++;
+        if (it != fs::end(it)) {
+            ss << '\n';
+        }
     }
     return ss.str();
 }

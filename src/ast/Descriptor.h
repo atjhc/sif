@@ -27,11 +27,11 @@ CH_AST_NAMESPACE_BEGIN
 struct Identifier;
 
 struct Descriptor : Expression {
-    Owned<Identifier> name;
+    Owned<IdentifierList> identifiers;
     Owned<Expression> value;
 
-    Descriptor(Owned<Identifier> &n, Owned<Expression> &v);
-    Descriptor(Owned<Identifier> &n);
+    Descriptor(Owned<IdentifierList> &identifiers, Owned<Expression> &value);
+    Descriptor(Owned<IdentifierList> &identifiers);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };

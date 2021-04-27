@@ -16,25 +16,29 @@
 
 #include "runtime/Descriptor.h"
 #include "runtime/Interpreter.h"
+#include "Utilities.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Descriptor::Descriptor(const std::vector<std::string> &n, const Optional<Value> &v)
-    : names(n), value(v) {}
+Descriptor::Descriptor(const std::string &name) {
+    names.push_back(name);
+}
 
-Descriptor::Descriptor(Interpreter &r, const ast::Descriptor &d) {
-    names.push_back(d.name->name);
+Descriptor::Descriptor(const std::vector<std::string> &names)
+    : names(names) {}
 
-    auto v = d.value.get();
-    while (v) {
-        if (const auto desc = dynamic_cast<ast::Descriptor *>(v)) {
-            names.push_back(desc->name->name);
-            v = desc->value.get();
-        } else {
-            value = std::any_cast<Value>(v->accept(r));
-            v = nullptr;
-        }
+Descriptor::Descriptor(const ast::Descriptor &descriptor) {
+    for (auto &identifier : descriptor.identifiers->identifiers) {
+        names.push_back(lowercase(identifier->name));
     }
+}
+
+bool Descriptor::operator==(const Descriptor &descriptor) const {
+    return names == descriptor.names;
+}
+
+std::string Descriptor::description() const {
+    return Join(names, " ");
 }
 
 CH_RUNTIME_NAMESPACE_END

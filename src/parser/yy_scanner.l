@@ -82,6 +82,12 @@ using namespace chatter::ast;
     }
 %}
 
+is[ \t]+not                 LEX_RETURN(NEQ);
+is[ \t]+(a|an)              LEX_RETURN(IS_AN);
+is[ \t]+not[ \t]+(a|an)     LEX_RETURN(IS_NOT_AN)
+is[ \t]+in                  LEX_RETURN(IS_IN);
+is[ \t]+not[ \t]+in         LEX_RETURN(IS_NOT_IN)
+
 on                          LEX_RETURN(ON);
 end                         LEX_RETURN(END);
 function                    LEX_RETURN(FUNCTION);
@@ -116,7 +122,7 @@ until                       LEX_RETURN(UNTIL);
 with                        LEX_RETURN(WITH);
 down                        LEX_RETURN(DOWN);
 is                          LEX_RETURN(IS);
-a|an                        LEX_RETURN(AN);
+(a)|(an)                    LEX_RETURN(AN);
 from                        LEX_RETURN(FROM);
 by                          LEX_RETURN(BY);
 add                         LEX_RETURN(ADD);

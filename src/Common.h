@@ -76,6 +76,29 @@ static inline std::string String(Args... args) {
 }
 
 template <typename T>
+static inline std::string Join(T &&v, const std::string &sep) {
+    std::string result;
+    auto it = v.begin();
+    while (it != v.end()) {
+        result += *it;
+        if (it != v.end() - 1) {
+            result += sep;
+        }
+        it++;
+    }
+    return result;
+}
+
+template <typename T>
+size_t HashRange(const T &v) {
+	size_t result = 1;
+	for (const auto &i : v) {
+		result = result * 31 + std::hash<typename T::value_type>{}(i);
+	}
+	return result;
+}
+
+template <typename T>
 class range {
     typename T::iterator _begin;
     typename T::iterator _end;

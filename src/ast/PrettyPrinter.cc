@@ -46,7 +46,7 @@ void PrettyPrinter::print(const Handler &handler) {
     handler.messageKey->accept(*this);
     if (handler.arguments) {
         out << " ";
-        print(*handler.arguments);
+        print(*handler.arguments, ", ");
     }
     out << std::endl;
     if (handler.statements) {
@@ -67,14 +67,14 @@ void PrettyPrinter::print(const StatementList &sl) {
     _indentLevel -= 1;
 }
 
-void PrettyPrinter::print(const IdentifierList &il) {
+void PrettyPrinter::print(const IdentifierList &il, const std::string &sep) {
     auto i = il.identifiers.begin();
     while (i != il.identifiers.end()) {
         (*i)->accept(*this);
 
         i++;
         if (i != il.identifiers.end()) {
-            out << ", ";
+            out << sep;
         }
     }
 }
@@ -166,7 +166,7 @@ void PrettyPrinter::visit(const Pass &s) {
 
 void PrettyPrinter::visit(const Global &s) {
     out << "global ";
-    print(*s.variables);
+    print(*s.variables, ", ");
 }
 
 void PrettyPrinter::visit(const Return &s) {
@@ -190,7 +190,7 @@ void PrettyPrinter::visit(const Identifier &e) {
 }
 
 void PrettyPrinter::visit(const FunctionCall &e) {
-    e.identifier->accept(*this);
+    e.name->accept(*this);
     out << "(";
     if (e.arguments) {
         print(*e.arguments);
@@ -200,11 +200,7 @@ void PrettyPrinter::visit(const FunctionCall &e) {
 
 void PrettyPrinter::visit(const Property &p) {
     out << "the ";
-    if (p.adjective) {
-        p.adjective->accept(*this);
-        out << " ";
-    }
-    p.name->accept(*this);
+    print(*p.identifiers, " ");
     if (p.expression) {
         out << " of ";
         p.expression->accept(*this);
@@ -212,11 +208,10 @@ void PrettyPrinter::visit(const Property &p) {
 }
 
 void PrettyPrinter::visit(const Descriptor &d) {
-    d.name->accept(*this);
+    print(*d.identifiers, " ");
     if (d.value) {
-        out << " (";
+        out << " ";
         d.value->accept(*this);
-        out << ")";
     }
 }
 

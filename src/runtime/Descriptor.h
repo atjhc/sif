@@ -29,12 +29,29 @@ class Interpreter;
 
 struct Descriptor {
     std::vector<std::string> names;
-    Optional<Value> value;
 
-    Descriptor(const std::vector<std::string> &n, const Optional<Value> &v);
+    Descriptor(const std::string &name);
+    Descriptor(const std::vector<std::string> &names);
+    Descriptor(const ast::Descriptor &descriptor);
 
-    // TODO: Move this into Interpreter since it does complex logic.
-    Descriptor(Interpreter &r, const ast::Descriptor &d);
+    std::string description() const;
+
+    bool operator==(const Descriptor &descriptor) const;
+
+    bool is(const std::string &n) const {
+        return names.size() == 1 && names[0] == lowercase(n);
+    }
 };
 
 CH_RUNTIME_NAMESPACE_END
+
+namespace std {
+
+template <>
+struct hash<::chatter::runtime::Descriptor> {
+    std::size_t operator()(const ::chatter::runtime::Descriptor& d) const {
+        return ::chatter::HashRange(d.names);
+    }
+};
+
+}

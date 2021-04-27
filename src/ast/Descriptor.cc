@@ -19,9 +19,9 @@
 
 CH_AST_NAMESPACE_BEGIN
 
-Descriptor::Descriptor(Owned<Identifier> &n, Owned<Expression> &v)
-    : name(std::move(n)), value(std::move(v)) {}
+Descriptor::Descriptor(Owned<IdentifierList> &identifiers, Owned<Expression> &value)
+    : identifiers(std::move(identifiers)), value(std::move(value)) {}
 
-Descriptor::Descriptor(Owned<Identifier> &n) : name(std::move(n)), value(nullptr) {}
+Descriptor::Descriptor(Owned<IdentifierList> &identifiers) : identifiers(std::move(identifiers)), value(nullptr) {}
 
 CH_AST_NAMESPACE_END
