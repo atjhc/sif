@@ -18,7 +18,7 @@ std::string::iterator chunk::scan(std::string::iterator it, size_t location) {
             while (iswhite(*it) && it < _end)
                 it++;
         } else if (_type == item) {
-            while (*it != ',' && it < _end)
+            while (*it != _itemDelimiter && it < _end)
                 it++;
             if (it < _end)
                 it++;
@@ -40,7 +40,7 @@ std::string::iterator chunk::scan_end(std::string::iterator it) {
         while (!iswhite(*it) && it < _end)
             it++;
     } else if (_type == item) {
-        while (*it != ',' && it < _end)
+        while (*it != _itemDelimiter && it < _end)
             it++;
     } else if (_type == line) {
         while (*it != '\n' && it < _end)

@@ -25,13 +25,15 @@ CH_NAMESPACE_BEGIN
 
 struct chunk {
     enum type { character, word, item, line };
+    static const unsigned char default_item_delimiter = ',';
 
-    chunk(type type, std::string &source)
-        : _type(type), _begin(source.begin()), _end(source.end()) {}
+    chunk(type type, std::string &source, unsigned char itemDelimiter = default_item_delimiter)
+        : _type(type), _itemDelimiter(itemDelimiter), _begin(source.begin()), _end(source.end()) {}
     chunk(const chunk &) = default;
 
     template <class T>
-    chunk(type type, T source) : _type(type), _begin(source.begin()), _end(source.end()) {}
+    chunk(type type, T source, unsigned char itemDelimiter = default_item_delimiter)
+        : _type(type), _itemDelimiter(itemDelimiter), _begin(source.begin()), _end(source.end()) {}
 
     chunk& operator=(const chunk &) = default;
 
@@ -47,15 +49,16 @@ struct chunk {
     std::string::iterator scan_end(std::string::iterator it);
 
     type _type;
+    unsigned char _itemDelimiter;
     std::string::iterator _begin, _end;
 };
 
 struct index_chunk : public chunk {
-    index_chunk(type type, size_t location, std::string &source) : chunk(type, source) {
+    index_chunk(type type, size_t location, std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) {
         _seek(location);
     }
 
-    index_chunk(type type, size_t location, const chunk &source) : chunk(type, source) {
+    index_chunk(type type, size_t location, const chunk &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) {
         _seek(location);
     }
 
@@ -67,13 +70,13 @@ struct index_chunk : public chunk {
 };
 
 struct range_chunk : public chunk {
-    range_chunk(type type, size_t begin, size_t end, std::string &source)
-        : chunk(type, source) {
+    range_chunk(type type, size_t begin, size_t end, std::string &source, unsigned char itemDelimiter = default_item_delimiter)
+        : chunk(type, source, itemDelimiter) {
         _seek(begin, end);
     }
 
-    range_chunk(type type, size_t begin, size_t end, const chunk &source)
-        : chunk(type, source) {
+    range_chunk(type type, size_t begin, size_t end, const chunk &source, unsigned char itemDelimiter = default_item_delimiter)
+        : chunk(type, source, itemDelimiter) {
         _seek(begin, end);
     }
 
@@ -86,13 +89,13 @@ struct range_chunk : public chunk {
 };
 
 struct random_chunk : public chunk {
-    random_chunk(type type, const std::function<int(int)> &random, std::string &source)
-        : chunk(type, source) {
+    random_chunk(type type, const std::function<int(int)> &random, std::string &source, unsigned char itemDelimiter = default_item_delimiter)
+        : chunk(type, source, itemDelimiter) {
         _seek(random);
     }
 
-    random_chunk(type type, const std::function<int(int)> &random, const chunk &source)
-        : chunk(type, source) {
+    random_chunk(type type, const std::function<int(int)> &random, const chunk &source, unsigned char itemDelimiter = default_item_delimiter)
+        : chunk(type, source, itemDelimiter) {
         _seek(random);
     }
 
@@ -112,9 +115,9 @@ struct random_chunk : public chunk {
 };
 
 struct last_chunk : public chunk {
-    last_chunk(type type, std::string &source) : chunk(type, source) { _seek(); }
+    last_chunk(type type, std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
 
-    last_chunk(type type, const chunk &source) : chunk(type, source) { _seek(); }
+    last_chunk(type type, const chunk &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
 
   private:
     void _seek() {
@@ -131,9 +134,9 @@ struct last_chunk : public chunk {
 };
 
 struct middle_chunk : public chunk {
-    middle_chunk(type type, std::string &source) : chunk(type, source) { _seek(); }
+    middle_chunk(type type, std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
 
-    middle_chunk(type type, const chunk &source) : chunk(type, source) { _seek(); }
+    middle_chunk(type type, const chunk &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
 
   private:
     void _seek() {
