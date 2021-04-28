@@ -6,8 +6,6 @@ CH_NAMESPACE_BEGIN
 
 static inline bool isoctal(char c) { return c >= '0' && c < '8'; }
 
-static inline int oct_to_int(char c) { return c - '0'; }
-
 static inline int hex_to_int(char c) {
     if (c >= '0' && c <= '9')
         return c - '0';
