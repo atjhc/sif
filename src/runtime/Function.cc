@@ -35,14 +35,14 @@ void Function::expectArgumentCount(const Message &m, int count) const {
 void Function::expectNumberAt(const Message &m, int index) const {
     if (!m.arguments[index].isNumber()) {
         throw InvalidArgumentError(
-            String("expected number here, but got '", m.arguments[index].asString(), "'"),
+            String("expected number here, but got ", Quoted(m.arguments[index].asString())),
             index);
     }
 }
 
 void Function::expectArguments(const Message &m) const {
     if (m.arguments.size() == 0) {
-        throw ArgumentsError(String("expected arguments for function '", m.name, "'"));
+        throw ArgumentsError(String("expected arguments for function ", Quoted(m.name)));
     }
 }
 
@@ -50,7 +50,7 @@ void Function::expectAllNumbers(const Message &m) const {
     for (int i = 0; i < m.arguments.size(); i++) {
         auto &arg = m.arguments[i];
         if (!arg.isNumber()) {
-            throw InvalidArgumentError(String("expected number for argument ", i+1, ", but got '", arg.asString(), "'"), i);
+            throw InvalidArgumentError(String("expected number for argument ", i+1, ", but got ", Quoted(arg.asString())), i);
         }
     }
 }

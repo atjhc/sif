@@ -44,7 +44,7 @@ bool File::setValueForProperty(const Value &v, const Property &p) {
     if (p.is("contents")) {
         std::ofstream file(_path);
         if (!file) {
-            throw RuntimeError(String("could not write to file '", _path, "'"));
+            throw RuntimeError(String("could not write to file ", Quoted(_path)));
         }
         file << v.asString();
         return true;

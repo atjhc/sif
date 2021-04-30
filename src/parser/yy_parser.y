@@ -315,7 +315,7 @@ keywordStatement
             $$ = MakeOwned<NextRepeat>();
             $$->location = @1.first;
         } else {
-            error(@$, "'next repeat' outside repeat loop");
+            error(@$, String(Quoted("next repeat"), "outside repeat loop"));
             $$ = nullptr;
         }
     }
@@ -324,7 +324,7 @@ keywordStatement
             $$ = MakeOwned<Exit>($2);
             $$->location = @1.first;
         } else {
-            error(@2, String("expected '", ctx.messageKey, "', but got '", $2->name, "'"));
+            error(@2, String("expected ", Quoted(ctx.messageKey), ", but got ", Quoted($2->name)));
             $$ = nullptr;
         }
     }
@@ -333,7 +333,7 @@ keywordStatement
             $$ = MakeOwned<Pass>($2);
             $$->location = @1.first;
         } else {
-            error(@2, String("expected '", ctx.messageKey, "', but got '", $2->name, "'"));
+            error(@2, String("expected ", Quoted(ctx.messageKey), ", but got ", Quoted($2->name)));
             $$ = nullptr;
         }
     }
@@ -1258,7 +1258,7 @@ static std::string symbolName(const yy::parser &parser, const yy::parser::symbol
         case yy::parser::symbol_kind::S_INT_LITERAL: return "integer literal";
         case yy::parser::symbol_kind::S_FLOAT_LITERAL: return "float literal";
         case yy::parser::symbol_kind::S_STRING_LITERAL: return "string literal";
-        default: return lowercase("'" + std::string(parser.symbol_name(symbol)) + "'");
+        default: return Quoted(lowercase(std::string(parser.symbol_name(symbol))));
     }
 }
 

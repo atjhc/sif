@@ -75,6 +75,10 @@ static inline std::string String(Args... args) {
 	return ss.str();
 }
 
+static inline std::string Quoted(const std::string str) {
+    return "\"" + str + "\"";
+}
+
 template <typename T>
 static inline std::string Join(T &&v, const std::string &sep) {
     std::string result;

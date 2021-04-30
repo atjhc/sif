@@ -53,7 +53,7 @@ Object::Object(const std::string &name, const std::string &source, Owned<ast::Pr
 
             // TODO: catch handler redifinition errors in the parser.
             if (map->find(name) != map->end()) {
-                throw RuntimeError("invalid redefinition of handler '" + name + "'",
+                throw RuntimeError(String("invalid redefinition of handler ", Quoted(name)),
                                    handler->location);
             }
             map->insert({lowercase(name), *handler});

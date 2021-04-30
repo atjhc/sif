@@ -92,6 +92,18 @@ Interpreter::Interpreter(const InterpreterConfig &config) : _config(config) {
     add(Descriptor("folder"), directoryFactory);
     add(Descriptor("directory"), directoryFactory);
 
+    _propertyValidators[Property("itemdelimiter")] = [](Value value) {
+        auto string = value.asString();
+        if (string.length() != 1) {
+            throw RuntimeError(String("expected a single character, got ", Quoted(string)));
+        }
+    };
+
+    _properties = Map<Property, Value>{
+        {Property("itemdelimiter"), ","},
+        {Property("numberformat"), "0.#####"},
+    };
+
 }
 
 bool Interpreter::send(const Message &message, Strong<Object> target) {
@@ -187,6 +199,14 @@ Optional<Value> Interpreter::get(const std::string &name) const {
     return value;
 }
 
+Optional<Value> Interpreter::valueForProperty(Property property) const {
+    auto it = _properties.find(property);
+    if (it == _properties.end()) {
+        return Empty;
+    }
+    return it->second;
+}
+
 void Interpreter::execute(const ast::Handler &handler, const std::vector<Value> &values) {
     if (handler.statements == nullptr) {
         return;
@@ -222,9 +242,9 @@ Value Interpreter::evaluateBuiltin(const Property &property, const std::vector<V
     auto fn = _functions.find(property);
     if (fn == _functions.end()) {
         if (property.names.size() == 1) {
-            throw RuntimeError(String("unrecognized function or property '", property.description(), "'"));
+            throw RuntimeError(String("unrecognized function or property ", Quoted(property.description())));
         } else if (property.names.size() > 1) {
-            throw RuntimeError(String("unrecognized property '", property.description(), "'"));
+            throw RuntimeError(String("unrecognized property ", Quoted(property.description())));
         }
     }
     auto message = Message(property.description(), arguments);
@@ -350,7 +370,7 @@ void Interpreter::visit(const ast::Do &c) {
         auto languageName = evaluate(*c.language);
 
         // TODO: Call out to another language.
-        throw RuntimeError(String("unrecognized language '", languageName.asString(), "'"),
+        throw RuntimeError(String("unrecognized language ", Quoted(languageName.asString())),
                            c.language->location);
     }
 
@@ -420,15 +440,29 @@ void Interpreter::visit(const ast::Get &s) {
 }
 
 void Interpreter::visit(const ast::Set &statement) {
+    auto property = Property(*statement.property);
+    auto value = evaluate(*statement.expression);
+
     if (!statement.property->expression) {
-        return;    
+        auto it = _propertyValidators.find(property);
+        if (it != _propertyValidators.end()) {
+            try {
+                it->second(value);
+            } catch (RuntimeError &error) {
+                error.where = statement.expression->location;
+                throw;
+            }
+            _properties[property] = value;
+            return;
+        } else {
+            throw RuntimeError(String("could not set property ", Quoted(property.description())), statement.property->location);
+        }
     }
 
     auto target = evaluate(*statement.property->expression);
     if (target.isObject()) {
         auto object = target.asObject();
-        auto value = evaluate(*statement.expression);
-        if (!object->setValueForProperty(value, Property(*statement.property))) {
+        if (!object->setValueForProperty(value, property)) {
             throw RuntimeError("unknown property", statement.property->location);
         }
     }
@@ -446,7 +480,7 @@ void Interpreter::visit(const ast::Ask &s) {
 
 static void expectNumber(const Value &value, const ast::Location &location) {
     if (!value.isNumber()) {
-        throw RuntimeError(String("expected number, got '", value.asString(), "'"), location);
+        throw RuntimeError(String("expected number, got ", Quoted(value.asString())), location);
     }
 }
 
@@ -566,7 +600,7 @@ Value Interpreter::visit(const ast::Property &p) {
             }
 
             if (!result.has_value()) {
-                throw RuntimeError(String("unknown property '", property.description(), "' for object '", value.asString(), "'"), p.location);
+                throw RuntimeError(String("unknown property ", Quoted(property.description()), " for object ", Quoted(value.asString())), p.location);
             }
             return result.value();
         } else {
@@ -574,9 +608,17 @@ Value Interpreter::visit(const ast::Property &p) {
         }
     }
 
+    auto property = Property(p);
+    if (!p.expression) {
+        auto it = _properties.find(p);
+        if (it != _properties.end()) {
+            return it->second;
+        }
+    }
+
     // Property calls skip the message path.
     try {
-        return evaluateBuiltin(Property(p), arguments);
+        return evaluateBuiltin(property, arguments);
     } catch (RuntimeError &error) {
         error.where = p.location;
         throw;
@@ -593,7 +635,7 @@ Value Interpreter::visit(const ast::Descriptor &d) {
         return get(descriptor.names[0]).value_or(Value(descriptor.names[0]));
     }
 
-    Optional<Value> value;
+    Value value;
     if (d.value) {
         value = evaluate(*d.value);
     } else {
@@ -603,14 +645,14 @@ Value Interpreter::visit(const ast::Descriptor &d) {
 
     const auto &it = _factories.find(descriptor);
     if (it == _factories.end()) {
-        throw RuntimeError(String("unrecognized descriptor '", descriptor.description(), "'"), d.location);
+        throw RuntimeError(String("unrecognized descriptor ", Quoted(descriptor.description())), d.location);
     }
     return it->second(value);
 }
 
 static void checkNumberOperand(const Value &value, const ast::Location &location) {
     if (!value.isNumber()) {
-        throw RuntimeError(String("expected number value here, got '", value.asString(), "'"), location);
+        throw RuntimeError(String("expected number value here, got ", Quoted(value.asString())), location);
     }
 }
 
@@ -634,7 +676,7 @@ Value Interpreter::visit(const ast::Binary &e) {
             return lhs.isEmpty();
         }
         // TODO: Check for additional host defined types.
-        throw RuntimeError(String("unknown type name '", rhs.asString(), "'"),
+        throw RuntimeError(String("unknown type name ", Quoted(rhs.asString())),
                            e.rightExpression->location);
     }
 
@@ -754,6 +796,7 @@ Value Interpreter::visit(const ast::Unary &e) {
 
 Value Interpreter::visit(const ast::ChunkExpression &e) {
     auto value = evaluate(*e.expression).asString();
+    std::string delimiter = valueForProperty(Property("itemdelimiter")).value_or(",");
     auto resolver = runtime::ChunkResolver(*this, value);
     return resolver.resolve(*e.chunk).get();
 }

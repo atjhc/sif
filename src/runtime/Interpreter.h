@@ -84,7 +84,8 @@ struct InterpreterStackFrame {
 
 class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visitor<Value> {
   public:
-    using ObjectFactory = std::function<Strong<Object>(Optional<Value>)>;
+    using ObjectFactory = std::function<Strong<Object>(Value)>;
+    using Validator = std::function<void(Value)>;
 
     Interpreter(const InterpreterConfig &c = InterpreterConfig());
 
@@ -96,6 +97,8 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
 
     void add(const Property &property, Function *fn);
     void add(const Descriptor &descriptor, const ObjectFactory &factory);
+
+    Optional<Value> valueForProperty(Property property) const;
 
     const InterpreterStackFrame &currentFrame();
     std::function<float()> random();
@@ -159,7 +162,9 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
 
     Map<Property, Owned<Function>> _functions;
     Map<Descriptor, ObjectFactory> _factories;
+    Map<Property, Validator> _propertyValidators;
 
+    Map<Property, Value> _properties;
     std::stack<InterpreterStackFrame> _stack;
     Environment _globals;
 };

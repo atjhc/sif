@@ -50,6 +50,9 @@ public:
     chunk visit(const ast::MiddleChunk &) override;
 
 private:
+    chunk _baseChunk() const;
+    unsigned char _itemDelimiter() const;
+
     Interpreter &_interpreter;
     range<std::string> _range;
 };
