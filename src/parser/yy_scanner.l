@@ -176,6 +176,7 @@ ten                         LEX_RETURN(TEN);
 tab                         LEX_RETURN(TAB);
 space                       LEX_RETURN(SPACE);
 quote                       LEX_RETURN(QUOTE);
+comma                       LEX_RETURN(LIT_COMMA);
 pi                          LEX_RETURN(PI);
 
 "("                         LEX_RETURN(LPAREN);
@@ -224,24 +225,24 @@ pi                          LEX_RETURN(PI);
     LEX_RETURN(IDENTIFIER); 
 }
 
-\¬.*\n {
+\¬.*[\n\r] {
     /* ignore */ ;
 }
 
-\\.*\n {
+\\.*[\n\r] {
     /* ignore */ ;
 }
 
-\n+ {
+[\n\r]+ {
     LEX_RETURN(NL);
 }
 
-"--".*\n? {
-    /* ignore */ ;
+"--".*[\n\r]? {
+    LEX_RETURN(NL) ;
 }
 
-"#".*\n? {
-    /* ignore */ ;
+"#".*[\n\r]? {
+    LEX_RETURN(NL) ;
 }
 
 [ \t]* {

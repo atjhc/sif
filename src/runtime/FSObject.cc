@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "runtime/Path.h"
+#include "runtime/FSObject.h"
 #include "runtime/Property.h"
 
 #include <fstream>
@@ -24,9 +24,9 @@ CH_RUNTIME_NAMESPACE_BEGIN
 
 namespace fs = std::filesystem;
 
-Path::Path(const std::string &path) : Object(String("path ", path), "", nullptr, nullptr), _path(path) {}
+FSObject::FSObject(const std::string &path) : Object(String("path ", path), "", nullptr, nullptr), _path(path) {}
 
-Optional<Value> Path::valueForProperty(const Property &p) const {
+Optional<Value> FSObject::valueForProperty(const Property &p) const {
     if (p.is("path")) {
         return _path;
     }
@@ -45,15 +45,15 @@ Optional<Value> Path::valueForProperty(const Property &p) const {
     return Object::valueForProperty(p);
 }
 
-bool Path::setValueForProperty(const Value &v, const Property &p) {
+bool FSObject::setValueForProperty(const Value &v, const Property &p) {
     return Object::setValueForProperty(v, p);
 }
 
-Optional<std::string> Path::asString() const {
+Optional<std::string> FSObject::asString() const {
     return _path;
 }
 
-bool Path::exists() const {
+bool FSObject::exists() const {
     return false;
 }
 

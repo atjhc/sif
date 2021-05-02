@@ -28,13 +28,13 @@ Strong<Folder> Folder::Make(const std::string &path) {
     return Strong<Folder>(new Folder(path));
 }
 
-Folder::Folder(const std::string &path) : Path(path) {}
+Folder::Folder(const std::string &path) : FSObject(path) {}
 
 Optional<Value> Folder::valueForProperty(const Property &p) const {
     if (p.is("contents")) {
         return asString().value();
     }
-    return Path::valueForProperty(p);
+    return FSObject::valueForProperty(p);
 }
 
 bool Folder::setValueForProperty(const Value &v, const Property &p) {

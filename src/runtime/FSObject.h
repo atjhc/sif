@@ -21,10 +21,10 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class Path : public Object {
+class FSObject : public Object {
   public:
 
-    ~Path() = default;
+    ~FSObject() = default;
 
     virtual Optional<Value> valueForProperty(const Property &p) const override;
     virtual bool setValueForProperty(const Value &v, const Property &p) override;
@@ -35,7 +35,7 @@ class Path : public Object {
   protected:
     std::string _path;
 
-    Path(const std::string &path);
+    FSObject(const std::string &path);
 };
 
 CH_RUNTIME_NAMESPACE_END

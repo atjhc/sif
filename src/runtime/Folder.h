@@ -17,11 +17,11 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/Path.h"
+#include "runtime/FSObject.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class Folder : public Path {
+class Folder : public FSObject {
   public:
     static Strong<Folder> Make(const std::string &path);
 

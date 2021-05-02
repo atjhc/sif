@@ -101,8 +101,9 @@ using namespace chatter::ast;
 %token LPAREN "(" RPAREN ")" PLUS "+" MINUS "-" MULT "*" DIV "/" DIV_TRUNC "div" LT "<" GT ">"
 %token LTE "<=" GTE ">=" CARROT "^" CONCAT "&" CONCAT_SPACE "&&" EQ "=" NEQ "<>" AND OR CONTAINS MOD
 %token IS_AN "is an" IS_NOT_AN "is not an" IS_IN "is in" IS_NOT_IN "is not in"
+
 // Constants
-%token EMPTY FALSE QUOTE SPACE TAB TRUE PI
+%token EMPTY TRUE FALSE QUOTE SPACE TAB LIT_COMMA PI
 %token ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN
 
 // Ordinals
@@ -1203,6 +1204,9 @@ constant
     }
     | QUOTE {
         $$ = MakeOwned<StringLiteral>("\"");
+    }
+    | LIT_COMMA {
+        $$ = MakeOwned<StringLiteral>(",");
     }
     | ZERO {
         $$ = MakeOwned<IntLiteral>(0);

@@ -28,7 +28,7 @@ Strong<File> File::Make(const std::string &path) {
     return Strong<File>(new File(path));
 }
 
-File::File(const std::string &path) : Path(path) {}
+File::File(const std::string &path) : FSObject(path) {}
 
 Optional<Value> File::valueForProperty(const Property &p) const {
     if (p.is("contents")) {
@@ -37,7 +37,7 @@ Optional<Value> File::valueForProperty(const Property &p) const {
     if (p.is("size")) {
         return fs::file_size(_path);
     }
-    return Path::valueForProperty(p);
+    return FSObject::valueForProperty(p);
 }
 
 bool File::setValueForProperty(const Value &v, const Property &p) {

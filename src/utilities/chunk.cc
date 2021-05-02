@@ -4,6 +4,8 @@ CH_NAMESPACE_BEGIN
 
 static bool iswhite(int c) { return isblank(c) || c == '\n'; }
 
+static bool isnewline(int c) { return c == '\r' || c == '\n'; }
+
 std::string::iterator chunk::scan(std::string::iterator it, size_t location) {
     if (_type == character) {
         return min(_end, it + location);
@@ -23,7 +25,7 @@ std::string::iterator chunk::scan(std::string::iterator it, size_t location) {
             if (it < _end)
                 it++;
         } else if (_type == line) {
-            while (*it != '\n' && it < _end)
+            while (!isnewline(*it) && it < _end)
                 it++;
             if (it < _end)
                 it++;
@@ -43,7 +45,7 @@ std::string::iterator chunk::scan_end(std::string::iterator it) {
         while (*it != _itemDelimiter && it < _end)
             it++;
     } else if (_type == line) {
-        while (*it != '\n' && it < _end)
+        while (!isnewline(*it) && it < _end)
             it++;
     }
     return it;
