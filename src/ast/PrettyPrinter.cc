@@ -326,7 +326,14 @@ void PrettyPrinter::visit(const ChunkExpression &e) {
     e.expression->accept(*this);
 }
 
-static std::string ordinalName(const Chunk &c) {
+void PrettyPrinter::visit(const CountExpression &e) {
+    out << "the number of ";
+    e.identifier->accept(*this);
+    out << " in ";
+    e.container->accept(*this);
+}
+
+static std::string chunkName(const Chunk &c) {
     switch (c.type) {
     case Chunk::Char:
         return "char";
@@ -340,7 +347,7 @@ static std::string ordinalName(const Chunk &c) {
 }
 
 void PrettyPrinter::visit(const RangeChunk &c) {
-    out << ordinalName(c) << " ";
+    out << chunkName(c) << " ";
     c.start->accept(*this);
     if (c.end) {
         out << " to ";
@@ -349,15 +356,15 @@ void PrettyPrinter::visit(const RangeChunk &c) {
 }
 
 void PrettyPrinter::visit(const AnyChunk &c) {
-    out << "any " << ordinalName(c);
+    out << "any " << chunkName(c);
 }
 
 void PrettyPrinter::visit(const LastChunk &c) {
-    out << "the last " << ordinalName(c);
+    out << "the last " << chunkName(c);
 }
 
 void PrettyPrinter::visit(const MiddleChunk &c) {
-    out << "the middle " << ordinalName(c);
+    out << "the middle " << chunkName(c);
 }
 
 void PrettyPrinter::visit(const Command &c) {

@@ -796,9 +796,38 @@ Value Interpreter::visit(const ast::Unary &e) {
 
 Value Interpreter::visit(const ast::ChunkExpression &e) {
     auto value = evaluate(*e.expression).asString();
-    std::string delimiter = valueForProperty(Property("itemdelimiter")).value_or(",");
     auto resolver = runtime::ChunkResolver(*this, value);
     return resolver.resolve(*e.chunk).get();
+}
+
+static chunk::type chunkTypeForIdentifier(const ast::Identifier &identifier) {
+    auto name = lowercase(identifier.name);
+    if (name == "chars" || name == "characters") {
+        return chunk::character;
+    }
+    if (name == "words") {
+        return chunk::word;
+    }
+    if (name == "items") {
+        return chunk::item;
+    }
+    if (name == "lines") {
+        return chunk::line;
+    }
+    throw RuntimeError(String("unknown chunk type ", Quoted(identifier.name)), identifier.location);
+}
+
+Value Interpreter::visit(const ast::CountExpression &e) {
+    auto container = evaluate(*e.container);
+    if (container.isObject()) {
+        // TODO: add container support for counting expressions.
+        throw RuntimeError("unexpected expression", e.container->location);
+    }
+
+    std::string source = container.asString();
+    std::string delimiter = valueForProperty(Property("itemdelimiter")).value_or(",");
+    chunk::type chunkType = chunkTypeForIdentifier(*e.identifier);
+    return count_chunk(chunkType, source, delimiter[0]).count;
 }
 
 Value Interpreter::visit(const ast::FloatLiteral &e) { return Value(e.value); }

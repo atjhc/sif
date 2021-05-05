@@ -86,6 +86,7 @@ class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor,
     void visit(const IntLiteral &) override;
     void visit(const StringLiteral &) override;
     void visit(const ChunkExpression &) override;
+    void visit(const CountExpression &) override;
 
 #pragma mark - Chunk::VoidVisitor
 

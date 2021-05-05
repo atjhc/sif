@@ -152,4 +152,20 @@ struct middle_chunk : public chunk {
     }
 };
 
+struct count_chunk : public chunk {
+    size_t count;
+
+    count_chunk(type type, std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
+
+  private:
+    void _seek() {
+        count = 0;
+        auto it = _begin;
+        while (it < _end) {
+            it = scan(it, 1);
+            count++;
+        }
+    }
+};
+
 CH_NAMESPACE_END

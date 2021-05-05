@@ -153,6 +153,7 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
     Value visit(const ast::Logical &) override;
     Value visit(const ast::Unary &) override;
     Value visit(const ast::ChunkExpression &) override;
+    Value visit(const ast::CountExpression &) override;
     Value visit(const ast::FloatLiteral &) override;
     Value visit(const ast::IntLiteral &) override;
     Value visit(const ast::StringLiteral &) override;

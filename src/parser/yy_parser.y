@@ -89,7 +89,7 @@ using namespace chatter::ast;
 // Keywords
 %token ON END FROM BY FUNCTION DO EXIT REPEAT TO COMMA "," GLOBAL NEXT PASS RETURN
 %token WINDOW PROGRAM IF THEN ELSE FOREVER WITH UNTIL WHILE FOR DOWN TIMES 
-%token NOT THE AN NO IS IN WITHIN OF UP NL AS THERE
+%token NOT THE AN NO IS IN WITHIN OF UP NL AS THERE NUMBER
 
 // Commands
 %token PUT GET SET ASK ADD SUBTRACT MULTIPLY DIVIDE DELETE
@@ -788,6 +788,13 @@ property
         if ($4) {
             $$ = MakeOwned<Property>($2, $4);
             $$->location = @2.first;
+        } else {
+            $$ = nullptr;
+        }
+    }
+    | the NUMBER OF IDENTIFIER IN container {
+        if ($6) {
+            $$ = MakeOwned<CountExpression>($4, $6);
         } else {
             $$ = nullptr;
         }

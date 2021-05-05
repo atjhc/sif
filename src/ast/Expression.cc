@@ -40,7 +40,10 @@ Logical::Logical(Operator o, Owned<Expression> &l, Owned<Expression> &r)
 
 Unary::Unary(Operator o, Owned<Expression> &e) : unaryOperator(o), expression(std::move(e)) {}
 
-ChunkExpression::ChunkExpression(Owned<Chunk> &c, Owned<Expression> &e) 
+ChunkExpression::ChunkExpression(Owned<Chunk> &c, Owned<Expression> &e)
     : chunk(std::move(c)), expression(std::move(e)) {}
+
+CountExpression::CountExpression(Owned<Identifier> &identifier, Owned<Expression> &container)
+    : identifier(std::move(identifier)), container(std::move(container)) {}
 
 CH_AST_NAMESPACE_END

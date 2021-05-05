@@ -139,6 +139,7 @@ in                          LEX_RETURN(IN);
 within                      LEX_RETURN(WITHIN);
 there                       LEX_RETURN(THERE);
 delete                      LEX_RETURN(DELETE);
+number                      LEX_RETURN(NUMBER);
 
 first                       LEX_RETURN(FIRST);
 second                      LEX_RETURN(SECOND);
@@ -238,11 +239,11 @@ pi                          LEX_RETURN(PI);
 }
 
 "--".*[\n\r]? {
-    LEX_RETURN(NL) ;
+    LEX_RETURN(NL);
 }
 
 "#".*[\n\r]? {
-    LEX_RETURN(NL) ;
+    LEX_RETURN(NL);
 }
 
 [ \t]* {

@@ -33,6 +33,7 @@ struct Binary;
 struct Logical;
 struct Unary;
 struct ChunkExpression;
+struct CountExpression;
 struct ThereIsA;
 struct Not;
 struct Minus;
@@ -53,6 +54,7 @@ struct Expression : Node {
         virtual std::any visitAny(const Logical &) = 0;
         virtual std::any visitAny(const Unary &) = 0;
         virtual std::any visitAny(const ChunkExpression &) = 0;
+        virtual std::any visitAny(const CountExpression &) = 0;
         virtual std::any visitAny(const FloatLiteral &) = 0;
         virtual std::any visitAny(const IntLiteral &) = 0;
         virtual std::any visitAny(const StringLiteral &) = 0;
@@ -68,6 +70,7 @@ struct Expression : Node {
         std::any visitAny(const Logical &e) { return visit(e); }
         std::any visitAny(const Unary &e) { return visit(e); }
         std::any visitAny(const ChunkExpression &e) { return visit(e); }
+        std::any visitAny(const CountExpression &e) { return visit(e); }
         std::any visitAny(const FloatLiteral &e) { return visit(e); }
         std::any visitAny(const IntLiteral &e) { return visit(e); }
         std::any visitAny(const StringLiteral &e) { return visit(e); }
@@ -80,6 +83,7 @@ struct Expression : Node {
         virtual T visit(const Logical &) = 0;
         virtual T visit(const Unary &) = 0;
         virtual T visit(const ChunkExpression &) = 0;
+        virtual T visit(const CountExpression &) = 0;
         virtual T visit(const FloatLiteral &) = 0;
         virtual T visit(const IntLiteral &) = 0;
         virtual T visit(const StringLiteral &) = 0;
@@ -94,6 +98,7 @@ struct Expression : Node {
         std::any visitAny(const Logical &e) { visit(e); return std::any(); }
         std::any visitAny(const Unary &e) { visit(e); return std::any(); }
         std::any visitAny(const ChunkExpression &e) { visit(e); return std::any(); }
+        std::any visitAny(const CountExpression &e) { visit(e); return std::any(); }
         std::any visitAny(const FloatLiteral &e) { visit(e); return std::any(); }
         std::any visitAny(const IntLiteral &e) { visit(e); return std::any(); }
         std::any visitAny(const StringLiteral &e) { visit(e); return std::any(); }
@@ -106,6 +111,7 @@ struct Expression : Node {
         virtual void visit(const Logical &) = 0;
         virtual void visit(const Unary &) = 0;
         virtual void visit(const ChunkExpression &) = 0;
+        virtual void visit(const CountExpression &) = 0;
         virtual void visit(const FloatLiteral &) = 0;
         virtual void visit(const IntLiteral &) = 0;
         virtual void visit(const StringLiteral &) = 0;
@@ -204,6 +210,15 @@ struct ChunkExpression : Expression {
     Owned<Expression> expression;
 
     ChunkExpression(Owned<Chunk> &chunk, Owned<Expression> &expression);
+
+    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
+};
+
+struct CountExpression : Expression {
+    Owned<Identifier> identifier;
+    Owned<Expression> container;
+
+    CountExpression(Owned<Identifier> &identifier, Owned<Expression> &container);
 
     std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
 };
