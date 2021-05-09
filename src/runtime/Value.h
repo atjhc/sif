@@ -70,6 +70,11 @@ class Value {
     bool isObject() const;
     Strong<Object> asObject() const;
 
+    template <typename T>
+    Strong<T> as() {
+        return isObject() ? std::dynamic_pointer_cast<T>(asObject()) : nullptr;
+    }
+
     operator bool() const { return asBool(); }
     operator int() const { return asInteger(); }
     operator long() const { return asInteger(); }

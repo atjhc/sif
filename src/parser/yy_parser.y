@@ -123,7 +123,7 @@ using namespace chatter::ast;
 %nterm <Owned<StatementList>> block matchedBlock unmatchedBlock elseMatched
 %nterm <Owned<Statement>> matchedStatement unmatchedStatement innerMatched simpleStatement keywordStatement commandStatement
 %nterm <Owned<Statement>> repeatStatement repeat repeatForever repeatCount repeatCondition repeatRange
-%nterm <Owned<Expression>> container literal descriptor ifThen functionCall property ordinal constant
+%nterm <Owned<Expression>> container literal descriptor ifThen functionCall property ordinal constant typename
 %nterm <Owned<Expression>> primary grouping unary exponent factor term concat comparison equality unary_existence logical expression
 %nterm <Owned<Chunk>> chunk
 %nterm <Owned<ExpressionList>> expressionList
@@ -665,7 +665,7 @@ times
 ;
 
 container
-    : IDENTIFIER {
+    : descriptor {
         $$ = std::move($1);
     }
     | chunk OF container {
@@ -675,6 +675,18 @@ container
         } else {
             $$ = nullptr;
         }
+    }
+;
+
+typename
+    : IDENTIFIER {
+        $$ = std::move($1);
+    }
+    | NUMBER {
+        $$ = MakeOwned<Identifier>("number");
+    }
+    | EMPTY {
+        $$ = MakeOwned<Identifier>("empty");
     }
 ;
 
@@ -938,14 +950,14 @@ comparison
             $$ = nullptr;
         }
     }
-    | comparison IS_AN concat {
+    | comparison IS_AN typename {
         if ($1 && $3) {
             $$ = MakeOwned<Binary>(Binary::IsA, $1, $3);
         } else {
             $$ = nullptr;
         }
     }
-    | comparison IS_NOT_AN concat {
+    | comparison IS_NOT_AN typename {
         if ($1 && $3) {
             Owned<Expression> isAn = MakeOwned<Binary>(Binary::IsA, $1, $3);
             $$ = MakeOwned<Unary>(Unary::Not, isAn);

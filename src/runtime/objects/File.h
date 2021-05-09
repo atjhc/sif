@@ -17,25 +17,27 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Descriptor.h"
-#include "runtime/Value.h"
-#include "runtime/Names.h"
-
-#include <string>
-#include <vector>
+#include "runtime/objects/FileSystemItem.h"
+#include "runtime/objects/TextContainable.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class Interpreter;
+class File : public FileSystemItem, public TextContainable {
+  public:
+    static Strong<File> Make(const std::string &path);
 
-struct Descriptor {
-    Names names;
-    Optional<Value> value;
+    ~File() = default;
 
-    Descriptor(Interpreter &interpreter, const ast::Descriptor &descriptor);
-    Descriptor(const Names &names, const Optional<Value> &value);
+    Optional<Value> valueForProperty(const Names &p) const override;
+    bool setValueForProperty(const Value &v, const Names &p) override;
 
-    std::string description() const;
+    bool exists() const override;
+
+    Optional<std::string> asString() const override;
+    void setString(const std::string &) const override;
+
+  private:
+    File(const std::string &path);
 };
 
 CH_RUNTIME_NAMESPACE_END

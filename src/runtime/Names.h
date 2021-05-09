@@ -18,25 +18,40 @@
 
 #include "Common.h"
 #include "ast/Property.h"
+#include "ast/Descriptor.h"
 
 #include <string>
 #include <vector>
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-struct Property {
+struct Names {
     std::vector<std::string> names;
 
-    Property(const std::string &name);
-    Property(const std::string &name1, const std::string &name2);
-    Property(const std::vector<std::string> &names);
+    Names(const std::string &name);
+    Names(const std::string &name1, const std::string &name2);
+    Names(const std::vector<std::string> &names);
 
-    Property(const ast::Property &p);
-    Property(const ast::FunctionCall &fn);
+    Names(const ast::Descriptor &);
+    Names(const ast::Property &);
+    Names(const ast::FunctionCall &);
+
+    size_t count() const { return names.size(); }
+    const std::string &operator[](size_t index) const {
+        return names[index];
+    }
+
+    const std::string& back() const {
+        return names.back();
+    }
+
+    const std::string& front() const {
+        return names.front();
+    }
 
     std::string description() const;
 
-    bool operator==(const Property &descriptor) const;
+    bool operator==(const Names &descriptor) const;
 
     bool is(const std::string &n) const;
     bool is(const std::string &n1, const std::string &n2) const;
@@ -47,8 +62,8 @@ CH_RUNTIME_NAMESPACE_END
 namespace std {
 
 template <>
-struct hash<::chatter::runtime::Property> {
-    std::size_t operator()(const ::chatter::runtime::Property& d) const {
+struct hash<::chatter::runtime::Names> {
+    std::size_t operator()(const ::chatter::runtime::Names& d) const {
         return ::chatter::HashRange(d.names);
     }
 };

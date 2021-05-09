@@ -28,7 +28,7 @@
 #include "runtime/Function.h"
 #include "runtime/Message.h"
 #include "runtime/Value.h"
-#include "runtime/Property.h"
+#include "runtime/Names.h"
 #include "runtime/Descriptor.h"
 
 #include <iostream>
@@ -93,12 +93,13 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
     Optional<Value> call(const Message &message, Strong<Object> target = nullptr);
 
     Value evaluate(const ast::Expression &expression);
-    Value evaluateBuiltin(const Property &property, const std::vector<Value> &arguments);
+    Value evaluate(Descriptor &descriptor);
+    Value evaluateBuiltin(const Names &name, const std::vector<Value> &arguments);
 
-    void add(const Property &property, Function *fn);
-    void add(const Descriptor &descriptor, const ObjectFactory &factory);
+    void addBuiltin(const Names &name, Function *fn);
+    void addFactory(const Names &name, const ObjectFactory &factory);
 
-    Optional<Value> valueForProperty(Property property) const;
+    Optional<Value> valueForProperty(Names property) const;
 
     const InterpreterStackFrame &currentFrame();
     std::function<float()> random();
@@ -161,11 +162,11 @@ class Interpreter : public ast::Statement::Visitor, public ast::Expression::Visi
   private:
     InterpreterConfig _config;
 
-    Map<Property, Owned<Function>> _functions;
-    Map<Descriptor, ObjectFactory> _factories;
-    Map<Property, Validator> _propertyValidators;
+    Map<Names, Owned<Function>> _functions;
+    Map<Names, ObjectFactory> _factories;
+    Map<Names, Validator> _propertyValidators;
 
-    Map<Property, Value> _properties;
+    Map<Names, Value> _properties;
     std::stack<InterpreterStackFrame> _stack;
     Environment _globals;
 };

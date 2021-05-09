@@ -18,9 +18,9 @@
 #include "ast/Descriptor.h"
 #include "ast/Property.h"
 #include "runtime/Object.h"
-#include "runtime/File.h"
-#include "runtime/Folder.h"
-#include "runtime/Property.h"
+#include "runtime/objects/File.h"
+#include "runtime/objects/Folder.h"
+#include "runtime/Names.h"
 #include "runtime/Container.h"
 #include "runtime/Descriptor.h"
 #include "runtime/ChunkResolver.h"
@@ -47,61 +47,61 @@ std::function<float()> InterpreterConfig::defaultRandom() {
 #endif
 
 Interpreter::Interpreter(const InterpreterConfig &config) : _config(config) {
-    add(Property("sin"), new OneArgumentFunction<sin>());
-    add(Property("cos"), new OneArgumentFunction<cos>());
-    add(Property("tan"), new OneArgumentFunction<tan>());
-    add(Property("atan"), new OneArgumentFunction<atan>());
-    add(Property("abs"), new OneArgumentFunction<fabs>());
-    add(Property("exp"), new OneArgumentFunction<exp>());
-    add(Property("exp2"), new OneArgumentFunction<exp2>());
-    add(Property("exp1"), new OneArgumentFunction<expm1>());
-    add(Property("log2"), new OneArgumentFunction<log2>());
-    add(Property("log10"), new OneArgumentFunction<log10>());
-    add(Property("ln"), new OneArgumentFunction<log>());
-    add(Property("ln1"), new OneArgumentFunction<log1p>());
-    add(Property("round"), new OneArgumentFunction<round>());
-    add(Property("sqrt"), new OneArgumentFunction<sqrt>());
-    add(Property("trunc"), new OneArgumentFunction<trunc>());
+    addBuiltin(Names("sin"), new OneArgumentFunction<sin>());
+    addBuiltin(Names("cos"), new OneArgumentFunction<cos>());
+    addBuiltin(Names("tan"), new OneArgumentFunction<tan>());
+    addBuiltin(Names("atan"), new OneArgumentFunction<atan>());
+    addBuiltin(Names("abs"), new OneArgumentFunction<fabs>());
+    addBuiltin(Names("exp"), new OneArgumentFunction<exp>());
+    addBuiltin(Names("exp2"), new OneArgumentFunction<exp2>());
+    addBuiltin(Names("exp1"), new OneArgumentFunction<expm1>());
+    addBuiltin(Names("log2"), new OneArgumentFunction<log2>());
+    addBuiltin(Names("log10"), new OneArgumentFunction<log10>());
+    addBuiltin(Names("ln"), new OneArgumentFunction<log>());
+    addBuiltin(Names("ln1"), new OneArgumentFunction<log1p>());
+    addBuiltin(Names("round"), new OneArgumentFunction<round>());
+    addBuiltin(Names("sqrt"), new OneArgumentFunction<sqrt>());
+    addBuiltin(Names("trunc"), new OneArgumentFunction<trunc>());
 
-    add(Property("max"), new MaxFunction());
-    add(Property("min"), new MinFunction());
-    add(Property("sum"), new SumFunction());
-    add(Property("average"), new MeanFunction());
-    add(Property("length"), new LengthFunction());
-    add(Property("offset"), new OffsetFunction());
-    add(Property("random"), new RandomFunction());
-    add(Property("params"), new ParamsFunction());
-    add(Property("paramcount"), new ParamCountFunction());
-    add(Property("param"), new ParamFunction());
-    add(Property("result"), new ResultFunction());
-    add(Property("value"), new ValueFunction());
-    add(Property("target"), new TargetFunction());
-    add(Property("seconds"), new SecondsFunction());
-    add(Property("secs"), new SecondsFunction());
+    addBuiltin(Names("max"), new MaxFunction());
+    addBuiltin(Names("min"), new MinFunction());
+    addBuiltin(Names("sum"), new SumFunction());
+    addBuiltin(Names("average"), new MeanFunction());
+    addBuiltin(Names("length"), new LengthFunction());
+    addBuiltin(Names("offset"), new OffsetFunction());
+    addBuiltin(Names("random"), new RandomFunction());
+    addBuiltin(Names("params"), new ParamsFunction());
+    addBuiltin(Names("paramcount"), new ParamCountFunction());
+    addBuiltin(Names("param"), new ParamFunction());
+    addBuiltin(Names("result"), new ResultFunction());
+    addBuiltin(Names("value"), new ValueFunction());
+    addBuiltin(Names("target"), new TargetFunction());
+    addBuiltin(Names("seconds"), new SecondsFunction());
+    addBuiltin(Names("secs"), new SecondsFunction());
 
     // TODO: add missing functions: date, time
     // Skipping these: ticks, annuity, charToNum, numToChar, compound
 
-    add(Descriptor("file"), [=](Optional<Value> value) -> Strong<Object> {
-        return std::static_pointer_cast<Object>(File::Make(value.value().asString()));
+    addFactory(Names("file"), [=](Value value) -> Strong<Object> {
+        return std::static_pointer_cast<Object>(File::Make(value.asString()));
     });
 
-    auto directoryFactory = [=](Optional<Value> value) -> Strong<Object> {
-        return std::static_pointer_cast<Object>(Folder::Make(value.value().asString()));
+    auto directoryFactory = [=](Value value) -> Strong<Object> {
+        return std::static_pointer_cast<Object>(Folder::Make(value.asString()));
     };
-    add(Descriptor("folder"), directoryFactory);
-    add(Descriptor("directory"), directoryFactory);
+    addFactory(Names("folder"), directoryFactory);
+    addFactory(Names("directory"), directoryFactory);
 
-    _propertyValidators[Property("itemdelimiter")] = [](Value value) {
+    _propertyValidators[Names("itemdelimiter")] = [](Value value) {
         auto string = value.asString();
         if (string.length() != 1) {
             throw RuntimeError(String("expected a single character, got ", Quoted(string)));
         }
     };
 
-    _properties = Map<Property, Value>{
-        {Property("itemdelimiter"), ","},
-        {Property("numberformat"), "0.#####"},
+    _properties = Map<Names, Value>{
+        {Names("itemdelimiter"), ","},
+        {Names("numberformat"), "0.#####"},
     };
 
 }
@@ -167,11 +167,11 @@ std::function<float()> Interpreter::random() { return _config.random; }
 
 #pragma mark - Private
 
-void Interpreter::add(const Property &property, Function *fn) {
+void Interpreter::addBuiltin(const Names &property, Function *fn) {
     _functions[property] = Owned<Function>(fn);
 }
 
-void Interpreter::add(const Descriptor &descriptor, const ObjectFactory &factory) {
+void Interpreter::addFactory(const Names &descriptor, const ObjectFactory &factory) {
     _factories[descriptor] = factory;
 }
 
@@ -199,7 +199,7 @@ Optional<Value> Interpreter::get(const std::string &name) const {
     return value;
 }
 
-Optional<Value> Interpreter::valueForProperty(Property property) const {
+Optional<Value> Interpreter::valueForProperty(Names property) const {
     auto it = _properties.find(property);
     if (it == _properties.end()) {
         return Empty;
@@ -238,7 +238,27 @@ Value Interpreter::evaluate(const ast::Expression &expression) {
     return expression.accept(*this);
 }
 
-Value Interpreter::evaluateBuiltin(const Property &property, const std::vector<Value> &arguments) {
+Value Interpreter::evaluate(Descriptor &descriptor) {
+    if (!descriptor.value.has_value() && descriptor.names.is("me")) {
+        return Value(_stack.top().target);
+    }
+    if (!descriptor.value.has_value() && descriptor.names.count() == 1) {
+        return get(descriptor.names[0]).value_or(Value(descriptor.names[0]));
+    }
+
+    if (!descriptor.value.has_value()) {
+        descriptor.value = get(descriptor.names.back()).value_or(Value(descriptor.names.back()));
+        descriptor.names.names.pop_back();
+    }
+
+    const auto &it = _factories.find(descriptor.names);
+    if (it == _factories.end()) {
+        throw RuntimeError(String("unrecognized descriptor ", Quoted(descriptor.description())));
+    }
+    return it->second(descriptor.value.value());
+}
+
+Value Interpreter::evaluateBuiltin(const Names &property, const std::vector<Value> &arguments) {
     auto fn = _functions.find(property);
     if (fn == _functions.end()) {
         if (property.names.size() == 1) {
@@ -408,30 +428,39 @@ void Interpreter::visit(const ast::Put &statement) {
         return;
     }
 
-    auto container = Container(statement.target);
+    auto container = Container(*this, statement.target);
 
     // Optimization for simple assignment.
-    if (statement.preposition == ast::Put::Into && container.chunkList.size() == 0) {
-        set(container.name, value);
+    if (statement.preposition == ast::Put::Into && 
+        container.chunkList.size() == 0 &&
+        container.descriptor->names.count() == 1 &&
+        !container.descriptor->value.has_value()) {
+        set(container.descriptor->names[0], value);
         return;
     }
 
-    std::string targetValue = get(container.name).value_or(Value()).asString();
-    chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, targetValue);
+    auto target = evaluate(*container.descriptor);
+    auto stringValue = target.asString();
+
+    chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, stringValue);
 
     switch (statement.preposition) {
     case ast::Put::Before:
-        targetValue.replace(targetChunk.begin(), targetChunk.begin(), value.asString());
+        stringValue.replace(targetChunk.begin(), targetChunk.begin(), value.asString());
         break;
     case ast::Put::After:
-        targetValue.replace(targetChunk.end(), targetChunk.end(), value.asString());
+        stringValue.replace(targetChunk.end(), targetChunk.end(), value.asString());
         break;
     case ast::Put::Into:
-        targetValue.replace(targetChunk.begin(), targetChunk.end(), value.asString());
+        stringValue.replace(targetChunk.begin(), targetChunk.end(), value.asString());
         break;
     }
 
-    set(container.name, targetValue);
+    if (auto textContainer = target.as<TextContainable>()) {
+        textContainer->setString(stringValue);
+    } else {
+        set(container.descriptor->names[0], stringValue);
+    }
 }
 
 void Interpreter::visit(const ast::Get &s) {
@@ -440,7 +469,7 @@ void Interpreter::visit(const ast::Get &s) {
 }
 
 void Interpreter::visit(const ast::Set &statement) {
-    auto property = Property(*statement.property);
+    auto property = Names(*statement.property);
     auto value = evaluate(*statement.expression);
 
     if (!statement.property->expression) {
@@ -462,7 +491,7 @@ void Interpreter::visit(const ast::Set &statement) {
     auto target = evaluate(*statement.property->expression);
     if (target.isObject()) {
         auto object = target.asObject();
-        if (!object->setValueForProperty(value, property)) {
+        if (!object->setValueForProperty(value, property.names)) {
             throw RuntimeError("unknown property", statement.property->location);
         }
     }
@@ -488,26 +517,35 @@ void Interpreter::performArith(const Owned<ast::Expression> &expression,
                                const Owned<ast::Expression> &destination,
                                const std::function<Value(Value, Value)> &fn) {
     auto value = evaluate(*expression);
-    auto container = Container(destination);
+    auto container = Container(*this, destination);
 
-    auto targetValue = get(container.name).value_or(Value());
+    auto target = evaluate(*container.descriptor);
     if (container.chunkList.size() == 0) {
         expectNumber(value, expression->location);
-        expectNumber(targetValue, destination->location);
-        return set(container.name, fn(targetValue, value));
+        expectNumber(target, destination->location);
+        auto result = fn(target, value);
+        if (auto textContainer = target.as<TextContainable>()) {
+            textContainer->setString(result.asString());
+        } else {
+            return set(container.descriptor->names[0], result);
+        }
     }
 
-    auto targetString = targetValue.asString();
-    chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, targetString);
-    targetValue = Value(targetChunk.get());
+    auto resultString = target.asString();
+    chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, resultString);
+    Value result = targetChunk.get();
     
     expectNumber(value, expression->location);
-    expectNumber(targetValue, destination->location);
+    expectNumber(result, destination->location);
 
-    targetValue = fn(targetValue, value);
-    targetString.replace(targetChunk.begin(), targetChunk.end(), targetValue.asString());
+    result = fn(result, value);
+    resultString.replace(targetChunk.begin(), targetChunk.end(), result.asString());
 
-    set(container.name, targetString);                         
+    if (auto textContainer = target.as<TextContainable>()) {
+        textContainer->setString(resultString);
+    } else {
+        return set(container.descriptor->names[0], resultString);
+    }
 }
 
 void Interpreter::visit(const ast::Add &statement) {
@@ -539,19 +577,25 @@ void Interpreter::visit(const ast::Divide &statement) {
 
 void Interpreter::visit(const ast::Delete &statement) {
     if (auto chunkExpression = dynamic_cast<ast::ChunkExpression *>(statement.expression.get())) {
-        auto container = Container(statement.expression);
+        auto container = Container(*this, statement.expression);
 
-        std::string targetValue = get(container.name).value_or(Value()).asString();
-        chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, targetValue);
+        auto target = evaluate(*container.descriptor);
+        std::string resultString = target.asString();
+        chunk targetChunk = ChunkResolver::resolve(container.chunkList, *this, resultString);
         
         // TODO: move this logic into the chunk util classes.
         if ((targetChunk.chunk_type() == chunk::line || targetChunk.chunk_type() == chunk::item) &&
-            targetChunk.end() < targetValue.end()) {
-            targetValue.erase(targetChunk.begin(), targetChunk.end() + 1);
+            targetChunk.end() < resultString.end()) {
+            resultString.erase(targetChunk.begin(), targetChunk.end() + 1);
         } else {
-            targetValue.erase(targetChunk.begin(), targetChunk.end());
+            resultString.erase(targetChunk.begin(), targetChunk.end());
         }
-        set(container.name, targetValue);
+
+        if (auto textContainer = target.as<TextContainable>()) {
+            textContainer->setString(resultString);
+        } else {
+            return set(container.descriptor->names[0], resultString);
+        }
     }
 }
 
@@ -574,7 +618,7 @@ Value Interpreter::visit(const ast::FunctionCall &fn) {
     }
 
     try {
-        return evaluateBuiltin(Property(fn), message.arguments);
+        return evaluateBuiltin(Names(fn), message.arguments);
     } catch (InvalidArgumentError &error) {
         error.where = fn.arguments->expressions[error.argumentIndex]->location;
         throw;
@@ -589,7 +633,7 @@ Value Interpreter::visit(const ast::Property &p) {
     if (p.expression) {
         auto value = evaluate(*p.expression);
         if (value.isObject()) {
-            auto property = runtime::Property(p);
+            auto property = runtime::Names(p);
 
             Optional<Value> result;
             try {
@@ -608,7 +652,7 @@ Value Interpreter::visit(const ast::Property &p) {
         }
     }
 
-    auto property = Property(p);
+    auto property = Names(p);
     if (!p.expression) {
         auto it = _properties.find(p);
         if (it != _properties.end()) {
@@ -626,28 +670,13 @@ Value Interpreter::visit(const ast::Property &p) {
 }
 
 Value Interpreter::visit(const ast::Descriptor &d) {
-    auto descriptor = Descriptor(d);
-
-    if (!d.value && descriptor.is("me")) {
-        return Value(_stack.top().target);
+    auto descriptor = Descriptor(*this, d);
+    try {
+        return evaluate(descriptor);
+    } catch (RuntimeError &error) {
+        error.where = d.location;
+        throw;
     }
-    if (!d.value && descriptor.names.size() == 1) {
-        return get(descriptor.names[0]).value_or(Value(descriptor.names[0]));
-    }
-
-    Value value;
-    if (d.value) {
-        value = evaluate(*d.value);
-    } else {
-        value = get(descriptor.names.back()).value_or(Value(descriptor.names.back()));
-        descriptor.names.pop_back();
-    }
-
-    const auto &it = _factories.find(descriptor);
-    if (it == _factories.end()) {
-        throw RuntimeError(String("unrecognized descriptor ", Quoted(descriptor.description())), d.location);
-    }
-    return it->second(value);
 }
 
 static void checkNumberOperand(const Value &value, const ast::Location &location) {
@@ -671,8 +700,7 @@ Value Interpreter::visit(const ast::Binary &e) {
         if (typeName == "logical") {
             return Value(lhs.isBool());
         }
-        // TODO: Hack since "empty" is a constant for empty string.
-        if (typeName == "empty" || typeName == "") {
+        if (typeName == "empty") {
             return lhs.isEmpty();
         }
         // TODO: Check for additional host defined types.
@@ -825,7 +853,7 @@ Value Interpreter::visit(const ast::CountExpression &e) {
     }
 
     std::string source = container.asString();
-    std::string delimiter = valueForProperty(Property("itemdelimiter")).value_or(",");
+    std::string delimiter = valueForProperty(Names("itemdelimiter")).value_or(",");
     chunk::type chunkType = chunkTypeForIdentifier(*e.identifier);
     return count_chunk(chunkType, source, delimiter[0]).count;
 }

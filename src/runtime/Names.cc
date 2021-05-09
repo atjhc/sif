@@ -14,48 +14,54 @@
 //  limitations under the License.
 //
 
-#include "runtime/Property.h"
+#include "runtime/Names.h"
 #include "Utilities.h"
 
 #include "ast/Identifier.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Property::Property(const std::string &name) {
+Names::Names(const std::string &name) {
     names.push_back(name);
 }
 
-Property::Property(const std::string &name1, const std::string &name2) {
+Names::Names(const std::string &name1, const std::string &name2) {
     names.push_back(name2);
     names.push_back(name1);
 }
 
-Property::Property(const std::vector<std::string> &names)
+Names::Names(const std::vector<std::string> &names)
     : names(names) {}
 
-Property::Property(const ast::Property &p) {
+Names::Names(const ast::Descriptor &descriptor) {
+    for (auto &identifier : descriptor.identifiers->identifiers) {
+        names.push_back(lowercase(identifier->name));
+    }
+}
+
+Names::Names(const ast::Property &p) {
     for (auto &identifier : p.identifiers->identifiers) {
         names.push_back(lowercase(identifier->name));
     }
 }
 
-Property::Property(const ast::FunctionCall &fn) {
+Names::Names(const ast::FunctionCall &fn) {
     names.push_back(lowercase(fn.name->name));
 }
 
-std::string Property::description() const {
+std::string Names::description() const {
     return Join(names, " ");
 }
 
-bool Property::operator==(const Property &property) const {
+bool Names::operator==(const Names &property) const {
     return names == property.names;
 }
 
-bool Property::is(const std::string &n) const {
+bool Names::is(const std::string &n) const {
     return names.size() == 1 && names[0] == lowercase(n);
 }
 
-bool Property::is(const std::string &n1, const std::string &n2) const {
+bool Names::is(const std::string &n1, const std::string &n2) const {
     return names.size() == 2 && names[0] == lowercase(n1) && names[1] == lowercase(n2);
 }
 

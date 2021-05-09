@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "runtime/File.h"
-#include "runtime/Property.h"
+#include "runtime/objects/File.h"
+#include "runtime/Names.h"
 
 #include <fstream>
 #include <filesystem>
@@ -28,28 +28,23 @@ Strong<File> File::Make(const std::string &path) {
     return Strong<File>(new File(path));
 }
 
-File::File(const std::string &path) : FSObject(path) {}
+File::File(const std::string &path) : FileSystemItem(path) {}
 
-Optional<Value> File::valueForProperty(const Property &p) const {
+Optional<Value> File::valueForProperty(const Names &p) const {
     if (p.is("contents")) {
         return asString().value();
     }
     if (p.is("size")) {
         return fs::file_size(_path);
     }
-    return FSObject::valueForProperty(p);
+    return FileSystemItem::valueForProperty(p);
 }
 
-bool File::setValueForProperty(const Value &v, const Property &p) {
+bool File::setValueForProperty(const Value &v, const Names &p) {
     if (p.is("contents")) {
-        std::ofstream file(_path);
-        if (!file) {
-            throw RuntimeError(String("could not write to file ", Quoted(_path)));
-        }
-        file << v.asString();
+        setString(v.asString());
         return true;
     }
-
     return Object::setValueForProperty(v, p);
 }
 
@@ -61,6 +56,14 @@ Optional<std::string> File::asString() const {
         return ss.str();
     }
     return Value();
+}
+
+void File::setString(const std::string &contents) const {
+    std::ofstream file(_path);
+    if (!file) {
+        throw RuntimeError(String("could not write to file ", Quoted(_path)));
+    }
+    file << contents;
 }
 
 bool File::exists() const {

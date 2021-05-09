@@ -17,24 +17,25 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/FSObject.h"
+#include "runtime/Object.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class File : public FSObject {
+class FileSystemItem : public Object {
   public:
-    static Strong<File> Make(const std::string &path);
 
-    ~File() = default;
+    ~FileSystemItem() = default;
 
-    Optional<Value> valueForProperty(const Property &p) const override;
-    bool setValueForProperty(const Value &v, const Property &p) override;
+    virtual Optional<Value> valueForProperty(const Names &p) const override;
+    virtual bool setValueForProperty(const Value &v, const Names &p) override;
 
-    bool exists() const override;
-    Optional<std::string> asString() const override;
+    virtual bool exists() const override;
+    virtual Optional<std::string> asString() const override;
 
-  private:
-    File(const std::string &path);
+  protected:
+    std::string _path;
+
+    FileSystemItem(const std::string &path);
 };
 
 CH_RUNTIME_NAMESPACE_END

@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "runtime/Folder.h"
-#include "runtime/Property.h"
+#include "runtime/objects/Folder.h"
+#include "runtime/Names.h"
 
 #include <sstream>
 #include <filesystem>
@@ -28,16 +28,16 @@ Strong<Folder> Folder::Make(const std::string &path) {
     return Strong<Folder>(new Folder(path));
 }
 
-Folder::Folder(const std::string &path) : FSObject(path) {}
+Folder::Folder(const std::string &path) : FileSystemItem(path) {}
 
-Optional<Value> Folder::valueForProperty(const Property &p) const {
+Optional<Value> Folder::valueForProperty(const Names &p) const {
     if (p.is("contents")) {
         return asString().value();
     }
-    return FSObject::valueForProperty(p);
+    return FileSystemItem::valueForProperty(p);
 }
 
-bool Folder::setValueForProperty(const Value &v, const Property &p) {
+bool Folder::setValueForProperty(const Value &v, const Names &p) {
     return Object::setValueForProperty(v, p);
 }
 

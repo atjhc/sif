@@ -16,7 +16,7 @@
 
 #include "runtime/Object.h"
 #include "runtime/Interpreter.h"
-#include "runtime/Property.h"
+#include "runtime/Names.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
@@ -77,14 +77,14 @@ Optional<Ref<ast::Handler>> Object::functionFor(const Message &message) {
     return i->second;
 }
 
-Optional<Value> Object::valueForProperty(const Property &p) const {
+Optional<Value> Object::valueForProperty(const Names &p) const {
     if (p.is("name")) {
         return Value(_name);
     }
     return Empty;
 }
 
-bool Object::setValueForProperty(const Value &v, const Property &p) { return false; }
+bool Object::setValueForProperty(const Value &v, const Names &p) { return false; }
 
 Optional<std::string> Object::asString() const {
     return _name;

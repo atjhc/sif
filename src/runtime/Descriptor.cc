@@ -20,25 +20,17 @@
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Descriptor::Descriptor(const std::string &name) {
-    names.push_back(name);
-}
-
-Descriptor::Descriptor(const std::vector<std::string> &names)
-    : names(names) {}
-
-Descriptor::Descriptor(const ast::Descriptor &descriptor) {
-    for (auto &identifier : descriptor.identifiers->identifiers) {
-        names.push_back(lowercase(identifier->name));
+Descriptor::Descriptor(Interpreter &interpreter, const ast::Descriptor &descriptor) : names(descriptor) {
+    if (descriptor.value) {
+        value = interpreter.evaluate(*descriptor.value);
     }
 }
 
-bool Descriptor::operator==(const Descriptor &descriptor) const {
-    return names == descriptor.names;
-}
+Descriptor::Descriptor(const Names &names, const Optional<Value> &value)
+    : names(names), value(value) {}
 
 std::string Descriptor::description() const {
-    return Join(names, " ");
+    return String(names.description(), " ", Quoted(value.value().asString()));
 }
 
 CH_RUNTIME_NAMESPACE_END

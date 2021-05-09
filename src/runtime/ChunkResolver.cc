@@ -50,7 +50,7 @@ chunk ChunkResolver::_baseChunk() const {
 }
 
 unsigned char ChunkResolver::_itemDelimiter() const {
-    auto property = Property("itemdelimiter");
+    auto property = Names("itemdelimiter");
     std::string delimiter = _interpreter.valueForProperty(property).value_or(",");
     return delimiter[0];
 }

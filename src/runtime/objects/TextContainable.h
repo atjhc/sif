@@ -17,24 +17,15 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/FSObject.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-class Folder : public FSObject {
+class TextContainable {
   public:
-    static Strong<Folder> Make(const std::string &path);
+    ~TextContainable() = default;
 
-    ~Folder() = default;
-
-    Optional<Value> valueForProperty(const Property &p) const override;
-    bool setValueForProperty(const Value &v, const Property &p) override;
-
-    bool exists() const override;
-    Optional<std::string> asString() const override;
-
-  private:
-    Folder(const std::string &path);
+    virtual Optional<std::string> asString() const = 0;
+    virtual void setString(const std::string &) const = 0;
 };
 
 CH_RUNTIME_NAMESPACE_END

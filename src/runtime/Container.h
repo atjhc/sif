@@ -18,18 +18,20 @@
 
 #include "Common.h"
 #include "ast/Chunk.h"
-#include "ast/Expression.h"
+#include "runtime/Descriptor.h"
 
 #include <string>
 #include <vector>
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
+class Interpreter;
+
 struct Container {
     std::vector<Ref<ast::Chunk>> chunkList;
-    std::string name;
+    Owned<Descriptor> descriptor;
 
-    Container(const Owned<ast::Expression> &e);
+    Container(Interpreter &interpreter, const Owned<ast::Expression> &expression);
 };
 
 CH_RUNTIME_NAMESPACE_END

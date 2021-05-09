@@ -16,19 +16,21 @@
 
 #include "runtime/Container.h"
 #include "runtime/Error.h"
-#include "ast/Identifier.h"
+#include "runtime/Interpreter.h"
+#include "runtime/Descriptor.h"
+#include "ast/Descriptor.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
 
-Container::Container(const Owned<ast::Expression> &e) {
-    auto target = e.get();
+Container::Container(Interpreter &interpreter, const Owned<ast::Expression> &expression) {
+    auto target = expression.get();
     while (target) {
-        if (const auto identifier = dynamic_cast<ast::Identifier *>(target)) {
-            name = identifier->name;
+        if (const auto d = dynamic_cast<ast::Descriptor *>(target)) {
+            descriptor = MakeOwned<Descriptor>(interpreter, *d);
             target = nullptr;
-        } else if (const auto chunkExpression = dynamic_cast<ast::ChunkExpression *>(target)) {
-            chunkList.push_back(*chunkExpression->chunk);
-            target = chunkExpression->expression.get();
+        } else if (const auto e = dynamic_cast<ast::ChunkExpression *>(target)) {
+            chunkList.push_back(*e->chunk);
+            target = e->expression.get();
         } else {
             throw RuntimeError("unexpected expression", target->location);
         }

@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "runtime/FSObject.h"
-#include "runtime/Property.h"
+#include "runtime/objects/FileSystemItem.h"
+#include "runtime/Names.h"
 
 #include <fstream>
 #include <filesystem>
@@ -24,9 +24,9 @@ CH_RUNTIME_NAMESPACE_BEGIN
 
 namespace fs = std::filesystem;
 
-FSObject::FSObject(const std::string &path) : Object(String("path ", path), "", nullptr, nullptr), _path(path) {}
+FileSystemItem::FileSystemItem(const std::string &path) : Object(String("path ", path), "", nullptr, nullptr), _path(path) {}
 
-Optional<Value> FSObject::valueForProperty(const Property &p) const {
+Optional<Value> FileSystemItem::valueForProperty(const Names &p) const {
     if (p.is("path")) {
         return _path;
     }
@@ -45,15 +45,15 @@ Optional<Value> FSObject::valueForProperty(const Property &p) const {
     return Object::valueForProperty(p);
 }
 
-bool FSObject::setValueForProperty(const Value &v, const Property &p) {
+bool FileSystemItem::setValueForProperty(const Value &v, const Names &p) {
     return Object::setValueForProperty(v, p);
 }
 
-Optional<std::string> FSObject::asString() const {
+Optional<std::string> FileSystemItem::asString() const {
     return _path;
 }
 
-bool FSObject::exists() const {
+bool FileSystemItem::exists() const {
     return false;
 }
 
