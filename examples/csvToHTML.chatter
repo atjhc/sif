@@ -15,11 +15,11 @@ function csvToHTML csv
   repeat while csv <> empty
     put line 1 of csv into row
     put "<tr>" after html
-    repeat while row <> empty
+    repeat while row is not empty
       put item 1 of row into theItem
+      put replaceAll(theItem, "&", "&amp;") into theItem
       put replaceAll(theItem, "<", "&lt;") into theItem
       put replaceAll(theItem, ">", "&gt;") into theItem
-      put replaceAll(theItem, "&", "&amp;") into theItem
       put "<td>" & theItem & "</td>" after html
       delete item 1 of row
     end repeat
@@ -31,10 +31,17 @@ function csvToHTML csv
 end csvToHTML
 
 function replaceAll text, src, dst
+  put empty into result
   repeat
     put offset(src, text) into index
-    if index is 0 then exit repeat
-    put dst into character (index) of text
+    if index is 0 then
+      put text after result
+      exit repeat
+    end if
+    
+    put char 1 to (index - 1) of text after result
+    put dst after result
+    delete char 1 to (index + length(src) - 1) of text
   end repeat
-  return text
+  return result
 end replaceAll
