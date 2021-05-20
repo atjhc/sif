@@ -15,22 +15,21 @@
 //
 
 #include "ast/Repeat.h"
-#include "ast/Identifier.h"
 #include "ast/Statement.h"
 
 CH_AST_NAMESPACE_BEGIN
 
-Repeat::Repeat(Owned<StatementList> &s) : statements(std::move(s)) {}
+Repeat::Repeat(Owned<Statement> statement) : statement(std::move(statement)) {}
 
-RepeatCount::RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s)
-    : Repeat(s), countExpression(std::move(cs)) {}
+// RepeatCount::RepeatCount(Owned<Expression> countExpression, Owned<StatementList> statements)
+//     : Repeat(std::move(statements)), countExpression(std::move(countExpression)) {}
 
-RepeatRange::RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee,
-                         bool asc, Owned<StatementList> &s)
-    : Repeat(s), variable(std::move(v)), startExpression(std::move(se)),
-      endExpression(std::move(ee)), ascending(asc) {}
+// RepeatRange::RepeatRange(Owned<Expression> startExpression, Owned<Expression> endExpression,
+//                          bool ascending, Owned<StatementList> statements)
+//     : Repeat(std::move(statements)), startExpression(std::move(startExpression)),
+//       endExpression(std::move(endExpression)), ascending(ascending) {}
 
-RepeatCondition::RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl)
-    : Repeat(sl), condition(std::move(c)), conditionValue(cv) {}
+RepeatCondition::RepeatCondition(Owned<Statement> statement, Owned<Expression> condition, bool conditionValue)
+    : Repeat(std::move(statement)), condition(std::move(condition)), conditionValue(conditionValue) {}
 
 CH_AST_NAMESPACE_END

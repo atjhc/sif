@@ -15,7 +15,6 @@
 //
 
 #include "runtime/Value.h"
-#include "runtime/Object.h"
 
 #include <iostream>
 
@@ -140,19 +139,7 @@ std::string Value::asString() const {
     if (auto v = std::get_if<bool>(&value)) {
         return *v ? "true" : "false";
     }
-    if (auto v = std::get_if<Strong<Object>>(&value)) {
-        return v->get()->asString().value_or(v->get()->name());
-    }
     assert(false);
-}
-
-bool Value::isObject() const { return std::holds_alternative<Strong<Object>>(value); }
-
-Strong<Object> Value::asObject() const {
-    if (auto o = std::get_if<Strong<Object>>(&value)) {
-        return *o;
-    }
-    throw RuntimeError("expected object type");
 }
 
 Value Value::operator==(const Value &rhs) const {

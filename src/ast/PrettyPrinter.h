@@ -19,81 +19,49 @@
 #include "Common.h"
 #include "ast/Statement.h"
 #include "ast/Expression.h"
-#include "ast/Chunk.h"
+#include "ast/Repeat.h"
 
 #include <iostream>
 
 CH_AST_NAMESPACE_BEGIN
-
-struct Program;
-struct Handler;
-struct StatementList;
-struct IdentifierList;
-struct Container;
 
 struct PrettyPrinterConfig {
     std::ostream &out = std::cout;
     unsigned int tabSize = 2;
 };
 
-class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor, public Chunk::VoidVisitor {
+class PrettyPrinter : public Statement::Visitor, public Expression::VoidVisitor {
   public:
     PrettyPrinter(const PrettyPrinterConfig &config = PrettyPrinterConfig());
 
-    void print(const Program &);
+    void print(const Expression &);
+    void print(const Statement &);
 
   private:
-    void print(const Handler &);
-    void print(const StatementList &);
-    void print(const IdentifierList &, const std::string &sep);
-    void print(const ExpressionList &);
+    void _printBlock(const Statement &statement);
 
 #pragma mark - Statement::Visitor
 
+    void visit(const Block &) override;
     void visit(const If &) override;
+    void visit(const Set &) override;
+    void visit(const Return &) override;
+    void visit(const ExpressionStatement &) override;
     void visit(const Repeat &) override;
-    void visit(const RepeatCount &) override;
-    void visit(const RepeatRange &) override;
+//     void visit(const RepeatCount &) override;
+//     void visit(const RepeatRange &) override;
     void visit(const RepeatCondition &) override;
     void visit(const ExitRepeat &) override;
     void visit(const NextRepeat &) override;
-    void visit(const Exit &) override;
-    void visit(const Pass &) override;
-    void visit(const Global &) override;
-    void visit(const Return &) override;
-    void visit(const Do &) override;
-    void visit(const Command &) override;
-    void visit(const Put &) override;
-    void visit(const Get &) override;
-    void visit(const Set &) override;
-    void visit(const Ask &) override;
-    void visit(const Add &) override;
-    void visit(const Subtract &) override;
-    void visit(const Multiply &) override;
-    void visit(const Divide &) override;
-    void visit(const Delete &) override;
 
 #pragma mark - Expression::VoidVisitor
 
-    void visit(const Identifier &) override;
-    void visit(const FunctionCall &) override;
-    void visit(const Property &) override;
-    void visit(const Descriptor &) override;
     void visit(const Binary &) override;
-    void visit(const Logical &e) override;
-    void visit(const Unary &e) override;
-    void visit(const FloatLiteral &) override;
-    void visit(const IntLiteral &) override;
-    void visit(const StringLiteral &) override;
-    void visit(const ChunkExpression &) override;
-    void visit(const CountExpression &) override;
-
-#pragma mark - Chunk::VoidVisitor
-
-    void visit(const RangeChunk &) override;
-    void visit(const AnyChunk &) override;
-    void visit(const LastChunk &) override;
-    void visit(const MiddleChunk &) override;
+    void visit(const Unary &) override;
+    void visit(const Grouping &) override;
+    void visit(const Variable &) override;
+    void visit(const List &) override;
+    void visit(const Literal &) override;
 
   private:
     PrettyPrinterConfig _config = PrettyPrinterConfig();

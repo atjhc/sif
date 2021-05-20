@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "ast/PrettyPrinter.h"
+#include "parser/Scanner.h"
 #include "parser/Parser.h"
 #include "tests/TestSuite.h"
 
@@ -22,30 +22,14 @@
 #include <iostream>
 #include <sstream>
 
+using namespace chatter;
+
 TEST_CASE(ParserTests, All) {
-    for (auto pstr : suite.files_in("parser")) {
-        auto path = std::filesystem::path(pstr);
-        if (path.extension() != ".chatter") {
-            continue;
-        }
+    const char str[] = "1 + 1";
+    const char *end = str + sizeof(str) - 1;
 
-        auto resultPath = path;
-        resultPath.replace_extension(".txt");
+    Scanner scanner(str, end);
+    Parser parser(ParserConfig(), scanner);
 
-        auto expectedResult = suite.file_contents(resultPath);
-        ASSERT_FALSE(expectedResult.empty());
-
-        auto parserConfig = chatter::ParserConfig(path);
-        auto parser = chatter::Parser(parserConfig);
-
-        auto source = suite.file_contents(path);
-        auto script = parser.parseProgram(source);
-
-        std::ostringstream ss;
-        auto printerConfig = chatter::ast::PrettyPrinterConfig{ss, 2};
-        auto printer = chatter::ast::PrettyPrinter(printerConfig);
-        printer.print(*script);
-
-        ASSERT_EQ(ss.str(), expectedResult) << "Failed: " << path << std::endl;
-    }
+    auto result = parser.parse();
 }

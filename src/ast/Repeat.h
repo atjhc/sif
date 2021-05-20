@@ -26,38 +26,37 @@
 CH_AST_NAMESPACE_BEGIN
 
 struct Repeat : Statement {
-    Owned<StatementList> statements;
+    Owned<Statement> statement;
 
-    Repeat(Owned<StatementList> &s);
-
-    void accept(Visitor &v) const override { return v.visit(*this); }
-};
-
-struct RepeatCount : Repeat {
-    Owned<Expression> countExpression;
-
-    RepeatCount(Owned<Expression> &cs, Owned<StatementList> &s);
+    Repeat(Owned<Statement> statement);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
-struct RepeatRange : Repeat {
-    Owned<Identifier> variable;
-    Owned<Expression> startExpression;
-    Owned<Expression> endExpression;
-    bool ascending;
+// struct RepeatCount : Repeat {
+//     Owned<Expression> countExpression;
 
-    RepeatRange(Owned<Identifier> &v, Owned<Expression> &se, Owned<Expression> &ee, bool asc,
-                Owned<StatementList> &s);
+//     RepeatCount(Owned<Expression> countExpression, Owned<StatementList> statements);
 
-    void accept(Visitor &v) const override { return v.visit(*this); }
-};
+//     void accept(Visitor &v) const override { return v.visit(*this); }
+// };
+
+// struct RepeatRange : Repeat {
+//     Owned<Expression> startExpression;
+//     Owned<Expression> endExpression;
+//     bool ascending;
+
+//     RepeatRange(Owned<Expression> startExpression, Owned<Expression> endExpression, bool ascending,
+//                 Owned<StatementList> statementList);
+
+//     void accept(Visitor &v) const override { return v.visit(*this); }
+// };
 
 struct RepeatCondition : Repeat {
     Owned<Expression> condition;
     bool conditionValue;
 
-    RepeatCondition(Owned<Expression> &c, bool cv, Owned<StatementList> &sl);
+    RepeatCondition(Owned<Statement> statement, Owned<Expression> condition, bool conditionValue);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
 };

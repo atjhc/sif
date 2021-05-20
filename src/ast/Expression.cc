@@ -15,35 +15,21 @@
 //
 
 #include "ast/Expression.h"
-#include "ast/Descriptor.h"
-#include "ast/Identifier.h"
-#include "ast/Chunk.h"
 
 CH_AST_NAMESPACE_BEGIN
 
-ExpressionList::ExpressionList() {}
-ExpressionList::ExpressionList(Owned<Expression> &e) { add(e); }
+Binary::Binary(Owned<Expression> leftExpression, Operator binaryOperator, Owned<Expression> rightExpression)
+    : leftExpression(std::move(leftExpression)), binaryOperator(binaryOperator), rightExpression(std::move(rightExpression)) {}
 
-FunctionCall::FunctionCall(Owned<Identifier> &name, Owned<ExpressionList> &arguments)
-    : name(std::move(name)), arguments(std::move(arguments)) {}
+Unary::Unary(Operator unaryOperator, Owned<Expression> expression) 
+    : unaryOperator(unaryOperator), expression(std::move(expression)) {}
 
-FunctionCall::FunctionCall(Owned<Identifier> &name) : name(std::move(name)), arguments(nullptr) {}
+Grouping::Grouping(Owned<Expression> expression) : expression(std::move(expression)) {}
 
-Binary::Binary(Operator o, Owned<Expression> &l, Owned<Expression> &r)
-    : binaryOperator(o), leftExpression(std::move(l)), rightExpression(std::move(r)) {}
+Variable::Variable(const std::vector<Token> tokens) : tokens(tokens) {}
 
-Binary::Binary(Operator binaryOperator, Owned<Expression> &rightExpression)
-    : binaryOperator(binaryOperator), leftExpression(nullptr), rightExpression(std::move(rightExpression)) {}
+List::List(std::vector<Owned<Expression>> expressions) : expressions(std::move(expressions)) {}
 
-Logical::Logical(Operator o, Owned<Expression> &l, Owned<Expression> &r)
-    : logicalOperator(o), leftExpression(std::move(l)), rightExpression(std::move(r)) {}
-
-Unary::Unary(Operator o, Owned<Expression> &e) : unaryOperator(o), expression(std::move(e)) {}
-
-ChunkExpression::ChunkExpression(Owned<Chunk> &c, Owned<Expression> &e)
-    : chunk(std::move(c)), expression(std::move(e)) {}
-
-CountExpression::CountExpression(Owned<Identifier> &identifier, Owned<Expression> &container)
-    : identifier(std::move(identifier)), container(std::move(container)) {}
+Literal::Literal(Token token) : token(token) {}
 
 CH_AST_NAMESPACE_END

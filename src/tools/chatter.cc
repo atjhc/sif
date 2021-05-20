@@ -16,8 +16,6 @@
 
 #include "ast/PrettyPrinter.h"
 #include "parser/Parser.h"
-#include "runtime/Interpreter.h"
-#include "runtime/Object.h"
 
 #include <chrono>
 #include <fstream>
@@ -31,7 +29,6 @@
 
 using namespace chatter;
 using namespace chatter::ast;
-using namespace chatter::runtime;
 
 #if defined(DEBUG)
 static int traceParsing = 0;
@@ -64,10 +61,13 @@ static int prettyPrint(const std::string &fileName) {
         config.fileName = "<stdin>";
     }
 
-    Parser parser(config);
-    Owned<Program> result;
-
-    if ((result = parser.parseProgram(source)) == nullptr) {
+    Scanner scanner(source.c_str(), source.c_str() + source.length());
+    Parser parser(config, scanner);
+    Owned<Statement> result;
+    if ((result = parser.parse()) == nullptr) {
+        for (auto error : parser.errors()) {
+            std::cerr << fileName << ":" << error.token().location << ": " << error.what() << std::endl;
+        }
         return -1;
     }
 
@@ -77,8 +77,7 @@ static int prettyPrint(const std::string &fileName) {
     return 0;
 }
 
-static int run(const std::string &fileName, const std::string &messageName,
-               const std::vector<std::string> &arguments) {
+static int run(const std::string &fileName, const std::vector<std::string> &arguments) {
     std::string source;
     std::string contextName = fileName;
 
@@ -96,41 +95,17 @@ static int run(const std::string &fileName, const std::string &messageName,
         contextName = "<stdin>";
     }
 
-    auto object = Object::Make(fileName, source);
-    if (!object) {
-        return -1;
-    }
-
-    std::vector<Value> values;
-    for (auto &argument : arguments) {
-        values.push_back(Value(argument));
-    }
-
-    InterpreterConfig coreConfig;
-#if defined(DEBUG)
-    coreConfig.enableTracing = traceRuntime;
-#endif
-    Interpreter core(coreConfig);
-
-    try {
-        core.send(Message(messageName, values), object);
-    } catch (RuntimeError &error) {
-        std::cerr << contextName << ":" << error.where << ": error: " << error.what() << std::endl;
-    }
-
     return 0;
 }
 
 int usage(int argc, char *argv[]) {
     std::cout << "Usage: " << basename(argv[0]) << " [options...] [file]" << std::endl
-#if defined(YYDEBUG)
+#if defined(DEBUG)
               << "     --trace-parse"
               << "\t Output trace logging for the parser" << std::endl
               << "     --trace-runtime"
               << "\t Output trace logging for the runtime" << std::endl
 #endif
-              << " -m, --message-name"
-              << "\t Run the specified message name (default is \"begin\")" << std::endl
               << " -p, --pretty-print"
               << "\t Pretty print the abstract syntax tree" << std::endl
               << " -h, --help"
@@ -139,28 +114,23 @@ int usage(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-    std::string messageName = "begin";
     bool shouldPrettyPrint = false;
 
     static struct option long_options[] = {
-#if defined(YYDEBUG)
+#if defined(DEBUG)
         {"trace-parse", no_argument, &traceParsing, 1},
         {"trace-runtime", no_argument, &traceRuntime, 1},
 #endif
-        {"message-name", required_argument, NULL, 'm'},
         {"pretty-print", no_argument, NULL, 'p'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
 
     int c, opt_index = 0;
-    while ((c = getopt_long(argc, argv, "m:ph", long_options, &opt_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "ph", long_options, &opt_index)) != -1) {
         switch (c) {
         case 'p':
             shouldPrettyPrint = true;
-            break;
-        case 'm':
-            messageName = optarg;
             break;
         case 'h':
             return usage(argc, argv);
@@ -184,5 +154,5 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         arguments.push_back(argv[i]);
     }
-    return run(fileName, messageName, arguments);
+    return run(fileName, arguments);
 }

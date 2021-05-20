@@ -17,61 +17,107 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Program.h"
+#include "parser/Scanner.h"
+#include "ast/Expression.h"
+#include "ast/Statement.h"
+#include "runtime/Error.h"
 
 #include <iostream>
+#include <stack>
 
 CH_NAMESPACE_BEGIN
 
+/*
+
+program: block
+block: statement*
+statement: expression | if | set | repeat
+set: SET variable TO expression NL
+repeat: REPEAT (FOREVER)? NL block NL END (REPEAT)?
+if: IF expression THEN (NL block | statement) (ELSE statement)
+
+expression: clause
+clause: equality ((AND | OR) equality)*
+equality: comparison (("=" | "!=" | "is" | "is not") comparison)*
+comparison: term (("<" | ">" | "<=" | ">=") term)*
+term: factor (("+" | "-") factor)*
+factor: exponent (("*" | "/" | "%") exponent)*
+exponent: unary ("^" unary)*
+unary: primary | ("!" | NOT) unary
+primary: NUMBER | STRING | TRUE | FALSE | EMPTY | "(" expression ")"
+
+*/
+
+
+using namespace ast;
+using namespace runtime;
+
 struct ParserConfig {
     std::string fileName;
-    std::ostream &err;
+    std::ostream &cerr;
 
 #if defined(DEBUG)
     bool enableTracing = false;
 #endif
 
-    ParserConfig(const std::string &n = "<stdin>", std::ostream &o = std::cerr)
-        : fileName(n), err(o) {}
-};
-
-struct ParserContext {
-    enum Mode { Program, Statements, Expression };
-
-    ParserConfig config;
-
-    void *scanner = nullptr;
-    std::string source;
-
-    // Parsing state
-    Mode parsingMode = Program;
-    bool selectingMode = true;
-    bool parsingRepeat = false;
-    std::string messageKey;
-    unsigned int numberOfErrors = 0;
-
-    // Result
-    Owned<ast::Program> program = nullptr;
-    Owned<ast::Expression> expression = nullptr;
-    Owned<ast::StatementList> statements = nullptr;
-
-    ParserContext(const ParserConfig &config, const std::string &source);
-
-    void error(ast::Location location, const std::string &msg);
+    ParserConfig(const std::string &n = "<stdin>", std::ostream &cerr = std::cerr)
+        : fileName(n), cerr(cerr) {}
 };
 
 class Parser {
   public:
-    Parser(const ParserConfig &config) : _config(config) {}
 
-    Owned<ast::Program> parseProgram(const std::string &source);
-    Owned<ast::StatementList> parseStatements(const std::string &source);
-    Owned<ast::Expression> parseExpression(const std::string &source);
+    Parser(const ParserConfig &config, Scanner &scanner);
+
+    Owned<Statement> parse();
+    const std::vector<SyntaxError> &errors();
 
   private:
-    void parse(ParserContext &context, const std::string &source);
+
+    bool _isAtEnd();
+    bool _check(const std::initializer_list<Token::Type> &types);
+    Optional<Token> _match(const std::initializer_list<Token::Type> &types);
+    Token _consume(Token::Type type, const std::string &error);
+    Token _consumeEnd(Token::Type type);
+    Token _consumeNewLine();
+    Token& _advance();
+    Token& _peek();
+    Token& _previous();
+    void _synchronize();
+
+#if defined(DEBUG)
+    void _trace(const std::string &message);
+#endif
+
+    Owned<Statement> _parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
+    Owned<Statement> _parseStatement();
+    Owned<Statement> _parseSimpleStatement();
+    Owned<Statement> _parseIf();
+    Owned<Statement> _parseRepeat();
+    Owned<Statement> _parseSet();
+    Owned<Statement> _parseExit();
+    Owned<Statement> _parseNext();
+    Owned<Statement> _parseReturn();
+    Owned<Statement> _parseExpressionStatement();
+
+    Owned<Expression> _parseExpression();
+    Owned<Expression> _parseClause();
+    Owned<Expression> _parseEquality();
+    Owned<Expression> _parseComparison();
+    Owned<Expression> _parseList();
+    Owned<Expression> _parseTerm();
+    Owned<Expression> _parseFactor();
+    Owned<Expression> _parseExponent();
+    Owned<Expression> _parseUnary();
+    Owned<Expression> _parsePrimary();
 
     ParserConfig _config;
+    Scanner &_scanner;
+
+    std::stack<Token> _tokens;
+    Optional<Token> _previousToken;
+    std::vector<SyntaxError> _errors;
+    bool _parsingRepeat;
 };
 
 CH_NAMESPACE_END

@@ -25,6 +25,8 @@
 
 CH_AST_NAMESPACE_BEGIN
 
+struct Block;
+struct Set;
 struct If;
 struct Repeat;
 struct RepeatCount;
@@ -32,46 +34,22 @@ struct RepeatRange;
 struct RepeatCondition;
 struct ExitRepeat;
 struct NextRepeat;
-struct Exit;
-struct Pass;
-struct Global;
 struct Return;
-struct Do;
-struct Command;
-struct Put;
-struct Get;
-struct Set;
-struct Ask;
-struct Add;
-struct Subtract;
-struct Multiply;
-struct Divide;
-struct Delete;
+struct ExpressionStatement;
 
 struct Statement : Node {
     struct Visitor {
+        virtual void visit(const Block &) = 0;
+        virtual void visit(const Set &) = 0;
         virtual void visit(const If &) = 0;
         virtual void visit(const Repeat &) = 0;
-        virtual void visit(const RepeatCount &) = 0;
-        virtual void visit(const RepeatRange &) = 0;
+        // virtual void visit(const RepeatCount &) = 0;
+        // virtual void visit(const RepeatRange &) = 0;
         virtual void visit(const RepeatCondition &) = 0;
         virtual void visit(const ExitRepeat &) = 0;
         virtual void visit(const NextRepeat &) = 0;
-        virtual void visit(const Exit &) = 0;
-        virtual void visit(const Pass &) = 0;
-        virtual void visit(const Global &) = 0;
         virtual void visit(const Return &) = 0;
-        virtual void visit(const Do &) = 0;
-        virtual void visit(const Command &) = 0;
-        virtual void visit(const Put &) = 0;
-        virtual void visit(const Get &) = 0;
-        virtual void visit(const Set &) = 0;
-        virtual void visit(const Ask &) = 0;
-        virtual void visit(const Add &) = 0;
-        virtual void visit(const Subtract &) = 0;
-        virtual void visit(const Multiply &) = 0;
-        virtual void visit(const Divide &) = 0;
-        virtual void visit(const Delete &) = 0;
+        virtual void visit(const ExpressionStatement &) = 0;
     };
 
     virtual ~Statement() = default;
@@ -79,49 +57,29 @@ struct Statement : Node {
     virtual void accept(Visitor &v) const = 0;
 };
 
-struct StatementList : Node {
+struct Block : Statement {
     std::vector<Owned<Statement>> statements;
 
-    StatementList();
-    StatementList(Owned<Statement> &statement);
+    Block(std::vector<Owned<Statement>> statements);
 
-    void add(Owned<Statement> &statement) { statements.push_back(std::move(statement)); }
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
+};
+
+struct Set : Statement {
+    Owned<Variable> variable;
+    Owned<Expression> expression;
+
+    Set(Owned<Variable> variable, Owned<Expression> expression);
+
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct If : Statement {
     Owned<Expression> condition;
-    Owned<StatementList> ifStatements;
-    Owned<StatementList> elseStatements;
+    Owned<Statement> ifStatement;
+    Owned<Statement> elseStatement;
 
-    If(Owned<Expression> &c, Owned<Statement> &is);
-    If(Owned<Expression> &c, Owned<Statement> &is, Owned<Statement> &es);
-    If(Owned<Expression> &c, Owned<StatementList> &isl);
-    If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es);
-    If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl);
-
-    void accept(Statement::Visitor &v) const override { v.visit(*this); }
-};
-
-struct Exit : Statement {
-    Owned<Identifier> messageKey;
-
-    Exit(Owned<Identifier> &m);
-
-    void accept(Statement::Visitor &v) const override { v.visit(*this); }
-};
-
-struct Pass : Statement {
-    Owned<Identifier> messageKey;
-
-    Pass(Owned<Identifier> &m);
-
-    void accept(Statement::Visitor &v) const override { v.visit(*this); }
-};
-
-struct Global : Statement {
-    Owned<IdentifierList> variables;
-
-    Global(Owned<IdentifierList> &v);
+    If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statement> elseStatement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
@@ -129,17 +87,15 @@ struct Global : Statement {
 struct Return : Statement {
     Owned<Expression> expression;
 
-    Return(Owned<Expression> &e);
+    Return(Owned<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
-struct Do : Statement {
+struct ExpressionStatement : Statement {
     Owned<Expression> expression;
-    Owned<Expression> language;
 
-    Do(Owned<Expression> &expression);
-    Do(Owned<Expression> &expression, Owned<Expression> &language);
+    ExpressionStatement(Owned<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };

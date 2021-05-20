@@ -15,41 +15,21 @@
 //
 
 #include "ast/Statement.h"
-#include "ast/Identifier.h"
 
 CH_AST_NAMESPACE_BEGIN
 
-StatementList::StatementList() {}
-StatementList::StatementList(Owned<Statement> &statement) { add(statement); }
+Block::Block(std::vector<Owned<Statement>> statements) 
+    : statements(std::move(statements)) {}
 
-If::If(Owned<Expression> &c, Owned<StatementList> &is, Owned<StatementList> &es)
-    : condition(std::move(c)), ifStatements(std::move(is)), elseStatements(std::move(es)) {}
+Set::Set(Owned<Variable> variable, Owned<Expression> expression)
+    : variable(std::move(variable)), expression(std::move(expression)) {}
 
-If::If(Owned<Expression> &c, Owned<StatementList> &isl)
-    : condition(std::move(c)), ifStatements(std::move(isl)), elseStatements(nullptr) {}
+If::If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statement> elseStatement)
+    : condition(std::move(condition)), ifStatement(std::move(ifStatement)), elseStatement(std::move(elseStatement)) {}
 
-If::If(Owned<Expression> &c, Owned<Statement> &is)
-    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)), elseStatements(nullptr) {
-}
+Return::Return(Owned<Expression> expression) : expression(std::move(expression)) {}
 
-If::If(Owned<Expression> &c, Owned<Statement> &is, Owned<Statement> &es)
-    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)),
-      elseStatements(MakeOwned<StatementList>(es)) {}
-
-If::If(Owned<Expression> &c, Owned<Statement> &is, Owned<StatementList> &esl)
-    : condition(std::move(c)), ifStatements(MakeOwned<StatementList>(is)),
-      elseStatements(std::move(esl)) {}
-
-Exit::Exit(Owned<Identifier> &m) : messageKey(std::move(m)) {}
-
-Pass::Pass(Owned<Identifier> &m) : messageKey(std::move(m)) {}
-
-Global::Global(Owned<IdentifierList> &v) : variables(std::move(v)) {}
-
-Return::Return(Owned<Expression> &e) : expression(std::move(e)) {}
-
-Do::Do(Owned<Expression> &e) : expression(std::move(e)), language(nullptr) {}
-Do::Do(Owned<Expression> &e, Owned<Expression> &l)
-    : expression(std::move(e)), language(std::move(l)) {}
+ExpressionStatement::ExpressionStatement(Owned<Expression> expression) 
+    : expression(std::move(expression)) {}
 
 CH_AST_NAMESPACE_END

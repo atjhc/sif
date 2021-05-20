@@ -18,16 +18,29 @@
 
 #include "Common.h"
 #include "ast/Node.h"
+#include "parser/Scanner.h"
 
 CH_RUNTIME_NAMESPACE_BEGIN
+
+class SyntaxError : public std::runtime_error {
+  public:
+    
+    SyntaxError(const Token &token, const std::string &what)
+        : std::runtime_error(what), _token(token) {}
+
+    const Token &token() const { return _token; }
+
+  private:
+    Token _token;
+};
 
 struct RuntimeError : std::runtime_error {
     ast::Location where;
 
-    RuntimeError(const std::string &_what) : std::runtime_error(_what) {}
+    RuntimeError(const std::string &what) : std::runtime_error(what) {}
 
-    RuntimeError(const std::string &_what, const ast::Location &_where)
-        : std::runtime_error(_what), where(_where) {}
+    RuntimeError(const std::string &what, const ast::Location &where)
+        : std::runtime_error(what), where(where) {}
 };
 
 struct ArgumentsError : RuntimeError {

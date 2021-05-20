@@ -12,7 +12,6 @@ DSTROOT := build
 SRCROOT := src
 
 TOOLS := $(SRCROOT)/tools/chatter.cc $(SRCROOT)/tools/tests.cc
-CODEGEN := $(DSTROOT)/yyParser.cc $(DSTROOT)/yyScanner.cc
 
 COMMON_HEADERS := $(SRCROOT)/Common.h $(SRCROOT)/Utilities.h
 
@@ -30,9 +29,6 @@ TEST_OBJ := $(patsubst $(SRCROOT)/%.cc,$(DSTROOT)/%.o,$(TEST_SRC))
 
 # Filter out test cases from framework.
 SRC := $(filter-out $(TEST_SRC),$(SRC))
-
-# Add the code generation files.
-SRC := $(CODEGEN) $(SRC)
 
 # Generate the .o files for the framework.
 OBJ := $(patsubst $(SRCROOT)/%.cc,$(DSTROOT)/%.o,$(SRC))
@@ -77,14 +73,6 @@ $(DSTROOT)/$(TOOLNAME): $(DSTROOT)/$(LIBNAME) $(SRCROOT)/tools/chatter.cc
 $(DSTROOT)/$(LIBNAME): $(OBJ)
 	ar rc $(DSTROOT)/$(LIBNAME) $(OBJ)
 	ranlib $(DSTROOT)/$(LIBNAME)
-
-$(DSTROOT)/yyScanner.cc: $(SRCROOT)/parser/yy_scanner.l
-	@mkdir -p $(dir $@)
-	$(FLEX) --outfile=$(DSTROOT)/yyScanner.cc --header-file=$(DSTROOT)/yyScanner.h $(SRCROOT)/parser/yy_scanner.l
-
-$(DSTROOT)/yyParser.cc: $(SRCROOT)/parser/yy_parser.y
-	@mkdir -p $(dir $@)
-	$(BISON) --output-file=$(DSTROOT)/yyParser.cc --defines=$(DSTROOT)/yyParser.h $(BISONFLAGS) $(SRCROOT)/parser/yy_parser.y
 
 $(DSTROOT)/tests/%.o: $(SRCROOT)/tests/%.cc $(COMMON_HEADERS)
 	@mkdir -p $(dir $@)
