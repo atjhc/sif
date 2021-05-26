@@ -17,16 +17,35 @@
 #pragma once
 
 #include "Common.h"
+#include "runtime/Value.h"
+#include "parser/Bytecode.h"
 
-#include <any>
-#include <ostream>
+#include <vector>
+#include <stack>
 
 CH_NAMESPACE_BEGIN
 
-struct Node {
-    Location location;
+struct VirtualMachineConfig {
+#if defined(DEBUG)
+    bool enableTracing = false;
+#endif
+};
 
-    virtual ~Node() = default;
+class VirtualMachine {
+public:
+    VirtualMachine(const VirtualMachineConfig &config = VirtualMachineConfig());
+
+    Optional<Value> execute(const Strong<Bytecode> &bytecode);
+
+    Optional<RuntimeError> error() const;
+
+private:
+
+    VirtualMachineConfig _config;
+    Optional<RuntimeError> _error;
+    std::stack<Value> _stack;
+    Map<std::string, Value> _variables;
+    Bytecode::Iterator _ip;
 };
 
 CH_NAMESPACE_END

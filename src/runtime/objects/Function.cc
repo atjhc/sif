@@ -1,6 +1,3 @@
-//
-//  Copyright (c) 2021 James Callender
-//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
@@ -14,21 +11,23 @@
 //  limitations under the License.
 //
 
-#pragma once
+#include "runtime/objects/Function.h"
 
-#include "Common.h"
-#include "runtime/Value.h"
+CH_NAMESPACE_BEGIN
 
-#include <vector>
+Function::Function(const FunctionSignature &signature, const Strong<Bytecode> &bytecode)
+    : _signature(signature), _bytecode(bytecode) {}
 
-CH_RUNTIME_NAMESPACE_BEGIN
+const Strong<Bytecode> &Function::bytecode() const {
+    return _bytecode;
+}
+    
+std::string Function::typeName() const {
+    return "function";
+}
 
-struct Message {
-    std::string name;
-    std::vector<Value> arguments;
+std::string Function::description() const {
+    return _signature.name();
+}
 
-    Message(const std::string &n, const std::vector<Value> args = {})
-        : name(lowercase(n)), arguments(args) {}
-};
-
-CH_RUNTIME_NAMESPACE_END
+CH_NAMESPACE_END

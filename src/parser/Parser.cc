@@ -28,12 +28,19 @@ CH_NAMESPACE_BEGIN
 #define trace(msg)
 #endif
 
-using namespace ast;
-using namespace runtime;
+static inline std::string Describe(const Token &token) {
+    return token.description();
+}
+
+static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
+    return out << Describe(token);
+}
 
 Parser::Parser(const ParserConfig &config, Scanner &scanner) 
     : _config(config), _scanner(scanner) {
     _parsingRepeat = false;
+    _recording = false;
+    _index = 0;
 }
 
 Owned<Statement> Parser::parse() {
@@ -69,7 +76,7 @@ Token Parser::_consumeNewLine() {
 }
 
 Token Parser::_consumeEnd(Token::Type type) {
-    auto endToken = _consume(Token::Type::End, String("expected ", Quoted("end")));
+    auto endToken = _consume(Token::Type::End, Concat("expected ", Quoted("end")));
     if (auto matchToken = _match({type})) {
         return matchToken.value();
     }
@@ -92,32 +99,46 @@ bool Parser::_isAtEnd() {
     return _peek().type == Token::Type::EndOfFile;
 }
 
+Token& Parser::_scan() {
+    auto token = _scanner.scan();
+    _tokens.push_back(token);
+    trace(Concat("Scanned ", Describe(token)));
+    trace(Concat("Tokens [", Join(_tokens, ", "), "] ", _index));
+    return _tokens.back();
+}
+
 Token& Parser::_advance() {
     if (!_isAtEnd()) {
-        _previousToken = _peek();
-        _tokens.pop();
+        if (!_recording && _tokens.size() > 1) {
+            _tokens.erase(_tokens.begin());
+        }
+        if (_recording || _index == 0) {
+            _index++;
+        }
+        if (_index == _tokens.size()) {
+            _scan();
+        }
     }
     return _previous();
 }
 
 Token& Parser::_peek() {
-    if (_tokens.empty()) {
-        auto token = _scanner.scan();
-        trace(String("Scanned: ", token.description(), " (", static_cast<int>(token.type), ")"));
-
-        _tokens.push(token);
+    if (_tokens.size() == 0) {
+        return _scan();
     }
-    return _tokens.top();
+    return _tokens[_index];
 }
 
 Token& Parser::_previous() {
-    if (_previousToken.has_value()) {
-        return _previousToken.value();
+    if (_tokens.size() > 1) {
+        return _tokens[_index - 1];
     }
     throw std::runtime_error("unexpected error");
 }
 
 void Parser::_synchronize() {
+    trace("Synchronizing");
+    _recording = false;
     auto token = _advance();
     while (!_isAtEnd()) {
         if (token.type == Token::Type::NewLine) {
@@ -125,6 +146,29 @@ void Parser::_synchronize() {
         }
         token = _advance();
     }
+}
+
+void Parser::_checkpoint() {
+    _recording = true;
+    _saved.push(_index);
+    trace(Concat("Checkpoint (", _previous().description(), ", ", _peek().description(), ")"));
+}
+
+void Parser::_rewind() {
+    _recording = false;
+    _index = _saved.top();
+    _saved.pop();
+    trace(Concat("Rewind (", _previous().description(), ", ", _peek().description(), ")"));
+}
+
+void Parser::_commit() {
+    _recording = false;
+    _saved.pop();
+    if (_saved.size() == 0) {
+        _tokens.erase(_tokens.begin(), _tokens.begin() + _index - 1);
+        _index = 1;
+    }
+    trace(Concat("Commit (", _previous().description(), ", ", _peek().description(), ")"));
 }
 
 #if defined(DEBUG)
@@ -136,6 +180,58 @@ void Parser::_trace(const std::string &message) {
 #endif
 
 #pragma mark - Grammar
+
+bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
+    if (auto token = std::get_if<Token>(&term)) {
+        trace(Concat("Checking token ", Quoted(token->text)));
+        if (_peek().type == token->type && _peek().text == token->text) {
+            _advance();
+            return true;
+        }
+        return false;
+    }
+    if (auto option = std::get_if<FunctionSignature::Option>(&term)) {
+        trace(Concat("Checking optional token ", Quoted(option->token.text)));
+        if (_peek().type == Token::Type::Word && _peek().text == option->token.text) {
+            tokens.push_back(_advance());
+        } else {
+            tokens.push_back(Empty);
+        }
+        return true;
+    }
+    if (auto argument = std::get_if<FunctionSignature::Argument>(&term)) {
+        trace(Concat("Checking argument"));
+        if (auto matchedExpression = _parsePrimary()) {
+            arguments.push_back(std::move(matchedExpression));
+            return true;
+        }
+        return false;
+    }
+
+    if (auto choice = std::get_if<FunctionSignature::Choice>(&term)) {
+        trace(Concat("Checking choice"));
+        for (const auto &token : choice->tokens) {
+            if (_peek().type == Token::Type::Word && _peek().text == token.text) {
+                tokens.push_back(_advance());
+                return true;
+            }
+        }
+        return false;
+    }
+    return false;
+}
+
+bool Parser::_matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
+    trace(Concat("Checking function signature ", Quoted(signature.name())));
+    for (const auto &term : signature.terms) {
+
+        if (!_matchTerm(term, tokens, arguments)) {
+            return false;
+        }
+    }
+    trace(Concat("Matched function signature ", Quoted(signature.name())));
+    return true;
+}
 
 Owned<Statement> Parser::_parseBlock(const std::initializer_list<Token::Type> &endTypes) {
     std::vector<Owned<Statement>> statements;
@@ -158,6 +254,9 @@ Owned<Statement> Parser::_parseBlock(const std::initializer_list<Token::Type> &e
 }
 
 Owned<Statement> Parser::_parseStatement() {
+    if (_match({Token::Type::Function})) {
+        return _parseFunction();
+    }
     if (_match({Token::Type::If})) {
         return _parseIf();
     }
@@ -175,9 +274,57 @@ Owned<Statement> Parser::_parseStatement() {
     return statement;
 }
 
+FunctionSignature Parser::_parseFunctionSignature() {
+    FunctionSignature signature;
+    while (auto token = _match({Token::Type::Word, Token::Type::LeftParen})) {
+        if (token.value().type == Token::Type::Word) {
+            signature.terms.push_back(FunctionSignature::Term{token.value()});
+        } else {
+            if (auto word = _match({Token::Type::Word})) {
+                if (_check({Token::Type::Slash})) {
+                    FunctionSignature::Choice choice;
+                    choice.tokens.push_back(word.value());
+                    while (_match({Token::Type::Slash})) {
+                        auto word = _consume(Token::Type::Word, "expected a word");
+                        choice.tokens.push_back(word);
+                    }
+                    std::sort(choice.tokens.begin(), choice.tokens.end(), [](Token lhs, Token rhs) {
+                        return lhs.text < rhs.text;
+                    });
+                    signature.terms.push_back(choice);
+                    _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
+                } else if (_match({Token::Type::Colon})) {
+                    auto typeName = _match({Token::Type::Word});
+                    _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
+                    signature.terms.push_back(FunctionSignature::Argument{word, typeName});
+                } else if (_match({Token::Type::RightParen})) {
+                    signature.terms.push_back(FunctionSignature::Option{word.value()});
+                }
+            } else if (_match({Token::Type::Colon})) {
+                auto typeName = _match({Token::Type::Word});
+                signature.terms.push_back(FunctionSignature::Term{FunctionSignature::Argument{Empty, typeName}});
+                _consume(Token::Type::RightParen, "expected right parenthesis");
+            } else {
+                throw SyntaxError(_peek(), Concat("expected a word, ", Quoted(":"), ", or ", Quoted("/")));
+            }
+        }
+    }
+    return signature;
+}
+
+Owned<Statement> Parser::_parseFunction() {
+    auto signature = _parseFunctionSignature();
+    _consumeNewLine();
+    _functionDecls.push_back(signature);
+    auto statement = _parseBlock({Token::Type::End});
+    _consumeEnd(Token::Type::Function);
+
+    return MakeOwned<FunctionDecl>(signature, std::move(statement));
+}
+
 Owned<Statement> Parser::_parseSimpleStatement() {
     if (_match({Token::Type::Set})) {
-        return _parseSet();
+        return _parseAssignment();
     }
     if (_match({Token::Type::Exit})) {
         return _parseExit();
@@ -194,7 +341,7 @@ Owned<Statement> Parser::_parseSimpleStatement() {
 Owned<Statement> Parser::_parseIf() {
     auto condition = _parseExpression();
     _match({Token::Type::NewLine});
-    _consume(Token::Type::Then, String("expected ", Quoted("then")));
+    _consume(Token::Type::Then, Concat("expected ", Quoted("then")));
 
     Optional<Token> token;
     Owned<Statement> ifClause = nullptr;
@@ -203,7 +350,7 @@ Owned<Statement> Parser::_parseIf() {
     if (_match({Token::Type::NewLine})) {
         ifClause = _parseBlock({Token::Type::End, Token::Type::Else});
         if (!(token = _match({Token::Type::End, Token::Type::Else}))) {
-            throw SyntaxError(_peek(), String("expected ", Quoted("end"), " or ", Quoted("else")));
+            throw SyntaxError(_peek(), Concat("expected ", Quoted("end"), " or ", Quoted("else")));
         }
         if (token.value().type == Token::Type::End) {
             _match({Token::Type::If});
@@ -254,31 +401,31 @@ Owned<Statement> Parser::_parseRepeat() {
     throw SyntaxError(_peek(), "unexpected expression");
 }
 
-Owned<Statement> Parser::_parseSet() {
+Owned<Statement> Parser::_parseAssignment() {
     std::vector<Token> tokens;
     while (auto token = _match({Token::Type::Word})) {
         tokens.push_back(token.value());
     }
-    _consume(Token::Type::To, String("expected ", Quoted("to")));
+    _consume(Token::Type::To, Concat("expected ", Quoted("to")));
     auto expression = _parseExpression();
     auto variable = MakeOwned<Variable>(tokens);
     
-    return MakeOwned<ast::Set>(std::move(variable), std::move(expression));
+    return MakeOwned<Assignment>(std::move(variable), std::move(expression));
 }
 
 Owned<Statement> Parser::_parseExit() {
     if (!_parsingRepeat) {
-        throw SyntaxError(_previous(), String("unexpected ", Quoted("exit"), " outside repeat block"));
+        throw SyntaxError(_previous(), Concat("unexpected ", Quoted("exit"), " outside repeat block"));
     }
-    _consume(Token::Type::Repeat, String("expected ", Quoted("repeat")));
+    _consume(Token::Type::Repeat, Concat("expected ", Quoted("repeat")));
     return MakeOwned<ExitRepeat>();
 }
 
 Owned<Statement> Parser::_parseNext() {
     if (!_parsingRepeat) {
-        throw SyntaxError(_previous(), String("unexpected ", Quoted("next"), " outside repeat block"));
+        throw SyntaxError(_previous(), Concat("unexpected ", Quoted("next"), " outside repeat block"));
     }
-    _consume(Token::Type::Repeat, String("expected ", Quoted("repeat")));
+    _consume(Token::Type::Repeat, Concat("expected ", Quoted("repeat")));
     return MakeOwned<NextRepeat>();
 }
 
@@ -359,18 +506,20 @@ Owned<Expression> Parser::_parseComparison() {
 
 Owned<Expression> Parser::_parseList() {
     auto expression = _parseTerm();
-    auto location = expression->location;
 
-    std::vector<Owned<Expression>> expressions;
-    while (_match({Token::Type::Comma})) {
+    if (_check({Token::Type::Comma})) {
+        auto location = expression->location;
+        
+        std::vector<Owned<Expression>> expressions;
         expressions.push_back(std::move(expression));
-        expression = _parseTerm();
-    }
-    if (expressions.size() > 0) {
-        expressions.push_back(std::move(expression));
-        expression = MakeOwned<List>(std::move(expressions));
+        while (_match({Token::Type::Comma})) {
+            expressions.push_back(_parseTerm());
+        }
+
+        expression = MakeOwned<ListLiteral>(std::move(expressions));
         expression->location = location;
     }
+
     return expression;
 }
 
@@ -410,6 +559,22 @@ Owned<Expression> Parser::_parseUnary() {
         expression->location = operatorToken.value().location;
         return expression;
     }
+    return _parseCall();
+}
+
+Owned<Expression> Parser::_parseCall() {
+    if (_functionDecls.size() > 0) {
+        _checkpoint();
+        for (const auto &signature : _functionDecls) {
+            std::vector<Optional<Token>> tokens;
+            std::vector<Owned<Expression>> arguments;
+            if (_matchSignature(signature, tokens, arguments)) {
+                _commit();
+                return MakeOwned<Call>(signature, std::move(tokens), std::move(arguments));
+            }
+        }
+        _rewind();
+    }
     return _parsePrimary();
 }
 
@@ -420,14 +585,28 @@ Owned<Expression> Parser::_parsePrimary() {
         Token::Type::IntLiteral,
         Token::Type::BoolLiteral,
     })) {
-        return MakeOwned<Literal>(token.value());
+        auto literal = MakeOwned<Literal>(token.value());
+        literal->location = token.value().location;
+        return literal;
     }
     if (_match({Token::Type::LeftParen})) {
         auto expression = _parseExpression();
-        _consume(Token::Type::RightParen, String("expected ", Quoted(")")));
-        return MakeOwned<Grouping>(std::move(expression));
+        _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
+        auto grouping = MakeOwned<Grouping>(std::move(expression));
+        grouping->location = grouping->expression->location;
+        return grouping;
     }
-    throw SyntaxError(_peek(), String("unexpected expression"));
+
+    std::vector<Token> tokens;
+    while (auto token = _match({Token::Type::Word})) {
+        tokens.push_back(token.value());
+    }
+    if (tokens.size()) {
+        _variableDecls.push_back(Variable(tokens));
+        return MakeOwned<Variable>(tokens);
+    }
+
+    throw SyntaxError(_peek(), Concat("unexpected expression"));
 }
 
 CH_NAMESPACE_END

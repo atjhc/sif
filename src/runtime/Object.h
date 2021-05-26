@@ -18,11 +18,16 @@
 
 #include "Common.h"
 
-CH_RUNTIME_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 class Object {
   public:
     virtual ~Object() = default;
+
+    virtual std::string typeName() const = 0;
+    virtual std::string description() const = 0;
 };
 
-CH_RUNTIME_NAMESPACE_END
+std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);
+
+CH_NAMESPACE_END

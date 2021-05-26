@@ -16,7 +16,9 @@
 
 #include "ast/PrettyPrinter.h"
 
-CH_AST_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
+
+using namespace chatter;
 
 PrettyPrinter::PrettyPrinter(const PrettyPrinterConfig &c) : _config(c), out(c.out) {}
 
@@ -50,17 +52,18 @@ void PrettyPrinter::visit(const Block &block) {
     }
 }
 
+void PrettyPrinter::visit(const FunctionDecl &functionDecl) {
+    out << "function " << functionDecl.signature.description();
+    _printBlock(*functionDecl.statement);
+    out << "end function";
+}
+
 void PrettyPrinter::visit(const If &ifs) {
     out << "if ";
     ifs.condition->accept(*this);
     out << " then";
 
     _printBlock(*ifs.ifStatement);
-    // _indentLevel++;
-    // out << indentString();
-    // ifs.ifStatement->accept(*this);
-    // out << std::endl;
-    // _indentLevel--;
 
     if (ifs.elseStatement) {
         out << indentString() << "else";
@@ -77,7 +80,7 @@ void PrettyPrinter::visit(const Return &statement) {
     }
 }
 
-void PrettyPrinter::visit(const Set &set) {
+void PrettyPrinter::visit(const Assignment &set) {
     out << "set ";
     set.variable->accept(*this);
     out << " to ";
@@ -138,16 +141,33 @@ void PrettyPrinter::visit(const NextRepeat &) {
     out << "next repeat";
 }
 
-// void PrettyPrinter::visit(const Exit &s) {
-//     out << "exit ";
-//     s.messageKey->accept(*this);
-// }
+void PrettyPrinter::visit(const Call &call) {
+    auto tokensIt = call.tokens.begin();
+    auto argsIt = call.arguments.begin();
 
-// void PrettyPrinter::visit(const Pass &s) {
-//     out << "pass ";
-//     s.messageKey->accept(*this);
-// }
-
+    auto it = call.signature.terms.begin();
+    while (it < call.signature.terms.end()) {
+        const auto &term = *it;
+        bool skip = false;
+        std::visit(Overload {
+            [&](Token token) { out << token.text; },
+            [&](FunctionSignature::Argument argument) { (*argsIt)->accept(*this); argsIt++; },
+            [&](FunctionSignature::Choice choice) { out << tokensIt->value().text; tokensIt++; },
+            [&](FunctionSignature::Option argument) { 
+                if (tokensIt->has_value()) {
+                    out << tokensIt->value().text;
+                } else {
+                    skip = true;
+                }
+                tokensIt++; 
+            },
+        }, term);
+        it++;
+        if (it != call.signature.terms.end() && !skip) {
+            out << " ";
+        }
+    }
+}
 
 void PrettyPrinter::visit(const Grouping &grouping) {
     out << "(";
@@ -230,7 +250,7 @@ void PrettyPrinter::visit(const Unary &e) {
     e.expression->accept(*this);
 }
 
-void PrettyPrinter::visit(const List &list) {
+void PrettyPrinter::visit(const ListLiteral &list) {
     auto it = list.expressions.begin();
     while (it != list.expressions.end()) {
         (*it)->accept(*this);
@@ -245,4 +265,4 @@ void PrettyPrinter::visit(const Literal &literal) {
     out << literal.token.text;
 }
 
-CH_AST_NAMESPACE_END
+CH_NAMESPACE_END

@@ -31,10 +31,14 @@ CH_NAMESPACE_BEGIN
 
 program: block
 block: statement*
-statement: expression | if | set | repeat
-set: SET variable TO expression NL
-repeat: REPEAT (FOREVER)? NL block NL END (REPEAT)?
-if: IF expression THEN (NL block | statement) (ELSE statement)
+statement: if | repeat | simpleStatement
+simpleStatement: expression NL | set NL | EXIT REPEAT NL | NEXT REPEAT NL
+set: SET variable TO expression
+repeat: REPEAT { [FOREVER] | WHILE expression | UNTIL expression } NL block NL END [REPEAT]
+if: IF expression [NL] THEN { singleThen | NL multiThen }
+singleThen: simpleStatement [ [NL] ELSE else ]
+multiThen: block { END [IF] NL | else }
+else: ELSE { statement | NL block END [IF] NL }
 
 expression: clause
 clause: equality ((AND | OR) equality)*
@@ -47,10 +51,6 @@ unary: primary | ("!" | NOT) unary
 primary: NUMBER | STRING | TRUE | FALSE | EMPTY | "(" expression ")"
 
 */
-
-
-using namespace ast;
-using namespace runtime;
 
 struct ParserConfig {
     std::string fileName;
@@ -80,21 +80,32 @@ class Parser {
     Token _consume(Token::Type type, const std::string &error);
     Token _consumeEnd(Token::Type type);
     Token _consumeNewLine();
+    Token& _scan();
     Token& _advance();
     Token& _peek();
     Token& _previous();
     void _synchronize();
 
+    void _checkpoint();
+    void _rewind();
+    void _commit();
+
+    bool _matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments);
+    bool _matchTerm(const FunctionSignature::Term &term, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments);
+
 #if defined(DEBUG)
     void _trace(const std::string &message);
 #endif
 
+    FunctionSignature _parseFunctionSignature();
+
     Owned<Statement> _parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
     Owned<Statement> _parseStatement();
     Owned<Statement> _parseSimpleStatement();
+    Owned<Statement> _parseFunction();
     Owned<Statement> _parseIf();
     Owned<Statement> _parseRepeat();
-    Owned<Statement> _parseSet();
+    Owned<Statement> _parseAssignment();
     Owned<Statement> _parseExit();
     Owned<Statement> _parseNext();
     Owned<Statement> _parseReturn();
@@ -110,13 +121,20 @@ class Parser {
     Owned<Expression> _parseExponent();
     Owned<Expression> _parseUnary();
     Owned<Expression> _parsePrimary();
+    Owned<Expression> _parseCall();
 
     ParserConfig _config;
     Scanner &_scanner;
-
-    std::stack<Token> _tokens;
-    Optional<Token> _previousToken;
     std::vector<SyntaxError> _errors;
+
+    std::vector<FunctionSignature> _functionDecls;
+    std::vector<Variable> _variableDecls;
+
+    std::vector<Token> _tokens;
+    std::stack<size_t> _saved;
+    size_t _index;
+
+    bool _recording;
     bool _parsingRepeat;
 };
 

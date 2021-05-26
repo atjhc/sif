@@ -23,8 +23,6 @@
 
 CH_NAMESPACE_BEGIN
 
-using namespace ast;
-
 struct Token {
     enum class Type {
         Error,

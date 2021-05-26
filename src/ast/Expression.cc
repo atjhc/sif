@@ -16,7 +16,10 @@
 
 #include "ast/Expression.h"
 
-CH_AST_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
+
+Call::Call(const FunctionSignature &signature, const std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> arguments)
+    : signature(signature), tokens(tokens), arguments(std::move(arguments)) {}
 
 Binary::Binary(Owned<Expression> leftExpression, Operator binaryOperator, Owned<Expression> rightExpression)
     : leftExpression(std::move(leftExpression)), binaryOperator(binaryOperator), rightExpression(std::move(rightExpression)) {}
@@ -26,10 +29,10 @@ Unary::Unary(Operator unaryOperator, Owned<Expression> expression)
 
 Grouping::Grouping(Owned<Expression> expression) : expression(std::move(expression)) {}
 
-Variable::Variable(const std::vector<Token> tokens) : tokens(tokens) {}
+Variable::Variable(const std::vector<Token> tokens, Optional<Token> typeName) : tokens(tokens), typeName(typeName) {}
 
-List::List(std::vector<Owned<Expression>> expressions) : expressions(std::move(expressions)) {}
+ListLiteral::ListLiteral(std::vector<Owned<Expression>> expressions) : expressions(std::move(expressions)) {}
 
 Literal::Literal(Token token) : token(token) {}
 
-CH_AST_NAMESPACE_END
+CH_NAMESPACE_END

@@ -16,6 +16,10 @@
 
 #include "runtime/Object.h"
 
-CH_RUNTIME_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
-CH_RUNTIME_NAMESPACE_END
+std::ostream &operator<<(std::ostream &out, const Strong<Object> &object) {
+    return out << (object ? object->description() : "<nil>");
+}
+
+CH_NAMESPACE_END

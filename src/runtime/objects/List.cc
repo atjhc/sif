@@ -1,6 +1,3 @@
-//
-//  Copyright (c) 2021 James Callender
-//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
@@ -14,19 +11,22 @@
 //  limitations under the License.
 //
 
-#pragma once
-
-#include "Common.h"
-
-#include <any>
-#include <ostream>
+#include "runtime/objects/List.h"
 
 CH_NAMESPACE_BEGIN
 
-struct Node {
-    Location location;
+List::List(const std::vector<Value> &values) : _values(values) {}
 
-    virtual ~Node() = default;
-};
+const std::vector<Value> &List::values() const {
+    return _values;
+}
+    
+std::string List::typeName() const {
+    return "list";
+}
+
+std::string List::description() const {
+    return Concat("[", Join(_values, ", "), "]");
+}
 
 CH_NAMESPACE_END

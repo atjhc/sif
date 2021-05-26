@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <vector>
 
-CH_RUNTIME_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 class Environment {
     Map<std::string, Value> _values;
@@ -38,4 +38,4 @@ class Environment {
     void insert(const std::vector<std::string> &names, const std::vector<Value> &values);
 };
 
-CH_RUNTIME_NAMESPACE_END
+CH_NAMESPACE_END

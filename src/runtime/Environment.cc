@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-CH_RUNTIME_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 Optional<Value> Environment::get(const std::string &name) const {
     auto key = lowercase(name);
@@ -46,4 +46,4 @@ void Environment::insert(const std::vector<std::string> &names, const std::vecto
     }
 }
 
-CH_RUNTIME_NAMESPACE_END
+CH_NAMESPACE_END

@@ -17,16 +17,23 @@
 #pragma once
 
 #include "Common.h"
+#include "runtime/Object.h"
 
-#include <any>
-#include <ostream>
+#include <string>
 
 CH_NAMESPACE_BEGIN
 
-struct Node {
-    Location location;
+class String : public Object {
+    std::string _string;
 
-    virtual ~Node() = default;
+  public:
+    
+    String(const std::string &string);
+
+    const std::string &string() const;
+
+    std::string typeName() const override;
+    std::string description() const override;
 };
 
 CH_NAMESPACE_END

@@ -20,8 +20,6 @@
 
 CH_NAMESPACE_BEGIN
 
-using namespace ast;
-
 Scanner::Scanner(const char *start, const char *end)
     : _start(start), _end(end), _current(start), _currentLocation{1, 1} {}
 
@@ -54,12 +52,13 @@ Token Scanner::scan() {
     case ',': return _make(Token::Type::Comma);
     case '=': return _make(Token::Type::Equal);
     case '%': return _make(Token::Type::Percent);
+    case '^': return _make(Token::Type::Carrot);
     case '!': return _make(_match('=') ? Token::Type::NotEqual : Token::Type::Bang);
     case '<': return _make(_match('=') ? Token::Type::LessThanOrEqual : Token::Type::LessThan);
     case '>': return _make(_match('=') ? Token::Type::GreaterThanOrEqual : Token::Type::GreaterThan);
     case '"': return _scanString();
     }
-    return _makeError(String("unknown character: ", int(c)));
+    return _makeError(Concat("unknown character: ", int(c)));
 }
 
 Token Scanner::_scanWord() {
@@ -151,9 +150,9 @@ Token::Type Scanner::_wordType() {
 Token::Type Scanner::_checkKeyword(int offset, int length, const char *name, Token::Type type) {
     if (_current - _start == offset + length &&
         memcmp(_start + offset, name, length) == 0) {
-    return type;
-  }
-  return Token::Type::Word;
+        return type;
+    }
+    return Token::Type::Word;
 }
 
 Token Scanner::_scanString() {
@@ -185,9 +184,10 @@ Token Scanner::_scanNumber() {
         while (!_isAtEnd() && isdigit(_current[0])) {
             _advance();
         } 
+        return _make(Token::Type::FloatLiteral);
+    } else {
+        return _make(Token::Type::IntLiteral);
     }
-
-    return _make(Token::Type::FloatLiteral);
 }
 
 bool Scanner::_isAtEnd() {

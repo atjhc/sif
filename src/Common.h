@@ -18,26 +18,14 @@
 
 #include <optional>
 #include <sstream>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <cstdlib>
 
 #define CH_NAMESPACE_BEGIN namespace chatter {
 #define CH_NAMESPACE_END }
-
-#define CH_AST_NAMESPACE_BEGIN \
-    namespace chatter {        \
-    namespace ast {
-#define CH_AST_NAMESPACE_END \
-    }                        \
-    }
-
-#define CH_RUNTIME_NAMESPACE_BEGIN \
-    namespace chatter {            \
-    namespace runtime {
-#define CH_RUNTIME_NAMESPACE_END \
-    }                            \
-    }
 
 CH_NAMESPACE_BEGIN
 
@@ -66,10 +54,10 @@ template <class T, class... Args> std::shared_ptr<T> MakeStrong(Args &&...args) 
     return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-static inline std::string String() { return std::string(); }
+static inline std::string Concat() { return std::string(); }
 
 template <typename... Args> 
-static inline std::string String(Args... args) {
+static inline std::string Concat(Args&&... args) {
 	std::ostringstream ss;
 	(ss << ... << args);
 	return ss.str();
@@ -81,16 +69,16 @@ static inline std::string Quoted(const std::string str) {
 
 template <typename T>
 static inline std::string Join(T &&v, const std::string &sep) {
-    std::string result;
+    std::ostringstream ss;
     auto it = v.begin();
     while (it != v.end()) {
-        result += *it;
+        ss << *it;
         if (it != v.end() - 1) {
-            result += sep;
+            ss << sep;
         }
         it++;
     }
-    return result;
+    return ss.str();
 }
 
 template <typename T>
@@ -102,51 +90,34 @@ size_t HashRange(const T &v) {
 	return result;
 }
 
-template <typename T>
-class range {
-    typename T::iterator _begin;
-    typename T::iterator _end;
-    
-public:
-    range(T &i) 
-        : _begin(i.begin()), _end(i.end()) {}
+template <typename... Args> 
+[[noreturn]] static inline void Abort(Args... args) {
+    std::cerr << Concat(args...) << std::endl;
+    std::abort();
+}
 
-    range(typename T::iterator begin, typename T::iterator end) 
-        : _begin(begin), _end(end) {}
+template<typename T>
+constexpr typename std::underlying_type<T>::type RawValue(T e) {
+   return static_cast<typename std::underlying_type<T>::type>(e);
+}
 
-    typename T::iterator begin() const {
-        return _begin;
+struct Location {
+    unsigned int position = 1;
+    unsigned int lineNumber = 1;
+
+    bool operator==(const Location &location) const {
+        return lineNumber == location.lineNumber && position == location.position;
     }
-    
-    typename T::iterator end() const {
-        return _end;
+    bool operator!=(const Location &location) const {
+        return lineNumber != location.lineNumber || position != location.position;
     }
 };
 
-template <typename T>
-range<T> make_range(T &x) {
-    return range<T>(x);
+static inline std::ostream &operator<<(std::ostream &out, const Location &location) {
+    return out << Concat(location.lineNumber, ":", location.position);
 }
 
-template <typename T>
-class reversed_range {
-	T &i;
-	
-public:
-	reversed_range(T &i) : i(i) {}
-	
-	decltype(i.rbegin()) begin() const {
-		return i.rbegin();
-	}
-	
-	decltype(i.rend()) end() const {
-		return i.rend();
-	}
-};
-
-template <typename T>
-reversed_range<T> reversed(T &x) {
-	return reversed_range<T>(x);
-}
+template<class... Ts> struct Overload : Ts... { using Ts::operator()...; };
+template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
 
 CH_NAMESPACE_END

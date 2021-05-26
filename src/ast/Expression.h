@@ -19,74 +19,47 @@
 #include "Common.h"
 #include "ast/Node.h"
 #include "parser/Scanner.h"
+#include "parser/FunctionSignature.h"
 
-#include <ostream>
+#include <variant>
 #include <vector>
 
-CH_AST_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
+struct Call;
 struct Binary;
 struct Unary;
 struct Grouping;
 struct Variable;
-struct List;
+struct ListLiteral;
 struct Literal;
 
 struct Expression : Node {
-    struct AnyVisitor {
-        virtual std::any visitAny(const Binary &) = 0;
-        virtual std::any visitAny(const Unary &) = 0;
-        virtual std::any visitAny(const Grouping &) = 0;
-        virtual std::any visitAny(const Variable &) = 0;
-        virtual std::any visitAny(const List &) = 0;
-        virtual std::any visitAny(const Literal &) = 0;
-    };
-
-    template <typename T>
-    struct Visitor : AnyVisitor {
-        std::any visitAny(const Binary &e) { return visit(e); }
-        std::any visitAny(const Unary &e) { return visit(e); }
-        std::any visitAny(const Grouping &e) { return visit(e); }
-        std::any visitAny(const Variable &e) { return visit(e); }
-        std::any visitAny(const List &e) { return visit(e); }
-        std::any visitAny(const Literal &e) { return visit(e); }
-
-        virtual T visit(const Binary &) = 0;
-        virtual T visit(const Unary &) = 0;
-        virtual T visit(const Grouping &) = 0;
-        virtual T visit(const Variable &) = 0;
-        virtual T visit(const List &) = 0;
-        virtual T visit(const Literal &) = 0;
-    };
-
-    struct VoidVisitor : AnyVisitor {
-        std::any visitAny(const Binary &e) { visit(e); return std::any(); }
-        std::any visitAny(const Unary &e) { visit(e); return std::any(); }
-        std::any visitAny(const Grouping &e) { visit(e); return std::any(); }
-        std::any visitAny(const Variable &e) { visit(e); return std::any(); }
-        std::any visitAny(const List &e) { visit(e); return std::any(); }
-        std::any visitAny(const Literal &e) { visit(e); return std::any(); }
-
+    struct Visitor {
+        virtual void visit(const Call &) = 0;
         virtual void visit(const Binary &) = 0;
         virtual void visit(const Unary &) = 0;
         virtual void visit(const Grouping &) = 0;
         virtual void visit(const Variable &) = 0;
-        virtual void visit(const List &) = 0;
+        virtual void visit(const ListLiteral &) = 0;
         virtual void visit(const Literal &) = 0;
     };
 
     virtual ~Expression() = default;
 
-	template <typename T>
-	T accept(Visitor<T> &v) const {
-		return std::any_cast<T>(acceptAny(v));
-	}
+    virtual void accept(Visitor &v) const = 0;
+};
 
-	void accept(VoidVisitor &v) const {
-		acceptAny(v);
-	}
+struct Call : Expression {
+    FunctionSignature signature;
 
-    virtual std::any acceptAny(AnyVisitor &v) const = 0;
+    std::vector<Optional<Token>> tokens;
+    std::vector<Owned<Expression>> arguments;
+
+    Call(const FunctionSignature &signature, const std::vector<Optional<Token>> &tokens,
+         std::vector<Owned<Expression>> arguments);
+
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct Binary : Expression {
@@ -114,7 +87,7 @@ struct Binary : Expression {
     Binary(Owned<Expression> leftExpression, Operator binaryOperator,
            Owned<Expression> rightExpression);
 
-    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct Unary : Expression {
@@ -125,7 +98,7 @@ struct Unary : Expression {
 
     Unary(Operator unaryOperator, Owned<Expression> expression);
 
-    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct Grouping : Expression {
@@ -133,23 +106,24 @@ struct Grouping : Expression {
 
     Grouping(Owned<Expression> expression);
 
-    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
-struct List : Expression {
+struct ListLiteral : Expression {
     std::vector<Owned<Expression>> expressions;
 
-    List(std::vector<Owned<Expression>> expressions);
+    ListLiteral(std::vector<Owned<Expression>> expressions);
 
-    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct Variable : Expression {
     std::vector<Token> tokens;
+    Optional<Token> typeName;
 
-    Variable(const std::vector<Token> tokens);
+    Variable(const std::vector<Token> tokens, Optional<Token> typeName = Empty);
     
-    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct Literal : Expression {
@@ -157,7 +131,7 @@ struct Literal : Expression {
 
     Literal(Token token);
 
-    std::any acceptAny(AnyVisitor &v) const override { return v.visitAny(*this); }
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
-CH_AST_NAMESPACE_END
+CH_NAMESPACE_END

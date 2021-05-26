@@ -16,12 +16,15 @@
 
 #include "ast/Statement.h"
 
-CH_AST_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 Block::Block(std::vector<Owned<Statement>> statements) 
     : statements(std::move(statements)) {}
 
-Set::Set(Owned<Variable> variable, Owned<Expression> expression)
+FunctionDecl::FunctionDecl(const FunctionSignature &signature, Owned<Statement> statement)
+    : signature(signature), statement(std::move(statement)) {}
+
+Assignment::Assignment(Owned<Variable> variable, Owned<Expression> expression)
     : variable(std::move(variable)), expression(std::move(expression)) {}
 
 If::If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statement> elseStatement)
@@ -32,4 +35,4 @@ Return::Return(Owned<Expression> expression) : expression(std::move(expression))
 ExpressionStatement::ExpressionStatement(Owned<Expression> expression) 
     : expression(std::move(expression)) {}
 
-CH_AST_NAMESPACE_END
+CH_NAMESPACE_END

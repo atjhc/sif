@@ -15,16 +15,23 @@
 //
 
 #include "runtime/Value.h"
+#include "runtime/Object.h"
 
 #include <iostream>
 
-CH_RUNTIME_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
-bool Value::isEmpty() const {
-    if (auto v = std::get_if<std::string>(&value)) {
-        return v->empty();
+Value::Type Value::type() const {
+    return Value::Type(value.index());
+}
+
+std::string Value::typeName() const {
+    switch (type()) {
+    case Value::Type::Integer: return "integer";
+    case Value::Type::Float: return "float";
+    case Value::Type::Bool: return "bool";
+    case Value::Type::Object: return asObject()->typeName();
     }
-    return false;
 }
 
 bool Value::isNumber() const { return isInteger() || isFloat(); }
@@ -33,12 +40,6 @@ bool Value::isBool() const {
     if (std::holds_alternative<bool>(value)) {
         return true;
     }
-    if (auto v = std::get_if<std::string>(&value)) {
-        auto lowercased = lowercase(*v);
-        if (lowercased == "true" || lowercased == "false") {
-            return true;
-        }
-    }
     return false;
 }
 
@@ -46,30 +47,12 @@ bool Value::asBool() const {
     if (auto v = std::get_if<bool>(&value)) {
         return *v;
     }
-    if (auto v = std::get_if<std::string>(&value)) {
-        auto lowercased = lowercase(*v);
-        if (lowercased == "true") {
-            return true;
-        }
-        if (lowercased == "false") {
-            return false;
-        }
-        throw RuntimeError("expected true or false");
-    }
-    throw RuntimeError("expected boolean type");
+    throw std::runtime_error("expected bool type");
 }
 
 bool Value::isInteger() const {
     if (std::holds_alternative<int64_t>(value)) {
         return true;
-    }
-    if (auto v = std::get_if<std::string>(&value)) {
-        if (v->empty()) {
-            return false;
-        }
-        char *p;
-        strtol(v->c_str(), &p, 10);
-        return (*p == 0);
     }
     return false;
 }
@@ -78,27 +61,21 @@ int64_t Value::asInteger() const {
     if (auto v = std::get_if<int64_t>(&value)) {
         return *v;
     }
-    if (auto v = std::get_if<std::string>(&value)) {
-        try {
-            return std::stoi(*v);
-        } catch (std::invalid_argument &error) {
-            throw RuntimeError("expected integer type");
-        }
+    throw std::runtime_error("expected integer type");
+}
+
+int64_t Value::castInteger() const {
+    if (auto v = std::get_if<int64_t>(&value)) {
+        return *v;
+    } else if (auto v = std::get_if<double>(&value)) {
+        return static_cast<int64_t>(*v);
     }
-    throw RuntimeError("expected integer type");
+    throw std::runtime_error("expected number type");
 }
 
 bool Value::isFloat() const {
     if (std::holds_alternative<double>(value)) {
         return true;
-    }
-    if (auto v = std::get_if<std::string>(&value)) {
-        if (v->empty()) {
-            return false;
-        }
-        char *p;
-        strtof(v->c_str(), &p);
-        return (*p == 0);
     }
     return false;
 }
@@ -107,140 +84,53 @@ double Value::asFloat() const {
     if (auto v = std::get_if<double>(&value)) {
         return *v;
     }
-    if (auto v = std::get_if<int64_t>(&value)) {
+    throw std::runtime_error("expected float type");
+}
+
+double Value::castFloat() const {
+    if (auto v = std::get_if<double>(&value)) {
+        return *v;
+    } else if (auto v = std::get_if<int64_t>(&value)) {
+        return static_cast<int64_t>(*v);
+    }
+    throw std::runtime_error("expected number type");
+}
+
+bool Value::isObject() const {
+    if (std::holds_alternative<Strong<Object>>(value)) {
+        return true;
+    }
+    return false;
+}
+
+Strong<Object> Value::asObject() const {
+    if (auto v = std::get_if<Strong<Object>>(&value)) {
         return *v;
     }
-    if (auto v = std::get_if<std::string>(&value)) {
-        try {
-            return std::stof(*v);
-        } catch (std::invalid_argument &error) {
-            throw RuntimeError("expected floating point type");
+    throw std::runtime_error("expected object type");
+}
+
+std::ostream &operator<<(std::ostream &out, const Value &value) {
+    if (value.isBool()) {
+        return out << (value.asBool() ? "true" : "false");
+    } else if (value.isObject()) {
+        return out << value.asObject()->description();
+    }
+
+    std::visit([&](auto && arg){ out << arg;}, value.value);
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v) {
+    auto i = v.begin();
+    while (i != v.end()) {
+        out << *i;
+        i++;
+        if (i != v.end()) {
+            out << ", ";
         }
     }
-    throw RuntimeError("expected floating point type");
+    return out;
 }
 
-bool Value::isString() const { return std::holds_alternative<std::string>(value); }
-
-std::string Value::asString() const {
-    if (auto v = std::get_if<std::string>(&value)) {
-        return *v;
-    }
-    if (auto v = std::get_if<int64_t>(&value)) {
-        std::ostringstream ss;
-        ss << *v;
-        return ss.str();
-    }
-    if (auto v = std::get_if<double>(&value)) {
-        std::ostringstream ss;
-        ss << *v;
-        return ss.str();
-    }
-    if (auto v = std::get_if<bool>(&value)) {
-        return *v ? "true" : "false";
-    }
-    assert(false);
-}
-
-Value Value::operator==(const Value &rhs) const {
-    if (value.index() == rhs.value.index()) {
-        return value == rhs.value;
-    }
-    return lowercase(asString()) == lowercase(rhs.asString());
-}
-
-Value Value::operator!=(const Value &rhs) const {
-    if (value.index() == rhs.value.index()) {
-        return value != rhs.value;
-    }
-    return lowercase(asString()) != lowercase(rhs.asString());
-}
-
-Value Value::operator<(const Value &rhs) const {
-    if (value.index() == rhs.value.index()) {
-        return value < rhs.value;
-    }
-    return asFloat() < rhs.asFloat();
-}
-
-Value Value::operator>(const Value &rhs) const {
-    if (value.index() == rhs.value.index()) {
-        return value > rhs.value;
-    }
-    return asFloat() > rhs.asFloat();
-}
-
-Value Value::operator<=(const Value &rhs) const {
-    if (value.index() == rhs.value.index()) {
-        return value <= rhs.value;
-    }
-    return asFloat() <= rhs.asFloat();
-}
-
-Value Value::operator>=(const Value &rhs) const {
-    if (value.index() == rhs.value.index()) {
-        return value >= rhs.value;
-    }
-    return asFloat() >= rhs.asFloat();
-}
-
-Value Value::operator&&(const Value &rhs) const { return asBool() && rhs.asBool(); }
-
-Value Value::operator||(const Value &rhs) const { return asBool() || rhs.asBool(); }
-
-Value Value::contains(const Value &rhs) const {
-    return asString().find(rhs.asString()) != std::string::npos;
-}
-
-Value Value::concat(const Value &rhs) const { return Value(asString() + rhs.asString()); }
-
-Value Value::concatSpace(const Value &rhs) const {
-    return Value(asString() + " " + rhs.asString());
-}
-
-Value Value::operator+(const Value &rhs) const {
-    assert(isNumber() && rhs.isNumber());
-    if (isInteger() && rhs.isInteger()) {
-        return asInteger() + rhs.asInteger();
-    }
-    return asFloat() + rhs.asFloat();
-}
-
-Value Value::operator-(const Value &rhs) const {
-    assert(isNumber() && rhs.isNumber());
-    if (isInteger() && rhs.isInteger()) {
-        return asInteger() - rhs.asInteger();
-    }
-    return asFloat() - rhs.asFloat();
-}
-
-Value Value::operator*(const Value &rhs) const {
-    assert(isNumber() && rhs.isNumber());
-    if (isInteger() && rhs.isInteger()) {
-        return asInteger() * rhs.asInteger();
-    }
-    return asFloat() * rhs.asFloat();
-}
-
-Value Value::operator/(const Value &rhs) const {
-    assert(isNumber() && rhs.isNumber());
-    if (isInteger() && rhs.isInteger()) {
-        return asInteger() / rhs.asInteger();
-    }
-    return asFloat() / rhs.asFloat();
-}
-
-Value Value::operator%(const Value &rhs) const {
-    assert(isNumber() && rhs.isNumber());
-    if (isInteger() && rhs.isInteger()) {
-        return asInteger() % rhs.asInteger();
-    }
-    return fmod(asFloat(), rhs.asFloat());
-}
-
-Value Value::operator^(const Value &rhs) const {
-    assert(isNumber() && rhs.isNumber());
-    return pow(asFloat(), rhs.asFloat());
-}
-
-CH_RUNTIME_NAMESPACE_END
+CH_NAMESPACE_END

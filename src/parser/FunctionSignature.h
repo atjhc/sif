@@ -17,16 +17,30 @@
 #pragma once
 
 #include "Common.h"
+#include "parser/Scanner.h"
 
-#include <any>
-#include <ostream>
+#include <vector>
+#include <variant>
 
 CH_NAMESPACE_BEGIN
 
-struct Node {
-    Location location;
+struct FunctionSignature {
+    struct Argument {
+        Optional<Token> token;
+        Optional<Token> typeName;
+    };
+    struct Option {
+        Token token;
+    };
+    struct Choice {
+        std::vector<Token> tokens;
+    };
+    using Term = std::variant<Token, Argument, Choice, Option>;
 
-    virtual ~Node() = default;
+    std::vector<Term> terms;
+
+    std::string name() const;
+    std::string description() const;
 };
 
 CH_NAMESPACE_END

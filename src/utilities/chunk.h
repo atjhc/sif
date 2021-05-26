@@ -27,8 +27,8 @@ struct chunk {
     enum type { character, word, item, line };
     static const unsigned char default_item_delimiter = ',';
 
-    chunk(type type, std::string &source, unsigned char itemDelimiter = default_item_delimiter)
-        : _type(type), _itemDelimiter(itemDelimiter), _begin(source.begin()), _end(source.end()) {}
+    chunk(type type, const std::string &source, unsigned char itemDelimiter = default_item_delimiter)
+        : _type(type), _itemDelimiter(itemDelimiter), _begin(source.cbegin()), _end(source.cend()) {}
     chunk(const chunk &) = default;
 
     template <class T>
@@ -37,24 +37,24 @@ struct chunk {
 
     chunk& operator=(const chunk &) = default;
 
-    std::string::iterator begin() { return _begin; }
-    std::string::iterator end() { return _end; }
+    std::string::const_iterator begin() { return _begin; }
+    std::string::const_iterator end() { return _end; }
 
     std::string get() { return std::string(begin(), end()); }
 
     type chunk_type() const { return _type; }
 
   protected:
-    std::string::iterator scan(std::string::iterator it, size_t count);
-    std::string::iterator scan_end(std::string::iterator it);
+    std::string::const_iterator scan(std::string::const_iterator it, size_t count);
+    std::string::const_iterator scan_end(std::string::const_iterator it);
 
     type _type;
     unsigned char _itemDelimiter;
-    std::string::iterator _begin, _end;
+    std::string::const_iterator _begin, _end;
 };
 
 struct index_chunk : public chunk {
-    index_chunk(type type, size_t location, std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) {
+    index_chunk(type type, size_t location, const std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) {
         _seek(location);
     }
 
@@ -70,7 +70,7 @@ struct index_chunk : public chunk {
 };
 
 struct range_chunk : public chunk {
-    range_chunk(type type, size_t begin, size_t end, std::string &source, unsigned char itemDelimiter = default_item_delimiter)
+    range_chunk(type type, size_t begin, size_t end, const std::string &source, unsigned char itemDelimiter = default_item_delimiter)
         : chunk(type, source, itemDelimiter) {
         _seek(begin, end);
     }
@@ -89,7 +89,7 @@ struct range_chunk : public chunk {
 };
 
 struct random_chunk : public chunk {
-    random_chunk(type type, const std::function<int(int)> &random, std::string &source, unsigned char itemDelimiter = default_item_delimiter)
+    random_chunk(type type, const std::function<int(int)> &random, const std::string &source, unsigned char itemDelimiter = default_item_delimiter)
         : chunk(type, source, itemDelimiter) {
         _seek(random);
     }
@@ -115,7 +115,7 @@ struct random_chunk : public chunk {
 };
 
 struct last_chunk : public chunk {
-    last_chunk(type type, std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
+    last_chunk(type type, const std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
 
     last_chunk(type type, const chunk &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
 
@@ -134,7 +134,7 @@ struct last_chunk : public chunk {
 };
 
 struct middle_chunk : public chunk {
-    middle_chunk(type type, std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
+    middle_chunk(type type, const std::string &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
 
     middle_chunk(type type, const chunk &source, unsigned char itemDelimiter = default_item_delimiter) : chunk(type, source, itemDelimiter) { _seek(); }
 

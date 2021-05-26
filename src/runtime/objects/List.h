@@ -17,16 +17,24 @@
 #pragma once
 
 #include "Common.h"
+#include "runtime/Object.h"
+#include "runtime/Value.h"
 
-#include <any>
-#include <ostream>
+#include <string>
 
 CH_NAMESPACE_BEGIN
 
-struct Node {
-    Location location;
+class List : public Object {
+    std::vector<Value> _values;
 
-    virtual ~Node() = default;
+  public:
+    
+    List(const std::vector<Value> &values);
+
+    const std::vector<Value> &values() const;
+
+    std::string typeName() const override;
+    std::string description() const override;
 };
 
 CH_NAMESPACE_END

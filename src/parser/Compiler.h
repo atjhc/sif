@@ -17,29 +17,28 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Statement.h"
+#include "runtime/Error.h"
 #include "ast/Expression.h"
+#include "ast/Statement.h"
 #include "ast/Repeat.h"
-
-#include <iostream>
+#include "parser/Bytecode.h"
 
 CH_NAMESPACE_BEGIN
 
-struct PrettyPrinterConfig {
-    std::ostream &out = std::cout;
-    unsigned int tabSize = 2;
-};
+class Compiler: public Statement::Visitor, public Expression::Visitor {
+public:
 
-class PrettyPrinter : public Statement::Visitor, public Expression::Visitor {
-  public:
-    PrettyPrinter(const PrettyPrinterConfig &config = PrettyPrinterConfig());
+    Compiler(Owned<Statement> statement);
 
-    void print(const Expression &);
-    void print(const Statement &);
+    Strong<Bytecode> compile();
 
-  private:
-    void _printBlock(const Statement &statement);
+    const std::vector<CompileError> &errors() const;
 
+private:
+
+    Bytecode &bytecode();
+    void error(const Node &node, const std::string &message);
+    
 #pragma mark - Statement::Visitor
 
     void visit(const Block &) override;
@@ -63,12 +62,13 @@ class PrettyPrinter : public Statement::Visitor, public Expression::Visitor {
     void visit(const ListLiteral &) override;
     void visit(const Literal &) override;
 
-  private:
-    PrettyPrinterConfig _config = PrettyPrinterConfig();
-    unsigned int _indentLevel = 0;
-    std::ostream &out;
-
-    std::string indentString() { return std::string(_indentLevel * _config.tabSize, ' '); }
+    Owned<Statement> _statement;
+    Strong<Bytecode> _bytecode;
+    Map<std::string, uint16_t> _variables;
+    Map<std::string, uint16_t> _functions;
+    std::vector<CompileError> _errors;
+    uint16_t _nextRepeat;
+    uint16_t _exitRepeat;
 };
 
 CH_NAMESPACE_END

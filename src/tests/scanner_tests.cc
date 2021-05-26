@@ -24,7 +24,7 @@
 using namespace chatter;
 
 static inline std::ostream &operator<<(std::ostream &out, Token::Type tokenType) {
-    return out << static_cast<std::underlying_type<Token::Type>::type>(tokenType);
+    return out << RawValue(tokenType);
 }
 
 TEST_CASE(ScannerTests, All) {
@@ -54,7 +54,6 @@ TEST_CASE(ScannerTests, All) {
     unsigned int i = 0;
     for (auto tokenType : expectedTokens) {
         auto token = scanner.scan();
-        std::cout << "read: " << token.description() << std::endl;
         ASSERT_EQ(token.type, tokenType) 
             << i << ": " << token.type << " != " << tokenType << std::endl;
         i++;

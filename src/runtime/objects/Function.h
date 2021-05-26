@@ -17,16 +17,25 @@
 #pragma once
 
 #include "Common.h"
-
-#include <any>
-#include <ostream>
+#include "runtime/Object.h"
+#include "parser/Bytecode.h"
+#include "parser/FunctionSignature.h"
 
 CH_NAMESPACE_BEGIN
 
-struct Node {
-    Location location;
+class Function : public Object {
+  public:
+    
+    Function(const FunctionSignature &signature, const Strong<Bytecode> &bytecode);
 
-    virtual ~Node() = default;
+    const Strong<Bytecode> &bytecode() const;
+
+    std::string typeName() const override;
+    std::string description() const override;
+
+  private:
+    FunctionSignature _signature;
+    Strong<Bytecode> _bytecode;
 };
 
 CH_NAMESPACE_END

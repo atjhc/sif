@@ -14,19 +14,25 @@
 //  limitations under the License.
 //
 
-#pragma once
+#include "parser/VirtualMachine.h"
+#include "parser/Bytecode.h"
+#include "tests/TestSuite.h"
 
-#include "Common.h"
+#include <filesystem>
+#include <iostream>
+#include <sstream>
 
-#include <any>
-#include <ostream>
+using namespace chatter;
 
-CH_NAMESPACE_BEGIN
+TEST_CASE(VMTests, All) {
+    auto bytecode = MakeStrong<Bytecode>();
+    auto index = bytecode->add(Value(10.0));
+    bytecode->add(Opcode::Constant, index);
+    index = bytecode->add(Value(5.0));
+    bytecode->add(Opcode::Constant, index);
+    bytecode->add(Opcode::Add);
+    bytecode->add(Opcode::Return);
 
-struct Node {
-    Location location;
-
-    virtual ~Node() = default;
-};
-
-CH_NAMESPACE_END
+    auto vm = VirtualMachine(bytecode);
+    ASSERT_EQ(vm.execute().value().asFloat(), 15.0);
+}

@@ -20,7 +20,7 @@
 #include "ast/Node.h"
 #include "parser/Scanner.h"
 
-CH_RUNTIME_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 class SyntaxError : public std::runtime_error {
   public:
@@ -34,24 +34,28 @@ class SyntaxError : public std::runtime_error {
     Token _token;
 };
 
-struct RuntimeError : std::runtime_error {
-    ast::Location where;
+class CompileError : public std::runtime_error {
+  public:
+    
+    CompileError(const Node &node, const std::string &what)
+        : std::runtime_error(what), _node(node) {}
 
-    RuntimeError(const std::string &what) : std::runtime_error(what) {}
+    const Node &node() const { return _node; }
 
-    RuntimeError(const std::string &what, const ast::Location &where)
-        : std::runtime_error(what), where(where) {}
+  private:
+    Node _node;
 };
 
-struct ArgumentsError : RuntimeError {
-    ArgumentsError(const std::string &what) : RuntimeError(what) {}
+class RuntimeError : public std::runtime_error {
+  public:
+
+    RuntimeError(const Location &location, const std::string &what)
+        : std::runtime_error(what), _location(location) {}
+  
+    const Location &location() const { return _location; }
+
+  private:
+    Location _location;  
 };
 
-struct InvalidArgumentError : ArgumentsError {
-    unsigned int argumentIndex;
-
-    InvalidArgumentError(const std::string &what, unsigned int index)
-        : ArgumentsError(what), argumentIndex(index) {}
-};
-
-CH_RUNTIME_NAMESPACE_END
+CH_NAMESPACE_END

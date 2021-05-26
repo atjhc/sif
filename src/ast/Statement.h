@@ -22,15 +22,15 @@
 
 #include <ostream>
 #include <vector>
+#include <variant>
 
-CH_AST_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 struct Block;
-struct Set;
+struct FunctionDecl;
+struct Assignment;
 struct If;
 struct Repeat;
-struct RepeatCount;
-struct RepeatRange;
 struct RepeatCondition;
 struct ExitRepeat;
 struct NextRepeat;
@@ -40,7 +40,8 @@ struct ExpressionStatement;
 struct Statement : Node {
     struct Visitor {
         virtual void visit(const Block &) = 0;
-        virtual void visit(const Set &) = 0;
+        virtual void visit(const FunctionDecl &) = 0;
+        virtual void visit(const Assignment &) = 0;
         virtual void visit(const If &) = 0;
         virtual void visit(const Repeat &) = 0;
         // virtual void visit(const RepeatCount &) = 0;
@@ -65,11 +66,20 @@ struct Block : Statement {
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
-struct Set : Statement {
+struct FunctionDecl : Statement {
+    FunctionSignature signature;
+    Owned<Statement> statement;
+
+    FunctionDecl(const FunctionSignature &signature, Owned<Statement> statement);
+
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
+};
+
+struct Assignment : Statement {
     Owned<Variable> variable;
     Owned<Expression> expression;
 
-    Set(Owned<Variable> variable, Owned<Expression> expression);
+    Assignment(Owned<Variable> variable, Owned<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
@@ -100,4 +110,4 @@ struct ExpressionStatement : Statement {
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
-CH_AST_NAMESPACE_END
+CH_NAMESPACE_END

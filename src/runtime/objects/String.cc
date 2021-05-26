@@ -1,6 +1,4 @@
-//
-//  Copyright (c) 2021 James Callender
-//
+
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
@@ -14,19 +12,22 @@
 //  limitations under the License.
 //
 
-#pragma once
-
-#include "Common.h"
-
-#include <any>
-#include <ostream>
+#include "runtime/objects/String.h"
 
 CH_NAMESPACE_BEGIN
 
-struct Node {
-    Location location;
+String::String(const std::string &string) : _string(string) {}
 
-    virtual ~Node() = default;
-};
+const std::string &String::string() const {
+    return _string;
+}
+    
+std::string String::typeName() const {
+    return "string";
+}
+
+std::string String::description() const {
+    return _string;
+}
 
 CH_NAMESPACE_END

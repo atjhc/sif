@@ -17,7 +17,7 @@
 #include "ast/Repeat.h"
 #include "ast/Statement.h"
 
-CH_AST_NAMESPACE_BEGIN
+CH_NAMESPACE_BEGIN
 
 Repeat::Repeat(Owned<Statement> statement) : statement(std::move(statement)) {}
 
@@ -32,4 +32,4 @@ Repeat::Repeat(Owned<Statement> statement) : statement(std::move(statement)) {}
 RepeatCondition::RepeatCondition(Owned<Statement> statement, Owned<Expression> condition, bool conditionValue)
     : Repeat(std::move(statement)), condition(std::move(condition)), conditionValue(conditionValue) {}
 
-CH_AST_NAMESPACE_END
+CH_NAMESPACE_END
