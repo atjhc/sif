@@ -43,7 +43,7 @@ template <class T> using Ref = std::reference_wrapper<T>;
 
 template <class T> using Optional = std::optional<T>;
 
-inline constexpr std::nullopt_t Empty = std::nullopt;
+inline constexpr std::nullopt_t None = std::nullopt;
 
 template <class T, class... Args>
 std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T>> MakeOwned(Args &&...args) {

@@ -17,6 +17,7 @@
 #include "parser/VirtualMachine.h"
 #include "runtime/objects/String.h"
 #include "runtime/objects/List.h"
+#include "runtime/objects/Function.h"
 
 CH_NAMESPACE_BEGIN
 
@@ -24,6 +25,10 @@ VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : _config(con
 
 Optional<RuntimeError> VirtualMachine::error() const {
     return _error;
+}
+
+VirtualMachine::CallFrame &VirtualMachine::frame() {
+    return _callStack.back();
 }
 
 static inline Opcode Read(Bytecode::Iterator &it) {
@@ -42,67 +47,97 @@ static inline uint16_t ReadJump(Bytecode::Iterator &it) {
     return (high << 8) | low;
 }
 
-static inline Value Pop(std::stack<Value> &stack) {
-    auto value = stack.top();
-    stack.pop();
+static inline Value Pop(std::vector<Value> &stack) {
+    auto value = stack.back();
+    stack.pop_back();
     return value;
+}
+
+static inline Value Peek(std::vector<Value> &stack) {
+    return stack.back();
+}
+
+static inline void Push(std::vector<Value> &stack, const Value &value) {
+    stack.push_back(value);
 }
 
 #define BINARY(OP)                                              \
     auto rhs = Pop(_stack);                                     \
     auto lhs = Pop(_stack);                                     \
     if (lhs.isInteger() && rhs.isInteger()) {                   \
-        _stack.push(lhs.asInteger() OP rhs.asInteger());        \
+        Push(_stack, lhs.asInteger() OP rhs.asInteger());       \
     } else if (lhs.isFloat() && rhs.isFloat()) {                \
-        _stack.push(lhs.asFloat() OP rhs.asFloat());            \
+        Push(_stack, lhs.asFloat() OP rhs.asFloat());           \
     } else {                                                    \
-        _error = RuntimeError(bytecode->location(_ip), "mismatched types"); \
-        return Empty;                                           \
+        _error = RuntimeError(bytecode->location(frame().ip),   \
+            "mismatched types");                                \
+        return None;                                            \
     }
 
+#if defined(DEBUG)
+std::ostream &operator<<(std::ostream &out, const VirtualMachine::CallFrame &f) {
+    return out << f.sp;
+}
+#endif
+
 Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
-    _error = Empty;
-    _ip = bytecode->code().begin();
+    _error = None;
+    _callStack.push_back({bytecode, bytecode->code().begin(), 0});
+    Push(_stack, Value());
     while (true) {
-        switch (Opcode instruction = Read(_ip)) {
+#if defined(DEBUG)
+        if (_config.enableTracing) {
+            frame().bytecode->disassemble(std::cout, frame().ip);
+            std::cout << std::endl << "[" << _stack << "]" << std::endl;
+            std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
+            std::cout << std::string(5, '-') << std::endl;
+        }
+#endif
+        switch (Opcode instruction = Read(frame().ip)) {
             case Opcode::Return: {
-                if (_stack.size()) {
-                    return Pop(_stack);
+                auto value = Pop(_stack);
+                while (_stack.size() > _callStack.back().sp) {
+                    Pop(_stack);
                 }
-                return Empty;
+                _callStack.pop_back();
+                if (_callStack.empty()) {
+                    return value;
+                }
+                Push(_stack, value);
+                break;
             }
             case Opcode::Jump: {
-                auto offset = ReadJump(_ip);
-                _ip += offset;
+                auto offset = ReadJump(frame().ip);
+                frame().ip += offset;
                 break;
             }
             case Opcode::JumpIfFalse: {
-                auto offset = ReadJump(_ip);
-                auto value = _stack.top();
+                auto offset = ReadJump(frame().ip);
+                auto value = Peek(_stack);
                 if (!value.isBool()) {
-                    _error = RuntimeError(bytecode->location(_ip), "expected bool type");
-                    return Empty;
+                    _error = RuntimeError(bytecode->location(frame().ip), "expected bool type");
+                    return None;
                 }
                 if (!value.asBool()) {
-                    _ip += offset;
+                    frame().ip += offset;
                 }
                 break;
             }
             case Opcode::JumpIfTrue: {
-                auto offset = ReadJump(_ip);
-                auto value = _stack.top();
+                auto offset = ReadJump(frame().ip);
+                auto value = Peek(_stack);
                 if (!value.isBool()) {
-                    _error = RuntimeError(bytecode->location(_ip), "expected bool type");
-                    return Empty;
+                    _error = RuntimeError(bytecode->location(frame().ip), "expected bool type");
+                    return None;
                 }
                 if (value.asBool()) {
-                    _ip += offset;
+                    frame().ip += offset;
                 }
                 break;
             }
             case Opcode::Repeat: {
-                auto offset = ReadJump(_ip);
-                _ip -= offset;
+                auto offset = ReadJump(frame().ip);
+                frame().ip -= offset;
                 break;
             }
             case Opcode::Pop: {
@@ -110,56 +145,66 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 break;
             }
             case Opcode::Constant: {
-                auto index = ReadConstant(_ip);
-                _stack.push(bytecode->constants().at(index));
+                auto index = ReadConstant(frame().ip);
+                Push(_stack, frame().bytecode->constants().at(index));
                 break;
             }
             case Opcode::Short: {
-                _stack.push(ReadConstant(_ip));
+                Push(_stack, ReadConstant(frame().ip));
                 break;
             }
-            case Opcode::SetVariable: {
-                auto index = ReadConstant(_ip);
-                auto name = bytecode->constants()[index];
+            case Opcode::SetGlobal: {
+                auto index = ReadConstant(frame().ip);
+                auto name = frame().bytecode->constants()[index];
                 _variables[name.as<String>()->string()] = Pop(_stack);
                 break;
             }
-            case Opcode::GetVariable: {
-                auto index = ReadConstant(_ip);
-                auto name = bytecode->constants()[index];
+            case Opcode::GetGlobal: {
+                auto index = ReadConstant(frame().ip);
+                auto name = frame().bytecode->constants()[index];
                 auto it = _variables.find(name.as<String>()->string());
                 if (it == _variables.end()) {
-                    _stack.push(Value());
+                    Push(_stack, Value());
                 } else {
-                    _stack.push(it->second);
+                    Push(_stack, it->second);
                 }
                 break;
             }
+            case Opcode::SetLocal: {
+                auto index = ReadConstant(frame().ip);
+                _stack[frame().sp + index + 1] = Pop(_stack);
+                break;
+            }
+            case Opcode::GetLocal: {
+                auto index = ReadConstant(frame().ip);
+                Push(_stack, _stack[frame().sp + index]);
+                break;
+            }
             case Opcode::List: {
-                auto count = ReadConstant(_ip);
+                auto count = ReadConstant(frame().ip);
                 std::vector<Value> values(count);
                 for (size_t i = 0; i < count; i++) {
                     values[count - i - 1] = Pop(_stack);
                 }
-                _stack.push(MakeStrong<List>(values));
+                Push(_stack, MakeStrong<List>(values));
                 break;
             }
             case Opcode::Negate: {
                 auto value = Pop(_stack);
                 if (value.isInteger()) {
-                    _stack.push(-value.asInteger());
+                    Push(_stack, -value.asInteger());
                 } else if (value.isFloat()) {
-                    _stack.push(-value.asFloat());
+                    Push(_stack, -value.asFloat());
                 } else {
-                    _error = RuntimeError(bytecode->location(_ip), "expected numerical type");
-                    return Empty;
+                    _error = RuntimeError(bytecode->location(frame().ip), "expected numerical type");
+                    return None;
                 }
                 break;
             }
             case Opcode::Not: {
                 auto value = Pop(_stack);
                 if (value.isBool()) {
-                    _stack.push(!value.asBool());
+                    Push(_stack, !value.asBool());
                 }
                 break;
             }
@@ -183,10 +228,10 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 auto lhs = Pop(_stack);
                 auto rhs = Pop(_stack);
                 if (lhs.isNumber() && rhs.isNumber()) {
-                    _stack.push(pow(lhs.castFloat(), rhs.castFloat()));
+                    Push(_stack, pow(lhs.castFloat(), rhs.castFloat()));
                 } else {
-                    _error = RuntimeError(bytecode->location(_ip), "expected floating point values");
-                    return Empty;
+                    _error = RuntimeError(bytecode->location(frame().ip), "expected floating point values");
+                    return None;
                 }
                 break;
             }
@@ -194,17 +239,19 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 auto lhs = Pop(_stack);
                 auto rhs = Pop(_stack);
                 if (lhs.isInteger() && rhs.isInteger()) {
-                    _stack.push(lhs.asInteger() % rhs.asInteger());
+                    Push(_stack, lhs.asInteger() % rhs.asInteger());
                 } else if (lhs.isFloat() && rhs.isFloat()) {
-                    _stack.push(fmod(lhs.asFloat(), rhs.asFloat()));
+                    Push(_stack, fmod(lhs.asFloat(), rhs.asFloat()));
                 } else {
-                    _error = RuntimeError(bytecode->location(_ip), "mismatched types");
-                    return Empty;
+                    _error = RuntimeError(bytecode->location(frame().ip), "mismatched types");
+                    return None;
                 }
                 break;
             }
             case Opcode::Equal: {
-                BINARY(==);
+                auto rhs = Pop(_stack);
+                auto lhs = Pop(_stack);
+                Push(_stack, lhs == rhs);
                 break;
             }
             case Opcode::NotEqual: {
@@ -228,40 +275,27 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 break;
             }
             case Opcode::True: {
-                _stack.push(true);
+                Push(_stack, true);
                 break;
             }
             case Opcode::False: {
-                _stack.push(false);
+                Push(_stack, false);
                 break;
             }
-            case Opcode::And: {
-                auto lhs = Pop(_stack);
-                auto rhs = Pop(_stack);
-                if (lhs.isBool() && rhs.isBool()) {
-                    _stack.push(lhs.asBool() && rhs.asBool());
-                } else {
-                    _error = RuntimeError(bytecode->location(_ip), "expected bool types");
-                    return Empty;
-                }
+            case Opcode::Call: {
+                auto count = ReadConstant(frame().ip);
+                auto fn = (_stack.end()[-count - 1]).as<Function>();
+                _callStack.push_back({fn->bytecode(), fn->bytecode()->code().begin(), 
+                    _stack.size() - count - 1});
                 break;
             }
-            case Opcode::Or: {
-                auto lhs = Pop(_stack);
-                auto rhs = Pop(_stack);
-                if (lhs.isBool() && rhs.isBool()) {
-                    _stack.push(lhs.asBool() || rhs.asBool());
-                } else {
-                    _error = RuntimeError(bytecode->location(_ip), "expected bool types");
-                    return Empty;
-                }
+            case Opcode::Empty: {
+                Push(_stack, Value());
                 break;
             }
             // TODO: remove.
             case Opcode::Show:
-                std::cout << _stack.top() << std::endl;
-                break;
-            case Opcode::Call:
+                std::cout << Peek(_stack) << std::endl;
                 break;
         }
     }

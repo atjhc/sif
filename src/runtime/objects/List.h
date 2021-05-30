@@ -25,16 +25,17 @@
 CH_NAMESPACE_BEGIN
 
 class List : public Object {
-    std::vector<Value> _values;
-
   public:
-    
     List(const std::vector<Value> &values);
 
     const std::vector<Value> &values() const;
 
     std::string typeName() const override;
     std::string description() const override;
+    bool equals(Strong<Object>) const override;
+
+  private:
+    std::vector<Value> _values;
 };
 
 CH_NAMESPACE_END

@@ -49,12 +49,13 @@ enum class Opcode : uint8_t {
     Return,
     True,
     False,
-    And,
-    Or,
-    SetVariable,
-    GetVariable,
+    SetGlobal,
+    GetGlobal,
+    SetLocal,
+    GetLocal,
     Show,
-    Call
+    Call,
+    Empty
 };
 
 class Bytecode {
@@ -78,10 +79,14 @@ public:
     friend std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode);
 
 private:
+    friend class VirtualMachine;
+
     Iterator disassembleConstant(std::ostream &, const std::string &, Iterator) const;
     Iterator disassembleList(std::ostream &, Iterator) const;
     Iterator disassembleJump(std::ostream &, const std::string &name, Iterator) const;
     Iterator disassembleShort(std::ostream &out, Iterator position) const;
+    Iterator disassembleCall(std::ostream &out, const std::string &name, Iterator position) const;
+    Iterator disassembleLocal(std::ostream &out, const std::string &name, Iterator position) const;
     Iterator disassemble(std::ostream &, Iterator) const;
 
     std::string _name;

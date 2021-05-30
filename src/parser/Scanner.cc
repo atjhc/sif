@@ -73,11 +73,11 @@ Token Scanner::_scanWord() {
 }
 
 Token::Type Scanner::_wordType() {
-    switch (_start[0]) {
+    switch (std::tolower(_start[0])) {
     case 'a': 
         if (_current - _start == 1) return Token::Type::An;
         else if (_current - _start == 2) {
-            switch (_start[1]) {
+            switch (std::tolower(_start[1])) {
             case 's': return Token::Type::As;
             case 'n': return Token::Type::An;
             }
@@ -88,7 +88,7 @@ Token::Type Scanner::_wordType() {
     case 'o': return _checkKeyword(1, 1, "r", Token::Type::Or);
     case 'i': 
         if (_current - _start == 2) {
-            switch (_start[1]) {
+            switch (std::tolower(_start[1])) {
             case 'f': return Token::Type::If;
             case 's': return Token::Type::Is;
             }
@@ -96,7 +96,7 @@ Token::Type Scanner::_wordType() {
         break;
     case 'e': 
         if (_current - _start > 1) {
-            switch (_start[1]) {
+            switch (std::tolower(_start[1])) {
             case 'l': return _checkKeyword(2, 2, "se", Token::Type::Else);
             case 'n': return _checkKeyword(2, 1, "d", Token::Type::End);
             case 'x': return _checkKeyword(2, 2, "it", Token::Type::Exit);
@@ -104,10 +104,10 @@ Token::Type Scanner::_wordType() {
         }
         break;
     case 't': 
-        if (_current - _start == 2 && _start[1] == 'o') {
+        if (_current - _start == 2 && std::tolower(_start[1]) == 'o') {
             return Token::Type::To;
         } else {
-            switch (_start[1]) {
+            switch (std::tolower(_start[1])) {
             case 'h': return _checkKeyword(2, 2, "en", Token::Type::Then);
             case 'r': return _checkKeyword(2, 2, "ue", Token::Type::BoolLiteral);
             }
@@ -115,9 +115,9 @@ Token::Type Scanner::_wordType() {
         }
         break;
     case 'r': 
-        if (_current - _start > 1 && _start[1] == 'e') {
+        if (_current - _start > 1 && std::tolower(_start[1]) == 'e') {
             if (_current - _start > 2) {
-                switch (_start[2]) {
+                switch (std::tolower(_start[2])) {
                 case 't': return _checkKeyword(3, 3, "urn", Token::Type::Return);
                 case 'p': return _checkKeyword(3, 3, "eat", Token::Type::Repeat);
                 }
@@ -128,7 +128,7 @@ Token::Type Scanner::_wordType() {
     case 's': return _checkKeyword(1, 2, "et", Token::Type::Set);
     case 'f': 
         if (_current - _start > 1) {
-            switch (_start[1]) {
+            switch (std::tolower(_start[1])) {
             case 'u': return _checkKeyword(2, 6, "nction", Token::Type::Function);
             case 'a': return _checkKeyword(2, 3, "lse", Token::Type::BoolLiteral);
             case 'o': return _checkKeyword(2, 5, "rever", Token::Type::Forever);
@@ -136,7 +136,7 @@ Token::Type Scanner::_wordType() {
         }
     case 'n':
         if (_current - _start > 1) {
-            switch (_start[1]) {
+            switch (std::tolower(_start[1])) {
             case 'e': return _checkKeyword(2, 2, "xt", Token::Type::Next);
             case 'o': return _checkKeyword(2, 1, "t", Token::Type::Not);
             }
@@ -148,11 +148,15 @@ Token::Type Scanner::_wordType() {
 }
 
 Token::Type Scanner::_checkKeyword(int offset, int length, const char *name, Token::Type type) {
-    if (_current - _start == offset + length &&
-        memcmp(_start + offset, name, length) == 0) {
-        return type;
+    if (_current - _start != offset + length) {
+        return Token::Type::Word;
     }
-    return Token::Type::Word;
+    for (int i = 0; i < length; i++) {
+        if (std::tolower(_start[offset + i]) != name[i]) {
+            return Token::Type::Word;
+        }
+    }
+    return type;
 }
 
 Token Scanner::_scanString() {

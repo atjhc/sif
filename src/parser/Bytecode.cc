@@ -51,6 +51,11 @@ void Bytecode::addRepeat(Location location, uint16_t argument) {
 }
 
 uint16_t Bytecode::addConstant(Value constant) {
+    for (int i = 0; i < _constants.size(); i++) {
+        if (_constants[i] == constant) {
+            return i;
+        }
+    }
     _constants.push_back(constant);
     if (_constants.size() > USHRT_MAX) {
         throw std::out_of_range(Concat("too many constants (", USHRT_MAX, ")"));
@@ -61,7 +66,7 @@ uint16_t Bytecode::addConstant(Value constant) {
 void Bytecode::patchJump(size_t index) {
     auto offset = _code.size() - index - 3;
     if (offset > USHRT_MAX) {
-        throw std::out_of_range(Concat("jump too far (", SHRT_MAX, ")"));
+        throw std::out_of_range(Concat("jump too far (", USHRT_MAX, ")"));
     }
     _code[index + 1] = static_cast<Opcode>(offset >> 8);
     _code[index + 2] = static_cast<Opcode>(offset & 0xff);
@@ -85,7 +90,7 @@ static inline uint16_t ReadUInt16(Bytecode::Iterator position) {
 
 Bytecode::Iterator Bytecode::disassembleConstant(std::ostream &out, const std::string &name, Iterator position) const {
     size_t index = ReadUInt16(position + 1);
-    out << name << " \"" << _constants.at(index) << "\"";
+    out << name << " " << index << " \"" << _constants.at(index).description() << "\"";
     return position + 3;
 }
 
@@ -96,14 +101,26 @@ Bytecode::Iterator Bytecode::disassembleList(std::ostream &out, Iterator positio
 }
 
 Bytecode::Iterator Bytecode::disassembleJump(std::ostream &out, const std::string &name, Iterator position) const {
-    size_t location = ReadUInt16(position + 1);
-    out << name << " " << location;
+    size_t offset = ReadUInt16(position + 1);
+    out << name << " " << offset;
+    return position + 3;
+}
+
+Bytecode::Iterator Bytecode::disassembleCall(std::ostream &out, const std::string &name, Iterator position) const {
+    size_t count = ReadUInt16(position + 1);
+    out << name << " " << count;
     return position + 3;
 }
 
 Bytecode::Iterator Bytecode::disassembleShort(std::ostream &out, Iterator position) const {
     uint16_t shortValue = ReadUInt16(position + 1);
     out << "Short" << " " << shortValue;
+    return position + 3;
+}
+
+Bytecode::Iterator Bytecode::disassembleLocal(std::ostream &out, const std::string &name, Iterator position) const {
+    uint16_t value = ReadUInt16(position + 1);
+    out << name << " " << value;
     return position + 3;
 }
 
@@ -119,8 +136,10 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Constant:      return disassembleConstant(out, "Constant", position);
     case Opcode::Short:         return disassembleShort(out, position);
     case Opcode::List:          return disassembleList(out, position);
-    case Opcode::GetVariable:   return disassembleConstant(out, "GetVariable", position);
-    case Opcode::SetVariable:   return disassembleConstant(out, "SetVariable", position);
+    case Opcode::GetGlobal:     return disassembleConstant(out, "GetGlobal", position);
+    case Opcode::SetGlobal:     return disassembleConstant(out, "SetGlobal", position);
+    case Opcode::GetLocal:      return disassembleLocal(out, "GetLocal", position);
+    case Opcode::SetLocal:      return disassembleLocal(out, "SetLocal", position);
     case Opcode::Negate:        out << "Negate"; return position + 1;
     case Opcode::Not:           out << "Not"; return position + 1;
     case Opcode::Add:           out << "Add"; return position + 1;
@@ -137,10 +156,9 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::GreaterThanOrEqual:    out << "GreaterThanOrEqual"; return position + 1;
     case Opcode::True:          out << "True"; return position + 1;
     case Opcode::False:         out << "False"; return position + 1;
-    case Opcode::And:           out << "And"; return position + 1;
-    case Opcode::Or:            out << "Or"; return position + 1;
     case Opcode::Show:          out << "Show"; return position + 1;
-    case Opcode::Call:          return disassembleConstant(out, "Call", position);
+    case Opcode::Call:          return disassembleCall(out, "Call", position);
+    case Opcode::Empty:         out << "Empty"; return position + 1;
     }
 }
 

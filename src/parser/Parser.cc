@@ -17,6 +17,7 @@
 #include "parser/Parser.h"
 #include "runtime/Error.h"
 #include "ast/Repeat.h"
+#include "Utilities.h"
 
 #include <vector>
 
@@ -61,7 +62,7 @@ Optional<Token> Parser::_match(const std::initializer_list<Token::Type> &types) 
     if (_check(types)) {
         return _advance();
     }
-    return Empty;
+    return None;
 }
 
 Token Parser::_consume(Token::Type type, const std::string &errorMessage) {
@@ -184,7 +185,7 @@ void Parser::_trace(const std::string &message) {
 bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
     if (auto token = std::get_if<Token>(&term)) {
         trace(Concat("Checking token ", Quoted(token->text)));
-        if (_peek().type == token->type && _peek().text == token->text) {
+        if (_peek().type == token->type && lowercase(_peek().text) == lowercase(token->text)) {
             _advance();
             return true;
         }
@@ -192,10 +193,10 @@ bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optiona
     }
     if (auto option = std::get_if<FunctionSignature::Option>(&term)) {
         trace(Concat("Checking optional token ", Quoted(option->token.text)));
-        if (_peek().type == Token::Type::Word && _peek().text == option->token.text) {
+        if (_peek().type == Token::Type::Word && lowercase(_peek().text) == lowercase(option->token.text)) {
             tokens.push_back(_advance());
         } else {
-            tokens.push_back(Empty);
+            tokens.push_back(None);
         }
         return true;
     }
@@ -211,7 +212,7 @@ bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optiona
     if (auto choice = std::get_if<FunctionSignature::Choice>(&term)) {
         trace(Concat("Checking choice"));
         for (const auto &token : choice->tokens) {
-            if (_peek().type == Token::Type::Word && _peek().text == token.text) {
+            if (_peek().type == Token::Type::Word && lowercase(_peek().text) == lowercase(token.text)) {
                 tokens.push_back(_advance());
                 return true;
             }
@@ -224,7 +225,6 @@ bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optiona
 bool Parser::_matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
     trace(Concat("Checking function signature ", Quoted(signature.name())));
     for (const auto &term : signature.terms) {
-
         if (!_matchTerm(term, tokens, arguments)) {
             return false;
         }
@@ -302,7 +302,7 @@ FunctionSignature Parser::_parseFunctionSignature() {
                 }
             } else if (_match({Token::Type::Colon})) {
                 auto typeName = _match({Token::Type::Word});
-                signature.terms.push_back(FunctionSignature::Term{FunctionSignature::Argument{Empty, typeName}});
+                signature.terms.push_back(FunctionSignature::Term{FunctionSignature::Argument{None, typeName}});
                 _consume(Token::Type::RightParen, "expected right parenthesis");
             } else {
                 throw SyntaxError(_peek(), Concat("expected a word, ", Quoted(":"), ", or ", Quoted("/")));
@@ -377,7 +377,9 @@ Owned<Statement> Parser::_parseIf() {
         }
     }
 
-    return MakeOwned<If>(std::move(condition), std::move(ifClause), std::move(elseClause));
+    auto ifStatement = MakeOwned<If>(std::move(condition), std::move(ifClause), std::move(elseClause));
+    ifStatement->location = ifStatement->condition->location;
+    return ifStatement;
 }
 
 Owned<Statement> Parser::_parseRepeat() {
@@ -431,7 +433,9 @@ Owned<Statement> Parser::_parseNext() {
 
 Owned<Statement> Parser::_parseReturn() {
     auto expression = _parseExpression();
-    return MakeOwned<Return>(std::move(expression));
+    auto returnStatement = MakeOwned<Return>(std::move(expression));
+    returnStatement->location = returnStatement->expression->location;
+    return returnStatement;
 }
 
 Owned<Statement> Parser::_parseExpressionStatement() {
@@ -566,11 +570,14 @@ Owned<Expression> Parser::_parseCall() {
     if (_functionDecls.size() > 0) {
         _checkpoint();
         for (const auto &signature : _functionDecls) {
+            Location location = _peek().location;
             std::vector<Optional<Token>> tokens;
             std::vector<Owned<Expression>> arguments;
             if (_matchSignature(signature, tokens, arguments)) {
                 _commit();
-                return MakeOwned<Call>(signature, std::move(tokens), std::move(arguments));
+                auto call = MakeOwned<Call>(signature, std::move(tokens), std::move(arguments));
+                call->location = location;
+                return call;
             }
         }
         _rewind();
@@ -603,7 +610,9 @@ Owned<Expression> Parser::_parsePrimary() {
     }
     if (tokens.size()) {
         _variableDecls.push_back(Variable(tokens));
-        return MakeOwned<Variable>(tokens);
+        auto variable = MakeOwned<Variable>(tokens);
+        variable->location = tokens[0].location;
+        return variable;
     }
 
     throw SyntaxError(_peek(), Concat("unexpected expression"));

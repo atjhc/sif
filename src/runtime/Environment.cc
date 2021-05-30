@@ -23,7 +23,7 @@ Optional<Value> Environment::get(const std::string &name) const {
     if (i != _values.end()) {
         return i->second;
     } else {
-        return Empty;
+        return None;
     }
 }
 

@@ -22,7 +22,7 @@
 CH_NAMESPACE_BEGIN
 
 Value::Type Value::type() const {
-    return Value::Type(value.index());
+    return Value::Type(_value.index());
 }
 
 std::string Value::typeName() const {
@@ -31,83 +31,103 @@ std::string Value::typeName() const {
     case Value::Type::Float: return "float";
     case Value::Type::Bool: return "bool";
     case Value::Type::Object: return asObject()->typeName();
+    case Value::Type::Empty: return "empty";
     }
 }
+
+bool Value::isEmpty() const { return type() == Value::Type::Empty; }
 
 bool Value::isNumber() const { return isInteger() || isFloat(); }
 
 bool Value::isBool() const {
-    if (std::holds_alternative<bool>(value)) {
+    if (std::holds_alternative<bool>(_value)) {
         return true;
     }
     return false;
 }
 
 bool Value::asBool() const {
-    if (auto v = std::get_if<bool>(&value)) {
+    if (auto v = std::get_if<bool>(&_value)) {
         return *v;
     }
     throw std::runtime_error("expected bool type");
 }
 
 bool Value::isInteger() const {
-    if (std::holds_alternative<int64_t>(value)) {
+    if (std::holds_alternative<int64_t>(_value)) {
         return true;
     }
     return false;
 }
 
 int64_t Value::asInteger() const {
-    if (auto v = std::get_if<int64_t>(&value)) {
+    if (auto v = std::get_if<int64_t>(&_value)) {
         return *v;
     }
     throw std::runtime_error("expected integer type");
 }
 
 int64_t Value::castInteger() const {
-    if (auto v = std::get_if<int64_t>(&value)) {
+    if (auto v = std::get_if<int64_t>(&_value)) {
         return *v;
-    } else if (auto v = std::get_if<double>(&value)) {
+    } else if (auto v = std::get_if<double>(&_value)) {
         return static_cast<int64_t>(*v);
     }
     throw std::runtime_error("expected number type");
 }
 
 bool Value::isFloat() const {
-    if (std::holds_alternative<double>(value)) {
+    if (std::holds_alternative<double>(_value)) {
         return true;
     }
     return false;
 }
 
 double Value::asFloat() const {
-    if (auto v = std::get_if<double>(&value)) {
+    if (auto v = std::get_if<double>(&_value)) {
         return *v;
     }
     throw std::runtime_error("expected float type");
 }
 
 double Value::castFloat() const {
-    if (auto v = std::get_if<double>(&value)) {
+    if (auto v = std::get_if<double>(&_value)) {
         return *v;
-    } else if (auto v = std::get_if<int64_t>(&value)) {
+    } else if (auto v = std::get_if<int64_t>(&_value)) {
         return static_cast<int64_t>(*v);
     }
     throw std::runtime_error("expected number type");
 }
 
 bool Value::isObject() const {
-    if (std::holds_alternative<Strong<Object>>(value)) {
+    if (std::holds_alternative<Strong<Object>>(_value)) {
         return true;
     }
     return false;
 }
 
 Strong<Object> Value::asObject() const {
-    if (auto v = std::get_if<Strong<Object>>(&value)) {
+    if (auto v = std::get_if<Strong<Object>>(&_value)) {
         return *v;
     }
     throw std::runtime_error("expected object type");
+}
+
+std::string Value::description() const {
+    std::ostringstream ss;
+    ss << "(" << typeName() << ") " << *this;
+    return ss.str();
+}
+
+bool Value::operator==(const Value &value) const {
+    if (isObject() && value.isObject()) {
+        return asObject()->equals(value.asObject());
+    }
+    return _value == value._value;
+}
+
+std::ostream &operator<<(std::ostream &out, const std::monostate &) {
+    return out << "Empty";
 }
 
 std::ostream &operator<<(std::ostream &out, const Value &value) {
@@ -117,7 +137,7 @@ std::ostream &operator<<(std::ostream &out, const Value &value) {
         return out << value.asObject()->description();
     }
 
-    std::visit([&](auto && arg){ out << arg;}, value.value);
+    std::visit([&](auto && arg){ out << arg;}, value._value);
     return out;
 }
 

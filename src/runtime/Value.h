@@ -35,6 +35,7 @@ class Object;
 class Value {
   public:
     enum class Type : size_t {
+        Empty,
         Bool,
         Integer,
         Float,
@@ -47,19 +48,20 @@ class Value {
     Value(Value &&v) = default;
 
     Value &operator=(const Value &v) {
-        value = v.value;
+        _value = v._value;
         return *this;
     }
     Value &operator=(Value &&v) {
-        value = std::move(v.value);
+        _value = std::move(v._value);
         return *this;
     }
 
-    template <typename T> Value(const T &v) : value(v) {}
+    template <typename T> Value(const T &v) : _value(v) {}
 
     Type type() const;
     std::string typeName() const;
 
+    bool isEmpty() const;
     bool isNumber() const;
 
     bool isBool() const;
@@ -81,10 +83,13 @@ class Value {
         return isObject() ? std::dynamic_pointer_cast<T>(asObject()) : nullptr;
     }
 
+    std::string description() const;
+
     friend std::ostream &operator<<(std::ostream &out, const Value &value);
+    bool operator==(const Value &value) const;
 
   private:
-    std::variant<bool, int64_t, double, Strong<Object>> value;
+    std::variant<std::monostate, bool, int64_t, double, Strong<Object>> _value;
 };
 
 std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v);

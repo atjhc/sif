@@ -41,11 +41,23 @@ public:
 
 private:
 
+    struct CallFrame {
+        Strong<Bytecode> bytecode;
+        Bytecode::Iterator ip;
+        size_t sp;
+    };
+
+#if defined(DEBUG)
+    friend std::ostream &operator<<(std::ostream &out, const VirtualMachine::CallFrame &f);
+#endif
+
+    CallFrame &frame();
+
     VirtualMachineConfig _config;
     Optional<RuntimeError> _error;
-    std::stack<Value> _stack;
+    std::vector<Value> _stack;
+    std::vector<CallFrame> _callStack;
     Map<std::string, Value> _variables;
-    Bytecode::Iterator _ip;
 };
 
 CH_NAMESPACE_END

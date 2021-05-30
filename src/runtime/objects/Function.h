@@ -25,17 +25,20 @@ CH_NAMESPACE_BEGIN
 
 class Function : public Object {
   public:
-    
     Function(const FunctionSignature &signature, const Strong<Bytecode> &bytecode);
 
     const Strong<Bytecode> &bytecode() const;
 
+    size_t arity() const;
+
     std::string typeName() const override;
     std::string description() const override;
+    bool equals(Strong<Object>) const override;
 
   private:
     FunctionSignature _signature;
     Strong<Bytecode> _bytecode;
+    size_t _arity;
 };
 
 CH_NAMESPACE_END

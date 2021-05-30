@@ -97,8 +97,7 @@ int evaluate(const std::string &name, const std::string &source) {
 
     auto result = vm.execute(bytecode);
     if (result) {
-        std::cout << "(" << result.value().typeName() << ") "
-                << result.value() << std::endl;
+        std::cout << result.value().description() << std::endl;
     }
 
     if (vm.error()) {

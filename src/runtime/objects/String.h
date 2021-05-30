@@ -24,16 +24,16 @@
 CH_NAMESPACE_BEGIN
 
 class String : public Object {
-    std::string _string;
-
   public:
-    
     String(const std::string &string);
 
     const std::string &string() const;
 
     std::string typeName() const override;
     std::string description() const override;
+    bool equals(Strong<Object>) const override;
+  private:
+    std::string _string;
 };
 
 CH_NAMESPACE_END

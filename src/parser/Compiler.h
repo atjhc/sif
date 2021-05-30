@@ -38,6 +38,16 @@ private:
 
     Bytecode &bytecode();
     void error(const Node &node, const std::string &message);
+
+    struct Local {
+        std::string name;
+        int depth; 
+    };
+
+    int findLocal(const std::string &name) const;
+    
+    void assign(Location location, const std::string &name);
+    void resolve(Location location, const std::string &name);
     
 #pragma mark - Statement::Visitor
 
@@ -62,10 +72,11 @@ private:
     void visit(const ListLiteral &) override;
     void visit(const Literal &) override;
 
-    Owned<Statement> _statement;
+    int _depth;
     Strong<Bytecode> _bytecode;
-    Map<std::string, uint16_t> _variables;
-    Map<std::string, uint16_t> _functions;
+    Owned<Statement> _statement;
+    Owned<std::vector<Local>> _locals;
+    Map<std::string, uint16_t> _globals;
     std::vector<CompileError> _errors;
     uint16_t _nextRepeat;
     uint16_t _exitRepeat;

@@ -29,4 +29,11 @@ std::string List::description() const {
     return Concat("[", Join(_values, ", "), "]");
 }
 
+bool List::equals(Strong<Object> object) const {
+    if (const auto &list = std::dynamic_pointer_cast<List>(object)) {
+        return _values == list->_values;
+    }
+    return false;
+}
+
 CH_NAMESPACE_END

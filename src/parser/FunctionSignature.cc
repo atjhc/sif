@@ -15,11 +15,12 @@
 //
 
 #include "parser/FunctionSignature.h"
+#include "Utilities.h"
 
 CH_NAMESPACE_BEGIN
 
 static inline std::string Name(const Token &token) {
-    return token.text;
+    return lowercase(token.text);
 }
 
 static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
@@ -35,7 +36,7 @@ static inline std::ostream &operator<<(std::ostream &out, const FunctionSignatur
 }
 
 static inline std::string Name(const FunctionSignature::Option &option) {
-    return Concat("(", option.token.text, ")");
+    return Concat("(", lowercase(option.token.text), ")");
 }
 
 static inline std::ostream &operator<<(std::ostream &out, const FunctionSignature::Option &option) {

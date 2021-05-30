@@ -30,4 +30,11 @@ std::string String::description() const {
     return _string;
 }
 
+bool String::equals(Strong<Object> object) const {
+    if (const auto &string = std::dynamic_pointer_cast<String>(object)) {
+        return _string == string->_string;
+    }
+    return false;
+}
+
 CH_NAMESPACE_END

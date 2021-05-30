@@ -121,7 +121,7 @@ struct Variable : Expression {
     std::vector<Token> tokens;
     Optional<Token> typeName;
 
-    Variable(const std::vector<Token> tokens, Optional<Token> typeName = Empty);
+    Variable(const std::vector<Token> tokens, Optional<Token> typeName = None);
     
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

@@ -22,10 +22,11 @@
 CH_NAMESPACE_BEGIN
 
 Compiler::Compiler(Owned<Statement> statement)
-    : _statement(std::move(statement)), _bytecode(MakeStrong<Bytecode>()) {}
+    : _depth(0), _bytecode(MakeStrong<Bytecode>()), _statement(std::move(statement)) {}
 
 Strong<Bytecode> Compiler::compile() {
     _statement->accept(*this);
+    bytecode().add(Location{1, 1}, Opcode::Empty);
     bytecode().add(Location{1, 1}, Opcode::Return);
     return _errors.size() > 0 ? nullptr : _bytecode;
 }
@@ -42,6 +43,80 @@ void Compiler::error(const Node &node, const std::string &message) {
     _errors.push_back(CompileError(node, message));
 }
 
+int Compiler::findLocal(const std::string &name) const {
+    for (int i = 0; i < _locals->size(); i++) {
+        if (_locals->at(i).name == name) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void Compiler::assign(Location location, const std::string &name) {
+    uint16_t index;
+    Opcode opcode;
+
+    auto it = _globals.find(name);
+    if (it == _globals.end()) {
+        if (_depth > 0) {
+            if (int i = findLocal(name); i > -1) {
+                index = i;
+            } else {
+                _locals->push_back({name, _depth});
+                return;
+            }
+            opcode = Opcode::SetLocal;
+        } else {
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            _globals[name] = index;
+            opcode = Opcode::SetGlobal;
+        }
+    } else {
+        index = it->second;
+        opcode = Opcode::SetGlobal;
+    }
+    bytecode().add(location, opcode, index);
+}
+
+void Compiler::resolve(Location location, const std::string &name) {
+    uint16_t index = 0;
+    Opcode opcode;
+
+    auto it = _globals.find(name);
+    if (it == _globals.end()) {
+        if (_depth > 0) {
+            if (int i = findLocal(name); i > -1) {
+                index = i;
+            } else {
+                bytecode().add(location, Opcode::Empty);
+                return;
+            }
+            opcode = Opcode::GetLocal;
+        } else {
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            opcode = Opcode::GetGlobal;
+            _globals[name] = index;
+        }
+    } else {
+        index = bytecode().addConstant(MakeStrong<String>(name));
+        opcode = Opcode::GetGlobal;
+    }
+    bytecode().add(location, opcode, index);
+}
+
+static inline std::string normalizedName(const Variable &variable) {
+    std::ostringstream ss;
+    auto it = variable.tokens.begin();
+    while (it != variable.tokens.end()) {
+        ss << lowercase(it->text);
+        if (it != variable.tokens.end() - 1) {
+            ss << " ";
+        }
+        it++;
+    }
+    return ss.str();
+}
+
 void Compiler::visit(const Block &block) {
     for (const auto &statement : block.statements) {
         statement->accept(*this);
@@ -49,13 +124,36 @@ void Compiler::visit(const Block &block) {
 }
 
 void Compiler::visit(const FunctionDecl &functionDecl) {
-    auto previousBytecode = _bytecode;
-    _bytecode = MakeStrong<Bytecode>();
-    functionDecl.statement->accept(*this);
-    auto function = MakeStrong<Function>(functionDecl.signature, _bytecode);
-    _bytecode = previousBytecode;
+    auto functionBytecode = MakeStrong<Bytecode>();
+    auto function = MakeStrong<Function>(functionDecl.signature, functionBytecode);
     auto constant = bytecode().addConstant(function);
-    _functions[functionDecl.signature.name()] = constant;
+    auto name = functionDecl.signature.name();
+
+    bytecode().add(functionDecl.location, Opcode::Constant, constant);
+    assign(functionDecl.location, name);
+
+    auto previousBytecode = _bytecode;
+    auto previousLocals = std::move(_locals);
+    _bytecode = functionBytecode;
+    _locals = MakeOwned<std::vector<Local>>();
+    _depth++;
+
+    _locals->push_back({"", _depth});
+    for (auto term : functionDecl.signature.terms) {
+        if (auto arg = std::get_if<FunctionSignature::Argument>(&term)) {
+            if (arg->token.has_value()) {
+                _locals->push_back({arg->token.value().text, _depth});
+            }
+        }
+    }
+    functionDecl.statement->accept(*this);
+    
+    bytecode().add(functionDecl.location, Opcode::Empty);
+    bytecode().add(functionDecl.location, Opcode::Return);
+
+    _depth--;
+    _bytecode = previousBytecode;
+    _locals = std::move(previousLocals);
 }
 
 void Compiler::visit(const If &ifStatement) {
@@ -63,6 +161,8 @@ void Compiler::visit(const If &ifStatement) {
     auto ifJump = bytecode().add(ifStatement.location, Opcode::JumpIfFalse, 0);
     bytecode().add(ifStatement.location, Opcode::Pop);
     ifStatement.ifStatement->accept(*this);
+    bytecode().add(ifStatement.location, Opcode::Jump, 1);
+    bytecode().add(ifStatement.location, Opcode::Pop);
 
     if (ifStatement.elseStatement) {
         auto elseJump = bytecode().add(ifStatement.location, Opcode::Jump, 0);
@@ -76,36 +176,17 @@ void Compiler::visit(const If &ifStatement) {
 }
 
 void Compiler::visit(const Return &statement) {
-    statement.expression->accept(*this);
-    bytecode().add(statement.location, Opcode::Return);
-}
-
-static inline std::string normalizedName(const Variable &variable) {
-    std::ostringstream ss;
-    auto it = variable.tokens.begin();
-    while (it != variable.tokens.end()) {
-        ss << it->text;
-        if (it != variable.tokens.end() - 1) {
-            ss << " ";
-        }
-        it++;
+    if (statement.expression) {
+        statement.expression->accept(*this);
+    } else {
+        bytecode().add(statement.location, Opcode::Empty);
     }
-    return ss.str();
+    bytecode().add(statement.location, Opcode::Return);
 }
 
 void Compiler::visit(const Assignment &assignment) {
     assignment.expression->accept(*this);
-
-    uint16_t index;
-    auto name = normalizedName(*assignment.variable);
-    auto it = _variables.find(name);
-    if (it == _variables.end()) {
-        index = bytecode().addConstant(MakeStrong<String>(name));
-        _variables[name] = index;
-    } else {
-        index = it->second;
-    }
-    bytecode().add(assignment.location, Opcode::SetVariable, index);
+    assign(assignment.location, normalizedName(*assignment.variable));
 }
 
 void Compiler::visit(const ExpressionStatement &statement) {
@@ -152,11 +233,11 @@ void Compiler::visit(const NextRepeat &next) {
 }
 
 void Compiler::visit(const Call &call) {
-    for (const auto &arg : call.arguments) {
-        arg->accept(*this);
+    resolve(call.location, call.signature.name());
+    for (const auto &argument : call.arguments) {
+        argument->accept(*this);
     }
-    auto constant = _functions[call.signature.name()];
-    bytecode().add(call.location, Opcode::Call, constant);
+    bytecode().add(call.location, Opcode::Call, call.arguments.size());
 }
 
 void Compiler::visit(const Grouping &grouping) {
@@ -164,16 +245,7 @@ void Compiler::visit(const Grouping &grouping) {
 }
 
 void Compiler::visit(const Variable &variable) {
-    uint16_t index;
-    auto name = normalizedName(variable);
-    auto it = _variables.find(name);
-    if (it == _variables.end()) {
-        index = bytecode().addConstant(MakeStrong<String>(name));
-        _variables[name] = index;
-    } else {
-        index = it->second;
-    }
-    bytecode().add(variable.location, Opcode::GetVariable, index);
+    resolve(variable.location, normalizedName(variable));
 }
 
 void Compiler::visit(const Binary &binary) {

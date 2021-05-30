@@ -26,6 +26,7 @@ class Object {
 
     virtual std::string typeName() const = 0;
     virtual std::string description() const = 0;
+    virtual bool equals(Strong<Object>) const = 0;
 };
 
 std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);
