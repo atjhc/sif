@@ -29,7 +29,7 @@ Unary::Unary(Operator unaryOperator, Owned<Expression> expression)
 
 Grouping::Grouping(Owned<Expression> expression) : expression(std::move(expression)) {}
 
-Variable::Variable(const std::vector<Token> tokens, Optional<Token> typeName) : tokens(tokens), typeName(typeName) {}
+Variable::Variable(const Token &token, Optional<Token> typeName) : token(token), typeName(typeName) {}
 
 ListLiteral::ListLiteral(std::vector<Owned<Expression>> expressions) : expressions(std::move(expressions)) {}
 

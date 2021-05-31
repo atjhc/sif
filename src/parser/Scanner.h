@@ -81,6 +81,8 @@ struct Token {
     Token() : type(Type::EndOfFile) {}
     Token(Type type, Location location) : type(type), location(location) {}
 
+    bool isWord() const;
+    
     std::string description() const {
         switch (type) {
         case Type::Error: return "$error";

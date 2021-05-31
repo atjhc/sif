@@ -55,7 +55,7 @@ void PrettyPrinter::visit(const Block &block) {
 void PrettyPrinter::visit(const FunctionDecl &functionDecl) {
     out << "function " << functionDecl.signature.description();
     _printBlock(*functionDecl.statement);
-    out << "end function";
+    out << indentString() << "end function";
 }
 
 void PrettyPrinter::visit(const If &ifs) {
@@ -176,14 +176,7 @@ void PrettyPrinter::visit(const Grouping &grouping) {
 }
 
 void PrettyPrinter::visit(const Variable &variable) {
-    auto it = variable.tokens.begin();
-    while (it != variable.tokens.end()) {
-        out << it->text;
-        if (it != variable.tokens.end() - 1) {
-            out << " ";
-        }
-        it++;
-    }
+    out << variable.token.text;
 }
 
 void PrettyPrinter::visit(const Binary &binary) {

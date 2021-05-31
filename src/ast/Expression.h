@@ -118,10 +118,10 @@ struct ListLiteral : Expression {
 };
 
 struct Variable : Expression {
-    std::vector<Token> tokens;
+    Token token;
     Optional<Token> typeName;
 
-    Variable(const std::vector<Token> tokens, Optional<Token> typeName = None);
+    Variable(const Token &token, Optional<Token> typeName = None);
     
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

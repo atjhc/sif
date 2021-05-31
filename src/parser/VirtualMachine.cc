@@ -255,7 +255,9 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 break;
             }
             case Opcode::NotEqual: {
-                BINARY(!=);
+                auto rhs = Pop(_stack);
+                auto lhs = Pop(_stack);
+                Push(_stack, !(lhs == rhs));
                 break;
             }
             case Opcode::LessThan: {

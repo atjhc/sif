@@ -26,8 +26,10 @@ Compiler::Compiler(Owned<Statement> statement)
 
 Strong<Bytecode> Compiler::compile() {
     _statement->accept(*this);
-    bytecode().add(Location{1, 1}, Opcode::Empty);
-    bytecode().add(Location{1, 1}, Opcode::Return);
+    if (bytecode().code().back() != Opcode::Return) {
+        bytecode().add(Location{0, 0}, Opcode::Empty);
+        bytecode().add(Location{0, 0}, Opcode::Return);
+    }
     return _errors.size() > 0 ? nullptr : _bytecode;
 }
 
@@ -105,16 +107,7 @@ void Compiler::resolve(Location location, const std::string &name) {
 }
 
 static inline std::string normalizedName(const Variable &variable) {
-    std::ostringstream ss;
-    auto it = variable.tokens.begin();
-    while (it != variable.tokens.end()) {
-        ss << lowercase(it->text);
-        if (it != variable.tokens.end() - 1) {
-            ss << " ";
-        }
-        it++;
-    }
-    return ss.str();
+    return lowercase(variable.token.text);
 }
 
 void Compiler::visit(const Block &block) {
@@ -148,8 +141,10 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     }
     functionDecl.statement->accept(*this);
     
-    bytecode().add(functionDecl.location, Opcode::Empty);
-    bytecode().add(functionDecl.location, Opcode::Return);
+    if (bytecode().code().back() != Opcode::Return) {
+        bytecode().add(Location{0, 0}, Opcode::Empty);
+        bytecode().add(Location{0, 0}, Opcode::Return);
+    }
 
     _depth--;
     _bytecode = previousBytecode;

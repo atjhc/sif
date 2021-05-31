@@ -20,6 +20,18 @@
 
 CH_NAMESPACE_BEGIN
 
+bool Token::isWord() const {
+    switch (type) {
+    case Type::Word:
+    case Type::Is:
+    case Type::To:
+    case Type::End:
+        return true;
+    default:
+        return false;
+    }
+}
+
 Scanner::Scanner(const char *start, const char *end)
     : _start(start), _end(end), _current(start), _currentLocation{1, 1} {}
 

@@ -156,16 +156,18 @@ void Parser::_checkpoint() {
 }
 
 void Parser::_rewind() {
-    _recording = false;
     _index = _saved.top();
     _saved.pop();
+    if (_saved.size() == 0) {
+        _recording = false;
+    }
     trace(Concat("Rewind (", _previous().description(), ", ", _peek().description(), ")"));
 }
 
 void Parser::_commit() {
-    _recording = false;
     _saved.pop();
     if (_saved.size() == 0) {
+        _recording = false;
         _tokens.erase(_tokens.begin(), _tokens.begin() + _index - 1);
         _index = 1;
     }
@@ -193,7 +195,7 @@ bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optiona
     }
     if (auto option = std::get_if<FunctionSignature::Option>(&term)) {
         trace(Concat("Checking optional token ", Quoted(option->token.text)));
-        if (_peek().type == Token::Type::Word && lowercase(_peek().text) == lowercase(option->token.text)) {
+        if (_peek().type == option->token.type && lowercase(_peek().text) == lowercase(option->token.text)) {
             tokens.push_back(_advance());
         } else {
             tokens.push_back(None);
@@ -276,14 +278,16 @@ Owned<Statement> Parser::_parseStatement() {
 
 FunctionSignature Parser::_parseFunctionSignature() {
     FunctionSignature signature;
-    while (auto token = _match({Token::Type::Word, Token::Type::LeftParen})) {
-        if (token.value().type == Token::Type::Word) {
-            signature.terms.push_back(FunctionSignature::Term{token.value()});
+    while (_peek().isWord() || _peek().type == Token::Type::LeftParen) {
+        auto token = _advance();
+        if (token.isWord()) {
+            signature.terms.push_back(FunctionSignature::Term{token});
         } else {
-            if (auto word = _match({Token::Type::Word})) {
+            if (_peek().isWord()) {
+                auto word = _advance();
                 if (_check({Token::Type::Slash})) {
                     FunctionSignature::Choice choice;
-                    choice.tokens.push_back(word.value());
+                    choice.tokens.push_back(word);
                     while (_match({Token::Type::Slash})) {
                         auto word = _consume(Token::Type::Word, "expected a word");
                         choice.tokens.push_back(word);
@@ -298,7 +302,7 @@ FunctionSignature Parser::_parseFunctionSignature() {
                     _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
                     signature.terms.push_back(FunctionSignature::Argument{word, typeName});
                 } else if (_match({Token::Type::RightParen})) {
-                    signature.terms.push_back(FunctionSignature::Option{word.value()});
+                    signature.terms.push_back(FunctionSignature::Option{word});
                 }
             } else if (_match({Token::Type::Colon})) {
                 auto typeName = _match({Token::Type::Word});
@@ -308,6 +312,9 @@ FunctionSignature Parser::_parseFunctionSignature() {
                 throw SyntaxError(_peek(), Concat("expected a word, ", Quoted(":"), ", or ", Quoted("/")));
             }
         }
+    }
+    if (signature.terms.size() == 0) {
+        throw SyntaxError(_peek(), Concat("expected a word or ", Quoted("(")));
     }
     return signature;
 }
@@ -404,14 +411,10 @@ Owned<Statement> Parser::_parseRepeat() {
 }
 
 Owned<Statement> Parser::_parseAssignment() {
-    std::vector<Token> tokens;
-    while (auto token = _match({Token::Type::Word})) {
-        tokens.push_back(token.value());
-    }
+    auto token = _consume(Token::Type::Word, Concat("expected variable name"));
     _consume(Token::Type::To, Concat("expected ", Quoted("to")));
     auto expression = _parseExpression();
-    auto variable = MakeOwned<Variable>(tokens);
-    
+    auto variable = MakeOwned<Variable>(token);
     return MakeOwned<Assignment>(std::move(variable), std::move(expression));
 }
 
@@ -567,18 +570,16 @@ Owned<Expression> Parser::_parseUnary() {
 }
 
 Owned<Expression> Parser::_parseCall() {
-    if (_functionDecls.size() > 0) {
+    for (const auto &signature : _functionDecls) {
+        Location location = _peek().location;
+        std::vector<Optional<Token>> tokens;
+        std::vector<Owned<Expression>> arguments;
         _checkpoint();
-        for (const auto &signature : _functionDecls) {
-            Location location = _peek().location;
-            std::vector<Optional<Token>> tokens;
-            std::vector<Owned<Expression>> arguments;
-            if (_matchSignature(signature, tokens, arguments)) {
-                _commit();
-                auto call = MakeOwned<Call>(signature, std::move(tokens), std::move(arguments));
-                call->location = location;
-                return call;
-            }
+        if (_matchSignature(signature, tokens, arguments)) {
+            _commit();
+            auto call = MakeOwned<Call>(signature, std::move(tokens), std::move(arguments));
+            call->location = location;
+            return call;
         }
         _rewind();
     }
@@ -604,14 +605,10 @@ Owned<Expression> Parser::_parsePrimary() {
         return grouping;
     }
 
-    std::vector<Token> tokens;
-    while (auto token = _match({Token::Type::Word})) {
-        tokens.push_back(token.value());
-    }
-    if (tokens.size()) {
-        _variableDecls.push_back(Variable(tokens));
-        auto variable = MakeOwned<Variable>(tokens);
-        variable->location = tokens[0].location;
+    if (_peek().isWord()) {
+        auto token = _advance();
+        auto variable = MakeOwned<Variable>(token);
+        variable->location = token.location;
         return variable;
     }
 
