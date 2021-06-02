@@ -73,10 +73,10 @@ static inline std::string Join(T &&v, const std::string &sep) {
     auto it = v.begin();
     while (it != v.end()) {
         ss << *it;
-        if (it != v.end() - 1) {
+        it++;
+        if (it != v.end()) {
             ss << sep;
         }
-        it++;
     }
     return ss.str();
 }

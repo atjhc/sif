@@ -224,8 +224,13 @@ void PrettyPrinter::visit(const Binary &binary) {
     case Binary::Mod:
         out << " % ";
         break;
+    case Binary::Subscript:
+        out << "[";
     }
     binary.rightExpression->accept(*this);
+    if (binary.binaryOperator == Binary::Subscript) {
+        out << "]";
+    }
 }
 
 void PrettyPrinter::visit(const Unary &e) {
@@ -252,6 +257,21 @@ void PrettyPrinter::visit(const ListLiteral &list) {
             out << ", ";
         }
     }
+}
+
+void PrettyPrinter::visit(const DictionaryLiteral &dictionary) {
+    out << "[";
+    auto it = dictionary.values.begin();
+    while (it != dictionary.values.end()) {
+        it->first->accept(*this);
+        out << ": ";
+        it->second->accept(*this);
+        it++;
+        if (it != dictionary.values.end()) {
+            out << ", ";
+        }
+    }
+    out << "]";
 }
 
 void PrettyPrinter::visit(const Literal &literal) {

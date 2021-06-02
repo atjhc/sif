@@ -96,9 +96,9 @@ int evaluate(const std::string &name, const std::string &source) {
     }
 
     auto result = vm.execute(bytecode);
-    if (result) {
-        std::cout << result.value().description() << std::endl;
-    }
+    // if (result) {
+    //     std::cout << result.value().description() << std::endl;
+    // }
 
     if (vm.error()) {
         report(name, vm.error().value().location(), source, vm.error().value().what());

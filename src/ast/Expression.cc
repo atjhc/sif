@@ -33,6 +33,8 @@ Variable::Variable(const Token &token, Optional<Token> typeName) : token(token),
 
 ListLiteral::ListLiteral(std::vector<Owned<Expression>> expressions) : expressions(std::move(expressions)) {}
 
+DictionaryLiteral::DictionaryLiteral(Map<Owned<Expression>, Owned<Expression>> values) : values(std::move(values)) {}
+
 Literal::Literal(Token token) : token(token) {}
 
 CH_NAMESPACE_END

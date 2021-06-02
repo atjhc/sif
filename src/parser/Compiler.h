@@ -71,6 +71,7 @@ private:
     void visit(const Grouping &) override;
     void visit(const Variable &) override;
     void visit(const ListLiteral &) override;
+    void visit(const DictionaryLiteral &) override;
     void visit(const Literal &) override;
 
     int _depth;

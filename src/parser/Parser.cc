@@ -598,7 +598,18 @@ Owned<Expression> Parser::_parseCall() {
         }
         _rewind();
     }
-    return _parsePrimary();
+    return _parseSubscript();
+}
+
+Owned<Expression> Parser::_parseSubscript() {
+    auto expression = _parsePrimary();
+    auto location = expression->location;
+    while (auto operatorToken = _match({Token::Type::LeftBracket})) {
+        expression = MakeOwned<Binary>(std::move(expression), Binary::Subscript, _parseExpression());
+        expression->location = location;
+        _consume(Token::Type::RightBracket, Concat("expected ", Quoted("]")));
+    }
+    return expression;
 }
 
 Owned<Expression> Parser::_parsePrimary() {
@@ -612,12 +623,17 @@ Owned<Expression> Parser::_parsePrimary() {
         literal->location = token.value().location;
         return literal;
     }
+    
     if (_match({Token::Type::LeftParen})) {
         auto expression = _parseExpression();
         _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
         auto grouping = MakeOwned<Grouping>(std::move(expression));
         grouping->location = grouping->expression->location;
         return grouping;
+    }
+
+    if (_match({Token::Type::LeftBracket})) {
+        return _parseDictionary();
     }
 
     if (_peek().isWord()) {
@@ -628,6 +644,25 @@ Owned<Expression> Parser::_parsePrimary() {
     }
 
     throw SyntaxError(_peek(), Concat("unexpected expression"));
+}
+
+Owned<Expression> Parser::_parseDictionary() {
+    Map<Owned<Expression>, Owned<Expression>> values;
+
+    if (_match({Token::Type::RightBracket})) {
+        return MakeOwned<DictionaryLiteral>(std::move(values));
+    }
+
+    do {
+        auto keyExpression = _parseTerm();
+        _consume(Token::Type::Colon, Concat("expected ", Quoted(":")));
+        auto valueExpression = _parseTerm();
+
+        values[std::move(keyExpression)] = std::move(valueExpression);
+    } while (_match({Token::Type::Comma}));
+    _consume(Token::Type::RightBracket, Concat("expected ", Quoted("]")));
+
+    return MakeOwned<DictionaryLiteral>(std::move(values));
 }
 
 CH_NAMESPACE_END

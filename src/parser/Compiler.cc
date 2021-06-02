@@ -305,6 +305,9 @@ void Compiler::visit(const Binary &binary) {
     case Binary::Operator::GreaterThanOrEqual:
         bytecode().add(binary.location, Opcode::GreaterThanOrEqual);
         break;
+    case Binary::Operator::Subscript:
+        bytecode().add(binary.location, Opcode::Subscript);
+        break;
     default:
         Abort("unexpected binary operator (", binary.binaryOperator, ")");
     }
@@ -329,6 +332,14 @@ void Compiler::visit(const ListLiteral &list) {
         expression->accept(*this);
     }
     bytecode().add(list.location, Opcode::List, list.expressions.size());
+}
+
+void Compiler::visit(const DictionaryLiteral &dictionary) {
+    for (const auto &pair : dictionary.values) {
+        pair.first->accept(*this);
+        pair.second->accept(*this);
+    }
+    bytecode().add(dictionary.location, Opcode::Dictionary, dictionary.values.size());
 }
 
 static inline Value valueOf(const Token &token) {

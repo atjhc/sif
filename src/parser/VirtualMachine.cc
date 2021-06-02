@@ -17,6 +17,7 @@
 #include "parser/VirtualMachine.h"
 #include "runtime/objects/String.h"
 #include "runtime/objects/List.h"
+#include "runtime/objects/Dictionary.h"
 #include "runtime/objects/Function.h"
 
 CH_NAMESPACE_BEGIN
@@ -205,12 +206,23 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 break;
             }
             case Opcode::List: {
-                auto count = ReadConstant(frame().ip);
+                const auto count = ReadConstant(frame().ip);
                 std::vector<Value> values(count);
                 for (size_t i = 0; i < count; i++) {
                     values[count - i - 1] = Pop(_stack);
                 }
                 Push(_stack, MakeStrong<List>(values));
+                break;
+            }
+            case Opcode::Dictionary: {
+                const auto count = ReadConstant(frame().ip);
+                ValueMap values(count);
+                for (size_t i = 0; i < count; i++) {
+                    auto value = Pop(_stack);
+                    auto key = Pop(_stack);
+                    values[key] = value;
+                }
+                Push(_stack, MakeStrong<Dictionary>(values));
                 break;
             }
             case Opcode::Negate: {
@@ -317,6 +329,30 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             }
             case Opcode::GreaterThanOrEqual: {
                 BINARY(>=);
+                break;
+            }
+            case Opcode::Subscript: {
+                auto rhs = Pop(_stack);
+                auto lhs = Pop(_stack);
+                if (auto list = lhs.as<List>()) {
+                    if (rhs.isInteger()) {
+                        Push(_stack, list->values().at(rhs.asInteger()));
+                    } else {
+                        _error = RuntimeError(
+                            frame().bytecode->location(frame().ip),
+                            "expected integer"
+                        );
+                        return None;
+                    }
+                } else if (auto dictionary = lhs.as<Dictionary>()) {
+                    Push(_stack, dictionary->values().at(rhs));
+                } else {
+                    _error = RuntimeError(
+                        frame().bytecode->location(frame().ip),
+                        "expected list type"
+                    );
+                    return None;
+                }
                 break;
             }
             case Opcode::True: {

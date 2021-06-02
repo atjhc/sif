@@ -56,6 +56,8 @@ Token Scanner::scan() {
         return _make(Token::Type::NewLine); 
     case '(': return _make(Token::Type::LeftParen);
     case ')': return _make(Token::Type::RightParen);
+    case '[': return _make(Token::Type::LeftBracket);
+    case ']': return _make(Token::Type::RightBracket);
     case '+': return _make(Token::Type::Plus);
     case '-': return _make(Token::Type::Minus);
     case '*': return _make(Token::Type::Star);

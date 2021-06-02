@@ -32,6 +32,7 @@ struct Unary;
 struct Grouping;
 struct Variable;
 struct ListLiteral;
+struct DictionaryLiteral;
 struct Literal;
 
 struct Expression : Node {
@@ -42,6 +43,7 @@ struct Expression : Node {
         virtual void visit(const Grouping &) = 0;
         virtual void visit(const Variable &) = 0;
         virtual void visit(const ListLiteral &) = 0;
+        virtual void visit(const DictionaryLiteral &) = 0;
         virtual void visit(const Literal &) = 0;
     };
 
@@ -78,7 +80,7 @@ struct Binary : Expression {
         Divide,
         Mod,
         Exponent,
-        Index
+        Subscript
     };
 
     Owned<Expression> leftExpression;
@@ -114,6 +116,14 @@ struct ListLiteral : Expression {
     std::vector<Owned<Expression>> expressions;
 
     ListLiteral(std::vector<Owned<Expression>> expressions);
+
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+};
+
+struct DictionaryLiteral : Expression {
+    Map<Owned<Expression>, Owned<Expression>> values;
+
+    DictionaryLiteral(Map<Owned<Expression>, Owned<Expression>>);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

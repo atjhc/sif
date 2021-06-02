@@ -126,6 +126,14 @@ bool Value::operator==(const Value &value) const {
     return _value == value._value;
 }
 
+size_t ValueHasher::operator()(const Value& value) const {
+    // if (value.isEmpty()) return 0;
+
+    // size_t hash;
+    // std::visit([&](auto && arg){ hash = std::hash()(arg);}, value._value);
+    return 0;
+}
+
 std::ostream &operator<<(std::ostream &out, const std::monostate &) {
     return out << "Empty";
 }

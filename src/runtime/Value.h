@@ -86,6 +86,7 @@ class Value {
     std::string description() const;
 
     friend std::ostream &operator<<(std::ostream &out, const Value &value);
+    friend struct ValueHasher;
     bool operator==(const Value &value) const;
 
   private:
@@ -93,5 +94,11 @@ class Value {
 };
 
 std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v);
+
+struct ValueHasher {
+    std::size_t operator()(const Value&) const;
+};
+
+using ValueMap = std::unordered_map<Value, Value, ValueHasher>;
 
 CH_NAMESPACE_END

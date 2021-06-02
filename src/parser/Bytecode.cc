@@ -100,6 +100,12 @@ Bytecode::Iterator Bytecode::disassembleList(std::ostream &out, Iterator positio
     return position + 3;
 }
 
+Bytecode::Iterator Bytecode::disassembleDictionary(std::ostream &out, Iterator position) const {
+    size_t count = ReadUInt16(position + 1);
+    out << "Dictionary " << count;
+    return position + 3;
+}
+
 Bytecode::Iterator Bytecode::disassembleJump(std::ostream &out, const std::string &name, Iterator position) const {
     size_t offset = ReadUInt16(position + 1);
     out << name << " " << offset;
@@ -136,6 +142,7 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Constant:      return disassembleConstant(out, "Constant", position);
     case Opcode::Short:         return disassembleShort(out, position);
     case Opcode::List:          return disassembleList(out, position);
+    case Opcode::Dictionary:    return disassembleDictionary(out, position);
     case Opcode::GetGlobal:     return disassembleConstant(out, "GetGlobal", position);
     case Opcode::SetGlobal:     return disassembleConstant(out, "SetGlobal", position);
     case Opcode::GetLocal:      return disassembleLocal(out, "GetLocal", position);
@@ -154,6 +161,7 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::GreaterThan:           out << "GreaterThan"; return position + 1;
     case Opcode::LessThanOrEqual:       out << "LessThanOrEqual"; return position + 1;
     case Opcode::GreaterThanOrEqual:    out << "GreaterThanOrEqual"; return position + 1;
+    case Opcode::Subscript:     out << "Subscript"; return position + 1;
     case Opcode::True:          out << "True"; return position + 1;
     case Opcode::False:         out << "False"; return position + 1;
     case Opcode::Show:          out << "Show"; return position + 1;

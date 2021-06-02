@@ -48,6 +48,8 @@ struct Token {
         Colon,
         LeftParen,
         RightParen,
+        LeftBracket,
+        RightBracket,
         Plus,
         Minus,
         Star,

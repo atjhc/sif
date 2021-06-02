@@ -31,6 +31,7 @@ enum class Opcode : uint8_t {
     Pop,
     Constant,
     List,
+    Dictionary,
     Short,
     Negate,
     Not,
@@ -46,6 +47,7 @@ enum class Opcode : uint8_t {
     GreaterThan,
     LessThanOrEqual,
     GreaterThanOrEqual,
+    Subscript,
     Return,
     True,
     False,
@@ -82,6 +84,7 @@ private:
     friend class VirtualMachine;
 
     Iterator disassembleConstant(std::ostream &, const std::string &, Iterator) const;
+    Iterator disassembleDictionary(std::ostream &out, Iterator position) const;
     Iterator disassembleList(std::ostream &, Iterator) const;
     Iterator disassembleJump(std::ostream &, const std::string &name, Iterator) const;
     Iterator disassembleShort(std::ostream &out, Iterator position) const;
