@@ -42,6 +42,13 @@ Parser::Parser(const ParserConfig &config, Scanner &scanner)
     _parsingRepeat = false;
     _recording = false;
     _index = 0;
+
+    if (!config.disableNatives) {
+        add(FunctionSignature::Make("write line (:)"));
+        add(FunctionSignature::Make("write (:)"));
+        add(FunctionSignature::Make("(the) size (of) (:list)"));
+        add(FunctionSignature::Make("item (:integer) of (:list)"));
+    }
 }
 
 Owned<Statement> Parser::parse() {
@@ -50,6 +57,14 @@ Owned<Statement> Parser::parse() {
         return nullptr;
     }
     return result;
+}
+
+FunctionSignature Parser::parseFunctionSignature() {
+    return _parseFunctionSignature();
+}
+
+void Parser::add(const FunctionSignature &signature) {
+    _functionDecls.insert(signature);
 }
 
 const std::vector<SyntaxError> &Parser::errors() {
@@ -152,7 +167,7 @@ void Parser::_synchronize() {
 void Parser::_checkpoint() {
     _recording = true;
     _saved.push(_index);
-    trace(Concat("Checkpoint (", _previous().description(), ", ", _peek().description(), ")"));
+    trace(Concat("Checkpoint (", _index, ")"));
 }
 
 void Parser::_rewind() {
@@ -161,7 +176,7 @@ void Parser::_rewind() {
     if (_saved.size() == 0) {
         _recording = false;
     }
-    trace(Concat("Rewind (", _previous().description(), ", ", _peek().description(), ")"));
+    trace(Concat("Rewind (", _index, ")"));
 }
 
 void Parser::_commit() {
@@ -204,7 +219,7 @@ bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optiona
     }
     if (auto argument = std::get_if<FunctionSignature::Argument>(&term)) {
         trace(Concat("Checking argument"));
-        if (auto matchedExpression = _parsePrimary()) {
+        if (auto matchedExpression = _parseCall()) {
             arguments.push_back(std::move(matchedExpression));
             return true;
         }
@@ -322,7 +337,7 @@ FunctionSignature Parser::_parseFunctionSignature() {
 Owned<Statement> Parser::_parseFunction() {
     auto signature = _parseFunctionSignature();
     _consumeNewLine();
-    _functionDecls.push_back(signature);
+    _functionDecls.insert(signature);
     auto statement = _parseBlock({Token::Type::End});
     _consumeEnd(Token::Type::Function);
 

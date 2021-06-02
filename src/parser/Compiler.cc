@@ -22,14 +22,18 @@
 CH_NAMESPACE_BEGIN
 
 Compiler::Compiler(Owned<Statement> statement)
-    : _depth(0), _bytecode(MakeStrong<Bytecode>()), _statement(std::move(statement)) {}
+    : _depth(0), _bytecode(MakeStrong<Bytecode>()), _statement(std::move(statement)) {
+    
+    _globals["write (:)"] = 0;
+    _globals["write line (:)"] = 0;
+    _globals["(the) size (of) (:list)"] = 0;
+    _globals["item (:integer) of (:list)"] = 0;
+}
 
 Strong<Bytecode> Compiler::compile() {
     _statement->accept(*this);
-    if (bytecode().code().back() != Opcode::Return) {
-        bytecode().add(Location{0, 0}, Opcode::Empty);
-        bytecode().add(Location{0, 0}, Opcode::Return);
-    }
+    addReturn();
+
     return _errors.size() > 0 ? nullptr : _bytecode;
 }
 
@@ -110,6 +114,13 @@ static inline std::string normalizedName(const Variable &variable) {
     return lowercase(variable.token.text);
 }
 
+void Compiler::addReturn() {
+    if (bytecode().code().size() == 0 || bytecode().code().back() != Opcode::Return) {
+        bytecode().add(Location{0, 0}, Opcode::Empty);
+        bytecode().add(Location{0, 0}, Opcode::Return);
+    }
+}
+
 void Compiler::visit(const Block &block) {
     for (const auto &statement : block.statements) {
         statement->accept(*this);
@@ -139,12 +150,9 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
             }
         }
     }
+
     functionDecl.statement->accept(*this);
-    
-    if (bytecode().code().back() != Opcode::Return) {
-        bytecode().add(Location{0, 0}, Opcode::Empty);
-        bytecode().add(Location{0, 0}, Opcode::Return);
-    }
+    addReturn();
 
     _depth--;
     _bytecode = previousBytecode;
@@ -186,7 +194,6 @@ void Compiler::visit(const Assignment &assignment) {
 
 void Compiler::visit(const ExpressionStatement &statement) {
     statement.expression->accept(*this);
-    bytecode().add(statement.location, Opcode::Show);
     bytecode().add(statement.location, Opcode::Pop);
 }
 

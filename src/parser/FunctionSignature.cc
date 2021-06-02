@@ -15,6 +15,8 @@
 //
 
 #include "parser/FunctionSignature.h"
+#include "parser/Scanner.h"
+#include "parser/Parser.h"
 #include "Utilities.h"
 
 CH_NAMESPACE_BEGIN
@@ -65,6 +67,24 @@ static inline std::ostream &operator<<(std::ostream &out, const FunctionSignatur
     return out;
 }
 
+FunctionSignature FunctionSignature::Make(const std::string &format) {
+    Scanner scanner(format.c_str(), format.c_str() + format.length());
+    ParserConfig config;
+    config.disableNatives = true;
+    Parser parser(config, scanner);
+    return parser.parseFunctionSignature();
+}
+
+size_t FunctionSignature::arity() const {
+    size_t arity = 0;
+    for (const auto &term : terms) {
+        if (std::holds_alternative<FunctionSignature::Argument>(term)) {
+            arity++;
+        }
+    }
+    return arity;
+}
+
 std::string FunctionSignature::name() const {
     std::ostringstream ss;
     auto it = terms.begin();
@@ -80,6 +100,19 @@ std::string FunctionSignature::name() const {
 
 std::string FunctionSignature::description() const {
     return Join(terms, " ");
+}
+
+bool FunctionSignature::operator<(const FunctionSignature &signature) const {
+    int i = 0;
+    while (i < terms.size() || i < signature.terms.size()) {
+        if (i == terms.size()) return false;
+        if (i == signature.terms.size()) return true;
+        if (terms[i].index() < signature.terms[i].index()) {
+            return true;
+        }
+        i++;
+    }
+    return false;
 }
 
 CH_NAMESPACE_END

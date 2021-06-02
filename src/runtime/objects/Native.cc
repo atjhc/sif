@@ -11,30 +11,30 @@
 //  limitations under the License.
 //
 
-#include "runtime/objects/Function.h"
+#include "runtime/objects/Native.h"
 
 CH_NAMESPACE_BEGIN
 
-Function::Function(const FunctionSignature &signature, const Strong<Bytecode> &bytecode)
-    : _signature(signature), _bytecode(bytecode), _arity(signature.arity()) {}
+Native::Native(size_t arity, const NativeCallable &callable)
+    : _arity(arity), _callable(callable) {}
 
-const Strong<Bytecode> &Function::bytecode() const {
-    return _bytecode;
-}
-
-size_t Function::arity() const {
+size_t Native::arity() const {
     return _arity;
 }
 
-std::string Function::typeName() const {
+const Native::NativeCallable &Native::callable() const {
+    return _callable;
+}
+
+std::string Native::typeName() const {
     return "function";
 }
 
-std::string Function::description() const {
-    return _signature.name();
+std::string Native::description() const {
+    return "<native function>";
 }
 
-bool Function::equals(Strong<Object> object) const {
+bool Native::equals(Strong<Object> object) const {
     return this == object.get();
 }
 

@@ -95,13 +95,11 @@ struct Token {
 
 class Scanner {
   public:
-
     Scanner(const char *start, const char *end);
 
     Token scan();
 
   private:
-
     bool _isAtEnd();
     char _advance();
     char _peekNext();

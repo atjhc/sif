@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <stack>
+#include <set>
 
 CH_NAMESPACE_BEGIN
 
@@ -60,20 +61,24 @@ struct ParserConfig {
     bool enableTracing = false;
 #endif
 
+    bool disableNatives = false;
+
     ParserConfig(const std::string &n = "<stdin>", std::ostream &cerr = std::cerr)
         : fileName(n), cerr(cerr) {}
 };
 
 class Parser {
   public:
-
     Parser(const ParserConfig &config, Scanner &scanner);
 
     Owned<Statement> parse();
+    FunctionSignature parseFunctionSignature();
+
+    void add(const FunctionSignature &signature);
+
     const std::vector<SyntaxError> &errors();
 
   private:
-
     bool _isAtEnd();
     bool _check(const std::initializer_list<Token::Type> &types);
     Optional<Token> _match(const std::initializer_list<Token::Type> &types);
@@ -127,7 +132,7 @@ class Parser {
     Scanner &_scanner;
     std::vector<SyntaxError> _errors;
 
-    std::vector<FunctionSignature> _functionDecls;
+    std::set<FunctionSignature> _functionDecls;
     std::vector<Variable> _variableDecls;
 
     std::vector<Token> _tokens;

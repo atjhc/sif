@@ -17,25 +17,28 @@
 #pragma once
 
 #include "Common.h"
-#include "Utilities.h"
+#include "runtime/Object.h"
 #include "runtime/Value.h"
-
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "parser/FunctionSignature.h"
 
 CH_NAMESPACE_BEGIN
 
-class Environment {
-    Map<std::string, Value> _values;
-
+class Native : public Object {
   public:
-    Optional<Value> get(const std::string &name) const;
-    void set(const std::string &name, const Value &value);
+    using NativeCallable = std::function<Value(Value*)>;
 
-    void insert(const Environment &environment);
-    void insert(const std::vector<std::string> &names, const std::vector<Value> &values);
+    Native(size_t arity, const NativeCallable &callable);
+
+    size_t arity() const;
+    const NativeCallable &callable() const;
+
+    std::string typeName() const override;
+    std::string description() const override;
+    bool equals(Strong<Object>) const override;
+
+  private:
+    size_t _arity;
+    NativeCallable _callable;
 };
 
 CH_NAMESPACE_END

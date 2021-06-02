@@ -78,6 +78,7 @@ struct Binary : Expression {
         Divide,
         Mod,
         Exponent,
+        Index
     };
 
     Owned<Expression> leftExpression;

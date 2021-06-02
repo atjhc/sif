@@ -29,18 +29,23 @@ struct FunctionSignature {
         Optional<Token> token;
         Optional<Token> typeName;
     };
-    struct Option {
-        Token token;
-    };
     struct Choice {
         std::vector<Token> tokens;
     };
+    struct Option {
+        Token token;
+    };
     using Term = std::variant<Token, Argument, Choice, Option>;
 
-    std::vector<Term> terms;
+    static FunctionSignature Make(const std::string &format);
 
+    size_t arity() const;
     std::string name() const;
     std::string description() const;
+
+    bool operator<(const FunctionSignature &signature) const;
+
+    std::vector<Term> terms;
 };
 
 CH_NAMESPACE_END

@@ -18,6 +18,7 @@
 
 #include "Common.h"
 #include "runtime/Value.h"
+#include "runtime/objects/Native.h"
 #include "parser/Bytecode.h"
 
 #include <vector>
@@ -36,11 +37,11 @@ public:
     VirtualMachine(const VirtualMachineConfig &config = VirtualMachineConfig());
 
     Optional<Value> execute(const Strong<Bytecode> &bytecode);
+    void add(const std::string &name, const Strong<Native> &nativeFunction);
 
     Optional<RuntimeError> error() const;
 
 private:
-
     struct CallFrame {
         Strong<Bytecode> bytecode;
         Bytecode::Iterator ip;

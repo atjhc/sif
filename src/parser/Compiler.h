@@ -48,6 +48,7 @@ private:
     
     void assign(Location location, const std::string &name);
     void resolve(Location location, const std::string &name);
+    void addReturn();
     
 #pragma mark - Statement::Visitor
 
