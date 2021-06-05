@@ -35,7 +35,7 @@ struct FunctionSignature {
     struct Option {
         Token token;
     };
-    using Term = std::variant<Token, Argument, Choice, Option>;
+    using Term = std::variant<Token, Choice, Argument, Option>;
 
     static FunctionSignature Make(const std::string &format);
 
@@ -44,6 +44,7 @@ struct FunctionSignature {
     std::string description() const;
 
     bool operator<(const FunctionSignature &signature) const;
+    bool operator==(const FunctionSignature &signature) const;
 
     std::vector<Term> terms;
 };

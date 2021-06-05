@@ -22,19 +22,17 @@
 CH_NAMESPACE_BEGIN
 
 Compiler::Compiler(Owned<Statement> statement)
-    : _depth(0), _bytecode(MakeStrong<Bytecode>()), _statement(std::move(statement)) {
-    
-    _globals["write (:)"] = 0;
-    _globals["write line (:)"] = 0;
-    _globals["(the) size (of) (:list)"] = 0;
-    _globals["item (:integer) of (:list)"] = 0;
-}
+    : _depth(0), _bytecode(MakeStrong<Bytecode>()), _statement(std::move(statement)) {}
 
 Strong<Bytecode> Compiler::compile() {
     _statement->accept(*this);
     addReturn();
 
     return _errors.size() > 0 ? nullptr : _bytecode;
+}
+
+void Compiler::addExtern(const std::string &name) {
+    _globals[name] = 0;
 }
 
 const std::vector<CompileError> &Compiler::errors() const {
@@ -143,7 +141,7 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     _depth++;
 
     _locals->push_back({"", _depth});
-    for (auto term : functionDecl.signature.terms) {
+    for (const auto &term : functionDecl.signature.terms) {
         if (auto arg = std::get_if<FunctionSignature::Argument>(&term)) {
             if (arg->token.has_value()) {
                 _locals->push_back({arg->token.value().text, _depth});
@@ -283,6 +281,9 @@ void Compiler::visit(const Binary &binary) {
         break;
     case Binary::Operator::Divide:
         bytecode().add(binary.location, Opcode::Divide);
+        break;
+    case Binary::Operator::Modulo:
+        bytecode().add(binary.location, Opcode::Modulo);
         break;
     case Binary::Operator::Exponent:
         bytecode().add(binary.location, Opcode::Exponent);

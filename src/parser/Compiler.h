@@ -31,6 +31,7 @@ public:
     Compiler(Owned<Statement> statement);
 
     Strong<Bytecode> compile();
+    void addExtern(const std::string &name);
 
     const std::vector<CompileError> &errors() const;
 

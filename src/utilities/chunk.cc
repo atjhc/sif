@@ -20,7 +20,7 @@ std::string::const_iterator chunk::scan(std::string::const_iterator it, size_t l
             while (iswhite(*it) && it < _end)
                 it++;
         } else if (_type == item) {
-            while (*it != _itemDelimiter && it < _end)
+            while (*it != ',' && it < _end)
                 it++;
             if (it < _end)
                 it++;
@@ -42,7 +42,7 @@ std::string::const_iterator chunk::scan_end(std::string::const_iterator it) {
         while (!iswhite(*it) && it < _end)
             it++;
     } else if (_type == item) {
-        while (*it != _itemDelimiter && it < _end)
+        while (*it != ',' && it < _end)
             it++;
     } else if (_type == line) {
         while (!isnewline(*it) && it < _end)

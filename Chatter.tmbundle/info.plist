@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>contactEmailRot13</key>
+	<string>wnzrf.pnyyraqre@zr.pbz</string>
+	<key>contactName</key>
+	<string>James Callender</string>
+	<key>description</key>
+	<string>Bundle for editing and running Chatter files.</string>
+	<key>name</key>
+	<string>Chatter</string>
+	<key>uuid</key>
+	<string>54860077-F10C-4423-B56A-B5F125F62954</string>
+</dict>
+</plist>

@@ -16,10 +16,13 @@
 
 #include "runtime/Value.h"
 #include "runtime/Object.h"
+#include "runtime/objects/String.h"
 
 #include <iostream>
 
 CH_NAMESPACE_BEGIN
+
+Value::Value(const std::string &string) : _value(MakeStrong<String>(string)) {}
 
 Value::Type Value::type() const {
     return Value::Type(_value.index());
@@ -123,15 +126,18 @@ bool Value::operator==(const Value &value) const {
     if (isObject() && value.isObject()) {
         return asObject()->equals(value.asObject());
     }
+    if (type() != value.type() && isNumber() && value.isNumber()) {
+        return castFloat() == value.castFloat();
+    }
     return _value == value._value;
 }
 
 size_t ValueHasher::operator()(const Value& value) const {
-    // if (value.isEmpty()) return 0;
+    if (value.isEmpty()) return 0;
 
-    // size_t hash;
-    // std::visit([&](auto && arg){ hash = std::hash()(arg);}, value._value);
-    return 0;
+    size_t hash;
+    std::visit([&](auto arg){ hash = std::hash<decltype(arg)>{}(arg); }, value._value);
+    return hash;
 }
 
 std::ostream &operator<<(std::ostream &out, const std::monostate &) {

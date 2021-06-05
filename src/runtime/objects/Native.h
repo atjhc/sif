@@ -25,12 +25,12 @@ CH_NAMESPACE_BEGIN
 
 class Native : public Object {
   public:
-    using NativeCallable = std::function<Value(Value*)>;
+    using Callable = std::function<Value(Value*)>;
 
-    Native(size_t arity, const NativeCallable &callable);
+    Native(size_t arity, const Callable &callable);
 
     size_t arity() const;
-    const NativeCallable &callable() const;
+    const Callable &callable() const;
 
     std::string typeName() const override;
     std::string description() const override;
@@ -38,7 +38,7 @@ class Native : public Object {
 
   private:
     size_t _arity;
-    NativeCallable _callable;
+    Callable _callable;
 };
 
 CH_NAMESPACE_END

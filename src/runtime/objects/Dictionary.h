@@ -1,3 +1,6 @@
+//
+//  Copyright (c) 2021 James Callender
+//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
@@ -11,31 +14,28 @@
 //  limitations under the License.
 //
 
-#include "runtime/objects/Native.h"
+#pragma once
+
+#include "Common.h"
+#include "runtime/Object.h"
+#include "runtime/Value.h"
+
+#include <string>
 
 CH_NAMESPACE_BEGIN
 
-Native::Native(size_t arity, const Native::Callable &callable)
-    : _arity(arity), _callable(callable) {}
+class Dictionary : public Object {
+  public:
+    Dictionary(const ValueMap &values);
 
-size_t Native::arity() const {
-    return _arity;
-}
+    const ValueMap &values() const;
 
-const Native::Native::Callable &Native::callable() const {
-    return _callable;
-}
+    std::string typeName() const override;
+    std::string description() const override;
+    bool equals(Strong<Object>) const override;
 
-std::string Native::typeName() const {
-    return "function";
-}
-
-std::string Native::description() const {
-    return "<native function>";
-}
-
-bool Native::equals(Strong<Object> object) const {
-    return this == object.get();
-}
+  private:
+    ValueMap _values;
+};
 
 CH_NAMESPACE_END

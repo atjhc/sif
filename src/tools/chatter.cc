@@ -14,11 +14,15 @@
 //  limitations under the License.
 //
 
+#include "utilities/chunk.h"
 #include "ast/PrettyPrinter.h"
 #include "parser/Parser.h"
 #include "parser/Compiler.h"
 #include "parser/VirtualMachine.h"
-#include "utilities/chunk.h"
+#include "runtime/objects/Native.h"
+#include "runtime/objects/List.h"
+#include "runtime/objects/Dictionary.h"
+#include "runtime/objects/String.h"
 
 #include <chrono>
 #include <fstream>
@@ -32,6 +36,7 @@
 #include <unistd.h>
 
 using namespace chatter;
+Map<std::string, Strong<Native>> builtins();
 
 enum {
     Success = 0,
@@ -52,6 +57,122 @@ static bool prettyPrint = false;
 static bool printBytecode = false;
 
 VirtualMachine vm;
+Map<std::string, Strong<Native>> natives = builtins();
+
+Map<std::string, Strong<Native>> builtins() {
+    Map<std::string, Strong<Native>> natives;
+    natives["quit (program)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        exit(0);
+    });
+    natives["print (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        std::cout << values[0];
+        return Value();
+    });
+    natives["print line (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        std::cout << values[0] << std::endl;
+        return Value();
+    });
+    natives["(the) size (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        size_t size = 0;
+        if (auto list = values[0].as<List>()) {
+            size = list->values().size();
+        } else if (auto dictionary = values[0].as<Dictionary>()) {
+            size = dictionary->values().size();
+        }
+        return static_cast<long>(size);
+    });
+    natives["item (:) of (:)"] = MakeStrong<Native>(2, [](Value *values) -> Value {
+        auto index = values[0].asInteger();
+        auto list = values[1].as<List>();
+        return list->values()[index];
+    });
+    natives["(the) type (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        return values[0].typeName();
+    });
+    natives["sin (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto argument = values[0].castFloat();
+        return sin(argument);
+    });
+    natives["cos (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto argument = values[0].castFloat();
+        return cos(argument);
+    });
+    natives["tan (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto argument = values[0].castFloat();
+        return tan(argument);
+    });
+    natives["(char/character) (:) of (:)"] = MakeStrong<Native>(2, [](Value *values) -> Value {
+        auto index = values[0].asInteger();
+        auto text = values[1].as<String>();
+        return index_chunk(chunk::character, index, text->string()).get();
+    });
+    natives["(char/character) (:) to (:) of (:)"] = MakeStrong<Native>(3, [](Value *values) -> Value {
+        auto start = values[0].asInteger();
+        auto end = values[1].asInteger();
+        auto text = values[2].as<String>();
+        return range_chunk(chunk::character, start, end, text->string()).get();
+    });
+    natives["(the) (mid/middle) (char/character) of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return middle_chunk(chunk::character, text->string()).get();
+    });
+    natives["(the) last (char/character) of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return last_chunk(chunk::character, text->string()).get();
+    });
+    natives["(the) number of (chars/characters) in (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return static_cast<long>(count_chunk(chunk::character, text->string()).count);
+    });
+    natives["word (:) of (:)"] = MakeStrong<Native>(2, [](Value *values) -> Value {
+        auto index = values[0].asInteger();
+        auto text = values[1].as<String>();
+        return index_chunk(chunk::word, index, text->string()).get();
+    });
+    natives["word (:) to (:) of (:)"] = MakeStrong<Native>(3, [](Value *values) -> Value {
+        auto start = values[0].asInteger();
+        auto end = values[1].asInteger();
+        auto text = values[2].as<String>();
+        return range_chunk(chunk::word, start, end, text->string()).get();
+    });
+    natives["(the) (mid/middle) word of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return middle_chunk(chunk::word, text->string()).get();
+    });
+    natives["(the) last word of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return last_chunk(chunk::word, text->string()).get();
+    });
+    natives["(the) number of words in (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return static_cast<long>(count_chunk(chunk::word, text->string()).count);
+    });
+    natives["line (:) of (:)"] = MakeStrong<Native>(2, [](Value *values) -> Value {
+        auto index = values[0].asInteger();
+        auto text = values[1].as<String>();
+        return index_chunk(chunk::line, index, text->string()).get();
+    });
+    natives["line (:) to (:) of (:)"] = MakeStrong<Native>(3, [](Value *values) -> Value {
+        auto start = values[0].asInteger();
+        auto end = values[1].asInteger();
+        auto text = values[2].as<String>();
+        return range_chunk(chunk::line, start, end, text->string()).get();
+    });
+    natives["(the) (mid/middle) line of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return middle_chunk(chunk::line, text->string()).get();
+    });
+    natives["(the) last line of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return last_chunk(chunk::line, text->string()).get();
+    });
+    natives["(the) number of lines in (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return static_cast<long>(count_chunk(chunk::line, text->string()).count);
+    });
+
+    return natives;
+}
 
 void report(const std::string &name, Location location, const std::string &source, const std::string &message) {
     std::cerr << name << ":" << location << ": " << message << std::endl;
@@ -66,6 +187,9 @@ int evaluate(const std::string &name, const std::string &source) {
     parserConfig.enableTracing = traceParsing;
 #endif
     Parser parser(parserConfig, scanner);
+    for (const auto &pair : natives) {
+        parser.declare(FunctionSignature::Make(pair.first));
+    }
     auto statement = parser.parse();
     if (!statement) {
         for (auto error : parser.errors()) {
@@ -82,6 +206,10 @@ int evaluate(const std::string &name, const std::string &source) {
     }
 
     Compiler compiler(std::move(statement));
+    for (const auto &pair : natives) {
+        compiler.addExtern(pair.first);
+    }
+
     auto bytecode = compiler.compile();
     if (!bytecode) {
         for (auto error : compiler.errors()) {
@@ -95,11 +223,7 @@ int evaluate(const std::string &name, const std::string &source) {
         return Success;
     }
 
-    auto result = vm.execute(bytecode);
-    // if (result) {
-    //     std::cout << result.value().description() << std::endl;
-    // }
-
+    vm.execute(bytecode);
     if (vm.error()) {
         report(name, vm.error().value().location(), source, vm.error().value().what());
         return RuntimeFailure;
@@ -202,6 +326,9 @@ int main(int argc, char *argv[]) {
     vmConfig.enableTracing = traceRuntime;
 #endif
     vm = VirtualMachine(vmConfig);
+    for (const auto &pair : natives) {
+        vm.add(pair.first, pair.second);
+    }
 
     if (fileName.empty()) {
         if (isatty(STDIN_FILENO)) {

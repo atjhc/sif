@@ -42,13 +42,6 @@ Parser::Parser(const ParserConfig &config, Scanner &scanner)
     _parsingRepeat = false;
     _recording = false;
     _index = 0;
-
-    if (!config.disableNatives) {
-        add(FunctionSignature::Make("write line (:)"));
-        add(FunctionSignature::Make("write (:)"));
-        add(FunctionSignature::Make("(the) size (of) (:list)"));
-        add(FunctionSignature::Make("item (:integer) of (:list)"));
-    }
 }
 
 Owned<Statement> Parser::parse() {
@@ -63,7 +56,7 @@ FunctionSignature Parser::parseFunctionSignature() {
     return _parseFunctionSignature();
 }
 
-void Parser::add(const FunctionSignature &signature) {
+void Parser::declare(const FunctionSignature &signature) {
     _functionDecls.insert(signature);
 }
 
@@ -78,6 +71,11 @@ Optional<Token> Parser::_match(const std::initializer_list<Token::Type> &types) 
         return _advance();
     }
     return None;
+}
+
+Token Parser::_consumeWord() {
+    if (_peek().isWord()) return _advance();
+    throw SyntaxError(_peek(), "expected a word");
 }
 
 Token Parser::_consume(Token::Type type, const std::string &errorMessage) {
@@ -199,7 +197,8 @@ void Parser::_trace(const std::string &message) {
 
 #pragma mark - Grammar
 
-bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
+bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
+    const auto &term = signature.terms[index];
     if (auto token = std::get_if<Token>(&term)) {
         trace(Concat("Checking token ", Quoted(token->text)));
         if (_peek().type == token->type && lowercase(_peek().text) == lowercase(token->text)) {
@@ -219,9 +218,16 @@ bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optiona
     }
     if (auto argument = std::get_if<FunctionSignature::Argument>(&term)) {
         trace(Concat("Checking argument"));
-        if (auto matchedExpression = _parseCall()) {
-            arguments.push_back(std::move(matchedExpression));
-            return true;
+        if (index == signature.terms.size() - 1) {
+            if (auto matchedExpression = _parseList()) {
+                arguments.push_back(std::move(matchedExpression));
+                return true;
+            }
+        } else {
+           if (auto matchedExpression = _parseSubscript()) {
+                arguments.push_back(std::move(matchedExpression));
+                return true;
+            }
         }
         return false;
     }
@@ -229,7 +235,7 @@ bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optiona
     if (auto choice = std::get_if<FunctionSignature::Choice>(&term)) {
         trace(Concat("Checking choice"));
         for (const auto &token : choice->tokens) {
-            if (_peek().type == Token::Type::Word && lowercase(_peek().text) == lowercase(token.text)) {
+            if (_peek().isWord() && lowercase(_peek().text) == lowercase(token.text)) {
                 tokens.push_back(_advance());
                 return true;
             }
@@ -241,8 +247,8 @@ bool Parser::_matchTerm(const FunctionSignature::Term &term, std::vector<Optiona
 
 bool Parser::_matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
     trace(Concat("Checking function signature ", Quoted(signature.name())));
-    for (const auto &term : signature.terms) {
-        if (!_matchTerm(term, tokens, arguments)) {
+    for (int i = 0; i < signature.terms.size(); i++) {
+        if (!_matchTerm(signature, i, tokens, arguments)) {
             return false;
         }
     }
@@ -304,7 +310,7 @@ FunctionSignature Parser::_parseFunctionSignature() {
                     FunctionSignature::Choice choice;
                     choice.tokens.push_back(word);
                     while (_match({Token::Type::Slash})) {
-                        auto word = _consume(Token::Type::Word, "expected a word");
+                        auto word = _consumeWord();
                         choice.tokens.push_back(word);
                     }
                     std::sort(choice.tokens.begin(), choice.tokens.end(), [](Token lhs, Token rhs) {
@@ -337,7 +343,7 @@ FunctionSignature Parser::_parseFunctionSignature() {
 Owned<Statement> Parser::_parseFunction() {
     auto signature = _parseFunctionSignature();
     _consumeNewLine();
-    _functionDecls.insert(signature);
+    declare(signature);
     auto statement = _parseBlock({Token::Type::End});
     _consumeEnd(Token::Type::Function);
 
@@ -468,6 +474,7 @@ Binary::Operator binaryOp(Token::Type tokenType) {
     case Token::Type::Minus: return Binary::Operator::Minus;
     case Token::Type::Star: return Binary::Operator::Multiply;
     case Token::Type::Slash: return Binary::Operator::Divide;
+    case Token::Type::Percent: return Binary::Operator::Modulo;
     case Token::Type::Carrot: return Binary::Operator::Exponent;
     case Token::Type::Is: return Binary::Operator::Equal;
     case Token::Type::Equal: return Binary::Operator::Equal;
@@ -558,7 +565,7 @@ Owned<Expression> Parser::_parseTerm() {
 Owned<Expression> Parser::_parseFactor() {
     auto expression = _parseExponent();
     auto location = expression->location;
-    while (auto operatorToken = _match({Token::Type::Star, Token::Type::Slash})) {
+    while (auto operatorToken = _match({Token::Type::Star, Token::Type::Slash, Token::Type::Percent})) {
         expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type), _parseExponent());
         expression->location = location;
     }

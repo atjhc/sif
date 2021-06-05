@@ -110,9 +110,18 @@ bool FunctionSignature::operator<(const FunctionSignature &signature) const {
         if (terms[i].index() < signature.terms[i].index()) {
             return true;
         }
+        if (std::holds_alternative<Token>(terms[i]) && std::holds_alternative<Token>(signature.terms[i])) {
+            if (std::get<Token>(terms[i]).text < std::get<Token>(signature.terms[i]).text) {
+                return true;
+            }
+        }
         i++;
     }
     return false;
+}
+
+bool FunctionSignature::operator==(const FunctionSignature &signature) const {
+    return name() == signature.name();
 }
 
 CH_NAMESPACE_END

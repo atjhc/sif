@@ -78,7 +78,7 @@ struct Binary : Expression {
         Minus,
         Multiply,
         Divide,
-        Mod,
+        Modulo,
         Exponent,
         Subscript
     };

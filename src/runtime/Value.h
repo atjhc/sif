@@ -57,6 +57,7 @@ class Value {
     }
 
     template <typename T> Value(const T &v) : _value(v) {}
+    Value(const std::string &string);
 
     Type type() const;
     std::string typeName() const;
@@ -96,7 +97,7 @@ class Value {
 std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v);
 
 struct ValueHasher {
-    std::size_t operator()(const Value&) const;
+    size_t operator()(const Value&) const;
 };
 
 using ValueMap = std::unordered_map<Value, Value, ValueHasher>;

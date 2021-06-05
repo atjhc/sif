@@ -74,7 +74,7 @@ class Parser {
     Owned<Statement> parse();
     FunctionSignature parseFunctionSignature();
 
-    void add(const FunctionSignature &signature);
+    void declare(const FunctionSignature &signature);
 
     const std::vector<SyntaxError> &errors();
 
@@ -85,6 +85,7 @@ class Parser {
     Token _consume(Token::Type type, const std::string &error);
     Token _consumeEnd(Token::Type type);
     Token _consumeNewLine();
+    Token _consumeWord();
     Token& _scan();
     Token& _advance();
     Token& _peek();
@@ -96,7 +97,7 @@ class Parser {
     void _commit();
 
     bool _matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments);
-    bool _matchTerm(const FunctionSignature::Term &term, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments);
+    bool _matchTerm(const FunctionSignature &signature, int index, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments);
 
 #if defined(DEBUG)
     void _trace(const std::string &message);
