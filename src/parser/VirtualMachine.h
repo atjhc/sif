@@ -42,6 +42,10 @@ public:
     Optional<RuntimeError> error() const;
 
 private:
+
+    bool call(Value, int count);
+    bool subscript(Value, Value);
+
     struct CallFrame {
         Strong<Bytecode> bytecode;
         Bytecode::Iterator ip;

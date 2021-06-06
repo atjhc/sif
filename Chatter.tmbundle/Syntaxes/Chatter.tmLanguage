@@ -24,13 +24,13 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b(write[ \t]+line)\b</string>
+			<string>\b(print\s+line)\b</string>
 			<key>name</key>
 			<string>keyword.other.chatter</string>
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b(write)\b</string>
+			<string>\b(print)\b</string>
 			<key>name</key>
 			<string>keyword.other.chatter</string>
 		</dict>
@@ -61,6 +61,23 @@
 			<string>"</string>
 			<key>name</key>
 			<string>string.quoted.double.chatter</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>match</key>
+					<string>\.</string>
+					<key>name</key>
+					<string>constant.character.escape.chatter</string>
+				</dict>
+			</array>
+		</dict>
+		<dict>
+			<key>begin</key>
+			<string>'</string>
+			<key>end</key>
+			<string>'</string>
+			<key>name</key>
+			<string>string.quoted.single.chatter</string>
 			<key>patterns</key>
 			<array>
 				<dict>

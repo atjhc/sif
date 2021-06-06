@@ -1,8 +1,8 @@
-on begin arg
-  put factorial(arg)
-end begin
-
-function factorial arg
+function (the) factorial (of) (arg: integer)
   if arg is 0 then return 1
   return arg * factorial(arg - 1)
-end factorial
+end function
+
+print line factorial 10
+print line the factorial of 10
+print line factorial of 10

@@ -94,7 +94,7 @@ struct Binary : Expression {
 };
 
 struct Unary : Expression {
-    enum Operator { ThereIsA, Minus, Not };
+    enum Operator { Minus, Not };
 
     Operator unaryOperator;
     Owned<Expression> expression;

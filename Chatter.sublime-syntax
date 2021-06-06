@@ -11,6 +11,10 @@ contexts:
       scope: punctuation.definition.string.begin.chatter
       push: double_quoted_string
 
+    - match: '\''
+      scope: punctuation.definition.string.begin.chatter
+      push: single_quoted_string
+
     - match: '--'
       scope: punctuation.definition.comment.chatter
       push: line_comment
@@ -44,6 +48,14 @@ contexts:
     - match: '\\.'
       scope: constant.character.escape.chatter
     - match: '"'
+      scope: punctuation.definition.string.end.chatter
+      pop: true
+
+  single_quoted_string:
+    - meta_scope: string.quoted.single.chatter
+    - match: '\\.'
+      scope: constant.character.escape.chatter
+    - match: '\''
       scope: punctuation.definition.string.end.chatter
       pop: true
 

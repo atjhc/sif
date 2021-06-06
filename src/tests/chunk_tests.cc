@@ -75,7 +75,4 @@ TEST_CASE(ChunkTests, GetChunks) {
                     chatter::chunk::line, [](int count) { return 1; }, string)
                     .get(),
                 "then, line 2");
-
-    string = "this/string/has/slashes";
-    ASSERT_EQ(chatter::index_chunk(chatter::chunk::item, 2, string, '/').get(), "has");
 }

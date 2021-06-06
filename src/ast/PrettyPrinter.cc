@@ -221,7 +221,7 @@ void PrettyPrinter::visit(const Binary &binary) {
     case Binary::Exponent:
         out << " ^ ";
         break;
-    case Binary::Mod:
+    case Binary::Modulo:
         out << " % ";
         break;
     case Binary::Subscript:
@@ -235,9 +235,6 @@ void PrettyPrinter::visit(const Binary &binary) {
 
 void PrettyPrinter::visit(const Unary &e) {
     switch (e.unaryOperator) {
-    case Unary::ThereIsA:
-        out << "there is a ";
-        break;
     case Unary::Minus:
         out << "-";
         break;

@@ -214,7 +214,10 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 } else if (value.isFloat()) {
                     Push(_stack, -value.asFloat());
                 } else {
-                    _error = RuntimeError(bytecode->location(frame().ip - 1), "expected numerical type");
+                    _error = RuntimeError(
+                        bytecode->location(frame().ip - 1),
+                        "expected a number"
+                    );
                     return None;
                 }
                 break;
@@ -222,7 +225,10 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             case Opcode::Not: {
                 auto value = Pop(_stack);
                 if (!value.isBool()) {
-                    _error = RuntimeError(bytecode->location(frame().ip - 1), "expected bool type");
+                    _error = RuntimeError(
+                        bytecode->location(frame().ip - 1), 
+                        "expected a bool"
+                    );
                     return None;
                 }
                 Push(_stack, !value.asBool());
@@ -316,23 +322,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             case Opcode::Subscript: {
                 auto rhs = Pop(_stack);
                 auto lhs = Pop(_stack);
-                if (auto list = lhs.as<List>()) {
-                    if (rhs.isInteger()) {
-                        Push(_stack, list->values().at(rhs.asInteger()));
-                    } else {
-                        _error = RuntimeError(
-                            frame().bytecode->location(frame().ip - 1),
-                            "expected integer"
-                        );
-                        return None;
-                    }
-                } else if (auto dictionary = lhs.as<Dictionary>()) {
-                    Push(_stack, dictionary->values().at(rhs));
-                } else {
-                    _error = RuntimeError(
-                        frame().bytecode->location(frame().ip - 1),
-                        "expected list type"
-                    );
+                if (subscript(lhs, rhs)) {
                     return None;
                 }
                 break;
@@ -348,15 +338,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             case Opcode::Call: {
                 auto count = ReadConstant(frame().ip);
                 auto object = _stack.end()[-count - 1];
-                if (auto fn = object.as<Function>()) {
-                    _callStack.push_back({fn->bytecode(), fn->bytecode()->code().begin(), 
-                        _stack.size() - count - 1});
-                } else if (auto native = object.as<Native>()) {
-                    auto result = native->callable()(&_stack.end()[-count]);
-                    _stack.erase(_stack.end() - count - 1, _stack.end());
-                    Push(_stack, result);
-                } else {
-                    _error = RuntimeError(bytecode->location(frame().ip - 3), "unexpected type for function call");
+                if (call(object, count)) {
                     return None;
                 }
                 break;
@@ -370,6 +352,79 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 break;
         }
     }
+}
+
+bool VirtualMachine::call(Value object, int count) {
+    if (auto fn = object.as<Function>()) {
+        _callStack.push_back({
+            fn->bytecode(),
+            fn->bytecode()->code().begin(), 
+            _stack.size() - count - 1
+        });
+    } else if (auto native = object.as<Native>()) {
+        auto result = native->callable()(&_stack.end()[-count]);
+        _stack.erase(_stack.end() - count - 1, _stack.end());
+        Push(_stack, result);
+    } else {
+        _error = RuntimeError(
+            fn->bytecode()->location(frame().ip - 3),
+            "unexpected type for function call"
+        );
+        return true;
+    }
+    return false;
+}
+
+bool VirtualMachine::subscript(Value lhs, Value rhs) {
+    if (auto list = lhs.as<List>()) {
+        if (!rhs.isInteger()) {
+            _error = RuntimeError(
+                frame().bytecode->location(frame().ip - 1),
+                "expected an integer"
+            );
+            return true;
+        }
+        auto index = rhs.asInteger();
+        if (index >= static_cast<int>(list->values().size()) || static_cast<int>(list->values().size()) + index < 0) {
+            _error = RuntimeError(
+                frame().bytecode->location(frame().ip - 1),
+                "array index out of bounds"
+            );
+            return true;
+        }
+        Push(_stack, list->values()[index < 0 ? list->values().size() + index : index]);
+    } else if (auto dictionary = lhs.as<Dictionary>()) {
+        auto it = dictionary->values().find(rhs);
+        if (it == dictionary->values().end()) {
+            Push(_stack, Value());
+        } else {
+            Push(_stack, dictionary->values().at(rhs));
+        }
+    } else if (auto string = lhs.as<String>()) {
+        if (!rhs.isInteger()) {
+            _error = RuntimeError(
+                frame().bytecode->location(frame().ip - 1),
+                "expected an integer"
+            );
+            return true;
+        }
+        auto index = rhs.asInteger();
+        if (index >= static_cast<int>(string->string().size()) || static_cast<int>(string->string().size()) + index < 0) {
+            _error = RuntimeError(
+                frame().bytecode->location(frame().ip - 1),
+                "string index out of bounds"
+            );
+            return true;
+        }
+        Push(_stack, string->string().substr(index < 0 ? string->string().size() + index : index, 1));
+    } else {
+        _error = RuntimeError(
+            frame().bytecode->location(frame().ip - 1),
+            "expected a list, string, or dictionary"
+        );
+        return true;
+    }
+    return false;
 }
 
 CH_NAMESPACE_END

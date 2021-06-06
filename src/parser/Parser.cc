@@ -639,8 +639,12 @@ Owned<Expression> Parser::_parsePrimary() {
         return grouping;
     }
 
+    if (_match({Token::Type::LeftBrace})) {
+        return _parseDictionaryLiteral();
+    }
+
     if (_match({Token::Type::LeftBracket})) {
-        return _parseDictionary();
+        return _parseListLiteral();
     }
 
     if (_peek().isWord()) {
@@ -653,21 +657,33 @@ Owned<Expression> Parser::_parsePrimary() {
     throw SyntaxError(_peek(), Concat("unexpected expression"));
 }
 
-Owned<Expression> Parser::_parseDictionary() {
-    Map<Owned<Expression>, Owned<Expression>> values;
+Owned<Expression> Parser::_parseListLiteral() {
+    std::vector<Owned<Expression>> values;
 
-    if (_match({Token::Type::RightBracket})) {
-        return MakeOwned<DictionaryLiteral>(std::move(values));
+    if (!_match({Token::Type::RightBracket})) {
+        do {
+            auto expression = _parseTerm();
+            values.push_back(std::move(expression));
+        } while (_match({Token::Type::Comma}));
+        _consume(Token::Type::RightBracket, Concat("expected ", Quoted("]")));
     }
 
-    do {
-        auto keyExpression = _parseTerm();
-        _consume(Token::Type::Colon, Concat("expected ", Quoted(":")));
-        auto valueExpression = _parseTerm();
+    return MakeOwned<ListLiteral>(std::move(values));
+}
 
-        values[std::move(keyExpression)] = std::move(valueExpression);
-    } while (_match({Token::Type::Comma}));
-    _consume(Token::Type::RightBracket, Concat("expected ", Quoted("]")));
+Owned<Expression> Parser::_parseDictionaryLiteral() {
+    Map<Owned<Expression>, Owned<Expression>> values;
+
+    if (!_match({Token::Type::RightBrace})) {
+        do {
+            auto keyExpression = _parseTerm();
+            _consume(Token::Type::Colon, Concat("expected ", Quoted(":")));
+            auto valueExpression = _parseTerm();
+
+            values[std::move(keyExpression)] = std::move(valueExpression);
+        } while (_match({Token::Type::Comma}));
+        _consume(Token::Type::RightBrace, Concat("expected ", Quoted("}")));
+    }
 
     return MakeOwned<DictionaryLiteral>(std::move(values));
 }

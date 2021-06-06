@@ -50,6 +50,8 @@ struct Token {
         RightParen,
         LeftBracket,
         RightBracket,
+        LeftBrace,
+        RightBrace,
         Plus,
         Minus,
         Star,
@@ -101,6 +103,8 @@ class Scanner {
 
     Token scan();
 
+    int skipNewlines;
+
   private:
     bool _isAtEnd();
     char _advance();
@@ -109,7 +113,7 @@ class Scanner {
     void _skipWhitespace();
     void _skipLine();
 
-    Token _scanString();
+    Token _scanString(char terminal);
     Token _scanNumber();
     Token _scanWord();
 

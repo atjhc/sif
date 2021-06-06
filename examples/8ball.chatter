@@ -1,8 +1,7 @@
 -- http://rosettacode.org/wiki/Magic_8-ball
 
-on begin
-  put ¬
-"It is certain
+set answers to "
+It is certain
 It is decidedly so
 Without a doubt
 Yes - definitely
@@ -21,10 +20,11 @@ Don't count on it
 My reply is no
 My sources say no
 Outlook not so good
-Very doubtful" into answers
-  repeat
-    ask "? : "
-    if it is empty then exit repeat
-    put any line of answers
-  end repeat
-end begin
+Very doubtful"
+
+repeat
+  print "? : "
+  set question to read line
+  if the size of question is 0 then exit repeat
+  print line the last line of answers
+end repeat

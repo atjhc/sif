@@ -36,7 +36,7 @@ bool Token::isWord() const {
 }
 
 Scanner::Scanner(const char *start, const char *end)
-    : _start(start), _end(end), _current(start), _currentLocation{1, 1} {}
+    : skipNewlines(0), _start(start), _end(end), _current(start), _currentLocation{1, 1} {}
 
 Token Scanner::scan() {
     _skipWhitespace();
@@ -57,10 +57,12 @@ Token Scanner::scan() {
         _currentLocation.lineNumber++;
         _currentLocation.position = 1;
         return _make(Token::Type::NewLine); 
-    case '(': return _make(Token::Type::LeftParen);
-    case ')': return _make(Token::Type::RightParen);
-    case '[': return _make(Token::Type::LeftBracket);
-    case ']': return _make(Token::Type::RightBracket);
+    case '(': skipNewlines++; return _make(Token::Type::LeftParen);
+    case ')': skipNewlines--; return _make(Token::Type::RightParen);
+    case '[': skipNewlines++; return _make(Token::Type::LeftBracket);
+    case ']': skipNewlines--; return _make(Token::Type::RightBracket);
+    case '{': skipNewlines++; return _make(Token::Type::LeftBrace);
+    case '}': skipNewlines--; return _make(Token::Type::RightBrace);
     case '+': return _make(Token::Type::Plus);
     case '-': return _make(Token::Type::Minus);
     case '*': return _make(Token::Type::Star);
@@ -73,7 +75,8 @@ Token Scanner::scan() {
     case '!': return _make(_match('=') ? Token::Type::NotEqual : Token::Type::Bang);
     case '<': return _make(_match('=') ? Token::Type::LessThanOrEqual : Token::Type::LessThan);
     case '>': return _make(_match('=') ? Token::Type::GreaterThanOrEqual : Token::Type::GreaterThan);
-    case '"': return _scanString();
+    case '"': return _scanString('"');
+    case '\'': return _scanString('\'');
     }
     return _makeError(Concat("unknown character: ", int(c)));
 }
@@ -176,10 +179,10 @@ Token::Type Scanner::_checkKeyword(int offset, int length, const char *name, Tok
     return type;
 }
 
-Token Scanner::_scanString() {
+Token Scanner::_scanString(char terminal) {
     while (!_isAtEnd()) {
         char c = _current[0];
-        if (c == '"') break;
+        if (c == terminal) break;
         if (c == '\n') {
             _currentLocation.lineNumber++;
             _currentLocation.position = 1;
@@ -252,6 +255,14 @@ void Scanner::_skipWhitespace() {
     while (!_isAtEnd()) {
         char c = _current[0];
         switch (c) {
+        case '\n':
+            if (skipNewlines) {
+                _currentLocation.lineNumber++;
+                _currentLocation.position = 1;
+                _advance();
+                break;
+            }
+            return;
         case ' ':
         case '\t':
         case '\r':
@@ -259,6 +270,12 @@ void Scanner::_skipWhitespace() {
             break;
         case '#':
             _skipLine();
+            break;
+        case '\\':
+            if (_current < _end && _current[1] == '\n') {
+                _advance();
+                _advance();
+            }
             break;
         case '-':
             if (_current < _end && _current[1] == '-') {

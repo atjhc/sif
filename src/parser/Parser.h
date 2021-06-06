@@ -129,7 +129,8 @@ class Parser {
     Owned<Expression> _parseCall();
     Owned<Expression> _parseSubscript();
     Owned<Expression> _parsePrimary();
-    Owned<Expression> _parseDictionary();
+    Owned<Expression> _parseListLiteral();
+    Owned<Expression> _parseDictionaryLiteral();
 
     ParserConfig _config;
     Scanner &_scanner;

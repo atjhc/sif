@@ -72,12 +72,24 @@ Map<std::string, Strong<Native>> builtins() {
         std::cout << values[0] << std::endl;
         return Value();
     });
+    natives["read word"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        std::string input;
+        std::cin >> input;
+        return input;
+    });
+    natives["read line"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        std::string input;
+        std::getline(std::cin, input);
+        return input;
+    });
     natives["(the) size (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         size_t size = 0;
         if (auto list = values[0].as<List>()) {
             size = list->values().size();
         } else if (auto dictionary = values[0].as<Dictionary>()) {
             size = dictionary->values().size();
+        } else if (auto string = values[0].as<String>()) {
+            size = string->string().size();
         }
         return static_cast<long>(size);
     });
