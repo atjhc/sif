@@ -24,7 +24,7 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b(print\s+line)\b</string>
+			<string>\b((print\s+line)|(read\s+line)|(print\s+error))\b</string>
 			<key>name</key>
 			<string>keyword.other.chatter</string>
 		</dict>
@@ -42,7 +42,7 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b(true|false|empty)\b</string>
+			<string>\b(true|false|empty|it)\b</string>
 			<key>name</key>
 			<string>constant.language.chatter</string>
 		</dict>
@@ -56,6 +56,14 @@
 		</dict>
 		<dict>
 			<key>begin</key>
+			<string>#</string>
+			<key>end</key>
+			<string>\n</string>
+			<key>name</key>
+			<string>comment.line.pound.chatter</string>
+		</dict>
+		<dict>
+			<key>begin</key>
 			<string>"</string>
 			<key>end</key>
 			<string>"</string>
@@ -65,7 +73,7 @@
 			<array>
 				<dict>
 					<key>match</key>
-					<string>\.</string>
+					<string>\\.</string>
 					<key>name</key>
 					<string>constant.character.escape.chatter</string>
 				</dict>
@@ -82,7 +90,7 @@
 			<array>
 				<dict>
 					<key>match</key>
-					<string>\.</string>
+					<string>\\.</string>
 					<key>name</key>
 					<string>constant.character.escape.chatter</string>
 				</dict>

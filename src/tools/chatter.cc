@@ -72,6 +72,10 @@ Map<std::string, Strong<Native>> builtins() {
         std::cout << values[0] << std::endl;
         return Value();
     });
+    natives["print error (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        std::cerr << values[0] << std::endl;
+        return Value();
+    });
     natives["read word"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         std::string input;
         std::cin >> input;

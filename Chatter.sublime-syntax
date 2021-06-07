@@ -11,7 +11,7 @@ contexts:
       scope: punctuation.definition.string.begin.chatter
       push: double_quoted_string
 
-    - match: '\''
+    - match: "'"
       scope: punctuation.definition.string.begin.chatter
       push: single_quoted_string
 
@@ -37,7 +37,16 @@ contexts:
     - match: '\b(is|not|and|or)\b'
       scope: keyword.operator.chatter
 
-    - match: '\b(true|false|empty)\b'
+    - match: '\b(print\s+line|read\s+line)\b'
+      scope: keyword.other.chatter
+
+    - match: '\b(print)\b'
+      scope: keyword.other.chatter
+
+    - match: '\b(string|integer|float|list|dictionary|bool)\b'
+      scope: keyword.other.chatter
+
+    - match: '\b(true|false|empty|it)\b'
       scope: constant.numeric.chatter
 
     - match: '\b(-)?[0-9.]+\b'
@@ -55,7 +64,7 @@ contexts:
     - meta_scope: string.quoted.single.chatter
     - match: '\\.'
       scope: constant.character.escape.chatter
-    - match: '\''
+    - match: "'"
       scope: punctuation.definition.string.end.chatter
       pop: true
 

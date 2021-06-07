@@ -1,25 +1,31 @@
 -- http://rosettacode.org/wiki/CSV_to_HTML_translation
 
-on begin
-  put "Character,Speech
-The multitude,The messiah! Show us the messiah!
-Brians mother,<angry>Now you listen here! He's not the messiah; he's a very naughty boy! Now go away!</angry>
-The multitude,Who are you?
-Brians mother,I'm his mother; that's who!
-The multitude,Behold his mother! Behold his mother!" into csv
-  put csvToHTML(csv)
-end begin
+function replace (src: string) with (dst: string) in (text: string) -> string
+  set result to empty
+  repeat
+    set index to the offset of src in text
+    if index is empty then
+      put text after result
+      exit repeat
+    end if
+    
+    put char 1 to (index - 1) of text after result
+    put dst after result
+    delete char 1 to (index + length(src) - 1) of text
+  end repeat
+  return result
+end function
 
-function csvToHTML csv
+function html of (csv: string)
   put "<table>\n" into html
   repeat while csv <> empty
     put line 1 of csv into row
     put "<tr>" after html
     repeat while row is not empty
       put item 1 of row into theItem
-      put replaceAll(theItem, "&", "&amp;") into theItem
-      put replaceAll(theItem, "<", "&lt;") into theItem
-      put replaceAll(theItem, ">", "&gt;") into theItem
+      set theItem to replace "&" with "&amp;" in theItem
+      set theItem to replace "<" with "&lt;" in theItem
+      set theItem to replace ">" with "&gt;" in theItem
       put "<td>" & theItem & "</td>" after html
       delete item 1 of row
     end repeat
@@ -30,18 +36,11 @@ function csvToHTML csv
   return html
 end csvToHTML
 
-function replaceAll text, src, dst
-  put empty into result
-  repeat
-    put offset(src, text) into index
-    if index is 0 then
-      put text after result
-      exit repeat
-    end if
-    
-    put char 1 to (index - 1) of text after result
-    put dst after result
-    delete char 1 to (index + length(src) - 1) of text
-  end repeat
-  return result
-end replaceAll
+set csv to "Character,Speech
+The multitude,The messiah! Show us the messiah!
+Brians mother,<angry>Now you listen here! He's not the messiah; he's a very naughty boy! Now go away!</angry>
+The multitude,Who are you?
+Brians mother,I'm his mother; that's who!
+The multitude,Behold his mother! Behold his mother!"
+
+print line html of csv

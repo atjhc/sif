@@ -27,7 +27,7 @@ std::string Dictionary::typeName() const {
 
 std::string Dictionary::description() const {
     std::ostringstream ss;
-    ss << "[";
+    ss << "{";
     auto it = _values.begin();
     while (it != _values.end()) {
         ss << it->first << ": " << it->second;
@@ -36,7 +36,7 @@ std::string Dictionary::description() const {
             ss << ", ";
         }
     }
-    ss << "]";
+    ss << "}";
     return ss.str();
 }
 

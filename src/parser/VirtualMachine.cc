@@ -347,6 +347,9 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, Value());
                 break;
             }
+            case Opcode::It:
+                _variables["it"] = Pop(_stack);
+                break;
             case Opcode::Show:
                 std::cout << Peek(_stack) << std::endl;
                 break;

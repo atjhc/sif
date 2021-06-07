@@ -60,24 +60,26 @@ void Compiler::assign(Location location, const std::string &name) {
     uint16_t index;
     Opcode opcode;
 
-    auto it = _globals.find(name);
-    if (it == _globals.end()) {
-        if (_depth > 0) {
-            if (int i = findLocal(name); i > -1) {
-                index = i;
-            } else {
-                _locals->push_back({name, _depth});
-                return;
-            }
+    if (_depth > 0) {
+        if (int i = findLocal(name); i > -1) {
+            index = i;
             opcode = Opcode::SetLocal;
+        } else if (auto it = _globals.find(name); it != _globals.end()) {
+            index = it->second;
+            opcode = Opcode::SetGlobal;
+        } else {
+            _locals->push_back({name, _depth});
+            return;
+        }
+    } else {
+        if (auto it = _globals.find(name); it != _globals.end()) {
+            index = it->second;
+            opcode = Opcode::SetGlobal;
         } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
             _globals[name] = index;
             opcode = Opcode::SetGlobal;
         }
-    } else {
-        index = it->second;
-        opcode = Opcode::SetGlobal;
     }
     bytecode().add(location, opcode, index);
 }
@@ -86,30 +88,28 @@ void Compiler::resolve(Location location, const std::string &name) {
     uint16_t index = 0;
     Opcode opcode;
 
-    auto it = _globals.find(name);
-    if (it == _globals.end()) {
-        if (_depth > 0) {
-            if (int i = findLocal(name); i > -1) {
-                index = i;
-            } else {
-                bytecode().add(location, Opcode::Empty);
-                return;
-            }
+    if (_depth > 0) {
+        if (int i = findLocal(name); i > -1) {
+            index = i;
             opcode = Opcode::GetLocal;
+        } else if (auto it = _globals.find(name); it != _globals.end()) {
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            opcode = Opcode::GetGlobal;
         } else {
+            bytecode().add(location, Opcode::Empty);
+            return;
+        }
+    } else {    
+        if (auto it = _globals.find(name); it != _globals.end()) {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
             _globals[name] = index;
+        } else {
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            opcode = Opcode::GetGlobal;
         }
-    } else {
-        index = bytecode().addConstant(MakeStrong<String>(name));
-        opcode = Opcode::GetGlobal;
     }
     bytecode().add(location, opcode, index);
-}
-
-static inline std::string normalizedName(const Variable &variable) {
-    return lowercase(variable.token.text);
 }
 
 void Compiler::addReturn() {
@@ -187,12 +187,12 @@ void Compiler::visit(const Return &statement) {
 
 void Compiler::visit(const Assignment &assignment) {
     assignment.expression->accept(*this);
-    assign(assignment.location, normalizedName(*assignment.variable));
+    assign(assignment.location, lowercase(assignment.variable->token.text));
 }
 
 void Compiler::visit(const ExpressionStatement &statement) {
     statement.expression->accept(*this);
-    bytecode().add(statement.location, Opcode::Pop);
+    bytecode().add(statement.location, Opcode::It);
 }
 
 void Compiler::visit(const Repeat &statement) {
@@ -245,7 +245,7 @@ void Compiler::visit(const Grouping &grouping) {
 }
 
 void Compiler::visit(const Variable &variable) {
-    resolve(variable.location, normalizedName(variable));
+    resolve(variable.location, lowercase(variable.token.text));
 }
 
 void Compiler::visit(const Binary &binary) {

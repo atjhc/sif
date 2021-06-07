@@ -464,9 +464,13 @@ Owned<Statement> Parser::_parseNext() {
 }
 
 Owned<Statement> Parser::_parseReturn() {
-    auto expression = _parseExpression();
+    Owned<Expression> expression;
+    auto location = _previous().location;
+    if (!_check({Token::Type::NewLine})) {
+        expression = _parseExpression();
+    }
     auto returnStatement = MakeOwned<Return>(std::move(expression));
-    returnStatement->location = returnStatement->expression->location;
+    returnStatement->location = location;
     return returnStatement;
 }
 

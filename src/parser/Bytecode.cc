@@ -167,6 +167,7 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Show:          out << "Show"; return position + 1;
     case Opcode::Call:          return disassembleCall(out, "Call", position);
     case Opcode::Empty:         out << "Empty"; return position + 1;
+    case Opcode::It:            out << "It"; return position + 1;
     }
 }
 
