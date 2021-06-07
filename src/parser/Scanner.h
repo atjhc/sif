@@ -72,6 +72,7 @@ struct Token {
         Or,
         Carrot,
         Percent,
+        Arrow,
         StringLiteral,
         BoolLiteral,
         IntLiteral,

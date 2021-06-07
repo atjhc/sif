@@ -99,7 +99,12 @@ std::string FunctionSignature::name() const {
 }
 
 std::string FunctionSignature::description() const {
-    return Join(terms, " ");
+    std::ostringstream ss;
+    ss << Join(terms, " ");
+    if (typeName.has_value()) {
+        ss << " -> " << typeName.value();
+    }
+    return ss.str();
 }
 
 bool FunctionSignature::operator<(const FunctionSignature &signature) const {

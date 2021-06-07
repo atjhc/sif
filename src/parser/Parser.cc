@@ -337,6 +337,10 @@ FunctionSignature Parser::_parseFunctionSignature() {
     if (signature.terms.size() == 0) {
         throw SyntaxError(_peek(), Concat("expected a word or ", Quoted("(")));
     }
+    if (_match({Token::Type::Arrow})) {
+        signature.typeName = _match({Token::Type::Word});
+    }
+
     return signature;
 }
 
@@ -433,9 +437,13 @@ Owned<Statement> Parser::_parseRepeat() {
 
 Owned<Statement> Parser::_parseAssignment() {
     auto token = _consume(Token::Type::Word, Concat("expected variable name"));
+    Optional<Token> typeName;
+    if (_match({Token::Type::Colon})) {
+        typeName = _consumeWord();
+    }
     _consume(Token::Type::To, Concat("expected ", Quoted("to")));
     auto expression = _parseExpression();
-    auto variable = MakeOwned<Variable>(token);
+    auto variable = MakeOwned<Variable>(token, typeName);
     return MakeOwned<Assignment>(std::move(variable), std::move(expression));
 }
 

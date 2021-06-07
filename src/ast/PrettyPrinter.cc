@@ -177,6 +177,9 @@ void PrettyPrinter::visit(const Grouping &grouping) {
 
 void PrettyPrinter::visit(const Variable &variable) {
     out << variable.token.text;
+    if (variable.typeName.has_value()) {
+        out << ": " << variable.typeName.value().text;
+    }
 }
 
 void PrettyPrinter::visit(const Binary &binary) {

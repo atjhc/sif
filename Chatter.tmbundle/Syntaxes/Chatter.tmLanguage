@@ -12,7 +12,7 @@
 	<array>
 		<dict>
 			<key>match</key>
-			<string>\b(if|else|then|repeat|end|function|exit|return|next|set|to)\b</string>
+			<string>\b(if|else|then|repeat|until|while|end|function|exit|return|next|set|to)\b</string>
 			<key>name</key>
 			<string>keyword.control.chatter</string>
 		</dict>

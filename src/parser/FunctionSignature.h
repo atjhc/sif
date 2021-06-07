@@ -47,6 +47,7 @@ struct FunctionSignature {
     bool operator==(const FunctionSignature &signature) const;
 
     std::vector<Term> terms;
+    Optional<Token> typeName;
 };
 
 CH_NAMESPACE_END
