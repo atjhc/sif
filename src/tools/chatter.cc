@@ -138,26 +138,26 @@ Map<std::string, Strong<Native>> builtins() {
         auto argument = values[0].castFloat();
         return tan(argument);
     });
-    natives["(char/character) (:) of (:)"] = MakeStrong<Native>(2, [](Value *values) -> Value {
+    natives["char/character (:) of (:)"] = MakeStrong<Native>(2, [](Value *values) -> Value {
         auto index = values[0].asInteger();
         auto text = values[1].as<String>();
         return index_chunk(chunk::character, index, text->string()).get();
     });
-    natives["(char/character) (:) to (:) of (:)"] = MakeStrong<Native>(3, [](Value *values) -> Value {
+    natives["char/character (:) to (:) of (:)"] = MakeStrong<Native>(3, [](Value *values) -> Value {
         auto start = values[0].asInteger();
         auto end = values[1].asInteger();
         auto text = values[2].as<String>();
         return range_chunk(chunk::character, start, end, text->string()).get();
     });
-    natives["(the) (mid/middle) (char/character) of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["(the) mid/middle char/character of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         auto text = values[0].as<String>();
         return middle_chunk(chunk::character, text->string()).get();
     });
-    natives["(the) last (char/character) of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["(the) last char/character of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         auto text = values[0].as<String>();
         return last_chunk(chunk::character, text->string()).get();
     });
-    natives["(the) number of (chars/characters) in (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["(the) number of chars/characters in (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         auto text = values[0].as<String>();
         return static_cast<long>(count_chunk(chunk::character, text->string()).count);
     });
@@ -172,7 +172,7 @@ Map<std::string, Strong<Native>> builtins() {
         auto text = values[2].as<String>();
         return range_chunk(chunk::word, start, end, text->string()).get();
     });
-    natives["(the) (mid/middle) word of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["(the) mid/middle word of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         auto text = values[0].as<String>();
         return middle_chunk(chunk::word, text->string()).get();
     });
@@ -195,7 +195,7 @@ Map<std::string, Strong<Native>> builtins() {
         auto text = values[2].as<String>();
         return range_chunk(chunk::line, start, end, text->string()).get();
     });
-    natives["(the) (mid/middle) line of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["(the) mid/middle line of (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         auto text = values[0].as<String>();
         return middle_chunk(chunk::line, text->string()).get();
     });

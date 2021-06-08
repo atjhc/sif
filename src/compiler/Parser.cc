@@ -302,23 +302,22 @@ FunctionSignature Parser::_parseFunctionSignature() {
     while (_peek().isWord() || _peek().type == Token::Type::LeftParen) {
         auto token = _advance();
         if (token.isWord()) {
-            signature.terms.push_back(FunctionSignature::Term{token});
+            std::vector<Token> tokens({token});
+            while (_match({Token::Type::Slash})) {
+               tokens.push_back(_consumeWord());
+            }
+            if (tokens.size() > 1) {
+                std::sort(tokens.begin(), tokens.end(), [](Token lhs, Token rhs) {
+                    return lhs.text < rhs.text;
+                });
+                signature.terms.push_back(FunctionSignature::Choice{tokens});
+            } else {
+                signature.terms.push_back(FunctionSignature::Term{token});
+            }
         } else {
             if (_peek().isWord()) {
                 auto word = _advance();
-                if (_check({Token::Type::Slash})) {
-                    FunctionSignature::Choice choice;
-                    choice.tokens.push_back(word);
-                    while (_match({Token::Type::Slash})) {
-                        auto word = _consumeWord();
-                        choice.tokens.push_back(word);
-                    }
-                    std::sort(choice.tokens.begin(), choice.tokens.end(), [](Token lhs, Token rhs) {
-                        return lhs.text < rhs.text;
-                    });
-                    signature.terms.push_back(choice);
-                    _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
-                } else if (_match({Token::Type::Colon})) {
+                if (_match({Token::Type::Colon})) {
                     auto typeName = _match({Token::Type::Word});
                     _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
                     signature.terms.push_back(FunctionSignature::Argument{word, typeName});
