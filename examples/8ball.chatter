@@ -26,5 +26,5 @@ repeat
   print "? : "
   set question to read line
   if the size of question is 0 then exit repeat
-  print line the last line of answers
+  print line any line of answers
 end repeat

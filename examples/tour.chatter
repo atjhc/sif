@@ -1,0 +1,37 @@
+-- Print a line of text to stdout using the "print line" function:
+print "Hello, World!"
+
+-- Print text without a newline, by using the "print" function:
+print "Prompt: "
+
+-- Read a line of text:
+read line
+
+-- The value is automatically captured into the "it" variable:
+print it
+
+-- Though less idiomatic, you may also compose these functions:
+print read line
+
+-- Set a variable using the "set" command:
+set myName to "James"
+
+-- You may optionally indicate a type decorator for readability:
+set myName: string to "James"
+
+set myName: string to 30
+
+-- If statements can be a single line:
+if myName is "James" then print line "Hello, James!"
+
+-- Or span multiple lines as a block:
+else
+  print line "I don't know you"
+  quit program
+end if
+
+-- Use "repeat" to loop over code:
+repeat
+  print line "Prove it"
+
+print the max of four, five, six

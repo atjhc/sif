@@ -54,9 +54,6 @@ install: all
 	cp $(DSTROOT)/$(TOOLNAME) $(INSTALL_DIR)
 	chmod +x $(INSTALL_DIR)/$(TOOLNAME)
 
-install-support:
-	cp Chatter.sublime-syntax "$(HOME)/Library/Application Support/Sublime Text 3/Packages/User"
-
 format:
 	find src -name '*.cc' -exec clang-format -i --style=file {} \;
 	find src -name '*.h' -exec clang-format -i --style=file {} \;

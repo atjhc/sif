@@ -16,9 +16,9 @@
 
 #include "utilities/chunk.h"
 #include "ast/PrettyPrinter.h"
-#include "parser/Parser.h"
-#include "parser/Compiler.h"
-#include "parser/VirtualMachine.h"
+#include "compiler/Parser.h"
+#include "compiler/Compiler.h"
+#include "runtime/VirtualMachine.h"
 #include "runtime/objects/Native.h"
 #include "runtime/objects/List.h"
 #include "runtime/objects/Dictionary.h"
@@ -61,27 +61,48 @@ Map<std::string, Strong<Native>> natives = builtins();
 
 Map<std::string, Strong<Native>> builtins() {
     Map<std::string, Strong<Native>> natives;
-    natives["quit (program)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["quit"] = MakeStrong<Native>(0, [](Value *values) -> Value {
         exit(0);
     });
-    natives["print (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["quit with code (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        exit(values[0].asInteger());
+    });
+    natives["write (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         std::cout << values[0];
         return Value();
     });
-    natives["print line (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
-        std::cout << values[0] << std::endl;
+    natives["print (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        if (const auto &list = values[0].as<List>()) {
+            for (const auto &item : list->values()) {
+                std::cout << item;
+            }
+        } else {
+            std::cout << values[0];
+        }
+        std::cout << std::endl;
         return Value();
     });
     natives["print error (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
-        std::cerr << values[0] << std::endl;
+        if (const auto &list = values[0].as<List>()) {
+            for (const auto &item : list->values()) {
+                std::cerr << item;
+            }
+        } else {
+            std::cerr << values[0];
+        }
+        std::cerr << std::endl;
         return Value();
     });
-    natives["read word"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["get (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+        return values[0];
+    });
+
+    natives["read (a) word"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         std::string input;
         std::cin >> input;
         return input;
     });
-    natives["read line"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["read (a) line"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         std::string input;
         std::getline(std::cin, input);
         return input;
@@ -105,15 +126,15 @@ Map<std::string, Strong<Native>> builtins() {
     natives["(the) type (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         return values[0].typeName();
     });
-    natives["sin (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["(the) sin (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         auto argument = values[0].castFloat();
         return sin(argument);
     });
-    natives["cos (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["(the) cos (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         auto argument = values[0].castFloat();
         return cos(argument);
     });
-    natives["tan (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
+    natives["(the) tan (of) (:)"] = MakeStrong<Native>(1, [](Value *values) -> Value {
         auto argument = values[0].castFloat();
         return tan(argument);
     });

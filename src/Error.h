@@ -18,7 +18,7 @@
 
 #include "Common.h"
 #include "ast/Node.h"
-#include "parser/Scanner.h"
+#include "compiler/Scanner.h"
 
 CH_NAMESPACE_BEGIN
 

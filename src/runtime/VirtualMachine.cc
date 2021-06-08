@@ -347,12 +347,14 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, Value());
                 break;
             }
-            case Opcode::It:
+            case Opcode::It: {
                 _variables["it"] = Pop(_stack);
                 break;
-            case Opcode::Show:
+            }
+            case Opcode::Show: {
                 std::cout << Peek(_stack) << std::endl;
                 break;
+            }
         }
     }
 }
@@ -365,9 +367,20 @@ bool VirtualMachine::call(Value object, int count) {
             _stack.size() - count - 1
         });
     } else if (auto native = object.as<Native>()) {
-        auto result = native->callable()(&_stack.end()[-count]);
-        _stack.erase(_stack.end() - count - 1, _stack.end());
-        Push(_stack, result);
+        try {
+            auto result = native->callable()(&_stack.end()[-count]);
+            _stack.erase(_stack.end() - count - 1, _stack.end());
+            Push(_stack, result);
+        } catch (const RuntimeError &error) {
+            _error = error;
+            return true;
+        } catch (...) {
+            _error = RuntimeError(
+                fn->bytecode()->location(frame().ip - 3),
+                "an unexpected error occurred"
+            );
+        return true;
+        }
     } else {
         _error = RuntimeError(
             fn->bytecode()->location(frame().ip - 3),

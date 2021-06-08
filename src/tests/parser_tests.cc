@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "parser/Scanner.h"
-#include "parser/Parser.h"
+#include "compiler/Scanner.h"
+#include "compiler/Parser.h"
 #include "tests/TestSuite.h"
 
 #include <filesystem>

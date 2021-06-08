@@ -18,8 +18,8 @@
 
 #include "Common.h"
 #include "runtime/Object.h"
-#include "parser/Bytecode.h"
-#include "parser/FunctionSignature.h"
+#include "compiler/Bytecode.h"
+#include "compiler/FunctionSignature.h"
 
 CH_NAMESPACE_BEGIN
 

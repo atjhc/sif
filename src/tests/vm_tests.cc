@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "parser/VirtualMachine.h"
-#include "parser/Bytecode.h"
+#include "runtime/VirtualMachine.h"
+#include "compiler/Bytecode.h"
 #include "tests/TestSuite.h"
 
 #include <filesystem>

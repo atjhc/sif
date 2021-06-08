@@ -19,7 +19,7 @@
 #include "Common.h"
 #include "runtime/Object.h"
 #include "runtime/Value.h"
-#include "parser/FunctionSignature.h"
+#include "compiler/FunctionSignature.h"
 
 CH_NAMESPACE_BEGIN
 

@@ -18,7 +18,7 @@
 
 #include "Common.h"
 #include "Utilities.h"
-#include "runtime/Error.h"
+#include "Error.h"
 
 #include <cstdlib>
 #include <iomanip>
