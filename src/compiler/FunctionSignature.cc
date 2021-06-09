@@ -30,7 +30,7 @@ static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
 }
 
 static inline std::string Name(const FunctionSignature::Choice &choice) {
-    return Concat("(", Join(choice.tokens, "/"), ")");
+    return Join(choice.tokens, "/");
 }
 
 static inline std::ostream &operator<<(std::ostream &out, const FunctionSignature::Choice &choice) {
@@ -69,20 +69,8 @@ static inline std::ostream &operator<<(std::ostream &out, const FunctionSignatur
 
 FunctionSignature FunctionSignature::Make(const std::string &format) {
     Scanner scanner(format.c_str(), format.c_str() + format.length());
-    ParserConfig config;
-    config.disableNatives = true;
-    Parser parser(config, scanner);
+    Parser parser(ParserConfig(), scanner);
     return parser.parseFunctionSignature();
-}
-
-size_t FunctionSignature::arity() const {
-    size_t arity = 0;
-    for (const auto &term : terms) {
-        if (std::holds_alternative<FunctionSignature::Argument>(term)) {
-            arity++;
-        }
-    }
-    return arity;
 }
 
 std::string FunctionSignature::name() const {

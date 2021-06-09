@@ -15,12 +15,8 @@
 
 CH_NAMESPACE_BEGIN
 
-Native::Native(size_t arity, const Native::Callable &callable)
-    : _arity(arity), _callable(callable) {}
-
-size_t Native::arity() const {
-    return _arity;
-}
+Native::Native(const Native::Callable &callable)
+    : _callable(callable) {}
 
 const Native::Native::Callable &Native::callable() const {
     return _callable;

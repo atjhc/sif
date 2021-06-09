@@ -1,11 +1,11 @@
 -- Print a line of text to stdout using the "print line" function:
 print "Hello, World!"
 
--- Print text without a newline, by using the "print" function:
-print "Prompt: "
+-- Print text without a newline, by using the "write" function:
+write "Prompt: "
 
--- Read a line of text:
-read line
+-- Read a line of text (note: "a" is optional):
+read a line
 
 -- The value is automatically captured into the "it" variable:
 print it
@@ -19,19 +19,35 @@ set myName to "James"
 -- You may optionally indicate a type decorator for readability:
 set myName: string to "James"
 
-set myName: string to 30
-
--- If statements can be a single line:
+-- "if" statements can be a single line:
 if myName is "James" then print line "Hello, James!"
 
 -- Or span multiple lines as a block:
 else
-  print line "I don't know you"
+  print "I don't know you"
   quit program
 end if
 
 -- Use "repeat" to loop over code:
+print "Welcome, James"
 repeat
-  print line "Prove it"
+  write "> "
+  read a line
+  set input to it
+  if input is empty then exit repeat
+  else print "I don't understand '", input, "'"
+end repeat
 
-print the max of four, five, six
+-- Functions may have multiple words in their name:
+function the password
+  return "12345"
+end function
+
+-- 
+write "Password: "
+read a line
+if it is the password then print "Correct"
+else print "Get out"
+
+-- 
+function something (optional)

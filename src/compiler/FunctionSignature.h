@@ -39,7 +39,6 @@ struct FunctionSignature {
 
     static FunctionSignature Make(const std::string &format);
 
-    size_t arity() const;
     std::string name() const;
     std::string description() const;
 

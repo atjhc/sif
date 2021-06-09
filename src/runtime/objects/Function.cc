@@ -16,14 +16,10 @@
 CH_NAMESPACE_BEGIN
 
 Function::Function(const FunctionSignature &signature, const Strong<Bytecode> &bytecode)
-    : _signature(signature), _bytecode(bytecode), _arity(signature.arity()) {}
+    : _signature(signature), _bytecode(bytecode) {}
 
 const Strong<Bytecode> &Function::bytecode() const {
     return _bytecode;
-}
-
-size_t Function::arity() const {
-    return _arity;
 }
 
 std::string Function::typeName() const {

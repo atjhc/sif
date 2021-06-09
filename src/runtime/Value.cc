@@ -141,7 +141,7 @@ size_t ValueHasher::operator()(const Value& value) const {
 }
 
 std::ostream &operator<<(std::ostream &out, const std::monostate &) {
-    return out << "Empty";
+    return out << "empty";
 }
 
 std::ostream &operator<<(std::ostream &out, const Value &value) {

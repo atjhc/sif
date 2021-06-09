@@ -29,8 +29,6 @@ class Function : public Object {
 
     const Strong<Bytecode> &bytecode() const;
 
-    size_t arity() const;
-
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
@@ -38,7 +36,6 @@ class Function : public Object {
   private:
     FunctionSignature _signature;
     Strong<Bytecode> _bytecode;
-    size_t _arity;
 };
 
 CH_NAMESPACE_END

@@ -122,7 +122,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 auto offset = ReadJump(frame().ip);
                 auto value = Peek(_stack);
                 if (!value.isBool()) {
-                    _error = RuntimeError(frame().bytecode->location(frame().ip - 1), "expected bool type");
+                    _error = RuntimeError(frame().bytecode->location(frame().ip - 1), "expected true or false");
                     return None;
                 }
                 if (!value.asBool()) {
@@ -134,7 +134,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 auto offset = ReadJump(frame().ip);
                 auto value = Peek(_stack);
                 if (!value.isBool()) {
-                    _error = RuntimeError(frame().bytecode->location(frame().ip - 1), "expected bool type");
+                    _error = RuntimeError(frame().bytecode->location(frame().ip - 1), "expected true or false");
                     return None;
                 }
                 if (value.asBool()) {
@@ -153,7 +153,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             }
             case Opcode::Constant: {
                 auto index = ReadConstant(frame().ip);
-                Push(_stack, frame().bytecode->constants().at(index));
+                Push(_stack, frame().bytecode->constants()[index]);
                 break;
             }
             case Opcode::Short: {
@@ -227,7 +227,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 if (!value.isBool()) {
                     _error = RuntimeError(
                         bytecode->location(frame().ip - 1), 
-                        "expected a bool"
+                        "expected true or false"
                     );
                     return None;
                 }

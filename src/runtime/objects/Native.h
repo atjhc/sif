@@ -27,9 +27,8 @@ class Native : public Object {
   public:
     using Callable = std::function<Value(Value*)>;
 
-    Native(size_t arity, const Callable &callable);
+    Native(const Callable &callable);
 
-    size_t arity() const;
     const Callable &callable() const;
 
     std::string typeName() const override;
@@ -37,7 +36,6 @@ class Native : public Object {
     bool equals(Strong<Object>) const override;
 
   private:
-    size_t _arity;
     Callable _callable;
 };
 

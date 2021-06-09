@@ -61,8 +61,6 @@ struct ParserConfig {
     bool enableTracing = false;
 #endif
 
-    bool disableNatives = false;
-
     ParserConfig(const std::string &n = "<stdin>", std::ostream &cerr = std::cerr)
         : fileName(n), cerr(cerr) {}
 };
