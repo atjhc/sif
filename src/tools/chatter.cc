@@ -230,7 +230,7 @@ int evaluate(const std::string &name, const std::string &source) {
     auto statement = parser.parse();
     if (!statement) {
         for (auto error : parser.errors()) {
-            report(name, error.token().location, source, error.what());
+            report(name, error.token().location, source, Concat("parser error, ", error.what()));
         }
         return ParseFailure;
     }
@@ -250,7 +250,7 @@ int evaluate(const std::string &name, const std::string &source) {
     auto bytecode = compiler.compile();
     if (!bytecode) {
         for (auto error : compiler.errors()) {
-            report(name, error.node().location, source, error.what());
+            report(name, error.node().location, source, Concat("compiler error, ", error.what()));
         }
         return CompileFailure;
     }
@@ -262,7 +262,7 @@ int evaluate(const std::string &name, const std::string &source) {
 
     vm.execute(bytecode);
     if (vm.error()) {
-        report(name, vm.error().value().location(), source, vm.error().value().what());
+        report(name, vm.error().value().location(), source, Concat("runtime error, ", vm.error().value().what()));
         return RuntimeFailure;
     }
 

@@ -147,7 +147,7 @@ Token& Parser::_previous() {
     if (_tokens.size() > 1) {
         return _tokens[_index - 1];
     }
-    throw std::runtime_error("unexpected error");
+    throw std::runtime_error("scanner underflow");
 }
 
 void Parser::_synchronize() {
@@ -200,7 +200,6 @@ void Parser::_trace(const std::string &message) {
 bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
     const auto &term = signature.terms[index];
     if (auto token = std::get_if<Token>(&term)) {
-        trace(Concat("Checking token ", Quoted(token->text)));
         if (_peek().type == token->type && lowercase(_peek().text) == lowercase(token->text)) {
             _advance();
             return true;
@@ -208,7 +207,6 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vect
         return false;
     }
     if (auto option = std::get_if<FunctionSignature::Option>(&term)) {
-        trace(Concat("Checking optional token ", Quoted(option->token.text)));
         if (_peek().type == option->token.type && lowercase(_peek().text) == lowercase(option->token.text)) {
             tokens.push_back(_advance());
         } else {
@@ -217,7 +215,6 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vect
         return true;
     }
     if (auto argument = std::get_if<FunctionSignature::Argument>(&term)) {
-        trace(Concat("Checking argument"));
         if (index == signature.terms.size() - 1) {
             if (auto matchedExpression = _parseList()) {
                 arguments.push_back(std::move(matchedExpression));
@@ -231,9 +228,7 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vect
         }
         return false;
     }
-
     if (auto choice = std::get_if<FunctionSignature::Choice>(&term)) {
-        trace(Concat("Checking choice"));
         for (const auto &token : choice->tokens) {
             if (_peek().isWord() && lowercase(_peek().text) == lowercase(token.text)) {
                 tokens.push_back(_advance());
@@ -665,7 +660,7 @@ Owned<Expression> Parser::_parsePrimary() {
         return variable;
     }
 
-    throw SyntaxError(_peek(), Concat("unexpected expression"));
+    throw SyntaxError(_peek(), Concat("expected expression, not ", Quoted(_peek().description())));
 }
 
 Owned<Expression> Parser::_parseListLiteral() {
