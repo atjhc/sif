@@ -120,6 +120,7 @@ class Parser {
     Owned<Expression> _parseEquality();
     Owned<Expression> _parseComparison();
     Owned<Expression> _parseList();
+    Owned<Expression> _parseRange();
     Owned<Expression> _parseTerm();
     Owned<Expression> _parseFactor();
     Owned<Expression> _parseExponent();
@@ -127,6 +128,7 @@ class Parser {
     Owned<Expression> _parseCall();
     Owned<Expression> _parseSubscript();
     Owned<Expression> _parsePrimary();
+    Owned<Expression> _parseGrouping();
     Owned<Expression> _parseListLiteral();
     Owned<Expression> _parseDictionaryLiteral();
 

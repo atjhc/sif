@@ -18,6 +18,8 @@
 
 #include "Common.h"
 #include "runtime/Object.h"
+#include "runtime/Value.h"
+#include "runtime/objects/Range.h"
 
 #include <string>
 
@@ -28,6 +30,9 @@ class String : public Object {
     String(const std::string &string);
 
     const std::string &string() const;
+
+    Value operator[](int64_t) const;
+    Value operator[](const Range &range) const;
 
     std::string typeName() const override;
     std::string description() const override;

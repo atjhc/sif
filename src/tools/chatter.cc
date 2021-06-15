@@ -60,6 +60,13 @@ VirtualMachine vm;
 Map<std::string, Strong<Native>> natives = builtins();
 
 Map<std::string, Strong<Native>> builtins() {
+    static std::random_device rd;
+    static std::mt19937 engine(rd());
+    auto random = [&](int max) { 
+        std::uniform_int_distribution<int> dist(0, max - 1);
+        return dist(engine);
+    };
+
     Map<std::string, Strong<Native>> natives;
     natives["quit"] = MakeStrong<Native>([](Value *values) -> Value {
         exit(0);
@@ -69,6 +76,10 @@ Map<std::string, Strong<Native>> builtins() {
     });
     natives["write (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         std::cout << values[0];
+        return Value();
+    });
+    natives["write error (:)"] = MakeStrong<Native>([](Value *values) -> Value {
+        std::cerr << values[0];
         return Value();
     });
     natives["print (:)"] = MakeStrong<Native>([](Value *values) -> Value {
@@ -96,7 +107,6 @@ Map<std::string, Strong<Native>> builtins() {
     natives["get (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         return values[0];
     });
-
     natives["read (a) word"] = MakeStrong<Native>([](Value *values) -> Value {
         std::string input;
         std::cin >> input;
@@ -106,6 +116,14 @@ Map<std::string, Strong<Native>> builtins() {
         std::string input;
         std::getline(std::cin, input);
         return input;
+    });
+    natives["(the) long description (of) (:)"] = MakeStrong<Native>([](Value *values) -> Value {
+        return values[0].description();
+    });
+    natives["(the) (short) description (of) (:)"] = MakeStrong<Native>([](Value *values) -> Value {
+        std::ostringstream ss;
+        ss << values[0];
+        return ss.str();
     });
     natives["(the) size (of) (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         size_t size = 0;
@@ -118,10 +136,15 @@ Map<std::string, Strong<Native>> builtins() {
         }
         return static_cast<long>(size);
     });
-    natives["item (:) of (:)"] = MakeStrong<Native>([](Value *values) -> Value {
+    natives["item (:) in/of (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         auto index = values[0].asInteger();
         auto list = values[1].as<List>();
         return list->values()[index];
+    });
+    natives["remove (:) from (:)"] = MakeStrong<Native>([](Value *values) -> Value {
+        auto dictionary = values[1].as<Dictionary>();
+        dictionary->values().erase(values[0]);
+        return values[1];
     });
     natives["(the) type (of) (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         return values[0].typeName();
@@ -149,6 +172,10 @@ Map<std::string, Strong<Native>> builtins() {
         auto text = values[2].as<String>();
         return range_chunk(chunk::character, start, end, text->string()).get();
     });
+    natives["any char/character of (:)"] = MakeStrong<Native>([random](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return random_chunk(chunk::character, random, text->string()).get();
+    });
     natives["(the) mid/middle char/character of (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         auto text = values[0].as<String>();
         return middle_chunk(chunk::character, text->string()).get();
@@ -172,6 +199,10 @@ Map<std::string, Strong<Native>> builtins() {
         auto text = values[2].as<String>();
         return range_chunk(chunk::word, start, end, text->string()).get();
     });
+    natives["any word of (:)"] = MakeStrong<Native>([random](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return random_chunk(chunk::word, random, text->string()).get();
+    });
     natives["(the) mid/middle word of (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         auto text = values[0].as<String>();
         return middle_chunk(chunk::word, text->string()).get();
@@ -194,6 +225,10 @@ Map<std::string, Strong<Native>> builtins() {
         auto end = values[1].asInteger();
         auto text = values[2].as<String>();
         return range_chunk(chunk::line, start, end, text->string()).get();
+    });
+    natives["any line of (:)"] = MakeStrong<Native>([random](Value *values) -> Value {
+        auto text = values[0].as<String>();
+        return random_chunk(chunk::line, random, text->string()).get();
     });
     natives["(the) mid/middle line of (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         auto text = values[0].as<String>();

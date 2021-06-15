@@ -77,6 +77,14 @@ Token Scanner::scan() {
     case '>': return _make(_match('=') ? Token::Type::GreaterThanOrEqual : Token::Type::GreaterThan);
     case '"': return _scanString('"');
     case '\'': return _scanString('\'');
+    case '.':
+        if (_match('.')) {
+            if (_match('.')) {
+                return _make(Token::Type::ThreeDots);
+            } else if (_match('<')) {
+                return _make(Token::Type::ClosedRange);
+            }
+        }
     }
     return _makeError(Concat("unknown character: ", int(c)));
 }
@@ -204,6 +212,9 @@ Token Scanner::_scanNumber() {
     }
 
     if (!_isAtEnd() && _current[0] == '.') {
+        if (_end - _current > 1 && _current[1] == '.') {
+            return _make(Token::Type::IntLiteral);
+        }
         _advance();
         while (!_isAtEnd() && isdigit(_current[0])) {
             _advance();

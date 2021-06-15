@@ -73,6 +73,8 @@ struct Token {
         Carrot,
         Percent,
         Arrow,
+        ThreeDots,
+        ClosedRange,
         StringLiteral,
         BoolLiteral,
         IntLiteral,

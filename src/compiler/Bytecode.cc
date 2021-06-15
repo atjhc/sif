@@ -141,6 +141,8 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Return:        out << "Return"; return position + 1;
     case Opcode::Constant:      return disassembleConstant(out, "Constant", position);
     case Opcode::Short:         return disassembleShort(out, position);
+    case Opcode::OpenRange:     out << "OpenRange"; return position + 1;
+    case Opcode::ClosedRange:   out << "ClosedRange"; return position + 1;
     case Opcode::List:          return disassembleList(out, position);
     case Opcode::Dictionary:    return disassembleDictionary(out, position);
     case Opcode::GetGlobal:     return disassembleConstant(out, "GetGlobal", position);

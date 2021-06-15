@@ -24,13 +24,13 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b((print\s+line)|(read\s+line)|(print\s+error))\b</string>
+			<string>\b((read\s+(a\s+)?line)|(print\s+error)|(write\s+error))\b</string>
 			<key>name</key>
 			<string>keyword.other.chatter</string>
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b(print)\b</string>
+			<string>\b(print|write)\b</string>
 			<key>name</key>
 			<string>keyword.other.chatter</string>
 		</dict>

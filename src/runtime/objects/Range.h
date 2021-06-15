@@ -24,18 +24,22 @@
 
 CH_NAMESPACE_BEGIN
 
-class Dictionary : public Object {
+class Range : public Object {
   public:
-    Dictionary(const ValueMap &values);
+    Range(Optional<int64_t> start, Optional<int64_t> end, bool closed);
 
-    ValueMap &values();
+    Optional<int64_t> start() const;
+    Optional<int64_t> end() const;
+    bool closed() const;
 
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
 
   private:
-    ValueMap _values;
+    Optional<int64_t> _start;
+    Optional<int64_t> _end;
+    bool _closed;
 };
 
 CH_NAMESPACE_END

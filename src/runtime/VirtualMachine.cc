@@ -16,6 +16,7 @@
 
 #include "runtime/VirtualMachine.h"
 #include "runtime/objects/String.h"
+#include "runtime/objects/Range.h"
 #include "runtime/objects/List.h"
 #include "runtime/objects/Dictionary.h"
 #include "runtime/objects/Function.h"
@@ -187,6 +188,22 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, _stack[frame().sp + index]);
                 break;
             }
+            case Opcode::OpenRange: {
+                auto end = Pop(_stack);
+                auto start = Pop(_stack);
+                if (range(start, end, false)) {
+                    return None;
+                }
+                break;
+            }
+            case Opcode::ClosedRange: {
+                auto end = Pop(_stack);
+                auto start = Pop(_stack);
+                if (range(start, end, true)) {
+                    return None;
+                }
+                break;
+            }
             case Opcode::List: {
                 const auto count = ReadConstant(frame().ip);
                 std::vector<Value> values(count);
@@ -215,7 +232,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                     Push(_stack, -value.asFloat());
                 } else {
                     _error = RuntimeError(
-                        bytecode->location(frame().ip - 1),
+                        frame().bytecode->location(frame().ip - 1),
                         "expected a number"
                     );
                     return None;
@@ -226,7 +243,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 auto value = Pop(_stack);
                 if (!value.isBool()) {
                     _error = RuntimeError(
-                        bytecode->location(frame().ip - 1), 
+                        frame().bytecode->location(frame().ip - 1), 
                         "expected true or false"
                     );
                     return None;
@@ -273,7 +290,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 if (lhs.isNumber() && rhs.isNumber()) {
                     Push(_stack, pow(lhs.castFloat(), rhs.castFloat()));
                 } else {
-                    _error = RuntimeError(bytecode->location(frame().ip - 1), "expected floating point values");
+                    _error = RuntimeError(frame().bytecode->location(frame().ip - 1), "expected floating point values");
                     return None;
                 }
                 break;
@@ -286,7 +303,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 } else if (lhs.isFloat() && rhs.isFloat()) {
                     Push(_stack, fmod(lhs.asFloat(), rhs.asFloat()));
                 } else {
-                    _error = RuntimeError(bytecode->location(frame().ip - 1), "mismatched types");
+                    _error = RuntimeError(frame().bytecode->location(frame().ip - 1), "mismatched types");
                     return None;
                 }
                 break;
@@ -376,14 +393,14 @@ bool VirtualMachine::call(Value object, int count) {
             return true;
         } catch (...) {
             _error = RuntimeError(
-                fn->bytecode()->location(frame().ip - 3),
+                frame().bytecode->location(frame().ip - 3),
                 "an unexpected error occurred"
             );
         return true;
         }
     } else {
         _error = RuntimeError(
-            fn->bytecode()->location(frame().ip - 3),
+            frame().bytecode->location(frame().ip - 3),
             "unexpected type for function call"
         );
         return true;
@@ -393,22 +410,28 @@ bool VirtualMachine::call(Value object, int count) {
 
 bool VirtualMachine::subscript(Value lhs, Value rhs) {
     if (auto list = lhs.as<List>()) {
-        if (!rhs.isInteger()) {
-            _error = RuntimeError(
-                frame().bytecode->location(frame().ip - 1),
-                "expected an integer"
-            );
-            return true;
+        if (auto range = rhs.as<Range>()) {
+            Push(_stack, (*list)[*range]);
+            return false;
         }
-        auto index = rhs.asInteger();
-        if (index >= static_cast<int>(list->values().size()) || static_cast<int>(list->values().size()) + index < 0) {
-            _error = RuntimeError(
-                frame().bytecode->location(frame().ip - 1),
-                "array index out of bounds"
-            );
-            return true;
+        if (rhs.isInteger()) {
+            auto index = rhs.asInteger();
+            if (index >= static_cast<int>(list->values().size()) || static_cast<int>(list->values().size()) + index < 0) {
+                _error = RuntimeError(
+                    frame().bytecode->location(frame().ip - 1),
+                    "array index out of bounds"
+                );
+                return true;
+            }
+            Push(_stack, list->values()[index < 0 ? list->values().size() + index : index]);
+            return false;
         }
-        Push(_stack, list->values()[index < 0 ? list->values().size() + index : index]);
+
+        _error = RuntimeError(
+            frame().bytecode->location(frame().ip - 1),
+            "expected an integer or range"
+        );
+        return true;
     } else if (auto dictionary = lhs.as<Dictionary>()) {
         auto it = dictionary->values().find(rhs);
         if (it == dictionary->values().end()) {
@@ -440,6 +463,32 @@ bool VirtualMachine::subscript(Value lhs, Value rhs) {
         );
         return true;
     }
+    return false;
+}
+
+bool VirtualMachine::range(Value start, Value end, bool closed) {
+    if (!start.isInteger()) {
+        _error = RuntimeError(
+            frame().bytecode->location(frame().ip - 1),
+            "expected an integer"
+        );
+        return true;
+    }
+    if (!end.isInteger()) {
+        _error = RuntimeError(
+            frame().bytecode->location(frame().ip - 1),
+            "expected an integer"
+        );
+        return true;
+    }
+    if (end.asInteger() < start.asInteger()) {
+        _error = RuntimeError(
+            frame().bytecode->location(frame().ip - 1),
+            "lower bound must be less than or equal to the upper bound"
+        );
+        return true;
+    }
+    Push(_stack, MakeStrong<Range>(start.asInteger(), end.asInteger(), closed));
     return false;
 }
 

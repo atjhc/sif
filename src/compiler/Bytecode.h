@@ -30,6 +30,8 @@ enum class Opcode : uint8_t {
     Repeat,
     Pop,
     Constant,
+    OpenRange,
+    ClosedRange,
     List,
     Dictionary,
     Short,

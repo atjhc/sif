@@ -23,8 +23,9 @@ Outlook not so good
 Very doubtful"
 
 repeat
-  print "? : "
-  set question to read line
+  write "? : "
+  read a line
+  set question to it
   if the size of question is 0 then exit repeat
-  print line any line of answers
+  print any line of answers
 end repeat

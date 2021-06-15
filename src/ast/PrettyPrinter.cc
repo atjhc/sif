@@ -105,22 +105,6 @@ void PrettyPrinter::visit(const Repeat &repeat) {
 //     out << indentString() << "end repeat";
 // }
 
-// void PrettyPrinter::visit(const RepeatRange &r) {
-//     out << "repeat with ";
-//     r.variable->accept(*this);
-//     out << " = ";
-//     r.startExpression->accept(*this);
-//     if (r.ascending) {
-//         out << " to ";
-//     } else {
-//         out << " down to ";
-//     }
-//     r.endExpression->accept(*this);
-//     out << std::endl;
-//     print(*r.statements);
-//     out << indentString() << "end repeat";
-// }
-
 void PrettyPrinter::visit(const RepeatCondition &repeat) {
     out << "repeat";
     if (repeat.conditionValue) {
@@ -248,6 +232,16 @@ void PrettyPrinter::visit(const Unary &e) {
     e.expression->accept(*this);
 }
 
+void PrettyPrinter::visit(const RangeLiteral &range) {
+    if (range.start) {
+        range.start->accept(*this);
+    }
+    out << (range.closed ? "..." : "..<");
+    if (range.end) {
+        range.end->accept(*this);
+    }
+}
+
 void PrettyPrinter::visit(const ListLiteral &list) {
     auto it = list.expressions.begin();
     while (it != list.expressions.end()) {
@@ -260,7 +254,7 @@ void PrettyPrinter::visit(const ListLiteral &list) {
 }
 
 void PrettyPrinter::visit(const DictionaryLiteral &dictionary) {
-    out << "[";
+    out << "{";
     auto it = dictionary.values.begin();
     while (it != dictionary.values.end()) {
         it->first->accept(*this);
@@ -271,7 +265,7 @@ void PrettyPrinter::visit(const DictionaryLiteral &dictionary) {
             out << ", ";
         }
     }
-    out << "]";
+    out << "}";
 }
 
 void PrettyPrinter::visit(const Literal &literal) {

@@ -17,7 +17,7 @@ CH_NAMESPACE_BEGIN
 
 Dictionary::Dictionary(const ValueMap &values) : _values(values) {}
 
-const ValueMap &Dictionary::values() const {
+ValueMap &Dictionary::values() {
     return _values;
 }
     

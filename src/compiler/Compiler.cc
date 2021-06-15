@@ -328,6 +328,16 @@ void Compiler::visit(const Unary &unary) {
     }
 }
 
+void Compiler::visit(const RangeLiteral &list) {
+    if (list.start) {
+        list.start->accept(*this);
+    }
+    if (list.end) {
+        list.end->accept(*this);
+    }
+    bytecode().add(list.location, (list.closed ? Opcode::ClosedRange : Opcode::OpenRange));
+}
+
 void Compiler::visit(const ListLiteral &list) {
     for (const auto &expression : list.expressions) {
         expression->accept(*this);

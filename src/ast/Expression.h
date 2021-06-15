@@ -31,6 +31,7 @@ struct Binary;
 struct Unary;
 struct Grouping;
 struct Variable;
+struct RangeLiteral;
 struct ListLiteral;
 struct DictionaryLiteral;
 struct Literal;
@@ -42,6 +43,7 @@ struct Expression : Node {
         virtual void visit(const Unary &) = 0;
         virtual void visit(const Grouping &) = 0;
         virtual void visit(const Variable &) = 0;
+        virtual void visit(const RangeLiteral &) = 0;
         virtual void visit(const ListLiteral &) = 0;
         virtual void visit(const DictionaryLiteral &) = 0;
         virtual void visit(const Literal &) = 0;
@@ -108,6 +110,16 @@ struct Grouping : Expression {
     Owned<Expression> expression;
 
     Grouping(Owned<Expression> expression);
+
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+};
+
+struct RangeLiteral : Expression {
+    Owned<Expression> start;
+    Owned<Expression> end;
+    bool closed;
+
+    RangeLiteral(Owned<Expression> start, Owned<Expression> end, bool closed);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

@@ -19,6 +19,7 @@
 #include "Common.h"
 #include "runtime/Object.h"
 #include "runtime/Value.h"
+#include "runtime/objects/Range.h"
 
 #include <string>
 
@@ -28,7 +29,10 @@ class List : public Object {
   public:
     List(const std::vector<Value> &values);
 
-    const std::vector<Value> &values() const;
+    std::vector<Value> &values();
+
+    Value operator[](int64_t) const;
+    Value operator[](const Range &range) const;
 
     std::string typeName() const override;
     std::string description() const override;

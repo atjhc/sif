@@ -45,6 +45,7 @@ private:
 
     bool call(Value, int count);
     bool subscript(Value, Value);
+    bool range(Value, Value, bool);
 
     struct CallFrame {
         Strong<Bytecode> bytecode;

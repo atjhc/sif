@@ -540,7 +540,7 @@ Owned<Expression> Parser::_parseComparison() {
 }
 
 Owned<Expression> Parser::_parseList() {
-    auto expression = _parseTerm();
+    auto expression = _parseRange();
 
     if (_check({Token::Type::Comma})) {
         auto location = expression->location;
@@ -548,13 +548,24 @@ Owned<Expression> Parser::_parseList() {
         std::vector<Owned<Expression>> expressions;
         expressions.push_back(std::move(expression));
         while (_match({Token::Type::Comma})) {
-            expressions.push_back(_parseTerm());
+            expressions.push_back(_parseRange());
         }
 
         expression = MakeOwned<ListLiteral>(std::move(expressions));
         expression->location = location;
     }
 
+    return expression;
+}
+
+Owned<Expression> Parser::_parseRange() {
+    auto expression = _parseTerm();
+    auto location = expression->location;
+    while (auto rangeOperator = _match({Token::Type::ThreeDots, Token::Type::ClosedRange})) {
+        bool closed = rangeOperator.value().type == Token::Type::ThreeDots ? true : false;
+        expression = MakeOwned<RangeLiteral>(std::move(expression), _parseTerm(), closed);
+        expression->location = location;
+    }
     return expression;
 }
 
@@ -627,9 +638,9 @@ Owned<Expression> Parser::_parseSubscript() {
 
 Owned<Expression> Parser::_parsePrimary() {
     if (auto token = _match({
+        Token::Type::IntLiteral,
         Token::Type::FloatLiteral, 
         Token::Type::StringLiteral,
-        Token::Type::IntLiteral,
         Token::Type::BoolLiteral,
     })) {
         auto literal = MakeOwned<Literal>(token.value());
@@ -638,11 +649,7 @@ Owned<Expression> Parser::_parsePrimary() {
     }
     
     if (_match({Token::Type::LeftParen})) {
-        auto expression = _parseExpression();
-        _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
-        auto grouping = MakeOwned<Grouping>(std::move(expression));
-        grouping->location = grouping->expression->location;
-        return grouping;
+        return _parseGrouping();
     }
 
     if (_match({Token::Type::LeftBrace})) {
@@ -660,7 +667,15 @@ Owned<Expression> Parser::_parsePrimary() {
         return variable;
     }
 
-    throw SyntaxError(_peek(), Concat("expected expression, not ", Quoted(_peek().description())));
+    throw SyntaxError(_peek(), Concat("unexpected ", Quoted(_peek().description())));
+}
+
+Owned<Expression> Parser::_parseGrouping() {
+    auto expression = _parseExpression();
+    _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
+    auto grouping = MakeOwned<Grouping>(std::move(expression));
+    grouping->location = grouping->expression->location;
+    return grouping;
 }
 
 Owned<Expression> Parser::_parseListLiteral() {

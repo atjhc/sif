@@ -31,6 +31,9 @@ Grouping::Grouping(Owned<Expression> expression) : expression(std::move(expressi
 
 Variable::Variable(const Token &token, Optional<Token> typeName) : token(token), typeName(typeName) {}
 
+RangeLiteral::RangeLiteral(Owned<Expression> start, Owned<Expression> end, bool closed)
+    : start(std::move(start)), end(std::move(end)), closed(closed) {}
+
 ListLiteral::ListLiteral(std::vector<Owned<Expression>> expressions) : expressions(std::move(expressions)) {}
 
 DictionaryLiteral::DictionaryLiteral(Map<Owned<Expression>, Owned<Expression>> values) : values(std::move(values)) {}

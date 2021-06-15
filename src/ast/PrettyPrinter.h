@@ -60,6 +60,7 @@ class PrettyPrinter : public Statement::Visitor, public Expression::Visitor {
     void visit(const Unary &) override;
     void visit(const Grouping &) override;
     void visit(const Variable &) override;
+    void visit(const RangeLiteral &) override;
     void visit(const ListLiteral &) override;
     void visit(const DictionaryLiteral &) override;
     void visit(const Literal &) override;

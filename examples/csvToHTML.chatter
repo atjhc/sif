@@ -1,6 +1,6 @@
 -- http://rosettacode.org/wiki/CSV_to_HTML_translation
 
-function replace (src: string) with (dst: string) in (text: string) -> string
+function replace all (src: string) with (dst: string) in (text: string) -> string
   set result to empty
   repeat
     set index to the offset of src in text
@@ -23,9 +23,9 @@ function html of (csv: string)
     put "<tr>" after html
     repeat while row is not empty
       put item 1 of row into theItem
-      set theItem to replace "&" with "&amp;" in theItem
-      set theItem to replace "<" with "&lt;" in theItem
-      set theItem to replace ">" with "&gt;" in theItem
+      set theItem to replace all "&" with "&amp;" in theItem
+      set theItem to replace all "<" with "&lt;" in theItem
+      set theItem to replace all ">" with "&gt;" in theItem
       put "<td>" & theItem & "</td>" after html
       delete item 1 of row
     end repeat
@@ -34,7 +34,7 @@ function html of (csv: string)
   end repeat
   put "</table>\n" after html
   return html
-end csvToHTML
+end function
 
 set csv to "Character,Speech
 The multitude,The messiah! Show us the messiah!
