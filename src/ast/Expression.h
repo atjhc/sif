@@ -18,8 +18,8 @@
 
 #include "Common.h"
 #include "ast/Node.h"
-#include "compiler/Scanner.h"
 #include "compiler/FunctionSignature.h"
+#include "compiler/Scanner.h"
 
 #include <variant>
 #include <vector>
@@ -145,7 +145,7 @@ struct Variable : Expression {
     Optional<Token> typeName;
 
     Variable(const Token &token, Optional<Token> typeName = None);
-    
+
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 

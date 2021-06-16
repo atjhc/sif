@@ -37,6 +37,7 @@ class String : public Object {
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
+
   private:
     std::string _string;
 };

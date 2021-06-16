@@ -4,14 +4,14 @@ CC := clang++
 BISON := /usr/local/opt/bison/bin/bison
 FLEX := /usr/local/opt/flex/bin/flex
 
-LIBNAME := chatter.a
-TOOLNAME := chatter
+LIBNAME := sif.a
+TOOLNAME := sif
 INSTALL_DIR := /usr/local/bin
 
 DSTROOT := build
 SRCROOT := src
 
-TOOLS := $(SRCROOT)/tools/chatter.cc $(SRCROOT)/tools/tests.cc
+TOOLS := $(SRCROOT)/tools/sif.cc $(SRCROOT)/tools/tests.cc
 
 COMMON_HEADERS := $(SRCROOT)/Common.h $(SRCROOT)/Utilities.h
 
@@ -64,8 +64,8 @@ dstroot:
 $(DSTROOT)/test: $(DSTROOT)/$(LIBNAME) $(TEST_OBJ) $(SRCROOT)/tools/tests.cc
 	$(CC) $(CPPFLAGS) -o $(DSTROOT)/test $(SRCROOT)/tools/tests.cc $(TEST_OBJ) $(DSTROOT)/$(LIBNAME)
 
-$(DSTROOT)/$(TOOLNAME): $(DSTROOT)/$(LIBNAME) $(SRCROOT)/tools/chatter.cc
-	$(CC) $(CPPFLAGS) -o $(DSTROOT)/$(TOOLNAME) $(SRCROOT)/tools/chatter.cc $(DSTROOT)/$(LIBNAME)
+$(DSTROOT)/$(TOOLNAME): $(DSTROOT)/$(LIBNAME) $(SRCROOT)/tools/sif.cc
+	$(CC) $(CPPFLAGS) -o $(DSTROOT)/$(TOOLNAME) $(SRCROOT)/tools/sif.cc $(DSTROOT)/$(LIBNAME)
 
 $(DSTROOT)/$(LIBNAME): $(OBJ)
 	ar rc $(DSTROOT)/$(LIBNAME) $(OBJ)

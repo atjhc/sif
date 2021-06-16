@@ -17,9 +17,9 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/Object.h"
 #include "compiler/Bytecode.h"
 #include "compiler/FunctionSignature.h"
+#include "runtime/Object.h"
 
 CH_NAMESPACE_BEGIN
 

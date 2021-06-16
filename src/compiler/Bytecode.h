@@ -64,7 +64,7 @@ enum class Opcode : uint8_t {
 };
 
 class Bytecode {
-public:
+  public:
     using Iterator = std::vector<Opcode>::const_iterator;
 
     Bytecode() = default;
@@ -78,12 +78,12 @@ public:
     const std::string &name() const;
     const std::vector<Opcode> &code() const;
     const std::vector<Value> &constants() const;
-    
+
     Location location(Iterator it) const;
 
     friend std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode);
 
-private:
+  private:
     friend class VirtualMachine;
 
     Iterator disassembleConstant(std::ostream &, const std::string &, Iterator) const;

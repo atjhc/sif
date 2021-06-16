@@ -9,5 +9,5 @@
 testparams "1","2","3"
 testparams 1 2 3 
 3
-runtime/functions.chatter
+runtime/functions.sif
 10

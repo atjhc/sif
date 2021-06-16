@@ -19,8 +19,8 @@
 #include "Common.h"
 #include "compiler/Scanner.h"
 
-#include <vector>
 #include <variant>
+#include <vector>
 
 CH_NAMESPACE_BEGIN
 

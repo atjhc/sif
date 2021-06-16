@@ -1,8 +1,8 @@
 set x to 1
-repeat -- with x = 1 to 100
-  if x % 15 is 0 then print line "FizzBuzz" else
-    if x % 5 is 0 then print line "Buzz" else
-      if x % 3 is 0 then print line "Fizz" else print line x
+repeat
+  if x % 15 is 0 then print "FizzBuzz" else
+    if x % 5 is 0 then print "Buzz" else
+      if x % 3 is 0 then print "Fizz" else print x
     end if
   end if
   set x to x + 1

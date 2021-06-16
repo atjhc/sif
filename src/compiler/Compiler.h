@@ -19,15 +19,14 @@
 #include "Common.h"
 #include "Error.h"
 #include "ast/Expression.h"
-#include "ast/Statement.h"
 #include "ast/Repeat.h"
+#include "ast/Statement.h"
 #include "compiler/Bytecode.h"
 
 CH_NAMESPACE_BEGIN
 
-class Compiler: public Statement::Visitor, public Expression::Visitor {
-public:
-
+class Compiler : public Statement::Visitor, public Expression::Visitor {
+  public:
     Compiler(Owned<Statement> statement);
 
     Strong<Bytecode> compile();
@@ -35,22 +34,21 @@ public:
 
     const std::vector<CompileError> &errors() const;
 
-private:
-
+  private:
     Bytecode &bytecode();
     void error(const Node &node, const std::string &message);
 
     struct Local {
         std::string name;
-        int depth; 
+        int depth;
     };
 
     int findLocal(const std::string &name) const;
-    
+
     void assign(Location location, const std::string &name);
     void resolve(Location location, const std::string &name);
     void addReturn();
-    
+
 #pragma mark - Statement::Visitor
 
     void visit(const Block &) override;

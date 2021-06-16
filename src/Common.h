@@ -16,15 +16,15 @@
 
 #pragma once
 
+#include <cstdlib>
+#include <iostream>
 #include <optional>
 #include <sstream>
-#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <cstdlib>
 
-#define CH_NAMESPACE_BEGIN namespace chatter {
+#define CH_NAMESPACE_BEGIN namespace sif {
 #define CH_NAMESPACE_END }
 
 CH_NAMESPACE_BEGIN
@@ -56,19 +56,15 @@ template <class T, class... Args> std::shared_ptr<T> MakeStrong(Args &&...args) 
 
 static inline std::string Concat() { return std::string(); }
 
-template <typename... Args> 
-static inline std::string Concat(Args&&... args) {
-	std::ostringstream ss;
-	(ss << ... << args);
-	return ss.str();
+template <typename... Args> static inline std::string Concat(Args &&...args) {
+    std::ostringstream ss;
+    (ss << ... << args);
+    return ss.str();
 }
 
-static inline std::string Quoted(const std::string str) {
-    return "\"" + str + "\"";
-}
+static inline std::string Quoted(const std::string str) { return "\"" + str + "\""; }
 
-template <typename T>
-static inline std::string Join(T &&v, const std::string &sep) {
+template <typename T> static inline std::string Join(T &&v, const std::string &sep) {
     std::ostringstream ss;
     auto it = v.begin();
     while (it != v.end()) {
@@ -81,24 +77,21 @@ static inline std::string Join(T &&v, const std::string &sep) {
     return ss.str();
 }
 
-template <typename T>
-size_t HashRange(const T &v) {
-	size_t result = 1;
-	for (const auto &i : v) {
-		result = result * 31 + std::hash<typename T::value_type>{}(i);
-	}
-	return result;
+template <typename T> size_t HashRange(const T &v) {
+    size_t result = 1;
+    for (const auto &i : v) {
+        result = result * 31 + std::hash<typename T::value_type>{}(i);
+    }
+    return result;
 }
 
-template <typename... Args> 
-[[noreturn]] static inline void Abort(Args... args) {
+template <typename... Args> [[noreturn]] static inline void Abort(Args... args) {
     std::cerr << Concat(args...) << std::endl;
     std::abort();
 }
 
-template<typename T>
-constexpr typename std::underlying_type<T>::type RawValue(T e) {
-   return static_cast<typename std::underlying_type<T>::type>(e);
+template <typename T> constexpr typename std::underlying_type<T>::type RawValue(T e) {
+    return static_cast<typename std::underlying_type<T>::type>(e);
 }
 
 struct Location {
@@ -117,7 +110,7 @@ static inline std::ostream &operator<<(std::ostream &out, const Location &locati
     return out << Concat(location.lineNumber, ":", location.position);
 }
 
-template<class... Ts> struct Overload : Ts... { using Ts::operator()...; };
-template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
+template <class... Ts> struct Overload : Ts... { using Ts::operator()...; };
+template <class... Ts> Overload(Ts...) -> Overload<Ts...>;
 
 CH_NAMESPACE_END

@@ -24,7 +24,6 @@ CH_NAMESPACE_BEGIN
 
 class SyntaxError : public std::runtime_error {
   public:
-    
     SyntaxError(const Token &token, const std::string &what)
         : std::runtime_error(what), _token(token) {}
 
@@ -36,7 +35,6 @@ class SyntaxError : public std::runtime_error {
 
 class CompileError : public std::runtime_error {
   public:
-    
     CompileError(const Node &node, const std::string &what)
         : std::runtime_error(what), _node(node) {}
 
@@ -48,14 +46,13 @@ class CompileError : public std::runtime_error {
 
 class RuntimeError : public std::runtime_error {
   public:
-
     RuntimeError(const Location &location, const std::string &what)
         : std::runtime_error(what), _location(location) {}
-  
+
     const Location &location() const { return _location; }
 
   private:
-    Location _location;  
+    Location _location;
 };
 
 CH_NAMESPACE_END

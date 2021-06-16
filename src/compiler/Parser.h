@@ -17,14 +17,14 @@
 #pragma once
 
 #include "Common.h"
-#include "compiler/Scanner.h"
+#include "Error.h"
 #include "ast/Expression.h"
 #include "ast/Statement.h"
-#include "Error.h"
+#include "compiler/Scanner.h"
 
 #include <iostream>
-#include <stack>
 #include <set>
+#include <stack>
 
 CH_NAMESPACE_BEGIN
 
@@ -83,19 +83,22 @@ class Parser {
     Token _consume(Token::Type type, const std::string &error);
     Token _consumeEnd(Token::Type type);
     Token _consumeNewLine();
-    Token _consumeWord();
-    Token& _scan();
-    Token& _advance();
-    Token& _peek();
-    Token& _previous();
+    Token _consumeWord(const std::string &message = "expected a word");
+    Token &_scan();
+    Token &_advance();
+    Token &_peek();
+    Token &_previous();
     void _synchronize();
 
     void _checkpoint();
     void _rewind();
     void _commit();
 
-    bool _matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments);
-    bool _matchTerm(const FunctionSignature &signature, int index, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments);
+    bool _matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens,
+                         std::vector<Owned<Expression>> &arguments);
+    bool _matchTerm(const FunctionSignature &signature, int index,
+                    std::vector<Optional<Token>> &tokens,
+                    std::vector<Owned<Expression>> &arguments);
 
 #if defined(DEBUG)
     void _trace(const std::string &message);

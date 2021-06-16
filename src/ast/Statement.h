@@ -21,8 +21,8 @@
 #include "ast/Node.h"
 
 #include <ostream>
-#include <vector>
 #include <variant>
+#include <vector>
 
 CH_NAMESPACE_BEGIN
 

@@ -17,12 +17,12 @@
 #pragma once
 
 #include "Common.h"
+#include "compiler/Bytecode.h"
 #include "runtime/Value.h"
 #include "runtime/objects/Native.h"
-#include "compiler/Bytecode.h"
 
-#include <vector>
 #include <stack>
+#include <vector>
 
 CH_NAMESPACE_BEGIN
 
@@ -33,7 +33,7 @@ struct VirtualMachineConfig {
 };
 
 class VirtualMachine {
-public:
+  public:
     VirtualMachine(const VirtualMachineConfig &config = VirtualMachineConfig());
 
     Optional<Value> execute(const Strong<Bytecode> &bytecode);
@@ -41,8 +41,7 @@ public:
 
     Optional<RuntimeError> error() const;
 
-private:
-
+  private:
     bool call(Value, int count);
     bool subscript(Value, Value);
     bool range(Value, Value, bool);

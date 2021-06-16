@@ -18,20 +18,12 @@ CH_NAMESPACE_BEGIN
 Function::Function(const FunctionSignature &signature, const Strong<Bytecode> &bytecode)
     : _signature(signature), _bytecode(bytecode) {}
 
-const Strong<Bytecode> &Function::bytecode() const {
-    return _bytecode;
-}
+const Strong<Bytecode> &Function::bytecode() const { return _bytecode; }
 
-std::string Function::typeName() const {
-    return "function";
-}
+std::string Function::typeName() const { return "function"; }
 
-std::string Function::description() const {
-    return _signature.name();
-}
+std::string Function::description() const { return _signature.name(); }
 
-bool Function::equals(Strong<Object> object) const {
-    return this == object.get();
-}
+bool Function::equals(Strong<Object> object) const { return this == object.get(); }
 
 CH_NAMESPACE_END

@@ -18,7 +18,7 @@
 #include "utilities/strings.h"
 
 TEST_CASE(Strings, Escape) {
-    auto escape = chatter::string_from_escaped_string;
+    auto escape = sif::string_from_escaped_string;
 
     ASSERT_EQ(escape("Hello, World!"), "Hello, World!");
     ASSERT_EQ(escape("Hello\\n World!"), "Hello\n World!");

@@ -21,7 +21,7 @@
 #include <iostream>
 #include <sstream>
 
-using namespace chatter;
+using namespace sif;
 
 static inline std::ostream &operator<<(std::ostream &out, Token::Type tokenType) {
     return out << RawValue(tokenType);
@@ -34,27 +34,17 @@ TEST_CASE(ScannerTests, All) {
     Scanner scanner(str, end);
 
     auto expectedTokens = std::vector<Token::Type>{
-        Token::Type::Word,
-        Token::Type::Is,
-        Token::Type::An,
-        Token::Type::FloatLiteral,
-        Token::Type::Word,
-        Token::Type::Word,
-        Token::Type::Plus,
-        Token::Type::Word,
-        Token::Type::Minus,
-        Token::Type::If,
-        Token::Type::Else,
-        Token::Type::LeftParen,
-        Token::Type::Then,
-        Token::Type::RightParen,
-        Token::Type::EndOfFile,
+        Token::Type::Word,         Token::Type::Is,         Token::Type::An,
+        Token::Type::FloatLiteral, Token::Type::Word,       Token::Type::Word,
+        Token::Type::Plus,         Token::Type::Word,       Token::Type::Minus,
+        Token::Type::If,           Token::Type::Else,       Token::Type::LeftParen,
+        Token::Type::Then,         Token::Type::RightParen, Token::Type::EndOfFile,
     };
 
     unsigned int i = 0;
     for (auto tokenType : expectedTokens) {
         auto token = scanner.scan();
-        ASSERT_EQ(token.type, tokenType) 
+        ASSERT_EQ(token.type, tokenType)
             << i << ": " << token.type << " != " << tokenType << std::endl;
         i++;
     }

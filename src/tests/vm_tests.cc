@@ -14,15 +14,15 @@
 //  limitations under the License.
 //
 
-#include "runtime/VirtualMachine.h"
 #include "compiler/Bytecode.h"
+#include "runtime/VirtualMachine.h"
 #include "tests/TestSuite.h"
 
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-using namespace chatter;
+using namespace sif;
 
 TEST_CASE(VMTests, All) {
     auto bytecode = MakeStrong<Bytecode>();

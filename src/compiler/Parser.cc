@@ -16,8 +16,8 @@
 
 #include "compiler/Parser.h"
 #include "Error.h"
-#include "ast/Repeat.h"
 #include "Utilities.h"
+#include "ast/Repeat.h"
 
 #include <vector>
 
@@ -29,16 +29,13 @@ CH_NAMESPACE_BEGIN
 #define trace(msg)
 #endif
 
-static inline std::string Describe(const Token &token) {
-    return token.description();
-}
+static inline std::string Describe(const Token &token) { return token.description(); }
 
 static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
     return out << Describe(token);
 }
 
-Parser::Parser(const ParserConfig &config, Scanner &scanner) 
-    : _config(config), _scanner(scanner) {
+Parser::Parser(const ParserConfig &config, Scanner &scanner) : _config(config), _scanner(scanner) {
     _parsingRepeat = false;
     _recording = false;
     _index = 0;
@@ -52,17 +49,11 @@ Owned<Statement> Parser::parse() {
     return result;
 }
 
-FunctionSignature Parser::parseFunctionSignature() {
-    return _parseFunctionSignature();
-}
+FunctionSignature Parser::parseFunctionSignature() { return _parseFunctionSignature(); }
 
-void Parser::declare(const FunctionSignature &signature) {
-    _functionDecls.insert(signature);
-}
+void Parser::declare(const FunctionSignature &signature) { _functionDecls.insert(signature); }
 
-const std::vector<SyntaxError> &Parser::errors() {
-    return _errors;
-}
+const std::vector<SyntaxError> &Parser::errors() { return _errors; }
 
 #pragma mark - Utilities
 
@@ -73,19 +64,23 @@ Optional<Token> Parser::_match(const std::initializer_list<Token::Type> &types) 
     return None;
 }
 
-Token Parser::_consumeWord() {
-    if (_peek().isWord()) return _advance();
-    throw SyntaxError(_peek(), "expected a word");
+Token Parser::_consumeWord(const std::string &message) {
+    if (_peek().isWord())
+        return _advance();
+    throw SyntaxError(_peek(), message);
 }
 
 Token Parser::_consume(Token::Type type, const std::string &errorMessage) {
-    if (_check({type})) return _advance();
+    if (_check({type}))
+        return _advance();
     throw SyntaxError(_peek(), errorMessage);
 }
 
 Token Parser::_consumeNewLine() {
-    if (_isAtEnd()) return _peek();
-    if (_check({Token::Type::NewLine})) return _advance();
+    if (_isAtEnd())
+        return _peek();
+    if (_check({Token::Type::NewLine}))
+        return _advance();
     throw SyntaxError(_peek(), "expected new line or end of script");
 }
 
@@ -109,11 +104,9 @@ bool Parser::_check(const std::initializer_list<Token::Type> &types) {
     return false;
 }
 
-bool Parser::_isAtEnd() {
-    return _peek().type == Token::Type::EndOfFile;
-}
+bool Parser::_isAtEnd() { return _peek().type == Token::Type::EndOfFile; }
 
-Token& Parser::_scan() {
+Token &Parser::_scan() {
     auto token = _scanner.scan();
     _tokens.push_back(token);
     trace(Concat("Scanned ", Describe(token)));
@@ -121,7 +114,7 @@ Token& Parser::_scan() {
     return _tokens.back();
 }
 
-Token& Parser::_advance() {
+Token &Parser::_advance() {
     if (!_isAtEnd()) {
         if (!_recording && _tokens.size() > 1) {
             _tokens.erase(_tokens.begin());
@@ -136,14 +129,14 @@ Token& Parser::_advance() {
     return _previous();
 }
 
-Token& Parser::_peek() {
+Token &Parser::_peek() {
     if (_tokens.size() == 0) {
         return _scan();
     }
     return _tokens[_index];
 }
 
-Token& Parser::_previous() {
+Token &Parser::_previous() {
     if (_tokens.size() > 1) {
         return _tokens[_index - 1];
     }
@@ -197,7 +190,9 @@ void Parser::_trace(const std::string &message) {
 
 #pragma mark - Grammar
 
-bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
+bool Parser::_matchTerm(const FunctionSignature &signature, int index,
+                        std::vector<Optional<Token>> &tokens,
+                        std::vector<Owned<Expression>> &arguments) {
     const auto &term = signature.terms[index];
     if (auto token = std::get_if<Token>(&term)) {
         if (_peek().type == token->type && lowercase(_peek().text) == lowercase(token->text)) {
@@ -207,7 +202,8 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vect
         return false;
     }
     if (auto option = std::get_if<FunctionSignature::Option>(&term)) {
-        if (_peek().type == option->token.type && lowercase(_peek().text) == lowercase(option->token.text)) {
+        if (_peek().type == option->token.type &&
+            lowercase(_peek().text) == lowercase(option->token.text)) {
             tokens.push_back(_advance());
         } else {
             tokens.push_back(None);
@@ -221,7 +217,7 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vect
                 return true;
             }
         } else {
-           if (auto matchedExpression = _parseSubscript()) {
+            if (auto matchedExpression = _parseSubscript()) {
                 arguments.push_back(std::move(matchedExpression));
                 return true;
             }
@@ -240,7 +236,9 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index, std::vect
     return false;
 }
 
-bool Parser::_matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> &arguments) {
+bool Parser::_matchSignature(const FunctionSignature &signature,
+                             std::vector<Optional<Token>> &tokens,
+                             std::vector<Owned<Expression>> &arguments) {
     trace(Concat("Checking function signature ", Quoted(signature.name())));
     for (int i = 0; i < signature.terms.size(); i++) {
         if (!_matchTerm(signature, i, tokens, arguments)) {
@@ -260,7 +258,7 @@ Owned<Statement> Parser::_parseBlock(const std::initializer_list<Token::Type> &e
         if (_check(endTypes)) {
             break;
         }
-        
+
         try {
             statements.push_back(_parseStatement());
         } catch (const SyntaxError &error) {
@@ -299,12 +297,11 @@ FunctionSignature Parser::_parseFunctionSignature() {
         if (token.isWord()) {
             std::vector<Token> tokens({token});
             while (_match({Token::Type::Slash})) {
-               tokens.push_back(_consumeWord());
+                tokens.push_back(_consumeWord());
             }
             if (tokens.size() > 1) {
-                std::sort(tokens.begin(), tokens.end(), [](Token lhs, Token rhs) {
-                    return lhs.text < rhs.text;
-                });
+                std::sort(tokens.begin(), tokens.end(),
+                          [](Token lhs, Token rhs) { return lhs.text < rhs.text; });
                 signature.terms.push_back(FunctionSignature::Choice{tokens});
             } else {
                 signature.terms.push_back(FunctionSignature::Term{token});
@@ -321,10 +318,12 @@ FunctionSignature Parser::_parseFunctionSignature() {
                 }
             } else if (_match({Token::Type::Colon})) {
                 auto typeName = _match({Token::Type::Word});
-                signature.terms.push_back(FunctionSignature::Term{FunctionSignature::Argument{None, typeName}});
+                signature.terms.push_back(
+                    FunctionSignature::Term{FunctionSignature::Argument{None, typeName}});
                 _consume(Token::Type::RightParen, "expected right parenthesis");
             } else {
-                throw SyntaxError(_peek(), Concat("expected a word, ", Quoted(":"), ", or ", Quoted("/")));
+                throw SyntaxError(_peek(),
+                                  Concat("expected a word, ", Quoted(":"), ", or ", Quoted("/")));
             }
         }
     }
@@ -387,7 +386,7 @@ Owned<Statement> Parser::_parseIf() {
         _match({Token::Type::NewLine});
     }
 
-    if ((token.has_value() && token.value().type == Token::Type::Else) || 
+    if ((token.has_value() && token.value().type == Token::Type::Else) ||
         (!token.has_value() && _match({Token::Type::Else}))) {
         if (_match({Token::Type::NewLine})) {
             elseClause = _parseBlock({Token::Type::End});
@@ -403,7 +402,8 @@ Owned<Statement> Parser::_parseIf() {
         }
     }
 
-    auto ifStatement = MakeOwned<If>(std::move(condition), std::move(ifClause), std::move(elseClause));
+    auto ifStatement =
+        MakeOwned<If>(std::move(condition), std::move(ifClause), std::move(elseClause));
     ifStatement->location = ifStatement->condition->location;
     return ifStatement;
 }
@@ -424,13 +424,15 @@ Owned<Statement> Parser::_parseRepeat() {
         _consumeNewLine();
         auto statement = _parseBlock({Token::Type::End});
         _consumeEnd(Token::Type::Repeat);
-        return MakeOwned<RepeatCondition>(std::move(statement), std::move(condition), conditionValue);
+        return MakeOwned<RepeatCondition>(std::move(statement), std::move(condition),
+                                          conditionValue);
     }
     throw SyntaxError(_peek(), "unexpected expression");
 }
 
 Owned<Statement> Parser::_parseAssignment() {
-    auto token = _consume(Token::Type::Word, Concat("expected variable name"));
+    // auto token = _consume(Token::Type::Word, Concat("expected variable name"));
+    auto token = _consumeWord("expected variable name");
     Optional<Token> typeName;
     if (_match({Token::Type::Colon})) {
         typeName = _consumeWord();
@@ -443,7 +445,8 @@ Owned<Statement> Parser::_parseAssignment() {
 
 Owned<Statement> Parser::_parseExit() {
     if (!_parsingRepeat) {
-        throw SyntaxError(_previous(), Concat("unexpected ", Quoted("exit"), " outside repeat block"));
+        throw SyntaxError(_previous(),
+                          Concat("unexpected ", Quoted("exit"), " outside repeat block"));
     }
     _consume(Token::Type::Repeat, Concat("expected ", Quoted("repeat")));
     return MakeOwned<ExitRepeat>();
@@ -451,7 +454,8 @@ Owned<Statement> Parser::_parseExit() {
 
 Owned<Statement> Parser::_parseNext() {
     if (!_parsingRepeat) {
-        throw SyntaxError(_previous(), Concat("unexpected ", Quoted("next"), " outside repeat block"));
+        throw SyntaxError(_previous(),
+                          Concat("unexpected ", Quoted("next"), " outside repeat block"));
     }
     _consume(Token::Type::Repeat, Concat("expected ", Quoted("repeat")));
     return MakeOwned<NextRepeat>();
@@ -474,42 +478,60 @@ Owned<Statement> Parser::_parseExpressionStatement() {
 
 Binary::Operator binaryOp(Token::Type tokenType) {
     switch (tokenType) {
-    case Token::Type::And: return Binary::Operator::And;
-    case Token::Type::Or: return Binary::Operator::Or;
-    case Token::Type::Plus: return Binary::Operator::Plus;
-    case Token::Type::Minus: return Binary::Operator::Minus;
-    case Token::Type::Star: return Binary::Operator::Multiply;
-    case Token::Type::Slash: return Binary::Operator::Divide;
-    case Token::Type::Percent: return Binary::Operator::Modulo;
-    case Token::Type::Carrot: return Binary::Operator::Exponent;
-    case Token::Type::Is: return Binary::Operator::Equal;
-    case Token::Type::Equal: return Binary::Operator::Equal;
-    case Token::Type::NotEqual: return Binary::Operator::NotEqual;
-    case Token::Type::LessThan: return Binary::Operator::LessThan;
-    case Token::Type::LessThanOrEqual: return Binary::Operator::LessThanOrEqual;
-    case Token::Type::GreaterThan: return Binary::Operator::GreaterThan;
-    case Token::Type::GreaterThanOrEqual: return Binary::Operator::GreaterThanOrEqual;
-    default: throw std::range_error("unknown token type");
+    case Token::Type::And:
+        return Binary::Operator::And;
+    case Token::Type::Or:
+        return Binary::Operator::Or;
+    case Token::Type::Plus:
+        return Binary::Operator::Plus;
+    case Token::Type::Minus:
+        return Binary::Operator::Minus;
+    case Token::Type::Star:
+        return Binary::Operator::Multiply;
+    case Token::Type::Slash:
+        return Binary::Operator::Divide;
+    case Token::Type::Percent:
+        return Binary::Operator::Modulo;
+    case Token::Type::Carrot:
+        return Binary::Operator::Exponent;
+    case Token::Type::Is:
+        return Binary::Operator::Equal;
+    case Token::Type::Equal:
+        return Binary::Operator::Equal;
+    case Token::Type::NotEqual:
+        return Binary::Operator::NotEqual;
+    case Token::Type::LessThan:
+        return Binary::Operator::LessThan;
+    case Token::Type::LessThanOrEqual:
+        return Binary::Operator::LessThanOrEqual;
+    case Token::Type::GreaterThan:
+        return Binary::Operator::GreaterThan;
+    case Token::Type::GreaterThanOrEqual:
+        return Binary::Operator::GreaterThanOrEqual;
+    default:
+        throw std::range_error("unknown token type");
     }
 }
 
 Unary::Operator unaryOp(Token::Type tokenType) {
     switch (tokenType) {
-    case Token::Type::Minus: return Unary::Operator::Minus;
-    case Token::Type::Not: return Unary::Operator::Not;
-    default: throw std::range_error("unknown token type");
+    case Token::Type::Minus:
+        return Unary::Operator::Minus;
+    case Token::Type::Not:
+        return Unary::Operator::Not;
+    default:
+        throw std::range_error("unknown token type");
     }
 }
 
-Owned<Expression> Parser::_parseExpression() {
-    return _parseClause();
-}
+Owned<Expression> Parser::_parseExpression() { return _parseClause(); }
 
 Owned<Expression> Parser::_parseClause() {
     auto expression = _parseEquality();
     auto location = expression->location;
     while (auto operatorToken = _match({Token::Type::And, Token::Type::Or})) {
-        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type), _parseEquality());
+        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type),
+                                       _parseEquality());
         expression->location = location;
     }
     return expression;
@@ -518,11 +540,14 @@ Owned<Expression> Parser::_parseClause() {
 Owned<Expression> Parser::_parseEquality() {
     auto expression = _parseComparison();
     auto location = expression->location;
-    while (auto operatorToken = _match({Token::Type::Equal, Token::Type::NotEqual, Token::Type::Is})) {
+    while (auto operatorToken =
+               _match({Token::Type::Equal, Token::Type::NotEqual, Token::Type::Is})) {
         if (operatorToken.value().type == Token::Type::Is && _match({Token::Type::Not})) {
-            expression = MakeOwned<Binary>(std::move(expression), Binary::Operator::NotEqual, _parseComparison());
+            expression = MakeOwned<Binary>(std::move(expression), Binary::Operator::NotEqual,
+                                           _parseComparison());
         } else {
-            expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type), _parseComparison());
+            expression = MakeOwned<Binary>(
+                std::move(expression), binaryOp(operatorToken.value().type), _parseComparison());
         }
         expression->location = location;
     }
@@ -532,8 +557,11 @@ Owned<Expression> Parser::_parseEquality() {
 Owned<Expression> Parser::_parseComparison() {
     auto expression = _parseList();
     auto location = expression->location;
-    while (auto operatorToken = _match({Token::Type::LessThan, Token::Type::GreaterThan, Token::Type::LessThanOrEqual, Token::Type::GreaterThanOrEqual})) {
-        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type), _parseList());
+    while (auto operatorToken =
+               _match({Token::Type::LessThan, Token::Type::GreaterThan,
+                       Token::Type::LessThanOrEqual, Token::Type::GreaterThanOrEqual})) {
+        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type),
+                                       _parseList());
         expression->location = location;
     }
     return expression;
@@ -544,7 +572,7 @@ Owned<Expression> Parser::_parseList() {
 
     if (_check({Token::Type::Comma})) {
         auto location = expression->location;
-        
+
         std::vector<Owned<Expression>> expressions;
         expressions.push_back(std::move(expression));
         while (_match({Token::Type::Comma})) {
@@ -573,7 +601,8 @@ Owned<Expression> Parser::_parseTerm() {
     auto expression = _parseFactor();
     auto location = expression->location;
     while (auto operatorToken = _match({Token::Type::Plus, Token::Type::Minus})) {
-        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type), _parseFactor());
+        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type),
+                                       _parseFactor());
         expression->location = location;
     }
     return expression;
@@ -582,8 +611,10 @@ Owned<Expression> Parser::_parseTerm() {
 Owned<Expression> Parser::_parseFactor() {
     auto expression = _parseExponent();
     auto location = expression->location;
-    while (auto operatorToken = _match({Token::Type::Star, Token::Type::Slash, Token::Type::Percent})) {
-        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type), _parseExponent());
+    while (auto operatorToken =
+               _match({Token::Type::Star, Token::Type::Slash, Token::Type::Percent})) {
+        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type),
+                                       _parseExponent());
         expression->location = location;
     }
     return expression;
@@ -593,14 +624,15 @@ Owned<Expression> Parser::_parseExponent() {
     auto expression = _parseUnary();
     auto location = expression->location;
     while (auto operatorToken = _match({Token::Type::Carrot})) {
-        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type), _parseUnary());
+        expression = MakeOwned<Binary>(std::move(expression), binaryOp(operatorToken.value().type),
+                                       _parseUnary());
         expression->location = location;
     }
     return expression;
 }
 
 Owned<Expression> Parser::_parseUnary() {
-    if (auto operatorToken = _match({Token::Type::Minus, Token::Type::Not})){
+    if (auto operatorToken = _match({Token::Type::Minus, Token::Type::Not})) {
         auto expression = MakeOwned<Unary>(unaryOp(operatorToken.value().type), _parseUnary());
         expression->location = operatorToken.value().location;
         return expression;
@@ -629,7 +661,8 @@ Owned<Expression> Parser::_parseSubscript() {
     auto expression = _parsePrimary();
     auto location = expression->location;
     while (auto operatorToken = _match({Token::Type::LeftBracket})) {
-        expression = MakeOwned<Binary>(std::move(expression), Binary::Subscript, _parseExpression());
+        expression =
+            MakeOwned<Binary>(std::move(expression), Binary::Subscript, _parseExpression());
         expression->location = location;
         _consume(Token::Type::RightBracket, Concat("expected ", Quoted("]")));
     }
@@ -638,16 +671,16 @@ Owned<Expression> Parser::_parseSubscript() {
 
 Owned<Expression> Parser::_parsePrimary() {
     if (auto token = _match({
-        Token::Type::IntLiteral,
-        Token::Type::FloatLiteral, 
-        Token::Type::StringLiteral,
-        Token::Type::BoolLiteral,
-    })) {
+            Token::Type::IntLiteral,
+            Token::Type::FloatLiteral,
+            Token::Type::StringLiteral,
+            Token::Type::BoolLiteral,
+        })) {
         auto literal = MakeOwned<Literal>(token.value());
         literal->location = token.value().location;
         return literal;
     }
-    
+
     if (_match({Token::Type::LeftParen})) {
         return _parseGrouping();
     }

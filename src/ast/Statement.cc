@@ -18,8 +18,7 @@
 
 CH_NAMESPACE_BEGIN
 
-Block::Block(std::vector<Owned<Statement>> statements) 
-    : statements(std::move(statements)) {}
+Block::Block(std::vector<Owned<Statement>> statements) : statements(std::move(statements)) {}
 
 FunctionDecl::FunctionDecl(const FunctionSignature &signature, Owned<Statement> statement)
     : signature(signature), statement(std::move(statement)) {}
@@ -28,11 +27,12 @@ Assignment::Assignment(Owned<Variable> variable, Owned<Expression> expression)
     : variable(std::move(variable)), expression(std::move(expression)) {}
 
 If::If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statement> elseStatement)
-    : condition(std::move(condition)), ifStatement(std::move(ifStatement)), elseStatement(std::move(elseStatement)) {}
+    : condition(std::move(condition)), ifStatement(std::move(ifStatement)),
+      elseStatement(std::move(elseStatement)) {}
 
 Return::Return(Owned<Expression> expression) : expression(std::move(expression)) {}
 
-ExpressionStatement::ExpressionStatement(Owned<Expression> expression) 
+ExpressionStatement::ExpressionStatement(Owned<Expression> expression)
     : expression(std::move(expression)) {}
 
 CH_NAMESPACE_END

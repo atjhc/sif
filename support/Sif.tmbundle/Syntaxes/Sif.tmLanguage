@@ -4,47 +4,47 @@
 <dict>
 	<key>fileTypes</key>
 	<array>
-		<string>chatter</string>
+		<string>sif</string>
 	</array>
 	<key>name</key>
-	<string>Chatter</string>
+	<string>Sif</string>
 	<key>patterns</key>
 	<array>
 		<dict>
 			<key>match</key>
 			<string>\b(if|else|then|repeat|until|while|end|function|exit|return|next|set|to)\b</string>
 			<key>name</key>
-			<string>keyword.control.chatter</string>
+			<string>keyword.control.sif</string>
 		</dict>
 		<dict>
 			<key>match</key>
 			<string>\b(is|not|and|or)\b</string>
 			<key>name</key>
-			<string>keyword.operator.chatter</string>
+			<string>keyword.operator.sif</string>
 		</dict>
 		<dict>
 			<key>match</key>
 			<string>\b((read\s+(a\s+)?line)|(print\s+error)|(write\s+error))\b</string>
 			<key>name</key>
-			<string>keyword.other.chatter</string>
+			<string>keyword.other.sif</string>
 		</dict>
 		<dict>
 			<key>match</key>
 			<string>\b(print|write)\b</string>
 			<key>name</key>
-			<string>keyword.other.chatter</string>
+			<string>keyword.other.sif</string>
 		</dict>
 		<dict>
 			<key>match</key>
 			<string>\b(-)?[0-9.]+\b</string>
 			<key>name</key>
-			<string>constant.numeric.chatter</string>
+			<string>constant.numeric.sif</string>
 		</dict>
 		<dict>
 			<key>match</key>
 			<string>\b(true|false|empty|it)\b</string>
 			<key>name</key>
-			<string>constant.language.chatter</string>
+			<string>constant.language.sif</string>
 		</dict>
 		<dict>
 			<key>begin</key>
@@ -52,7 +52,7 @@
 			<key>end</key>
 			<string>\n</string>
 			<key>name</key>
-			<string>comment.line.double-dash.chatter</string>
+			<string>comment.line.double-dash.sif</string>
 		</dict>
 		<dict>
 			<key>begin</key>
@@ -60,7 +60,7 @@
 			<key>end</key>
 			<string>\n</string>
 			<key>name</key>
-			<string>comment.line.pound.chatter</string>
+			<string>comment.line.pound.sif</string>
 		</dict>
 		<dict>
 			<key>begin</key>
@@ -68,14 +68,14 @@
 			<key>end</key>
 			<string>"</string>
 			<key>name</key>
-			<string>string.quoted.double.chatter</string>
+			<string>string.quoted.double.sif</string>
 			<key>patterns</key>
 			<array>
 				<dict>
 					<key>match</key>
 					<string>\\.</string>
 					<key>name</key>
-					<string>constant.character.escape.chatter</string>
+					<string>constant.character.escape.sif</string>
 				</dict>
 			</array>
 		</dict>
@@ -85,20 +85,20 @@
 			<key>end</key>
 			<string>'</string>
 			<key>name</key>
-			<string>string.quoted.single.chatter</string>
+			<string>string.quoted.single.sif</string>
 			<key>patterns</key>
 			<array>
 				<dict>
 					<key>match</key>
 					<string>\\.</string>
 					<key>name</key>
-					<string>constant.character.escape.chatter</string>
+					<string>constant.character.escape.sif</string>
 				</dict>
 			</array>
 		</dict>
 	</array>
 	<key>scopeName</key>
-	<string>source.chatter</string>
+	<string>source.sif</string>
 	<key>uuid</key>
 	<string>1A6B5105-AD0B-45C9-A22C-9660DB1D8D16</string>
 </dict>

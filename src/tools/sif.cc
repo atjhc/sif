@@ -14,15 +14,16 @@
 //  limitations under the License.
 //
 
-#include "utilities/chunk.h"
+#include "Common.h"
 #include "ast/PrettyPrinter.h"
-#include "compiler/Parser.h"
 #include "compiler/Compiler.h"
+#include "compiler/Parser.h"
 #include "runtime/VirtualMachine.h"
-#include "runtime/objects/Native.h"
-#include "runtime/objects/List.h"
 #include "runtime/objects/Dictionary.h"
+#include "runtime/objects/List.h"
+#include "runtime/objects/Native.h"
 #include "runtime/objects/String.h"
+#include "utilities/chunk.h"
 
 #include <chrono>
 #include <fstream>
@@ -35,15 +36,10 @@
 #include <libgen.h>
 #include <unistd.h>
 
-using namespace chatter;
+using namespace sif;
 Map<std::string, Strong<Native>> builtins();
 
-enum {
-    Success = 0,
-    ParseFailure = 1,
-    CompileFailure = 2,
-    RuntimeFailure = 3
-};
+enum { Success = 0, ParseFailure = 1, CompileFailure = 2, RuntimeFailure = 3 };
 
 #if defined(DEBUG)
 static int traceParsing = 0;
@@ -62,18 +58,15 @@ Map<std::string, Strong<Native>> natives = builtins();
 Map<std::string, Strong<Native>> builtins() {
     static std::random_device rd;
     static std::mt19937 engine(rd());
-    auto random = [&](int max) { 
+    auto random = [&](int max) {
         std::uniform_int_distribution<int> dist(0, max - 1);
         return dist(engine);
     };
 
     Map<std::string, Strong<Native>> natives;
-    natives["quit"] = MakeStrong<Native>([](Value *values) -> Value {
-        exit(0);
-    });
-    natives["quit with code (:)"] = MakeStrong<Native>([](Value *values) -> Value {
-        exit(values[0].asInteger());
-    });
+    natives["quit"] = MakeStrong<Native>([](Value *values) -> Value { exit(0); });
+    natives["quit with code (:)"] =
+        MakeStrong<Native>([](Value *values) -> Value { exit(values[0].asInteger()); });
     natives["write (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         std::cout << values[0];
         return Value();
@@ -84,9 +77,7 @@ Map<std::string, Strong<Native>> builtins() {
     });
     natives["print (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         if (const auto &list = values[0].as<List>()) {
-            for (const auto &item : list->values()) {
-                std::cout << item;
-            }
+            std::cout << Join(list->values(), " ");
         } else {
             std::cout << values[0];
         }
@@ -104,9 +95,7 @@ Map<std::string, Strong<Native>> builtins() {
         std::cerr << std::endl;
         return Value();
     });
-    natives["get (:)"] = MakeStrong<Native>([](Value *values) -> Value {
-        return values[0];
-    });
+    natives["get (:)"] = MakeStrong<Native>([](Value *values) -> Value { return values[0]; });
     natives["read (a) word"] = MakeStrong<Native>([](Value *values) -> Value {
         std::string input;
         std::cin >> input;
@@ -117,9 +106,8 @@ Map<std::string, Strong<Native>> builtins() {
         std::getline(std::cin, input);
         return input;
     });
-    natives["(the) long description (of) (:)"] = MakeStrong<Native>([](Value *values) -> Value {
-        return values[0].description();
-    });
+    natives["(the) long description (of) (:)"] =
+        MakeStrong<Native>([](Value *values) -> Value { return values[0].description(); });
     natives["(the) (short) description (of) (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         std::ostringstream ss;
         ss << values[0];
@@ -146,9 +134,8 @@ Map<std::string, Strong<Native>> builtins() {
         dictionary->values().erase(values[0]);
         return values[1];
     });
-    natives["(the) type (of) (:)"] = MakeStrong<Native>([](Value *values) -> Value {
-        return values[0].typeName();
-    });
+    natives["(the) type (of) (:)"] =
+        MakeStrong<Native>([](Value *values) -> Value { return values[0].typeName(); });
     natives["(the) sin (of) (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         auto argument = values[0].castFloat();
         return sin(argument);
@@ -176,18 +163,20 @@ Map<std::string, Strong<Native>> builtins() {
         auto text = values[0].as<String>();
         return random_chunk(chunk::character, random, text->string()).get();
     });
-    natives["(the) mid/middle char/character of (:)"] = MakeStrong<Native>([](Value *values) -> Value {
-        auto text = values[0].as<String>();
-        return middle_chunk(chunk::character, text->string()).get();
-    });
+    natives["(the) mid/middle char/character of (:)"] =
+        MakeStrong<Native>([](Value *values) -> Value {
+            auto text = values[0].as<String>();
+            return middle_chunk(chunk::character, text->string()).get();
+        });
     natives["(the) last char/character of (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         auto text = values[0].as<String>();
         return last_chunk(chunk::character, text->string()).get();
     });
-    natives["(the) number of chars/characters in (:)"] = MakeStrong<Native>([](Value *values) -> Value {
-        auto text = values[0].as<String>();
-        return static_cast<long>(count_chunk(chunk::character, text->string()).count);
-    });
+    natives["(the) number of chars/characters in (:)"] =
+        MakeStrong<Native>([](Value *values) -> Value {
+            auto text = values[0].as<String>();
+            return static_cast<long>(count_chunk(chunk::character, text->string()).count);
+        });
     natives["word (:) of (:)"] = MakeStrong<Native>([](Value *values) -> Value {
         auto index = values[0].asInteger();
         auto text = values[1].as<String>();
@@ -246,7 +235,8 @@ Map<std::string, Strong<Native>> builtins() {
     return natives;
 }
 
-void report(const std::string &name, Location location, const std::string &source, const std::string &message) {
+void report(const std::string &name, Location location, const std::string &source,
+            const std::string &message) {
     std::cerr << name << ":" << location << ": " << message << std::endl;
     std::cerr << index_chunk(chunk::line, location.lineNumber - 1, source).get() << std::endl;
     std::cerr << std::string(location.position - 1, ' ') << "^" << std::endl;
@@ -297,7 +287,8 @@ int evaluate(const std::string &name, const std::string &source) {
 
     vm.execute(bytecode);
     if (vm.error()) {
-        report(name, vm.error().value().location(), source, Concat("runtime error, ", vm.error().value().what()));
+        report(name, vm.error().value().location(), source,
+               Concat("runtime error, ", vm.error().value().what()));
         return RuntimeFailure;
     }
 
@@ -309,7 +300,8 @@ static int repl(const std::vector<std::string> &arguments) {
 
     std::cout << "> ";
     while (std::getline(std::cin, line)) {
-        if (line.empty()) continue;
+        if (line.empty())
+            continue;
         evaluate("<stdin>", line);
         std::cout << "> ";
     }

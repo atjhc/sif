@@ -14,15 +14,15 @@
 //  limitations under the License.
 //
 
-#include "compiler/Scanner.h"
 #include "compiler/Parser.h"
+#include "compiler/Scanner.h"
 #include "tests/TestSuite.h"
 
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 
-using namespace chatter;
+using namespace sif;
 
 TEST_CASE(ParserTests, All) {
     const char str[] = "1 + 1";

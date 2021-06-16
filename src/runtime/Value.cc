@@ -24,17 +24,20 @@ CH_NAMESPACE_BEGIN
 
 Value::Value(const std::string &string) : _value(MakeStrong<String>(string)) {}
 
-Value::Type Value::type() const {
-    return Value::Type(_value.index());
-}
+Value::Type Value::type() const { return Value::Type(_value.index()); }
 
 std::string Value::typeName() const {
     switch (type()) {
-    case Value::Type::Integer: return "integer";
-    case Value::Type::Float: return "float";
-    case Value::Type::Bool: return "bool";
-    case Value::Type::Object: return asObject()->typeName();
-    case Value::Type::Empty: return "empty";
+    case Value::Type::Integer:
+        return "integer";
+    case Value::Type::Float:
+        return "float";
+    case Value::Type::Bool:
+        return "bool";
+    case Value::Type::Object:
+        return asObject()->typeName();
+    case Value::Type::Empty:
+        return "empty";
     }
 }
 
@@ -132,17 +135,16 @@ bool Value::operator==(const Value &value) const {
     return _value == value._value;
 }
 
-size_t ValueHasher::operator()(const Value& value) const {
-    if (value.isEmpty()) return 0;
+size_t ValueHasher::operator()(const Value &value) const {
+    if (value.isEmpty())
+        return 0;
 
     size_t hash;
-    std::visit([&](auto arg){ hash = std::hash<decltype(arg)>{}(arg); }, value._value);
+    std::visit([&](auto arg) { hash = std::hash<decltype(arg)>{}(arg); }, value._value);
     return hash;
 }
 
-std::ostream &operator<<(std::ostream &out, const std::monostate &) {
-    return out << "empty";
-}
+std::ostream &operator<<(std::ostream &out, const std::monostate &) { return out << "empty"; }
 
 std::ostream &operator<<(std::ostream &out, const Value &value) {
     if (value.isBool()) {
@@ -151,7 +153,7 @@ std::ostream &operator<<(std::ostream &out, const Value &value) {
         return out << value.asObject()->description();
     }
 
-    std::visit([&](auto && arg){ out << arg;}, value._value);
+    std::visit([&](auto &&arg) { out << arg; }, value._value);
     return out;
 }
 

@@ -17,13 +17,9 @@ CH_NAMESPACE_BEGIN
 
 Dictionary::Dictionary(const ValueMap &values) : _values(values) {}
 
-ValueMap &Dictionary::values() {
-    return _values;
-}
-    
-std::string Dictionary::typeName() const {
-    return "dictionary";
-}
+ValueMap &Dictionary::values() { return _values; }
+
+std::string Dictionary::typeName() const { return "dictionary"; }
 
 std::string Dictionary::description() const {
     std::ostringstream ss;

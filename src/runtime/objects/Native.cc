@@ -15,23 +15,14 @@
 
 CH_NAMESPACE_BEGIN
 
-Native::Native(const Native::Callable &callable)
-    : _callable(callable) {}
+Native::Native(const Native::Callable &callable) : _callable(callable) {}
 
-const Native::Native::Callable &Native::callable() const {
-    return _callable;
-}
+const Native::Native::Callable &Native::callable() const { return _callable; }
 
-std::string Native::typeName() const {
-    return "function";
-}
+std::string Native::typeName() const { return "function"; }
 
-std::string Native::description() const {
-    return "<native function>";
-}
+std::string Native::description() const { return "<native function>"; }
 
-bool Native::equals(Strong<Object> object) const {
-    return this == object.get();
-}
+bool Native::equals(Strong<Object> object) const { return this == object.get(); }
 
 CH_NAMESPACE_END

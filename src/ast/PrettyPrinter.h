@@ -17,9 +17,9 @@
 #pragma once
 
 #include "Common.h"
-#include "ast/Statement.h"
 #include "ast/Expression.h"
 #include "ast/Repeat.h"
+#include "ast/Statement.h"
 
 #include <iostream>
 

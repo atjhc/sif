@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "Utilities.h"
 #include "Error.h"
+#include "Utilities.h"
 
 #include <cstdlib>
 #include <iomanip>
@@ -34,13 +34,7 @@ class Object;
 
 class Value {
   public:
-    enum class Type : size_t {
-        Empty,
-        Bool,
-        Integer,
-        Float,
-        Object
-    };
+    enum class Type : size_t { Empty, Bool, Integer, Float, Object };
 
     Value() = default;
 
@@ -79,8 +73,7 @@ class Value {
     bool isObject() const;
     Strong<Object> asObject() const;
 
-    template <typename T>
-    Strong<T> as() const {
+    template <typename T> Strong<T> as() const {
         return isObject() ? std::dynamic_pointer_cast<T>(asObject()) : nullptr;
     }
 
@@ -97,7 +90,7 @@ class Value {
 std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v);
 
 struct ValueHasher {
-    size_t operator()(const Value&) const;
+    size_t operator()(const Value &) const;
 };
 
 using ValueMap = std::unordered_map<Value, Value, ValueHasher>;

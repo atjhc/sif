@@ -17,15 +17,15 @@
 #pragma once
 
 #include "Common.h"
+#include "compiler/FunctionSignature.h"
 #include "runtime/Object.h"
 #include "runtime/Value.h"
-#include "compiler/FunctionSignature.h"
 
 CH_NAMESPACE_BEGIN
 
 class Native : public Object {
   public:
-    using Callable = std::function<Value(Value*)>;
+    using Callable = std::function<Value(Value *)>;
 
     Native(const Callable &callable);
 

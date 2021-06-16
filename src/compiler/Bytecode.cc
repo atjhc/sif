@@ -60,7 +60,7 @@ uint16_t Bytecode::addConstant(Value constant) {
     if (_constants.size() > USHRT_MAX) {
         throw std::out_of_range(Concat("too many constants (", USHRT_MAX, ")"));
     }
-    return _constants.size() - 1; 
+    return _constants.size() - 1;
 }
 
 void Bytecode::patchJump(size_t index) {
@@ -72,23 +72,18 @@ void Bytecode::patchJump(size_t index) {
     _code[index + 2] = static_cast<Opcode>(offset & 0xff);
 }
 
-const std::vector<Opcode> &Bytecode::code() const {
-    return _code;
-}
+const std::vector<Opcode> &Bytecode::code() const { return _code; }
 
-const std::vector<Value> &Bytecode::constants() const {
-    return _constants;
-}
+const std::vector<Value> &Bytecode::constants() const { return _constants; }
 
-Location Bytecode::location(Iterator it) const {
-    return _locations[it - _code.begin()];
-}
+Location Bytecode::location(Iterator it) const { return _locations[it - _code.begin()]; }
 
 static inline uint16_t ReadUInt16(Bytecode::Iterator position) {
     return RawValue(position[0]) << 8 | RawValue(position[1]);
 }
 
-Bytecode::Iterator Bytecode::disassembleConstant(std::ostream &out, const std::string &name, Iterator position) const {
+Bytecode::Iterator Bytecode::disassembleConstant(std::ostream &out, const std::string &name,
+                                                 Iterator position) const {
     size_t index = ReadUInt16(position + 1);
     out << name << " " << index << " \"" << _constants.at(index).description() << "\"";
     return position + 3;
@@ -106,13 +101,15 @@ Bytecode::Iterator Bytecode::disassembleDictionary(std::ostream &out, Iterator p
     return position + 3;
 }
 
-Bytecode::Iterator Bytecode::disassembleJump(std::ostream &out, const std::string &name, Iterator position) const {
+Bytecode::Iterator Bytecode::disassembleJump(std::ostream &out, const std::string &name,
+                                             Iterator position) const {
     size_t offset = ReadUInt16(position + 1);
     out << name << " " << offset;
     return position + 3;
 }
 
-Bytecode::Iterator Bytecode::disassembleCall(std::ostream &out, const std::string &name, Iterator position) const {
+Bytecode::Iterator Bytecode::disassembleCall(std::ostream &out, const std::string &name,
+                                             Iterator position) const {
     size_t count = ReadUInt16(position + 1);
     out << name << " " << count;
     return position + 3;
@@ -120,11 +117,13 @@ Bytecode::Iterator Bytecode::disassembleCall(std::ostream &out, const std::strin
 
 Bytecode::Iterator Bytecode::disassembleShort(std::ostream &out, Iterator position) const {
     uint16_t shortValue = ReadUInt16(position + 1);
-    out << "Short" << " " << shortValue;
+    out << "Short"
+        << " " << shortValue;
     return position + 3;
 }
 
-Bytecode::Iterator Bytecode::disassembleLocal(std::ostream &out, const std::string &name, Iterator position) const {
+Bytecode::Iterator Bytecode::disassembleLocal(std::ostream &out, const std::string &name,
+                                              Iterator position) const {
     uint16_t value = ReadUInt16(position + 1);
     out << name << " " << value;
     return position + 3;
@@ -132,44 +131,105 @@ Bytecode::Iterator Bytecode::disassembleLocal(std::ostream &out, const std::stri
 
 Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) const {
     auto opcode = *position;
-    switch(opcode) {
-    case Opcode::Jump:          return disassembleJump(out, "Jump", position);
-    case Opcode::JumpIfFalse:   return disassembleJump(out, "JumpIfFalse", position);
-    case Opcode::JumpIfTrue:    return disassembleJump(out, "JumpIfTrue", position);
-    case Opcode::Repeat:        return disassembleJump(out, "Repeat", position);
-    case Opcode::Pop:           out << "Pop"; return position + 1;
-    case Opcode::Return:        out << "Return"; return position + 1;
-    case Opcode::Constant:      return disassembleConstant(out, "Constant", position);
-    case Opcode::Short:         return disassembleShort(out, position);
-    case Opcode::OpenRange:     out << "OpenRange"; return position + 1;
-    case Opcode::ClosedRange:   out << "ClosedRange"; return position + 1;
-    case Opcode::List:          return disassembleList(out, position);
-    case Opcode::Dictionary:    return disassembleDictionary(out, position);
-    case Opcode::GetGlobal:     return disassembleConstant(out, "GetGlobal", position);
-    case Opcode::SetGlobal:     return disassembleConstant(out, "SetGlobal", position);
-    case Opcode::GetLocal:      return disassembleLocal(out, "GetLocal", position);
-    case Opcode::SetLocal:      return disassembleLocal(out, "SetLocal", position);
-    case Opcode::Negate:        out << "Negate"; return position + 1;
-    case Opcode::Not:           out << "Not"; return position + 1;
-    case Opcode::Add:           out << "Add"; return position + 1;
-    case Opcode::Subtract:      out << "Subtract"; return position + 1;
-    case Opcode::Multiply:      out << "Multiply"; return position + 1;
-    case Opcode::Divide:        out << "Divide"; return position + 1;
-    case Opcode::Exponent:      out << "Exponent"; return position + 1;
-    case Opcode::Modulo:        out << "Modulo"; return position + 1;
-    case Opcode::Equal:         out << "Equal"; return position + 1;
-    case Opcode::NotEqual:      out << "NotEqual"; return position + 1;
-    case Opcode::LessThan:      out << "LessThan"; return position + 1;
-    case Opcode::GreaterThan:           out << "GreaterThan"; return position + 1;
-    case Opcode::LessThanOrEqual:       out << "LessThanOrEqual"; return position + 1;
-    case Opcode::GreaterThanOrEqual:    out << "GreaterThanOrEqual"; return position + 1;
-    case Opcode::Subscript:     out << "Subscript"; return position + 1;
-    case Opcode::True:          out << "True"; return position + 1;
-    case Opcode::False:         out << "False"; return position + 1;
-    case Opcode::Show:          out << "Show"; return position + 1;
-    case Opcode::Call:          return disassembleCall(out, "Call", position);
-    case Opcode::Empty:         out << "Empty"; return position + 1;
-    case Opcode::It:            out << "It"; return position + 1;
+    switch (opcode) {
+    case Opcode::Jump:
+        return disassembleJump(out, "Jump", position);
+    case Opcode::JumpIfFalse:
+        return disassembleJump(out, "JumpIfFalse", position);
+    case Opcode::JumpIfTrue:
+        return disassembleJump(out, "JumpIfTrue", position);
+    case Opcode::Repeat:
+        return disassembleJump(out, "Repeat", position);
+    case Opcode::Pop:
+        out << "Pop";
+        return position + 1;
+    case Opcode::Return:
+        out << "Return";
+        return position + 1;
+    case Opcode::Constant:
+        return disassembleConstant(out, "Constant", position);
+    case Opcode::Short:
+        return disassembleShort(out, position);
+    case Opcode::OpenRange:
+        out << "OpenRange";
+        return position + 1;
+    case Opcode::ClosedRange:
+        out << "ClosedRange";
+        return position + 1;
+    case Opcode::List:
+        return disassembleList(out, position);
+    case Opcode::Dictionary:
+        return disassembleDictionary(out, position);
+    case Opcode::GetGlobal:
+        return disassembleConstant(out, "GetGlobal", position);
+    case Opcode::SetGlobal:
+        return disassembleConstant(out, "SetGlobal", position);
+    case Opcode::GetLocal:
+        return disassembleLocal(out, "GetLocal", position);
+    case Opcode::SetLocal:
+        return disassembleLocal(out, "SetLocal", position);
+    case Opcode::Negate:
+        out << "Negate";
+        return position + 1;
+    case Opcode::Not:
+        out << "Not";
+        return position + 1;
+    case Opcode::Add:
+        out << "Add";
+        return position + 1;
+    case Opcode::Subtract:
+        out << "Subtract";
+        return position + 1;
+    case Opcode::Multiply:
+        out << "Multiply";
+        return position + 1;
+    case Opcode::Divide:
+        out << "Divide";
+        return position + 1;
+    case Opcode::Exponent:
+        out << "Exponent";
+        return position + 1;
+    case Opcode::Modulo:
+        out << "Modulo";
+        return position + 1;
+    case Opcode::Equal:
+        out << "Equal";
+        return position + 1;
+    case Opcode::NotEqual:
+        out << "NotEqual";
+        return position + 1;
+    case Opcode::LessThan:
+        out << "LessThan";
+        return position + 1;
+    case Opcode::GreaterThan:
+        out << "GreaterThan";
+        return position + 1;
+    case Opcode::LessThanOrEqual:
+        out << "LessThanOrEqual";
+        return position + 1;
+    case Opcode::GreaterThanOrEqual:
+        out << "GreaterThanOrEqual";
+        return position + 1;
+    case Opcode::Subscript:
+        out << "Subscript";
+        return position + 1;
+    case Opcode::True:
+        out << "True";
+        return position + 1;
+    case Opcode::False:
+        out << "False";
+        return position + 1;
+    case Opcode::Show:
+        out << "Show";
+        return position + 1;
+    case Opcode::Call:
+        return disassembleCall(out, "Call", position);
+    case Opcode::Empty:
+        out << "Empty";
+        return position + 1;
+    case Opcode::It:
+        out << "It";
+        return position + 1;
     }
 }
 
@@ -178,13 +238,14 @@ std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode) {
         const auto &constant = bytecode.constants()[i];
         out << "[" << i << "] (" << constant.typeName() << ") " << constant << std::endl;
         if (const auto &function = constant.as<Function>()) {
-            out << std::string(30, '=') << std::endl << *function->bytecode() 
-                << std::string(30, '=') << std::endl;
+            out << std::string(30, '=') << std::endl
+                << *function->bytecode() << std::string(30, '=') << std::endl;
         }
     }
 
     int width = (bytecode.code().size() / 10) + 1;
-    if (width < 4) width = 4;
+    if (width < 4)
+        width = 4;
 
     auto position = bytecode.code().begin();
     Optional<Location> previousLocation;
@@ -193,9 +254,11 @@ std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode) {
 
         auto location = bytecode.location(position);
         if (!previousLocation.has_value() || previousLocation.value() != location) {
-            out << std::setfill(' ') << std::setw(8) << std::right << bytecode.location(position) << " ";
+            out << std::setfill(' ') << std::setw(8) << std::right << bytecode.location(position)
+                << " ";
         } else {
-            out << std::setfill(' ') << std::setw(8) << std::right << "|" << " ";
+            out << std::setfill(' ') << std::setw(8) << std::right << "|"
+                << " ";
         }
         previousLocation = location;
 

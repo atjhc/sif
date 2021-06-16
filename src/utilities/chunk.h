@@ -32,10 +32,9 @@ struct chunk {
     chunk(const chunk &) = default;
 
     template <class T>
-    chunk(type type, T source)
-        : _type(type), _begin(source.begin()), _end(source.end()) {}
+    chunk(type type, T source) : _type(type), _begin(source.begin()), _end(source.end()) {}
 
-    chunk& operator=(const chunk &) = default;
+    chunk &operator=(const chunk &) = default;
 
     std::string::const_iterator begin() { return _begin; }
     std::string::const_iterator end() { return _end; }
@@ -74,8 +73,7 @@ struct range_chunk : public chunk {
         _seek(begin, end);
     }
 
-    range_chunk(type type, size_t begin, size_t end, const chunk &source)
-        : chunk(type, source) {
+    range_chunk(type type, size_t begin, size_t end, const chunk &source) : chunk(type, source) {
         _seek(begin, end);
     }
 

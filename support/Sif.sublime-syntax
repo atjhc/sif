@@ -1,0 +1,73 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+file_extensions:
+  - sif
+scope: source.sif
+contexts:
+  main:
+    - match: '"'
+      scope: punctuation.definition.string.begin.sif
+      push: double_quoted_string
+
+    - match: "'"
+      scope: punctuation.definition.string.begin.sif
+      push: single_quoted_string
+
+    - match: '--'
+      scope: punctuation.definition.comment.sif
+      push: line_comment
+
+    - match: '#'
+      scope: punctuation.definition.comment.sif
+      push: line_comment
+
+    - match: '\\'
+      scope: punctuation.definition.comment.sif
+      push: line_comment
+
+    - match: '¬'
+      scope: punctuation.definition.comment.sif
+      push: line_comment
+
+    - match: '\b(if|else|then|repeat|until|while|end|function|exit|return|next|set|to)\b'
+      scope: keyword.control.sif
+
+    - match: '\b(is|not|and|or)\b'
+      scope: keyword.operator.sif
+
+    - match: '\b(print\s+line|read\s+line)\b'
+      scope: keyword.other.sif
+
+    - match: '\b(print)\b'
+      scope: keyword.other.sif
+
+    - match: '\b(string|integer|float|list|dictionary|bool)\b'
+      scope: keyword.other.sif
+
+    - match: '\b(true|false|empty|it)\b'
+      scope: constant.numeric.sif
+
+    - match: '\b(-)?[0-9.]+\b'
+      scope: constant.numeric.sif
+
+  double_quoted_string:
+    - meta_scope: string.quoted.double.sif
+    - match: '\\.'
+      scope: constant.character.escape.sif
+    - match: '"'
+      scope: punctuation.definition.string.end.sif
+      pop: true
+
+  single_quoted_string:
+    - meta_scope: string.quoted.single.sif
+    - match: '\\.'
+      scope: constant.character.escape.sif
+    - match: "'"
+      scope: punctuation.definition.string.end.sif
+      pop: true
+
+  line_comment:
+    - meta_scope: comment.line.sif
+    - match: $
+      pop: true

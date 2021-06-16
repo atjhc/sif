@@ -15,9 +15,9 @@
 //
 
 #include "compiler/Compiler.h"
-#include "utilities/strings.h"
-#include "runtime/objects/String.h"
 #include "runtime/objects/Function.h"
+#include "runtime/objects/String.h"
+#include "utilities/strings.h"
 
 CH_NAMESPACE_BEGIN
 
@@ -31,17 +31,11 @@ Strong<Bytecode> Compiler::compile() {
     return _errors.size() > 0 ? nullptr : _bytecode;
 }
 
-void Compiler::addExtern(const std::string &name) {
-    _globals[name] = 0;
-}
+void Compiler::addExtern(const std::string &name) { _globals[name] = 0; }
 
-const std::vector<CompileError> &Compiler::errors() const {
-    return _errors;
-}
+const std::vector<CompileError> &Compiler::errors() const { return _errors; }
 
-Bytecode &Compiler::bytecode() {
-    return *_bytecode;
-}
+Bytecode &Compiler::bytecode() { return *_bytecode; }
 
 void Compiler::error(const Node &node, const std::string &message) {
     _errors.push_back(CompileError(node, message));
@@ -99,7 +93,7 @@ void Compiler::resolve(Location location, const std::string &name) {
             bytecode().add(location, Opcode::Empty);
             return;
         }
-    } else {    
+    } else {
         if (auto it = _globals.find(name); it != _globals.end()) {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
@@ -224,13 +218,9 @@ void Compiler::visit(const RepeatCondition &statement) {
     bytecode().patchJump(_exitRepeat);
 }
 
-void Compiler::visit(const ExitRepeat &exit) {
-    bytecode().addRepeat(exit.location, _exitRepeat);
-}
+void Compiler::visit(const ExitRepeat &exit) { bytecode().addRepeat(exit.location, _exitRepeat); }
 
-void Compiler::visit(const NextRepeat &next) {
-    bytecode().addRepeat(next.location, _nextRepeat);
-}
+void Compiler::visit(const NextRepeat &next) { bytecode().addRepeat(next.location, _nextRepeat); }
 
 void Compiler::visit(const Call &call) {
     resolve(call.location, call.signature.name());
@@ -240,9 +230,7 @@ void Compiler::visit(const Call &call) {
     bytecode().add(call.location, Opcode::Call, call.arguments.size());
 }
 
-void Compiler::visit(const Grouping &grouping) {
-    grouping.expression->accept(*this);
-}
+void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*this); }
 
 void Compiler::visit(const Variable &variable) {
     resolve(variable.location, lowercase(variable.token.text));

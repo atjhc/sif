@@ -15,15 +15,13 @@
 //
 
 #include "compiler/FunctionSignature.h"
-#include "compiler/Scanner.h"
-#include "compiler/Parser.h"
 #include "Utilities.h"
+#include "compiler/Parser.h"
+#include "compiler/Scanner.h"
 
 CH_NAMESPACE_BEGIN
 
-static inline std::string Name(const Token &token) {
-    return lowercase(token.text);
-}
+static inline std::string Name(const Token &token) { return lowercase(token.text); }
 
 static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
     return out << Name(token);
@@ -45,11 +43,10 @@ static inline std::ostream &operator<<(std::ostream &out, const FunctionSignatur
     return out << Name(option);
 }
 
-static inline std::string Name(const FunctionSignature::Argument &argument) {
-    return "(:)";
-}
+static inline std::string Name(const FunctionSignature::Argument &argument) { return "(:)"; }
 
-static inline std::ostream &operator<<(std::ostream &out, const FunctionSignature::Argument &argument) {
+static inline std::ostream &operator<<(std::ostream &out,
+                                       const FunctionSignature::Argument &argument) {
     out << "(";
     if (argument.token.has_value()) {
         out << argument.token.value();
@@ -63,7 +60,7 @@ static inline std::ostream &operator<<(std::ostream &out, const FunctionSignatur
 }
 
 static inline std::ostream &operator<<(std::ostream &out, const FunctionSignature::Term &term) {
-    std::visit([&](auto && arg){ out << arg;}, term);
+    std::visit([&](auto &&arg) { out << arg; }, term);
     return out;
 }
 
@@ -77,7 +74,7 @@ std::string FunctionSignature::name() const {
     std::ostringstream ss;
     auto it = terms.begin();
     while (it != terms.end()) {
-        std::visit([&](auto && arg){ ss << Name(arg); }, *it);
+        std::visit([&](auto &&arg) { ss << Name(arg); }, *it);
         it++;
         if (it != terms.end()) {
             ss << " ";
@@ -98,12 +95,15 @@ std::string FunctionSignature::description() const {
 bool FunctionSignature::operator<(const FunctionSignature &signature) const {
     int i = 0;
     while (i < terms.size() || i < signature.terms.size()) {
-        if (i == terms.size()) return false;
-        if (i == signature.terms.size()) return true;
+        if (i == terms.size())
+            return false;
+        if (i == signature.terms.size())
+            return true;
         if (terms[i].index() < signature.terms[i].index()) {
             return true;
         }
-        if (std::holds_alternative<Token>(terms[i]) && std::holds_alternative<Token>(signature.terms[i])) {
+        if (std::holds_alternative<Token>(terms[i]) &&
+            std::holds_alternative<Token>(signature.terms[i])) {
             if (std::get<Token>(terms[i]).text < std::get<Token>(signature.terms[i]).text) {
                 return true;
             }

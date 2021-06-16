@@ -15,24 +15,16 @@
 
 CH_NAMESPACE_BEGIN
 
-Range::Range(Optional<int64_t> start, Optional<int64_t> end, bool closed) 
+Range::Range(Optional<int64_t> start, Optional<int64_t> end, bool closed)
     : _start(start), _end(end), _closed(closed) {}
-    
-Optional<int64_t> Range::start() const {
-    return _start;
-}
 
-Optional<int64_t> Range::end() const {
-    return _end;
-}
+Optional<int64_t> Range::start() const { return _start; }
 
-bool Range::closed() const {
-    return _closed;
-}
+Optional<int64_t> Range::end() const { return _end; }
 
-std::string Range::typeName() const {
-    return "range";
-}
+bool Range::closed() const { return _closed; }
+
+std::string Range::typeName() const { return "range"; }
 
 std::string Range::description() const {
     std::ostringstream ss;

@@ -18,25 +18,31 @@
 
 CH_NAMESPACE_BEGIN
 
-Call::Call(const FunctionSignature &signature, const std::vector<Optional<Token>> &tokens, std::vector<Owned<Expression>> arguments)
+Call::Call(const FunctionSignature &signature, const std::vector<Optional<Token>> &tokens,
+           std::vector<Owned<Expression>> arguments)
     : signature(signature), tokens(tokens), arguments(std::move(arguments)) {}
 
-Binary::Binary(Owned<Expression> leftExpression, Operator binaryOperator, Owned<Expression> rightExpression)
-    : leftExpression(std::move(leftExpression)), binaryOperator(binaryOperator), rightExpression(std::move(rightExpression)) {}
+Binary::Binary(Owned<Expression> leftExpression, Operator binaryOperator,
+               Owned<Expression> rightExpression)
+    : leftExpression(std::move(leftExpression)), binaryOperator(binaryOperator),
+      rightExpression(std::move(rightExpression)) {}
 
-Unary::Unary(Operator unaryOperator, Owned<Expression> expression) 
+Unary::Unary(Operator unaryOperator, Owned<Expression> expression)
     : unaryOperator(unaryOperator), expression(std::move(expression)) {}
 
 Grouping::Grouping(Owned<Expression> expression) : expression(std::move(expression)) {}
 
-Variable::Variable(const Token &token, Optional<Token> typeName) : token(token), typeName(typeName) {}
+Variable::Variable(const Token &token, Optional<Token> typeName)
+    : token(token), typeName(typeName) {}
 
 RangeLiteral::RangeLiteral(Owned<Expression> start, Owned<Expression> end, bool closed)
     : start(std::move(start)), end(std::move(end)), closed(closed) {}
 
-ListLiteral::ListLiteral(std::vector<Owned<Expression>> expressions) : expressions(std::move(expressions)) {}
+ListLiteral::ListLiteral(std::vector<Owned<Expression>> expressions)
+    : expressions(std::move(expressions)) {}
 
-DictionaryLiteral::DictionaryLiteral(Map<Owned<Expression>, Owned<Expression>> values) : values(std::move(values)) {}
+DictionaryLiteral::DictionaryLiteral(Map<Owned<Expression>, Owned<Expression>> values)
+    : values(std::move(values)) {}
 
 Literal::Literal(Token token) : token(token) {}
 

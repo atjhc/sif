@@ -89,13 +89,17 @@ struct Token {
     Token(Type type, Location location) : type(type), location(location) {}
 
     bool isWord() const;
-    
+
     std::string description() const {
         switch (type) {
-        case Type::Error: return "$error";
-        case Type::EndOfFile: return "$end";
-        case Type::NewLine: return "$nl";
-        default: return text;
+        case Type::Error:
+            return "$error";
+        case Type::EndOfFile:
+            return "$end";
+        case Type::NewLine:
+            return "$nl";
+        default:
+            return text;
         }
     }
 };

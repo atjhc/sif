@@ -29,7 +29,9 @@ Repeat::Repeat(Owned<Statement> statement) : statement(std::move(statement)) {}
 //     : Repeat(std::move(statements)), startExpression(std::move(startExpression)),
 //       endExpression(std::move(endExpression)), ascending(ascending) {}
 
-RepeatCondition::RepeatCondition(Owned<Statement> statement, Owned<Expression> condition, bool conditionValue)
-    : Repeat(std::move(statement)), condition(std::move(condition)), conditionValue(conditionValue) {}
+RepeatCondition::RepeatCondition(Owned<Statement> statement, Owned<Expression> condition,
+                                 bool conditionValue)
+    : Repeat(std::move(statement)), condition(std::move(condition)),
+      conditionValue(conditionValue) {}
 
 CH_NAMESPACE_END
