@@ -49,9 +49,9 @@ Owned<Statement> Parser::parse() {
     return result;
 }
 
-FunctionSignature Parser::parseFunctionSignature() { return _parseFunctionSignature(); }
+Signature Parser::parseFunctionSignature() { return _parseFunctionSignature(); }
 
-void Parser::declare(const FunctionSignature &signature) { _functionDecls.insert(signature); }
+void Parser::declare(const Signature &signature) { _functionDecls.insert(signature); }
 
 const std::vector<SyntaxError> &Parser::errors() { return _errors; }
 
@@ -64,9 +64,17 @@ Optional<Token> Parser::_match(const std::initializer_list<Token::Type> &types) 
     return None;
 }
 
-Token Parser::_consumeWord(const std::string &message) {
-    if (_peek().isWord())
+Optional<Token> Parser::_matchWord() {
+    if (_peek().isWord()) {
         return _advance();
+    }
+    return None;
+}
+
+Token Parser::_consumeWord(const std::string &message) {
+    if (_peek().isWord()) {
+        return _advance();
+    }
     throw SyntaxError(_peek(), message);
 }
 
@@ -190,7 +198,7 @@ void Parser::_trace(const std::string &message) {
 
 #pragma mark - Grammar
 
-bool Parser::_matchTerm(const FunctionSignature &signature, int index,
+bool Parser::_matchTerm(const Signature &signature, int index,
                         std::vector<Optional<Token>> &tokens,
                         std::vector<Owned<Expression>> &arguments) {
     const auto &term = signature.terms[index];
@@ -201,7 +209,7 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index,
         }
         return false;
     }
-    if (auto option = std::get_if<FunctionSignature::Option>(&term)) {
+    if (auto option = std::get_if<Signature::Option>(&term)) {
         if (_peek().type == option->token.type &&
             lowercase(_peek().text) == lowercase(option->token.text)) {
             tokens.push_back(_advance());
@@ -210,7 +218,7 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index,
         }
         return true;
     }
-    if (auto argument = std::get_if<FunctionSignature::Argument>(&term)) {
+    if (auto argument = std::get_if<Signature::Argument>(&term)) {
         if (index == signature.terms.size() - 1) {
             if (auto matchedExpression = _parseList()) {
                 arguments.push_back(std::move(matchedExpression));
@@ -224,7 +232,7 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index,
         }
         return false;
     }
-    if (auto choice = std::get_if<FunctionSignature::Choice>(&term)) {
+    if (auto choice = std::get_if<Signature::Choice>(&term)) {
         for (const auto &token : choice->tokens) {
             if (_peek().isWord() && lowercase(_peek().text) == lowercase(token.text)) {
                 tokens.push_back(_advance());
@@ -236,7 +244,7 @@ bool Parser::_matchTerm(const FunctionSignature &signature, int index,
     return false;
 }
 
-bool Parser::_matchSignature(const FunctionSignature &signature,
+bool Parser::_matchSignature(const Signature &signature,
                              std::vector<Optional<Token>> &tokens,
                              std::vector<Owned<Expression>> &arguments) {
     trace(Concat("Checking function signature ", Quoted(signature.name())));
@@ -290,9 +298,9 @@ Owned<Statement> Parser::_parseStatement() {
     return statement;
 }
 
-FunctionSignature Parser::_parseFunctionSignature() {
-    FunctionSignature signature;
-    while (_peek().isWord() || _peek().type == Token::Type::LeftParen) {
+Signature Parser::_parseFunctionSignature() {
+    Signature signature;
+    while (_peek().isWord() || _peek().type == Token::Type::LeftParen || _peek().type == Token::Type::LeftBrace) {
         auto token = _advance();
         if (token.isWord()) {
             std::vector<Token> tokens({token});
@@ -302,38 +310,34 @@ FunctionSignature Parser::_parseFunctionSignature() {
             if (tokens.size() > 1) {
                 std::sort(tokens.begin(), tokens.end(),
                           [](Token lhs, Token rhs) { return lhs.text < rhs.text; });
-                signature.terms.push_back(FunctionSignature::Choice{tokens});
+                signature.terms.push_back(Signature::Choice{tokens});
             } else {
-                signature.terms.push_back(FunctionSignature::Term{token});
+                signature.terms.push_back(Signature::Term{token});
             }
+        } else if (token.type == Token::Type::LeftParen) {
+            auto word = _consumeWord();
+            signature.terms.push_back(Signature::Option{word});
+            _consume(Token::Type::RightParen, "expected right parenthesis");
         } else {
-            if (_peek().isWord()) {
-                auto word = _advance();
+            Optional<Token> word;
+            Optional<Token> typeName;
+            if ((word = _matchWord())) {
                 if (_match({Token::Type::Colon})) {
-                    auto typeName = _match({Token::Type::Word});
-                    _consume(Token::Type::RightParen, Concat("expected ", Quoted(")")));
-                    signature.terms.push_back(FunctionSignature::Argument{word, typeName});
-                } else if (_match({Token::Type::RightParen})) {
-                    signature.terms.push_back(FunctionSignature::Option{word});
+                    typeName = _consumeWord("expected a type name");
                 }
             } else if (_match({Token::Type::Colon})) {
-                auto typeName = _match({Token::Type::Word});
-                signature.terms.push_back(
-                    FunctionSignature::Term{FunctionSignature::Argument{None, typeName}});
-                _consume(Token::Type::RightParen, "expected right parenthesis");
-            } else {
-                throw SyntaxError(_peek(),
-                                  Concat("expected a word, ", Quoted(":"), ", or ", Quoted("/")));
+                typeName = _consumeWord("expected a type name");
             }
+            _consume(Token::Type::RightBrace, Concat("expected ", Quoted("}")));
+            signature.terms.push_back(Signature::Argument{word, typeName});
         }
     }
     if (signature.terms.size() == 0) {
-        throw SyntaxError(_peek(), Concat("expected a word or ", Quoted("(")));
+        throw SyntaxError(_peek(), Concat("expected a word, or ", Quoted("("), ", ", Quoted("{")));
     }
     if (_match({Token::Type::Arrow})) {
-        signature.typeName = _match({Token::Type::Word});
+        signature.typeName = _consumeWord("expected a type name");
     }
-
     return signature;
 }
 
@@ -431,7 +435,6 @@ Owned<Statement> Parser::_parseRepeat() {
 }
 
 Owned<Statement> Parser::_parseAssignment() {
-    // auto token = _consume(Token::Type::Word, Concat("expected variable name"));
     auto token = _consumeWord("expected variable name");
     Optional<Token> typeName;
     if (_match({Token::Type::Colon})) {

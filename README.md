@@ -2,15 +2,13 @@
 
 Sif is a scripting language inspired by [HyperTalk](https://en.wikipedia.org/wiki/HyperTalk), [AppleScript](https://en.wikipedia.org/wiki/AppleScript), and [Jinx](https://www.jinx-lang.org).
 
-Since you probably just want to see the language, here is a sample Sif script that solves FizzBuzz:
+Since you probably just want to see the language, here is a sample Sif script:
 ```
-repeat for each x in 1 to 100
-  if x mod 15 is 0 then put "FizzBuzz" else
-    if x mod 5 is 0 then put "Buzz" else
-      if x mod 3 is 0 then put "Fizz" else put x
-    end if
-  end if
-end repeat
+function factorial {x}
+  if x = 0 or x = 1 then return 1
+  return x * factorial x - 1
+end function
+print factorial 10
 ```
 ### How to
 

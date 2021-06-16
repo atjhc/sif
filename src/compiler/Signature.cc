@@ -14,10 +14,10 @@
 //  limitations under the License.
 //
 
-#include "compiler/FunctionSignature.h"
-#include "Utilities.h"
+#include "compiler/Signature.h"
 #include "compiler/Parser.h"
 #include "compiler/Scanner.h"
+#include "Utilities.h"
 
 CH_NAMESPACE_BEGIN
 
@@ -27,27 +27,27 @@ static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
     return out << Name(token);
 }
 
-static inline std::string Name(const FunctionSignature::Choice &choice) {
+static inline std::string Name(const Signature::Choice &choice) {
     return Join(choice.tokens, "/");
 }
 
-static inline std::ostream &operator<<(std::ostream &out, const FunctionSignature::Choice &choice) {
+static inline std::ostream &operator<<(std::ostream &out, const Signature::Choice &choice) {
     return out << Name(choice);
 }
 
-static inline std::string Name(const FunctionSignature::Option &option) {
+static inline std::string Name(const Signature::Option &option) {
     return Concat("(", lowercase(option.token.text), ")");
 }
 
-static inline std::ostream &operator<<(std::ostream &out, const FunctionSignature::Option &option) {
+static inline std::ostream &operator<<(std::ostream &out, const Signature::Option &option) {
     return out << Name(option);
 }
 
-static inline std::string Name(const FunctionSignature::Argument &argument) { return "(:)"; }
+static inline std::string Name(const Signature::Argument &argument) { return "{}"; }
 
 static inline std::ostream &operator<<(std::ostream &out,
-                                       const FunctionSignature::Argument &argument) {
-    out << "(";
+                                       const Signature::Argument &argument) {
+    out << "{";
     if (argument.token.has_value()) {
         out << argument.token.value();
     }
@@ -55,22 +55,22 @@ static inline std::ostream &operator<<(std::ostream &out,
     if (argument.typeName.has_value()) {
         out << " " << argument.typeName.value();
     }
-    out << ")";
+    out << "}";
     return out;
 }
 
-static inline std::ostream &operator<<(std::ostream &out, const FunctionSignature::Term &term) {
+static inline std::ostream &operator<<(std::ostream &out, const Signature::Term &term) {
     std::visit([&](auto &&arg) { out << arg; }, term);
     return out;
 }
 
-FunctionSignature FunctionSignature::Make(const std::string &format) {
+Signature Signature::Make(const std::string &format) {
     Scanner scanner(format.c_str(), format.c_str() + format.length());
     Parser parser(ParserConfig(), scanner);
     return parser.parseFunctionSignature();
 }
 
-std::string FunctionSignature::name() const {
+std::string Signature::name() const {
     std::ostringstream ss;
     auto it = terms.begin();
     while (it != terms.end()) {
@@ -83,7 +83,7 @@ std::string FunctionSignature::name() const {
     return ss.str();
 }
 
-std::string FunctionSignature::description() const {
+std::string Signature::description() const {
     std::ostringstream ss;
     ss << Join(terms, " ");
     if (typeName.has_value()) {
@@ -92,7 +92,7 @@ std::string FunctionSignature::description() const {
     return ss.str();
 }
 
-bool FunctionSignature::operator<(const FunctionSignature &signature) const {
+bool Signature::operator<(const Signature &signature) const {
     int i = 0;
     while (i < terms.size() || i < signature.terms.size()) {
         if (i == terms.size())
@@ -113,7 +113,7 @@ bool FunctionSignature::operator<(const FunctionSignature &signature) const {
     return false;
 }
 
-bool FunctionSignature::operator==(const FunctionSignature &signature) const {
+bool Signature::operator==(const Signature &signature) const {
     return name() == signature.name();
 }
 

@@ -136,7 +136,7 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
 
     _locals->push_back({"", _depth});
     for (const auto &term : functionDecl.signature.terms) {
-        if (auto arg = std::get_if<FunctionSignature::Argument>(&term)) {
+        if (auto arg = std::get_if<Signature::Argument>(&term)) {
             if (arg->token.has_value()) {
                 _locals->push_back({arg->token.value().text, _depth});
             }

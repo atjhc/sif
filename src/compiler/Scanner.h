@@ -110,27 +110,26 @@ class Scanner {
 
     Token scan();
 
-    int skipNewlines;
-
   private:
-    bool _isAtEnd();
-    char _advance();
-    char _peekNext();
-    bool _match(const char);
-    void _skipWhitespace();
-    void _skipLine();
+    bool isAtEnd();
+    char advance();
+    char peekNext();
+    bool match(const char);
+    void skipWhitespace();
+    void skipLine();
 
-    Token _scanString(char terminal);
-    Token _scanNumber();
-    Token _scanWord();
+    Token scanString(char terminal);
+    Token scanNumber();
+    Token scanWord();
 
-    Token _make(Token::Type);
-    Token _makeError(const std::string &);
-    Token::Type _wordType();
-    Token::Type _checkKeyword(int offset, int length, const char *name, Token::Type type);
+    Token make(Token::Type);
+    Token makeError(const std::string &);
+    Token::Type wordType();
+    Token::Type checkKeyword(int offset, int length, const char *name, Token::Type type);
 
     const char *_start, *_end, *_current;
     Location _startLocation, _currentLocation;
+    int _skipNewlines;
 };
 
 CH_NAMESPACE_END

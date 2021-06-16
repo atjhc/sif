@@ -24,7 +24,7 @@
 
 CH_NAMESPACE_BEGIN
 
-struct FunctionSignature {
+struct Signature {
     struct Argument {
         Optional<Token> token;
         Optional<Token> typeName;
@@ -37,13 +37,13 @@ struct FunctionSignature {
     };
     using Term = std::variant<Token, Choice, Argument, Option>;
 
-    static FunctionSignature Make(const std::string &format);
+    static Signature Make(const std::string &format);
 
     std::string name() const;
     std::string description() const;
 
-    bool operator<(const FunctionSignature &signature) const;
-    bool operator==(const FunctionSignature &signature) const;
+    bool operator<(const Signature &signature) const;
+    bool operator==(const Signature &signature) const;
 
     std::vector<Term> terms;
     Optional<Token> typeName;

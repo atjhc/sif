@@ -18,7 +18,7 @@
 
 CH_NAMESPACE_BEGIN
 
-Call::Call(const FunctionSignature &signature, const std::vector<Optional<Token>> &tokens,
+Call::Call(const Signature &signature, const std::vector<Optional<Token>> &tokens,
            std::vector<Owned<Expression>> arguments)
     : signature(signature), tokens(tokens), arguments(std::move(arguments)) {}
 

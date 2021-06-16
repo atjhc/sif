@@ -36,99 +36,99 @@ bool Token::isWord() const {
 }
 
 Scanner::Scanner(const char *start, const char *end)
-    : skipNewlines(0), _start(start), _end(end), _current(start), _currentLocation{1, 1} {}
+    : _start(start), _end(end), _current(start), _currentLocation{1, 1}, _skipNewlines(0) {}
 
 Token Scanner::scan() {
-    _skipWhitespace();
+    skipWhitespace();
     _start = _current;
     _startLocation = _currentLocation;
 
-    if (_isAtEnd()) {
-        return _make(Token::Type::EndOfFile);
+    if (isAtEnd()) {
+        return make(Token::Type::EndOfFile);
     }
 
-    char c = _advance();
+    char c = advance();
 
     if (isalpha(c) || c == '_')
-        return _scanWord();
+        return scanWord();
     if (isdigit(c))
-        return _scanNumber();
+        return scanNumber();
 
     switch (c) {
     case '\n':
         _currentLocation.lineNumber++;
         _currentLocation.position = 1;
-        return _make(Token::Type::NewLine);
+        return make(Token::Type::NewLine);
     case '(':
-        skipNewlines++;
-        return _make(Token::Type::LeftParen);
+        _skipNewlines++;
+        return make(Token::Type::LeftParen);
     case ')':
-        skipNewlines--;
-        return _make(Token::Type::RightParen);
+        _skipNewlines--;
+        return make(Token::Type::RightParen);
     case '[':
-        skipNewlines++;
-        return _make(Token::Type::LeftBracket);
+        _skipNewlines++;
+        return make(Token::Type::LeftBracket);
     case ']':
-        skipNewlines--;
-        return _make(Token::Type::RightBracket);
+        _skipNewlines--;
+        return make(Token::Type::RightBracket);
     case '{':
-        skipNewlines++;
-        return _make(Token::Type::LeftBrace);
+        _skipNewlines++;
+        return make(Token::Type::LeftBrace);
     case '}':
-        skipNewlines--;
-        return _make(Token::Type::RightBrace);
+        _skipNewlines--;
+        return make(Token::Type::RightBrace);
     case '+':
-        return _make(Token::Type::Plus);
+        return make(Token::Type::Plus);
     case '-':
-        return _make(_match('>') ? Token::Type::Arrow : Token::Type::Minus);
+        return make(match('>') ? Token::Type::Arrow : Token::Type::Minus);
     case '*':
-        return _make(Token::Type::Star);
+        return make(Token::Type::Star);
     case '/':
-        return _make(Token::Type::Slash);
+        return make(Token::Type::Slash);
     case ':':
-        return _make(Token::Type::Colon);
+        return make(Token::Type::Colon);
     case ',':
-        return _make(Token::Type::Comma);
+        return make(Token::Type::Comma);
     case '=':
-        return _make(Token::Type::Equal);
+        return make(Token::Type::Equal);
     case '%':
-        return _make(Token::Type::Percent);
+        return make(Token::Type::Percent);
     case '^':
-        return _make(Token::Type::Carrot);
+        return make(Token::Type::Carrot);
     case '!':
-        return _make(_match('=') ? Token::Type::NotEqual : Token::Type::Bang);
+        return make(match('=') ? Token::Type::NotEqual : Token::Type::Bang);
     case '<':
-        return _make(_match('=') ? Token::Type::LessThanOrEqual : Token::Type::LessThan);
+        return make(match('=') ? Token::Type::LessThanOrEqual : Token::Type::LessThan);
     case '>':
-        return _make(_match('=') ? Token::Type::GreaterThanOrEqual : Token::Type::GreaterThan);
+        return make(match('=') ? Token::Type::GreaterThanOrEqual : Token::Type::GreaterThan);
     case '"':
-        return _scanString('"');
+        return scanString('"');
     case '\'':
-        return _scanString('\'');
+        return scanString('\'');
     case '.':
-        if (_match('.')) {
-            if (_match('.')) {
-                return _make(Token::Type::ThreeDots);
-            } else if (_match('<')) {
-                return _make(Token::Type::ClosedRange);
+        if (match('.')) {
+            if (match('.')) {
+                return make(Token::Type::ThreeDots);
+            } else if (match('<')) {
+                return make(Token::Type::ClosedRange);
             }
         }
     }
-    return _makeError(Concat("unknown character: ", int(c)));
+    return makeError(Concat("unknown character: ", int(c)));
 }
 
-Token Scanner::_scanWord() {
-    while (!_isAtEnd()) {
+Token Scanner::scanWord() {
+    while (!isAtEnd()) {
         char c = _current[0];
         if (!isalpha(c) && !isdigit(c) && c != '_') {
             break;
         }
-        _advance();
+        advance();
     }
-    return _make(_wordType());
+    return make(wordType());
 }
 
-Token::Type Scanner::_wordType() {
+Token::Type Scanner::wordType() {
     switch (std::tolower(_start[0])) {
     case 'a':
         if (_current - _start == 1)
@@ -141,11 +141,11 @@ Token::Type Scanner::_wordType() {
                 return Token::Type::An;
             }
         } else if (_current - _start > 2) {
-            return _checkKeyword(1, 2, "nd", Token::Type::And);
+            return checkKeyword(1, 2, "nd", Token::Type::And);
         }
         break;
     case 'o':
-        return _checkKeyword(1, 1, "r", Token::Type::Or);
+        return checkKeyword(1, 1, "r", Token::Type::Or);
     case 'i':
         if (_current - _start == 2) {
             switch (std::tolower(_start[1])) {
@@ -160,11 +160,11 @@ Token::Type Scanner::_wordType() {
         if (_current - _start > 1) {
             switch (std::tolower(_start[1])) {
             case 'l':
-                return _checkKeyword(2, 2, "se", Token::Type::Else);
+                return checkKeyword(2, 2, "se", Token::Type::Else);
             case 'n':
-                return _checkKeyword(2, 1, "d", Token::Type::End);
+                return checkKeyword(2, 1, "d", Token::Type::End);
             case 'x':
-                return _checkKeyword(2, 2, "it", Token::Type::Exit);
+                return checkKeyword(2, 2, "it", Token::Type::Exit);
             }
         }
         break;
@@ -174,9 +174,9 @@ Token::Type Scanner::_wordType() {
         } else {
             switch (std::tolower(_start[1])) {
             case 'h':
-                return _checkKeyword(2, 2, "en", Token::Type::Then);
+                return checkKeyword(2, 2, "en", Token::Type::Then);
             case 'r':
-                return _checkKeyword(2, 2, "ue", Token::Type::BoolLiteral);
+                return checkKeyword(2, 2, "ue", Token::Type::BoolLiteral);
             }
         }
         break;
@@ -185,46 +185,46 @@ Token::Type Scanner::_wordType() {
             if (_current - _start > 2) {
                 switch (std::tolower(_start[2])) {
                 case 't':
-                    return _checkKeyword(3, 3, "urn", Token::Type::Return);
+                    return checkKeyword(3, 3, "urn", Token::Type::Return);
                 case 'p':
-                    return _checkKeyword(3, 3, "eat", Token::Type::Repeat);
+                    return checkKeyword(3, 3, "eat", Token::Type::Repeat);
                 }
             }
         }
         break;
     case 'b':
-        return _checkKeyword(1, 4, "reak", Token::Type::Break);
+        return checkKeyword(1, 4, "reak", Token::Type::Break);
     case 's':
-        return _checkKeyword(1, 2, "et", Token::Type::Set);
+        return checkKeyword(1, 2, "et", Token::Type::Set);
     case 'f':
         if (_current - _start > 1) {
             switch (std::tolower(_start[1])) {
             case 'u':
-                return _checkKeyword(2, 6, "nction", Token::Type::Function);
+                return checkKeyword(2, 6, "nction", Token::Type::Function);
             case 'a':
-                return _checkKeyword(2, 3, "lse", Token::Type::BoolLiteral);
+                return checkKeyword(2, 3, "lse", Token::Type::BoolLiteral);
             case 'o':
-                return _checkKeyword(2, 5, "rever", Token::Type::Forever);
+                return checkKeyword(2, 5, "rever", Token::Type::Forever);
             }
         }
     case 'n':
         if (_current - _start > 1) {
             switch (std::tolower(_start[1])) {
             case 'e':
-                return _checkKeyword(2, 2, "xt", Token::Type::Next);
+                return checkKeyword(2, 2, "xt", Token::Type::Next);
             case 'o':
-                return _checkKeyword(2, 1, "t", Token::Type::Not);
+                return checkKeyword(2, 1, "t", Token::Type::Not);
             }
         }
     case 'w':
-        return _checkKeyword(1, 4, "hile", Token::Type::While);
+        return checkKeyword(1, 4, "hile", Token::Type::While);
     case 'u':
-        return _checkKeyword(1, 4, "ntil", Token::Type::Until);
+        return checkKeyword(1, 4, "ntil", Token::Type::Until);
     }
     return Token::Type::Word;
 }
 
-Token::Type Scanner::_checkKeyword(int offset, int length, const char *name, Token::Type type) {
+Token::Type Scanner::checkKeyword(int offset, int length, const char *name, Token::Type type) {
     if (_current - _start != offset + length) {
         return Token::Type::Word;
     }
@@ -236,8 +236,8 @@ Token::Type Scanner::_checkKeyword(int offset, int length, const char *name, Tok
     return type;
 }
 
-Token Scanner::_scanString(char terminal) {
-    while (!_isAtEnd()) {
+Token Scanner::scanString(char terminal) {
+    while (!isAtEnd()) {
         char c = _current[0];
         if (c == terminal)
             break;
@@ -245,46 +245,46 @@ Token Scanner::_scanString(char terminal) {
             _currentLocation.lineNumber++;
             _currentLocation.position = 1;
         }
-        _advance();
+        advance();
     }
 
-    if (_isAtEnd()) {
-        return _makeError("unterminated string");
+    if (isAtEnd()) {
+        return makeError("unterminated string");
     }
 
-    _advance();
-    return _make(Token::Type::StringLiteral);
+    advance();
+    return make(Token::Type::StringLiteral);
 }
 
-Token Scanner::_scanNumber() {
-    while (!_isAtEnd() && isdigit(_current[0])) {
-        _advance();
+Token Scanner::scanNumber() {
+    while (!isAtEnd() && isdigit(_current[0])) {
+        advance();
     }
 
-    if (!_isAtEnd() && _current[0] == '.') {
+    if (!isAtEnd() && _current[0] == '.') {
         if (_end - _current > 1 && _current[1] == '.') {
-            return _make(Token::Type::IntLiteral);
+            return make(Token::Type::IntLiteral);
         }
-        _advance();
-        while (!_isAtEnd() && isdigit(_current[0])) {
-            _advance();
+        advance();
+        while (!isAtEnd() && isdigit(_current[0])) {
+            advance();
         }
-        return _make(Token::Type::FloatLiteral);
+        return make(Token::Type::FloatLiteral);
     } else {
-        return _make(Token::Type::IntLiteral);
+        return make(Token::Type::IntLiteral);
     }
 }
 
-bool Scanner::_isAtEnd() { return _current == _end; }
+bool Scanner::isAtEnd() { return _current == _end; }
 
-char Scanner::_advance() {
+char Scanner::advance() {
     _current++;
     _currentLocation.position++;
     return _current[-1];
 }
 
-bool Scanner::_match(const char c) {
-    if (_isAtEnd())
+bool Scanner::match(const char c) {
+    if (isAtEnd())
         return false;
     if (_current[0] != c)
         return false;
@@ -293,54 +293,54 @@ bool Scanner::_match(const char c) {
     return true;
 }
 
-char Scanner::_peekNext() {
+char Scanner::peekNext() {
     if (_current + 1 == _end) {
         return '\0';
     }
     return _current[1];
 }
 
-Token Scanner::_make(Token::Type type) {
+Token Scanner::make(Token::Type type) {
     auto token = Token(type, _startLocation);
     token.text = std::string(_start, _current - _start);
     return token;
 }
 
-Token Scanner::_makeError(const std::string &message) {
-    auto token = _make(Token::Type::Error);
+Token Scanner::makeError(const std::string &message) {
+    auto token = make(Token::Type::Error);
     token.text = message;
     return token;
 }
 
-void Scanner::_skipWhitespace() {
-    while (!_isAtEnd()) {
+void Scanner::skipWhitespace() {
+    while (!isAtEnd()) {
         char c = _current[0];
         switch (c) {
         case '\n':
-            if (skipNewlines) {
+            if (_skipNewlines) {
                 _currentLocation.lineNumber++;
                 _currentLocation.position = 1;
-                _advance();
+                advance();
                 break;
             }
             return;
         case ' ':
         case '\t':
         case '\r':
-            _advance();
+            advance();
             break;
         case '#':
-            _skipLine();
+            skipLine();
             break;
         case '\\':
             if (_current < _end && _current[1] == '\n') {
-                _advance();
-                _advance();
+                advance();
+                advance();
             }
             break;
         case '-':
             if (_current < _end && _current[1] == '-') {
-                _skipLine();
+                skipLine();
             } else {
                 return;
             }
@@ -351,9 +351,9 @@ void Scanner::_skipWhitespace() {
     }
 }
 
-void Scanner::_skipLine() {
-    while (!_isAtEnd() && _current[0] != '\n') {
-        _advance();
+void Scanner::skipLine() {
+    while (!isAtEnd() && _current[0] != '\n') {
+        advance();
     }
 }
 

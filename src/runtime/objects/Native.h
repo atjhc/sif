@@ -17,7 +17,7 @@
 #pragma once
 
 #include "Common.h"
-#include "compiler/FunctionSignature.h"
+#include "compiler/Signature.h"
 #include "runtime/Object.h"
 #include "runtime/Value.h"
 

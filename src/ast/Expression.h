@@ -18,7 +18,7 @@
 
 #include "Common.h"
 #include "ast/Node.h"
-#include "compiler/FunctionSignature.h"
+#include "compiler/Signature.h"
 #include "compiler/Scanner.h"
 
 #include <variant>
@@ -55,12 +55,12 @@ struct Expression : Node {
 };
 
 struct Call : Expression {
-    FunctionSignature signature;
+    Signature signature;
 
     std::vector<Optional<Token>> tokens;
     std::vector<Owned<Expression>> arguments;
 
-    Call(const FunctionSignature &signature, const std::vector<Optional<Token>> &tokens,
+    Call(const Signature &signature, const std::vector<Optional<Token>> &tokens,
          std::vector<Owned<Expression>> arguments);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }

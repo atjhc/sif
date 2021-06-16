@@ -15,7 +15,7 @@
 
 CH_NAMESPACE_BEGIN
 
-Function::Function(const FunctionSignature &signature, const Strong<Bytecode> &bytecode)
+Function::Function(const Signature &signature, const Strong<Bytecode> &bytecode)
     : _signature(signature), _bytecode(bytecode) {}
 
 const Strong<Bytecode> &Function::bytecode() const { return _bytecode; }

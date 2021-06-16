@@ -128,15 +128,15 @@ void PrettyPrinter::visit(const Call &call) {
         std::visit(
             Overload {
                 [&](Token token) { out << token.text; },
-                [&](FunctionSignature::Argument argument) {
+                [&](Signature::Argument argument) {
                     (*argsIt)->accept(*this);
                     argsIt++;
                 },
-                [&](FunctionSignature::Choice choice) {
+                [&](Signature::Choice choice) {
                     out << tokensIt->value().text;
                     tokensIt++;
                 },
-                [&](FunctionSignature::Option argument) {
+                [&](Signature::Option argument) {
                     if (tokensIt->has_value()) {
                         out << tokensIt->value().text;
                     } else {

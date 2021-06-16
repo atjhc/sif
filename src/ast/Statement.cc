@@ -20,7 +20,7 @@ CH_NAMESPACE_BEGIN
 
 Block::Block(std::vector<Owned<Statement>> statements) : statements(std::move(statements)) {}
 
-FunctionDecl::FunctionDecl(const FunctionSignature &signature, Owned<Statement> statement)
+FunctionDecl::FunctionDecl(const Signature &signature, Owned<Statement> statement)
     : signature(signature), statement(std::move(statement)) {}
 
 Assignment::Assignment(Owned<Variable> variable, Owned<Expression> expression)

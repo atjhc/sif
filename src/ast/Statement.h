@@ -67,10 +67,10 @@ struct Block : Statement {
 };
 
 struct FunctionDecl : Statement {
-    FunctionSignature signature;
+    Signature signature;
     Owned<Statement> statement;
 
-    FunctionDecl(const FunctionSignature &signature, Owned<Statement> statement);
+    FunctionDecl(const Signature &signature, Owned<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };

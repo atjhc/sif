@@ -70,9 +70,9 @@ class Parser {
     Parser(const ParserConfig &config, Scanner &scanner);
 
     Owned<Statement> parse();
-    FunctionSignature parseFunctionSignature();
+    Signature parseFunctionSignature();
 
-    void declare(const FunctionSignature &signature);
+    void declare(const Signature &signature);
 
     const std::vector<SyntaxError> &errors();
 
@@ -80,6 +80,7 @@ class Parser {
     bool _isAtEnd();
     bool _check(const std::initializer_list<Token::Type> &types);
     Optional<Token> _match(const std::initializer_list<Token::Type> &types);
+    Optional<Token> _matchWord();
     Token _consume(Token::Type type, const std::string &error);
     Token _consumeEnd(Token::Type type);
     Token _consumeNewLine();
@@ -94,9 +95,9 @@ class Parser {
     void _rewind();
     void _commit();
 
-    bool _matchSignature(const FunctionSignature &signature, std::vector<Optional<Token>> &tokens,
+    bool _matchSignature(const Signature &signature, std::vector<Optional<Token>> &tokens,
                          std::vector<Owned<Expression>> &arguments);
-    bool _matchTerm(const FunctionSignature &signature, int index,
+    bool _matchTerm(const Signature &signature, int index,
                     std::vector<Optional<Token>> &tokens,
                     std::vector<Owned<Expression>> &arguments);
 
@@ -104,7 +105,7 @@ class Parser {
     void _trace(const std::string &message);
 #endif
 
-    FunctionSignature _parseFunctionSignature();
+    Signature _parseFunctionSignature();
 
     Owned<Statement> _parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
     Owned<Statement> _parseStatement();
@@ -139,7 +140,7 @@ class Parser {
     Scanner &_scanner;
     std::vector<SyntaxError> _errors;
 
-    std::set<FunctionSignature> _functionDecls;
+    std::set<Signature> _functionDecls;
     std::vector<Variable> _variableDecls;
 
     std::vector<Token> _tokens;

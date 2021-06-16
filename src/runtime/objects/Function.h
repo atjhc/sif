@@ -18,14 +18,14 @@
 
 #include "Common.h"
 #include "compiler/Bytecode.h"
-#include "compiler/FunctionSignature.h"
+#include "compiler/Signature.h"
 #include "runtime/Object.h"
 
 CH_NAMESPACE_BEGIN
 
 class Function : public Object {
   public:
-    Function(const FunctionSignature &signature, const Strong<Bytecode> &bytecode);
+    Function(const Signature &signature, const Strong<Bytecode> &bytecode);
 
     const Strong<Bytecode> &bytecode() const;
 
@@ -34,7 +34,7 @@ class Function : public Object {
     bool equals(Strong<Object>) const override;
 
   private:
-    FunctionSignature _signature;
+    Signature _signature;
     Strong<Bytecode> _bytecode;
 };
 
