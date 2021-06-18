@@ -64,6 +64,9 @@ Map<std::string, Strong<Native>> builtins() {
     };
 
     Map<std::string, Strong<Native>> natives;
+    natives["{} (up) to {}"] = MakeStrong<Native>([](Value *values) -> Value {
+        return MakeStrong<Range>(values[0].asInteger(), values[1].asInteger(), true);
+    });
     natives["quit"] = MakeStrong<Native>([](Value *values) -> Value { exit(0); });
     natives["quit with code {}"] =
         MakeStrong<Native>([](Value *values) -> Value { exit(values[0].asInteger()); });

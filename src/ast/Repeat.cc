@@ -24,14 +24,12 @@ Repeat::Repeat(Owned<Statement> statement) : statement(std::move(statement)) {}
 // RepeatCount::RepeatCount(Owned<Expression> countExpression, Owned<StatementList> statements)
 //     : Repeat(std::move(statements)), countExpression(std::move(countExpression)) {}
 
-// RepeatRange::RepeatRange(Owned<Expression> startExpression, Owned<Expression> endExpression,
-//                          bool ascending, Owned<StatementList> statements)
-//     : Repeat(std::move(statements)), startExpression(std::move(startExpression)),
-//       endExpression(std::move(endExpression)), ascending(ascending) {}
-
 RepeatCondition::RepeatCondition(Owned<Statement> statement, Owned<Expression> condition,
                                  bool conditionValue)
     : Repeat(std::move(statement)), condition(std::move(condition)),
       conditionValue(conditionValue) {}
+
+RepeatForEach::RepeatForEach(Owned<Statement> statement, Owned<Variable> variable, Owned<Expression> expression)
+    : Repeat(std::move(statement)), variable(std::move(variable)), expression(std::move(expression)) {}
 
 CH_NAMESPACE_END

@@ -44,6 +44,8 @@ struct Token {
         An,
         As,
         In,
+        For,
+        Each,
         Comma,
         Colon,
         LeftParen,

@@ -32,6 +32,7 @@ struct Assignment;
 struct If;
 struct Repeat;
 struct RepeatCondition;
+struct RepeatForEach;
 struct ExitRepeat;
 struct NextRepeat;
 struct Return;
@@ -45,7 +46,7 @@ struct Statement : Node {
         virtual void visit(const If &) = 0;
         virtual void visit(const Repeat &) = 0;
         // virtual void visit(const RepeatCount &) = 0;
-        // virtual void visit(const RepeatRange &) = 0;
+        virtual void visit(const RepeatForEach &) = 0;
         virtual void visit(const RepeatCondition &) = 0;
         virtual void visit(const ExitRepeat &) = 0;
         virtual void visit(const NextRepeat &) = 0;

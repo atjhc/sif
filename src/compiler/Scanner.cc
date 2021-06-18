@@ -29,6 +29,8 @@ bool Token::isWord() const {
     case Type::An:
     case Type::And:
     case Type::Or:
+    case Type::For:
+    case Type::Each:
         return true;
     default:
         return false;
@@ -153,12 +155,16 @@ Token::Type Scanner::wordType() {
                 return Token::Type::If;
             case 's':
                 return Token::Type::Is;
+            case 'n':
+                return Token::Type::In;
             }
         }
         break;
     case 'e':
         if (_current - _start > 1) {
             switch (std::tolower(_start[1])) {
+            case 'a':
+                return checkKeyword(2, 2, "ch", Token::Type::Each);
             case 'l':
                 return checkKeyword(2, 2, "se", Token::Type::Else);
             case 'n':
@@ -204,6 +210,9 @@ Token::Type Scanner::wordType() {
             case 'a':
                 return checkKeyword(2, 3, "lse", Token::Type::BoolLiteral);
             case 'o':
+                if (_current - _start == 3 && _start[2] == 'r') {
+                    return Token::Type::For;
+                }
                 return checkKeyword(2, 5, "rever", Token::Type::Forever);
             }
         }

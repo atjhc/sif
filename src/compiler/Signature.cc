@@ -67,7 +67,7 @@ static inline std::ostream &operator<<(std::ostream &out, const Signature::Term 
 Signature Signature::Make(const std::string &format) {
     Scanner scanner(format.c_str(), format.c_str() + format.length());
     Parser parser(ParserConfig(), scanner);
-    return parser.parseFunctionSignature();
+    return parser.parseSignature();
 }
 
 std::string Signature::name() const {

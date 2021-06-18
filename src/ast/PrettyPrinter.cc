@@ -26,7 +26,7 @@ void PrettyPrinter::print(const Expression &expression) { expression.accept(*thi
 
 void PrettyPrinter::print(const Statement &statement) { statement.accept(*this); }
 
-void PrettyPrinter::_printBlock(const Statement &statement) {
+void PrettyPrinter::printBlock(const Statement &statement) {
     _indentLevel++;
     out << std::endl << indentString();
     statement.accept(*this);
@@ -50,7 +50,7 @@ void PrettyPrinter::visit(const Block &block) {
 
 void PrettyPrinter::visit(const FunctionDecl &functionDecl) {
     out << "function " << functionDecl.signature.description();
-    _printBlock(*functionDecl.statement);
+    printBlock(*functionDecl.statement);
     out << indentString() << "end function";
 }
 
@@ -59,11 +59,11 @@ void PrettyPrinter::visit(const If &ifs) {
     ifs.condition->accept(*this);
     out << " then";
 
-    _printBlock(*ifs.ifStatement);
+    printBlock(*ifs.ifStatement);
 
     if (ifs.elseStatement) {
         out << indentString() << "else";
-        _printBlock(*ifs.elseStatement);
+        printBlock(*ifs.elseStatement);
     }
     out << indentString() << "end if";
 }
@@ -89,7 +89,7 @@ void PrettyPrinter::visit(const ExpressionStatement &statement) {
 
 void PrettyPrinter::visit(const Repeat &repeat) {
     out << "repeat forever";
-    _printBlock(*repeat.statement);
+    printBlock(*repeat.statement);
     out << indentString() << "end repeat";
 }
 
@@ -109,7 +109,16 @@ void PrettyPrinter::visit(const RepeatCondition &repeat) {
         out << " until ";
     }
     repeat.condition->accept(*this);
-    _printBlock(*repeat.statement);
+    printBlock(*repeat.statement);
+    out << indentString() << "end repeat";
+}
+
+void PrettyPrinter::visit(const RepeatForEach &foreach) {
+    out << "repeat for each ";
+    foreach.variable->accept(*this);
+    out << " in ";
+    foreach.expression->accept(*this);
+    printBlock(*foreach.statement);
     out << indentString() << "end repeat";
 }
 

@@ -52,11 +52,11 @@ class VirtualMachine {
         size_t sp;
     };
 
+    CallFrame &frame();
+
 #if defined(DEBUG)
     friend std::ostream &operator<<(std::ostream &out, const VirtualMachine::CallFrame &f);
 #endif
-
-    CallFrame &frame();
 
     VirtualMachineConfig _config;
     Optional<RuntimeError> _error;

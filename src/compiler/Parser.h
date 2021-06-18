@@ -70,71 +70,69 @@ class Parser {
     Parser(const ParserConfig &config, Scanner &scanner);
 
     Owned<Statement> parse();
-    Signature parseFunctionSignature();
+    Signature parseSignature();
 
     void declare(const Signature &signature);
 
     const std::vector<SyntaxError> &errors();
 
   private:
-    bool _isAtEnd();
-    bool _check(const std::initializer_list<Token::Type> &types);
-    Optional<Token> _match(const std::initializer_list<Token::Type> &types);
-    Optional<Token> _matchWord();
-    Token _consume(Token::Type type, const std::string &error);
-    Token _consumeEnd(Token::Type type);
-    Token _consumeNewLine();
-    Token _consumeWord(const std::string &message = "expected a word");
-    Token &_scan();
-    Token &_advance();
-    Token &_peek();
-    Token &_previous();
-    void _synchronize();
+    bool isAtEnd();
+    bool check(const std::initializer_list<Token::Type> &types);
+    Optional<Token> match(const std::initializer_list<Token::Type> &types);
+    Optional<Token> matchWord();
+    Token consume(Token::Type type, const std::string &error);
+    Token consumeEnd(Token::Type type);
+    Token consumeNewLine();
+    Token consumeWord(const std::string &message = "expected a word");
+    Token &scan();
+    Token &advance();
+    Token &peek();
+    Token &previous();
+    void synchronize();
 
-    void _checkpoint();
-    void _rewind();
-    void _commit();
+    void checkpoint();
+    void rewind();
+    void commit();
 
-    bool _matchSignature(const Signature &signature, std::vector<Optional<Token>> &tokens,
-                         std::vector<Owned<Expression>> &arguments);
-    bool _matchTerm(const Signature &signature, int index,
-                    std::vector<Optional<Token>> &tokens,
-                    std::vector<Owned<Expression>> &arguments);
+    bool matchSignature(const Signature &signature, std::vector<Optional<Token>> &tokens,
+                        std::vector<Owned<Expression>> &arguments);
+    bool matchTerm(const Signature &signature, int index,
+                   std::vector<Optional<Token>> &tokens,
+                   std::vector<Owned<Expression>> &arguments);
 
 #if defined(DEBUG)
     void _trace(const std::string &message);
 #endif
 
-    Signature _parseFunctionSignature();
+    Owned<Statement> parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
+    Owned<Statement> parseStatement();
+    Owned<Statement> parseSimpleStatement();
+    Owned<Statement> parseFunction();
+    Owned<Statement> parseIf();
+    Owned<Statement> parseRepeat();
+    Owned<Statement> parseAssignment();
+    Owned<Statement> parseExit();
+    Owned<Statement> parseNext();
+    Owned<Statement> parseReturn();
+    Owned<Statement> parseExpressionStatement();
 
-    Owned<Statement> _parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
-    Owned<Statement> _parseStatement();
-    Owned<Statement> _parseSimpleStatement();
-    Owned<Statement> _parseFunction();
-    Owned<Statement> _parseIf();
-    Owned<Statement> _parseRepeat();
-    Owned<Statement> _parseAssignment();
-    Owned<Statement> _parseExit();
-    Owned<Statement> _parseNext();
-    Owned<Statement> _parseReturn();
-    Owned<Statement> _parseExpressionStatement();
-
-    Owned<Expression> _parseExpression();
-    Owned<Expression> _parseClause();
-    Owned<Expression> _parseEquality();
-    Owned<Expression> _parseComparison();
-    Owned<Expression> _parseList();
-    Owned<Expression> _parseRange();
-    Owned<Expression> _parseTerm();
-    Owned<Expression> _parseFactor();
-    Owned<Expression> _parseExponent();
-    Owned<Expression> _parseUnary();
-    Owned<Expression> _parseCall();
-    Owned<Expression> _parseSubscript();
-    Owned<Expression> _parsePrimary();
-    Owned<Expression> _parseGrouping();
-    Owned<Expression> _parseListLiteral();
-    Owned<Expression> _parseDictionaryLiteral();
+    Owned<Expression> parseExpression();
+    Owned<Expression> parseClause();
+    Owned<Expression> parseEquality();
+    Owned<Expression> parseComparison();
+    Owned<Expression> parseList();
+    Owned<Expression> parseRange();
+    Owned<Expression> parseTerm();
+    Owned<Expression> parseFactor();
+    Owned<Expression> parseExponent();
+    Owned<Expression> parseUnary();
+    Owned<Expression> parseCall();
+    Owned<Expression> parseSubscript();
+    Owned<Expression> parsePrimary();
+    Owned<Expression> parseGrouping();
+    Owned<Expression> parseListLiteral();
+    Owned<Expression> parseDictionaryLiteral();
 
     ParserConfig _config;
     Scanner &_scanner;

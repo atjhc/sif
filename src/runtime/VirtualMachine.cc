@@ -408,7 +408,6 @@ bool VirtualMachine::subscript(Value lhs, Value rhs) {
             Push(_stack, list->values()[index < 0 ? list->values().size() + index : index]);
             return false;
         }
-
         _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
                               "expected an integer or range");
         return true;

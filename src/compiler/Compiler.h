@@ -59,6 +59,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     void visit(const ExpressionStatement &) override;
     void visit(const Repeat &) override;
     void visit(const RepeatCondition &) override;
+    void visit(const RepeatForEach &) override;
     void visit(const ExitRepeat &) override;
     void visit(const NextRepeat &) override;
 

@@ -218,6 +218,11 @@ void Compiler::visit(const RepeatCondition &statement) {
     bytecode().patchJump(_exitRepeat);
 }
 
+void Compiler::visit(const RepeatForEach &foreach) {
+    foreach.expression->accept(*this);
+    bytecode().add(foreach.location, Opcode::Pop);
+}
+
 void Compiler::visit(const ExitRepeat &exit) { bytecode().addRepeat(exit.location, _exitRepeat); }
 
 void Compiler::visit(const NextRepeat &next) { bytecode().addRepeat(next.location, _nextRepeat); }
