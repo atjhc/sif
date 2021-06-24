@@ -19,7 +19,7 @@
 #include "runtime/objects/String.h"
 #include "utilities/strings.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 Compiler::Compiler(Owned<Statement> statement)
     : _depth(0), _bytecode(MakeStrong<Bytecode>()), _statement(std::move(statement)) {}
@@ -384,4 +384,4 @@ void Compiler::visit(const Literal &literal) {
     }
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

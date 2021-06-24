@@ -22,7 +22,7 @@
 
 #include <string>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class Range : public Object {
   public:
@@ -42,4 +42,4 @@ class Range : public Object {
     bool _closed;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

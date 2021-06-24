@@ -21,7 +21,7 @@
 
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 #if defined(DEBUG)
 #define trace(msg) _trace(msg)
@@ -196,63 +196,55 @@ void Parser::_trace(const std::string &message) {
 
 #pragma mark - Grammar
 
-bool Parser::matchTerm(const Signature &signature, int index,
-                        std::vector<Optional<Token>> &tokens,
-                        std::vector<Owned<Expression>> &arguments) {
-    const auto &term = signature.terms[index];
-    if (auto token = std::get_if<Token>(&term)) {
-        if (peek().type == token->type && lowercase(peek().text) == lowercase(token->text)) {
-            advance();
-            return true;
-        }
+bool Parser::isPrimary(const Token &token) {
+    if (token.isWord()) return true;
+    switch (token.type) {
+    case Token::Type::LeftBrace:
+    case Token::Type::LeftBracket:
+    case Token::Type::LeftParen:
+    case Token::Type::IntLiteral:
+    case Token::Type::FloatLiteral:
+    case Token::Type::BoolLiteral:
+    case Token::Type::StringLiteral:
+        return true;
+    default:
         return false;
     }
+}
+
+bool Parser::checkTerm(const Token &token, const Signature &signature, size_t &index) {
+    if (index == signature.terms.size()) {
+        return false;
+    }
+    const auto &term = signature.terms[index++];
     if (auto option = std::get_if<Signature::Option>(&term)) {
-        if (peek().type == option->token.type &&
-            lowercase(peek().text) == lowercase(option->token.text)) {
-            tokens.push_back(advance());
-        } else {
-            tokens.push_back(None);
+        if (token.type != option->token.type || lowercase(token.text) != lowercase(option->token.text)) {
+            return checkTerm(token, signature, index);
         }
         return true;
     }
     if (auto argument = std::get_if<Signature::Argument>(&term)) {
-        if (index == signature.terms.size() - 1) {
-            if (auto matchedExpression = parseList()) {
-                arguments.push_back(std::move(matchedExpression));
-                return true;
-            }
-        } else {
-            if (auto matchedExpression = parseSubscript()) {
-                arguments.push_back(std::move(matchedExpression));
-                return true;
-            }
+        return isPrimary(token);
+    }
+    if (!token.isWord()) {
+        return false;
+    }
+    if (auto matchToken = std::get_if<Token>(&term)) {
+        if (lowercase(token.text) == lowercase(matchToken->text)) {
+            return true;
         }
         return false;
     }
     if (auto choice = std::get_if<Signature::Choice>(&term)) {
-        for (const auto &token : choice->tokens) {
-            if (peek().isWord() && lowercase(peek().text) == lowercase(token.text)) {
-                tokens.push_back(advance());
+        auto text = lowercase(token.text);
+        for (const auto &alternate : choice->tokens) {
+            if (lowercase(alternate.text) == text) {
                 return true;
             }
         }
         return false;
     }
     return false;
-}
-
-bool Parser::matchSignature(const Signature &signature,
-                             std::vector<Optional<Token>> &tokens,
-                             std::vector<Owned<Expression>> &arguments) {
-    trace(Concat("Checking function signature ", Quoted(signature.name())));
-    for (int i = 0; i < signature.terms.size(); i++) {
-        if (!matchTerm(signature, i, tokens, arguments)) {
-            return false;
-        }
-    }
-    trace(Concat("Matched function signature ", Quoted(signature.name())));
-    return true;
 }
 
 Owned<Statement> Parser::parseBlock(const std::initializer_list<Token::Type> &endTypes) {
@@ -654,20 +646,66 @@ Owned<Expression> Parser::parseUnary() {
 }
 
 Owned<Expression> Parser::parseCall() {
-    for (const auto &signature : _functionDecls) {
-        Location location = peek().location;
-        std::vector<Optional<Token>> tokens;
-        std::vector<Owned<Expression>> arguments;
-        checkpoint();
-        if (matchSignature(signature, tokens, arguments)) {
-            commit();
-            auto call = MakeOwned<Call>(signature, std::move(tokens), std::move(arguments));
-            call->location = location;
-            return call;
-        }
-        rewind();
+    struct Candidate {
+        Signature signature;
+        size_t offset;
+    };
+    std::vector<Candidate> candidates;
+    for (auto decl : _functionDecls) {
+        candidates.push_back({decl, 0});
     }
-    return parseSubscript();
+    auto startToken = peek();
+    std::vector<Owned<Expression>> primaries;
+    while (candidates.size() > 0 && isPrimary(peek())) {
+        trace(Concat("Checking ", Quoted(peek().text)));
+        candidates = Filter(candidates, [&](Candidate &candidate) {
+            return checkTerm(peek(), candidate.signature, candidate.offset);
+        });
+        if (candidates.size() == 1 && candidates[0].offset == candidates[0].signature.terms.size()) {
+            if (candidates[0].signature.endsWithArgument()) {
+                primaries.push_back(parseList());
+            } else {
+                primaries.push_back(parsePrimary());
+            }
+            break;
+        } else {
+            primaries.push_back(parsePrimary());
+        }
+    }
+
+    // Filter incomplete matches.
+    candidates = Filter(candidates, [&](Candidate &candidate) {
+        return candidate.offset == candidate.signature.terms.size();
+    });
+    
+    // No matching signatures.
+    if (candidates.size() == 0) {
+        // Special case single primaries.
+        if (primaries.size() == 1) {
+            return std::move(primaries[0]);
+        }
+        throw SyntaxError(startToken, "no matching function for expression");
+    }
+
+    // Partial match of multiple signatures.
+    if (candidates.size() > 1) {
+        auto ambiguousList = Map(candidates, [](auto &&candidate) {
+            return Concat("  ", candidate.signature.name());
+        });
+        throw SyntaxError(startToken, Concat("ambiguous expression. Possible candidates: \n", Join(ambiguousList, "\n")));
+    }
+
+    auto signature = candidates[0].signature;
+    trace(Concat("Matched ", signature.name()));
+    std::vector<Owned<Expression>> arguments;
+    for (size_t i = 0; i < signature.terms.size(); i++) {
+        if (std::holds_alternative<Signature::Argument>(signature.terms[i])) {
+            arguments.push_back(std::move(primaries[i]));
+        }
+    }
+    auto call = MakeOwned<Call>(signature, std::vector<Optional<Token>>(), std::move(arguments));
+    call->location = peek().location;
+    return call;
 }
 
 Owned<Expression> Parser::parseSubscript() {
@@ -739,7 +777,7 @@ Owned<Expression> Parser::parseListLiteral() {
 }
 
 Owned<Expression> Parser::parseDictionaryLiteral() {
-    Map<Owned<Expression>, Owned<Expression>> values;
+    Mapping<Owned<Expression>, Owned<Expression>> values;
 
     if (!match({Token::Type::RightBrace})) {
         do {
@@ -755,4 +793,4 @@ Owned<Expression> Parser::parseDictionaryLiteral() {
     return MakeOwned<DictionaryLiteral>(std::move(values));
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

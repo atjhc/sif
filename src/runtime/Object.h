@@ -18,7 +18,7 @@
 
 #include "Common.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class Object {
   public:
@@ -31,4 +31,4 @@ class Object {
 
 std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

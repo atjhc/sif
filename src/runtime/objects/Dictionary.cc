@@ -13,7 +13,7 @@
 
 #include "runtime/objects/Dictionary.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 Dictionary::Dictionary(const ValueMap &values) : _values(values) {}
 
@@ -43,4 +43,4 @@ bool Dictionary::equals(Strong<Object> object) const {
     return false;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

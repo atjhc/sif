@@ -16,7 +16,7 @@
 
 #include "ast/Statement.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 Block::Block(std::vector<Owned<Statement>> statements) : statements(std::move(statements)) {}
 
@@ -35,4 +35,4 @@ Return::Return(Owned<Expression> expression) : expression(std::move(expression))
 ExpressionStatement::ExpressionStatement(Owned<Expression> expression)
     : expression(std::move(expression)) {}
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

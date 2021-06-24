@@ -20,7 +20,7 @@
 
 #include <iostream>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 template <class cT, class traits = std::char_traits<cT>>
 class basic_nullbuf : public std::basic_streambuf<cT, traits> {
@@ -62,4 +62,4 @@ extern wonullstream wdevnull;
 extern inullstream idevnull;
 extern winullstream widevnull;
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

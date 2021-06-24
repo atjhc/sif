@@ -1,6 +1,6 @@
 #include "chunk.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 static bool iswhite(int c) { return isblank(c) || c == '\n'; }
 
@@ -51,4 +51,4 @@ std::string::const_iterator chunk::scan_end(std::string::const_iterator it) {
     return it;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

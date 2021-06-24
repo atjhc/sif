@@ -37,7 +37,7 @@
 #include <unistd.h>
 
 using namespace sif;
-Map<std::string, Strong<Native>> builtins();
+Mapping<std::string, Strong<Native>> builtins();
 
 enum { Success = 0, ParseFailure = 1, CompileFailure = 2, RuntimeFailure = 3 };
 
@@ -53,9 +53,9 @@ static bool prettyPrint = false;
 static bool printBytecode = false;
 
 VirtualMachine vm;
-Map<std::string, Strong<Native>> natives = builtins();
+Mapping<std::string, Strong<Native>> natives = builtins();
 
-Map<std::string, Strong<Native>> builtins() {
+Mapping<std::string, Strong<Native>> builtins() {
     static std::random_device rd;
     static std::mt19937 engine(rd());
     auto random = [&](int max) {
@@ -63,7 +63,7 @@ Map<std::string, Strong<Native>> builtins() {
         return dist(engine);
     };
 
-    Map<std::string, Strong<Native>> natives;
+    Mapping<std::string, Strong<Native>> natives;
     natives["{} (up) to {}"] = MakeStrong<Native>([](Value *values) -> Value {
         return MakeStrong<Range>(values[0].asInteger(), values[1].asInteger(), true);
     });

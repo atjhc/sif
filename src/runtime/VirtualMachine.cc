@@ -21,7 +21,7 @@
 #include "runtime/objects/Range.h"
 #include "runtime/objects/String.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : _config(config) {}
 
@@ -459,4 +459,4 @@ bool VirtualMachine::range(Value start, Value end, bool closed) {
     return false;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

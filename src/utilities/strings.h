@@ -20,8 +20,8 @@
 
 #include <string>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 std::string string_from_escaped_string(const std::string &str);
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

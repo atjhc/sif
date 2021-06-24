@@ -18,7 +18,7 @@
 
 #include "Common.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct Node {
     Location location;
@@ -26,4 +26,4 @@ struct Node {
     virtual ~Node() = default;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

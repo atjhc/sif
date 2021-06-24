@@ -14,7 +14,7 @@
 
 #include "runtime/objects/String.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 String::String(const std::string &string) : _string(string) {}
 
@@ -55,4 +55,4 @@ bool String::equals(Strong<Object> object) const {
     return false;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

@@ -19,7 +19,7 @@
 #include "compiler/Scanner.h"
 #include "Utilities.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 static inline std::string Name(const Token &token) { return lowercase(token.text); }
 
@@ -92,6 +92,10 @@ std::string Signature::description() const {
     return ss.str();
 }
 
+bool Signature::endsWithArgument() const {
+    return std::holds_alternative<Argument>(terms.back());
+}
+
 bool Signature::operator<(const Signature &signature) const {
     int i = 0;
     while (i < terms.size() || i < signature.terms.size()) {
@@ -117,4 +121,4 @@ bool Signature::operator==(const Signature &signature) const {
     return name() == signature.name();
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

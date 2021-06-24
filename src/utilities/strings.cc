@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 static inline bool isoctal(char c) { return c >= '0' && c < '8'; }
 
@@ -94,4 +94,4 @@ std::string string_from_escaped_string(const std::string &str) {
     return ss.str();
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

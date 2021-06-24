@@ -21,7 +21,7 @@
 
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 enum class Opcode : uint8_t {
     Jump,
@@ -101,4 +101,4 @@ class Bytecode {
     std::vector<Location> _locations;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

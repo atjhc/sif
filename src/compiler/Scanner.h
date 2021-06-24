@@ -21,7 +21,7 @@
 
 #include <iostream>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct Token {
     enum class Type {
@@ -134,4 +134,4 @@ class Scanner {
     int _skipNewlines;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

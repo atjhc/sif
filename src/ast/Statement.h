@@ -24,7 +24,7 @@
 #include <variant>
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct Block;
 struct FunctionDecl;
@@ -111,4 +111,4 @@ struct ExpressionStatement : Statement {
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

@@ -22,7 +22,7 @@
 #include <variant>
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct Signature {
     struct Argument {
@@ -41,6 +41,7 @@ struct Signature {
 
     std::string name() const;
     std::string description() const;
+    bool endsWithArgument() const;
 
     bool operator<(const Signature &signature) const;
     bool operator==(const Signature &signature) const;
@@ -49,4 +50,4 @@ struct Signature {
     Optional<Token> typeName;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

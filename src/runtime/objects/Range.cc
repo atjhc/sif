@@ -13,7 +13,7 @@
 
 #include "runtime/objects/Range.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 Range::Range(Optional<int64_t> start, Optional<int64_t> end, bool closed)
     : _start(start), _end(end), _closed(closed) {}
@@ -45,4 +45,4 @@ bool Range::equals(Strong<Object> object) const {
     return false;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

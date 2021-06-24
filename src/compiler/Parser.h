@@ -26,7 +26,7 @@
 #include <set>
 #include <stack>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 /*
 
@@ -95,11 +95,8 @@ class Parser {
     void rewind();
     void commit();
 
-    bool matchSignature(const Signature &signature, std::vector<Optional<Token>> &tokens,
-                        std::vector<Owned<Expression>> &arguments);
-    bool matchTerm(const Signature &signature, int index,
-                   std::vector<Optional<Token>> &tokens,
-                   std::vector<Owned<Expression>> &arguments);
+    bool isPrimary(const Token &token);
+    bool checkTerm(const Token &token, const Signature &signature, size_t &index);
 
 #if defined(DEBUG)
     void _trace(const std::string &message);
@@ -149,4 +146,4 @@ class Parser {
     bool _parsingRepeat;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

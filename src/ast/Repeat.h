@@ -23,7 +23,7 @@
 #include <ostream>
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct Repeat : Statement {
     Owned<Statement> statement;
@@ -67,4 +67,4 @@ struct NextRepeat : Statement {
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

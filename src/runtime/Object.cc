@@ -16,10 +16,10 @@
 
 #include "runtime/Object.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 std::ostream &operator<<(std::ostream &out, const Strong<Object> &object) {
     return out << (object ? object->description() : "<nil>");
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

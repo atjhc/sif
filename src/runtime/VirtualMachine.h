@@ -24,7 +24,7 @@
 #include <stack>
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct VirtualMachineConfig {
 #if defined(DEBUG)
@@ -62,7 +62,7 @@ class VirtualMachine {
     Optional<RuntimeError> _error;
     std::vector<Value> _stack;
     std::vector<CallFrame> _callStack;
-    Map<std::string, Value> _variables;
+    Mapping<std::string, Value> _variables;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

@@ -23,7 +23,7 @@
 
 #include <string>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class List : public Object {
   public:
@@ -42,4 +42,4 @@ class List : public Object {
     std::vector<Value> _values;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

@@ -20,7 +20,7 @@
 
 #include <iostream>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 Value::Value(const std::string &string) : _value(MakeStrong<String>(string)) {}
 
@@ -169,4 +169,4 @@ std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v) {
     return out;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

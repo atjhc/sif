@@ -21,7 +21,7 @@
 #include "runtime/Object.h"
 #include "runtime/Value.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class Native : public Object {
   public:
@@ -39,4 +39,4 @@ class Native : public Object {
     Callable _callable;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

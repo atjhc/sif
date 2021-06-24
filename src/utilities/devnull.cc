@@ -1,6 +1,6 @@
 #include "devnull.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 onullstream devnull;
 wonullstream wdevnull;
@@ -8,4 +8,4 @@ wonullstream wdevnull;
 inullstream idevnull;
 winullstream widevnull;
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

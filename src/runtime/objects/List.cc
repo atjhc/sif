@@ -13,7 +13,7 @@
 
 #include "runtime/objects/List.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 List::List(const std::vector<Value> &values) : _values(values) {}
 
@@ -52,4 +52,4 @@ bool List::equals(Strong<Object> object) const {
     return false;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

@@ -23,7 +23,7 @@
 
 #include <string>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class String : public Object {
   public:
@@ -42,4 +42,4 @@ class String : public Object {
     std::string _string;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

@@ -13,7 +13,7 @@
 
 #include "runtime/objects/Native.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 Native::Native(const Native::Callable &callable) : _callable(callable) {}
 
@@ -25,4 +25,4 @@ std::string Native::description() const { return "<native function>"; }
 
 bool Native::equals(Strong<Object> object) const { return this == object.get(); }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

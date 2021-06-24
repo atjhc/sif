@@ -19,7 +19,7 @@
 
 #include <iomanip>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 size_t Bytecode::add(Location location, Opcode opcode) {
     _code.push_back(opcode);
@@ -268,4 +268,4 @@ std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode) {
     return out;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

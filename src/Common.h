@@ -24,10 +24,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#define CH_NAMESPACE_BEGIN namespace sif {
-#define CH_NAMESPACE_END }
+#define SIF_NAMESPACE_BEGIN namespace sif {
+#define SIF_NAMESPACE_END }
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 template <class T> using Strong = std::shared_ptr<T>;
 
@@ -37,7 +37,7 @@ template <class T> using Owned = std::unique_ptr<T>;
 
 template <class T> using Set = std::unordered_set<T>;
 
-template <class K, class V> using Map = std::unordered_map<K, V>;
+template <class K, class V> using Mapping = std::unordered_map<K, V>;
 
 template <class T> using Ref = std::reference_wrapper<T>;
 
@@ -64,11 +64,24 @@ template <typename... Args> static inline std::string Concat(Args &&...args) {
 
 static inline std::string Quoted(const std::string str) { return "\"" + str + "\""; }
 
-template <typename T> static inline std::string Join(T &&v, const std::string &sep) {
+template <typename Iterable> static inline std::string Join(Iterable &&v, const std::string &sep) {
     std::ostringstream ss;
     auto it = v.begin();
     while (it != v.end()) {
         ss << *it;
+        it++;
+        if (it != v.end()) {
+            ss << sep;
+        }
+    }
+    return ss.str();
+}
+
+template <typename Iterable, typename Functor> static inline std::string Join(Iterable &&v, const std::string &sep, Functor f) {
+    std::ostringstream ss;
+    auto it = v.begin();
+    while (it != v.end()) {
+        ss << f(*it);
         it++;
         if (it != v.end()) {
             ss << sep;
@@ -94,6 +107,27 @@ template <typename T> constexpr typename std::underlying_type<T>::type RawValue(
     return static_cast<typename std::underlying_type<T>::type>(e);
 }
 
+template <typename Iterable>
+using ValueType = typename std::iterator_traits<typename Iterable::iterator>::value_type;
+
+template <typename Iterable, typename Functor>
+std::vector<ValueType<Iterable>>
+Filter(Iterable &container, Functor f) {
+	Iterable result;
+	result.reserve(std::distance(container.begin(), container.end()));
+	std::copy_if(container.begin(), container.end(), std::back_inserter(result), f);
+	return result;
+}
+
+template <typename Iterable, typename Functor>
+std::vector<typename std::result_of<Functor(ValueType<Iterable>)>::type>
+Map(const Iterable &container, Functor f) {
+	std::vector<typename std::result_of<Functor(ValueType<Iterable>)>::type> values;
+	values.reserve(std::distance(container.begin(), container.end()));
+	std::transform(container.begin(), container.end(), std::back_inserter(values), f);
+	return values;
+}
+
 struct Location {
     unsigned int position = 1;
     unsigned int lineNumber = 1;
@@ -113,4 +147,4 @@ static inline std::ostream &operator<<(std::ostream &out, const Location &locati
 template <class... Ts> struct Overload : Ts... { using Ts::operator()...; };
 template <class... Ts> Overload(Ts...) -> Overload<Ts...>;
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

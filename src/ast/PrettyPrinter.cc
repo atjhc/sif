@@ -16,7 +16,7 @@
 
 #include "ast/PrettyPrinter.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 using namespace sif;
 
@@ -280,4 +280,4 @@ void PrettyPrinter::visit(const DictionaryLiteral &dictionary) {
 
 void PrettyPrinter::visit(const Literal &literal) { out << literal.token.text; }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

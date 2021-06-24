@@ -13,7 +13,7 @@
 
 #include "runtime/objects/Function.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 Function::Function(const Signature &signature, const Strong<Bytecode> &bytecode)
     : _signature(signature), _bytecode(bytecode) {}
@@ -26,4 +26,4 @@ std::string Function::description() const { return _signature.name(); }
 
 bool Function::equals(Strong<Object> object) const { return this == object.get(); }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

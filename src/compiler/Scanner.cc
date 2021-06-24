@@ -18,7 +18,7 @@
 
 #include <iostream>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 bool Token::isWord() const {
     switch (type) {
@@ -366,4 +366,4 @@ void Scanner::skipLine() {
     }
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

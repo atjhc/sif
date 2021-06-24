@@ -21,7 +21,7 @@
 #include <iostream>
 #include <string>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct chunk {
     enum type { character, word, item, line };
@@ -165,4 +165,4 @@ struct count_chunk : public chunk {
     }
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

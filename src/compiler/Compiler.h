@@ -23,7 +23,7 @@
 #include "ast/Statement.h"
 #include "compiler/Bytecode.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class Compiler : public Statement::Visitor, public Expression::Visitor {
   public:
@@ -79,10 +79,10 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     Strong<Bytecode> _bytecode;
     Owned<Statement> _statement;
     Owned<std::vector<Local>> _locals;
-    Map<std::string, uint16_t> _globals;
+    Mapping<std::string, uint16_t> _globals;
     std::vector<CompileError> _errors;
     uint16_t _nextRepeat;
     uint16_t _exitRepeat;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

@@ -20,7 +20,7 @@
 #include "ast/Node.h"
 #include "compiler/Scanner.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class SyntaxError : public std::runtime_error {
   public:
@@ -55,4 +55,4 @@ class RuntimeError : public std::runtime_error {
     Location _location;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

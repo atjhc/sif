@@ -28,7 +28,7 @@
 #include <string>
 #include <variant>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class Object;
 
@@ -95,4 +95,4 @@ struct ValueHasher {
 
 using ValueMap = std::unordered_map<Value, Value, ValueHasher>;
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

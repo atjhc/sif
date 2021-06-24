@@ -24,7 +24,7 @@
 #include <variant>
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct Call;
 struct Binary;
@@ -133,9 +133,9 @@ struct ListLiteral : Expression {
 };
 
 struct DictionaryLiteral : Expression {
-    Map<Owned<Expression>, Owned<Expression>> values;
+    Mapping<Owned<Expression>, Owned<Expression>> values;
 
-    DictionaryLiteral(Map<Owned<Expression>, Owned<Expression>>);
+    DictionaryLiteral(Mapping<Owned<Expression>, Owned<Expression>>);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
@@ -157,4 +157,4 @@ struct Literal : Expression {
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 static inline std::string lowercase(const std::string &string) {
     auto result = string;
@@ -44,4 +44,4 @@ static inline std::ostream &operator<<(std::ostream &out, const std::vector<std:
     return out;
 }
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

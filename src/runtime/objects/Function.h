@@ -21,7 +21,7 @@
 #include "compiler/Signature.h"
 #include "runtime/Object.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class Function : public Object {
   public:
@@ -38,4 +38,4 @@ class Function : public Object {
     Strong<Bytecode> _bytecode;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

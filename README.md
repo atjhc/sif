@@ -20,7 +20,7 @@ This will produce artifacts in the `build` directory. To run tests:
 ```sh
 make test
 ```
-To run the parser:
+To run a script:
 ```sh
 ./build/sif <file> [ <args> ... ]
 ```

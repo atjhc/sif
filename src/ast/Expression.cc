@@ -16,7 +16,7 @@
 
 #include "ast/Expression.h"
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 Call::Call(const Signature &signature, const std::vector<Optional<Token>> &tokens,
            std::vector<Owned<Expression>> arguments)
@@ -41,9 +41,9 @@ RangeLiteral::RangeLiteral(Owned<Expression> start, Owned<Expression> end, bool 
 ListLiteral::ListLiteral(std::vector<Owned<Expression>> expressions)
     : expressions(std::move(expressions)) {}
 
-DictionaryLiteral::DictionaryLiteral(Map<Owned<Expression>, Owned<Expression>> values)
+DictionaryLiteral::DictionaryLiteral(Mapping<Owned<Expression>, Owned<Expression>> values)
     : values(std::move(values)) {}
 
 Literal::Literal(Token token) : token(token) {}
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

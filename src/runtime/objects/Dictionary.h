@@ -22,7 +22,7 @@
 
 #include <string>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 class Dictionary : public Object {
   public:
@@ -38,4 +38,4 @@ class Dictionary : public Object {
     ValueMap _values;
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END

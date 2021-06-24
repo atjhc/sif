@@ -23,7 +23,7 @@
 
 #include <iostream>
 
-CH_NAMESPACE_BEGIN
+SIF_NAMESPACE_BEGIN
 
 struct PrettyPrinterConfig {
     std::ostream &out = std::cout;
@@ -74,4 +74,4 @@ class PrettyPrinter : public Statement::Visitor, public Expression::Visitor {
     std::string indentString() { return std::string(_indentLevel * _config.tabSize, ' '); }
 };
 
-CH_NAMESPACE_END
+SIF_NAMESPACE_END
