@@ -35,7 +35,7 @@ TEST_CASE(ScannerTests, All) {
 
     auto expectedTokens = std::vector<Token::Type>{
         Token::Type::Word,         Token::Type::Is,         Token::Type::An,
-        Token::Type::FloatLiteral, Token::Type::Word,       Token::Type::Word,
+        Token::Type::IntLiteral,   Token::Type::Word,       Token::Type::Word,
         Token::Type::Plus,         Token::Type::Word,       Token::Type::Minus,
         Token::Type::If,           Token::Type::Else,       Token::Type::LeftParen,
         Token::Type::Then,         Token::Type::RightParen, Token::Type::EndOfFile,

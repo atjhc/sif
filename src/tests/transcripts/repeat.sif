@@ -1,0 +1,39 @@
+repeat
+    print "loop"
+    exit repeat
+end
+(-- expect
+loop
+--)
+
+set i to 0
+repeat while i < 2
+    print "loop"
+    set i to i + 1
+end
+(-- expect
+loop
+loop
+--)
+
+set i to 0
+repeat until i is 3
+    print "loop"
+    set i to i + 1
+end
+(-- expect
+loop
+loop
+loop
+--)
+
+repeat
+    repeat
+        exit repeat
+    end repeat
+    print "loop"
+    exit repeat
+end
+(-- expect
+loop
+--)

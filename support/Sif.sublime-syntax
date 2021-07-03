@@ -14,6 +14,10 @@ contexts:
       scope: punctuation.definition.string.begin.sif
       push: single_quoted_string
 
+    - match: '\(--'
+      scope: punctuation.definition.comment.sif
+      push: block_comment
+
     - match: '--'
       scope: punctuation.definition.comment.sif
       push: line_comment
@@ -70,4 +74,11 @@ contexts:
   line_comment:
     - meta_scope: comment.line.sif
     - match: $
+      pop: true
+
+  block_comment:
+    - meta_scope: comment.block.sif
+    - match: '\(--'
+      push: block_comment
+    - match: '--\)'
       pop: true

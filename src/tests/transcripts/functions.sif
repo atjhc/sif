@@ -1,0 +1,67 @@
+function foo
+    print "foo"
+end
+foo
+(-- expect
+foo
+--)
+
+function {x} plus {y}
+    return x + y
+end
+print 10 plus 20
+print 10 plus 20 plus 30
+(-- expect
+30
+60
+--)
+
+function foo bar
+    return 10
+end
+function foo bar {}
+    return 100
+end
+print foo bar
+print foo bar baz
+(-- expect
+10
+100
+--)
+
+function say {msg}
+    print msg
+end
+function say {msg} {count}
+    print msg, count
+end
+say "Hello"
+say "Hello" 10
+(-- expect
+Hello
+Hello 10
+--)
+
+function (the) (current) time
+    return 12345
+end
+print time
+print the time
+print the current time
+print current time
+(-- expect
+12345
+12345
+12345
+12345
+--)
+
+function an/the H
+    return "H"
+end
+print an H
+print the H
+(-- expect
+H
+H
+--)

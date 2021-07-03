@@ -1,0 +1,91 @@
+if true then print "pass 1"
+(-- expect
+pass 1
+--)
+
+if true then
+    print "pass 2"
+end if
+(-- expect
+pass 2
+--)
+
+if true then print "pass 3" else print "fail"
+(-- expect
+pass 3
+--)
+
+if true then
+    print "pass 4"
+else print "fail"
+(-- expect
+pass 4
+--)
+
+if true then print "pass 5" else
+    print "fail"
+end if
+(-- expect
+pass 5
+--)
+
+if true then
+    print "pass 6"
+else
+    print "fail"
+end if
+(-- expect
+pass 6
+--)
+
+if true
+then print "pass 7"
+(-- expect
+pass 7
+--)
+
+if true
+then
+    print "pass 8"
+end if
+(-- expect
+pass 8
+--)
+
+if true
+then print "pass 9" else print "fail"
+(-- expect
+pass 9
+--)
+
+if true
+then
+    print "pass 10"
+else print "fail"
+(-- expect
+pass 10
+--)
+
+if true
+then print "pass 11" else
+    print "fail"
+end if
+(-- expect
+pass 11
+--)
+
+if true
+then
+    print "pass 12"
+else
+    print "fail"
+end if
+(-- expect
+pass 12
+--)
+
+if true then print "pass 13"
+else print "fail"
+(-- expect
+pass 13
+--)

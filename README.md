@@ -10,6 +10,8 @@ function factorial {x}
 end function
 print factorial 10
 ```
+More thorough documentation is forthcoming. The language is currently in a very unstable pre-alpha stage. You should be able to play around with it, but you'll likely encounter unexpected bugs.
+
 ### How to
 
 Building should work pretty much out of the box:

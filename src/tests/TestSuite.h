@@ -30,7 +30,7 @@
     void _TEST_FN(GROUP, NAME)(TestSuite & suite)
 
 #define ASSERT_FAIL(M) suite._assert(false, M, __FILE__, __LINE__)
-#define ASSERT_TRUE(C) suite._assert((C), #C " == true", __FILE__, __LINE__)
+#define ASSERT_TRUE(C) suite._assert(!!(C), #C " == true", __FILE__, __LINE__)
 #define ASSERT_FALSE(C) suite._assert(!(C), #C " == false", __FILE__, __LINE__)
 #define ASSERT_NULL(V) suite._assert((V) == nullptr, #V " == nullptr", __FILE__, __LINE__)
 #define ASSERT_NOT_NULL(V) suite._assert((V) != nullptr, #V " != nullptr", __FILE__, __LINE__)

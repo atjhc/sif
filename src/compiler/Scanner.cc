@@ -22,15 +22,29 @@ SIF_NAMESPACE_BEGIN
 
 bool Token::isWord() const {
     switch (type) {
-    case Type::Word:
-    case Type::Is:
-    case Type::To:
-    case Type::End:
     case Type::An:
     case Type::And:
-    case Type::Or:
-    case Type::For:
     case Type::Each:
+    case Type::Else:
+    case Type::End:
+    case Type::Exit:
+    case Type::For:
+    case Type::Forever:
+    case Type::Function:
+    case Type::If:
+    case Type::In:
+    case Type::Is:
+    case Type::Next:
+    case Type::Not:
+    case Type::Or:
+    case Type::Repeat:
+    case Type::Return:
+    case Type::Set:
+    case Type::Then:
+    case Type::To:
+    case Type::Until:
+    case Type::While:
+    case Type::Word:
         return true;
     default:
         return false;
@@ -42,6 +56,8 @@ Scanner::Scanner(const char *start, const char *end)
 
 Token Scanner::scan() {
     skipWhitespace();
+    skipComments();
+
     _start = _current;
     _startLocation = _currentLocation;
 
@@ -49,17 +65,19 @@ Token Scanner::scan() {
         return make(Token::Type::EndOfFile);
     }
 
-    char c = advance();
+    auto c = advance();
 
-    if (isalpha(c) || c == '_')
-        return scanWord();
     if (isdigit(c))
         return scanNumber();
+    if (isalpha(c) || c == '_')
+        return scanWord();
 
     switch (c) {
     case '\n':
         _currentLocation.lineNumber++;
         _currentLocation.position = 1;
+        return make(Token::Type::NewLine);
+    case ';':
         return make(Token::Type::NewLine);
     case '(':
         _skipNewlines++;
@@ -286,9 +304,9 @@ Token Scanner::scanNumber() {
 
 bool Scanner::isAtEnd() { return _current == _end; }
 
-char Scanner::advance() {
-    _current++;
-    _currentLocation.position++;
+char Scanner::advance(int count) {
+    _current += count;
+    _currentLocation.position += count;
     return _current[-1];
 }
 
@@ -358,6 +376,28 @@ void Scanner::skipWhitespace() {
             return;
         }
     }
+}
+
+void Scanner::skipComments() {
+    if (isAtEnd()) return;
+
+    int depth = 0;
+    do {
+        if (_current + 1 < _end && _current[0] == '(' && _current[1] == '-' && _current[2] == '-') {
+            advance(3);
+            depth++;
+        } else if (depth > 0) {
+            if (_current + 1 < _end && _current[0] == '-' && _current[1] == '-' && _current[2] == ')') {
+                advance(3);
+                depth--;
+            } else {
+                if (advance() == '\n') {
+                    _currentLocation.lineNumber++;
+                    _currentLocation.position = 1;
+                }
+            }
+        }
+    } while (depth > 0 && !isAtEnd());
 }
 
 void Scanner::skipLine() {

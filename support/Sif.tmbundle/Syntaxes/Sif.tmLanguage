@@ -96,10 +96,42 @@
 				</dict>
 			</array>
 		</dict>
+		<dict>
+			<key>begin</key>
+			<string>\(--</string>
+			<key>end</key>
+			<string>--\)</string>
+			<key>name</key>
+			<string>comment.block.sif</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#block_comments</string>
+				</dict>
+			</array>
+		</dict>
 	</array>
+	<key>repository</key>
+	<dict>
+		<key>block_comments</key>
+		<dict>
+			<key>begin</key>
+			<string>\(--</string>
+			<key>end</key>
+			<string>--\)</string>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#block_comments</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>scopeName</key>
 	<string>source.sif</string>
 	<key>uuid</key>
-	<string>1A6B5105-AD0B-45C9-A22C-9660DB1D8D16</string>
+	<string>977AAA1A-9680-4DDA-AB3E-A848E10D3B3D</string>
 </dict>
 </plist>

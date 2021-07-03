@@ -114,10 +114,11 @@ class Scanner {
 
   private:
     bool isAtEnd();
-    char advance();
+    char advance(int count = 1);
     char peekNext();
     bool match(const char);
     void skipWhitespace();
+    void skipComments();
     void skipLine();
 
     Token scanString(char terminal);

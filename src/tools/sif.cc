@@ -234,7 +234,6 @@ Mapping<std::string, Strong<Native>> builtins() {
         auto text = values[0].as<String>();
         return static_cast<long>(count_chunk(chunk::line, text->string()).count);
     });
-
     return natives;
 }
 
