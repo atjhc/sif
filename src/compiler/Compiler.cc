@@ -190,6 +190,8 @@ void Compiler::visit(const ExpressionStatement &statement) {
 }
 
 void Compiler::visit(const Repeat &statement) {
+    auto nextRepeat = _nextRepeat;
+    auto exitRepeat = _exitRepeat;
     _nextRepeat = bytecode().code().size();
     bytecode().add(statement.location, Opcode::Jump, 3);
     _exitRepeat = bytecode().add(statement.location, Opcode::Jump, 0);
@@ -197,9 +199,13 @@ void Compiler::visit(const Repeat &statement) {
     statement.statement->accept(*this);
     bytecode().addRepeat(statement.location, repeat);
     bytecode().patchJump(_exitRepeat);
+    _nextRepeat = nextRepeat;
+    _exitRepeat = exitRepeat;
 }
 
 void Compiler::visit(const RepeatCondition &statement) {
+    auto nextRepeat = _nextRepeat;
+    auto exitRepeat = _exitRepeat;
     bytecode().add(statement.location, Opcode::Jump, 3);
     _exitRepeat = bytecode().add(statement.location, Opcode::Jump, 0);
     _nextRepeat = bytecode().code().size();
@@ -216,6 +222,8 @@ void Compiler::visit(const RepeatCondition &statement) {
     bytecode().patchJump(jump);
     bytecode().add(statement.location, Opcode::Pop);
     bytecode().patchJump(_exitRepeat);
+    _nextRepeat = nextRepeat;
+    _exitRepeat = exitRepeat;
 }
 
 void Compiler::visit(const RepeatForEach &foreach) {

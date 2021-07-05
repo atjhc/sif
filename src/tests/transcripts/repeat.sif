@@ -30,10 +30,10 @@ loop 3
 repeat
     repeat
         exit repeat
-    end repeat
+    end
     print "loop 4"
     exit repeat
 end
 (-- expect
-loop
+loop 4
 --)
