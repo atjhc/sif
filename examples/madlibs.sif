@@ -1,0 +1,22 @@
+function read story
+  print "Enter a story. A blank line marks the end of the story."
+  print "Use <noun>, <verb>, etc. to mark inputs:"
+  set input to empty
+  repeat
+    read a line
+    if it is empty then exit repeat
+    set input to input + it
+  end
+  return input
+end
+
+set story to read story
+repeat
+  set startIndex to offset "<" story
+  if startIndex is empty then exit repeat
+  put offset(">", story) into endIndex
+  put character startIndex to endIndex of story into prompt
+  ask "Enter a " & prompt & ": "
+  put it into character startIndex to endIndex of story
+end repeat
+print line story

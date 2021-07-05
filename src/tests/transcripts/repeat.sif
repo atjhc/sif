@@ -1,37 +1,37 @@
 repeat
-    print "loop"
+    print "loop 1"
     exit repeat
 end
 (-- expect
-loop
+loop 1
 --)
 
 set i to 0
 repeat while i < 2
-    print "loop"
+    print "loop 2"
     set i to i + 1
 end
 (-- expect
-loop
-loop
+loop 2
+loop 2
 --)
 
 set i to 0
 repeat until i is 3
-    print "loop"
+    print "loop 3"
     set i to i + 1
 end
 (-- expect
-loop
-loop
-loop
+loop 3
+loop 3
+loop 3
 --)
 
 repeat
     repeat
         exit repeat
     end repeat
-    print "loop"
+    print "loop 4"
     exit repeat
 end
 (-- expect

@@ -25,11 +25,23 @@
 #include <iostream>
 #include <sstream>
 
-using namespace sif;
+SIF_NAMESPACE_BEGIN
 
 static inline std::ostream &operator<<(std::ostream &out, const Optional<RuntimeError> &error) {
     return out << (error.has_value() ? error.value().what() : "(none)");
 }
+
+static inline std::ostream &operator<<(std::ostream &out, const SyntaxError &error) {
+    return out << error.token().location << ": " << error.what();
+}
+
+static inline std::ostream &operator<<(std::ostream &out, const CompileError &error) {
+    return out << error.node().location << ": " << error.what();
+}
+
+SIF_NAMESPACE_END
+
+using namespace sif;
 
 TEST_CASE(TranscriptTests, All) {
     for (auto pstr : suite.files_in("transcripts")) {
@@ -61,12 +73,14 @@ TEST_CASE(TranscriptTests, All) {
         Parser parser(ParserConfig(), scanner);
         parser.declare(Signature::Make("print {}"));
         auto statement = parser.parse();
-        ASSERT_TRUE(statement) << path << " failed";
+        ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl << Join(parser.errors(), "\n");
+        if (!statement) continue;
 
         Compiler compiler(std::move(statement));
         compiler.addExtern("print {}");
         auto bytecode = compiler.compile();
-        ASSERT_TRUE(bytecode) << path << " failed";
+        ASSERT_TRUE(bytecode) << path << " failed to compile" << std::endl << Join(compiler.errors(), "\n");
+        if (!bytecode) continue;
 
         VirtualMachine vm;
         ss = std::ostringstream();

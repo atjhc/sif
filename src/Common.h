@@ -62,9 +62,9 @@ template <typename... Args> static inline std::string Concat(Args &&...args) {
     return ss.str();
 }
 
-static inline std::string Quoted(const std::string str) { return "\"" + str + "\""; }
+static inline std::string Quoted(const std::string &str) { return "\"" + str + "\""; }
 
-template <typename Iterable> static inline std::string Join(Iterable &&v, const std::string &sep) {
+template <typename Iterable> static inline std::string Join(const Iterable &v, const std::string &sep) {
     std::ostringstream ss;
     auto it = v.begin();
     while (it != v.end()) {
@@ -77,7 +77,7 @@ template <typename Iterable> static inline std::string Join(Iterable &&v, const 
     return ss.str();
 }
 
-template <typename Iterable, typename Functor> static inline std::string Join(Iterable &&v, const std::string &sep, Functor f) {
+template <typename Iterable, typename Functor> static inline std::string Join(const Iterable &v, const std::string &sep, Functor f) {
     std::ostringstream ss;
     auto it = v.begin();
     while (it != v.end()) {

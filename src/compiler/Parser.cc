@@ -218,10 +218,13 @@ bool Parser::checkTerm(const Token &token, const Signature &signature, size_t &i
     }
     const auto &term = signature.terms[index++];
     if (auto option = std::get_if<Signature::Option>(&term)) {
-        if (token.type != option->token.type || lowercase(token.text) != lowercase(option->token.text)) {
-            return checkTerm(token, signature, index);
+        if (index == signature.terms.size()) {
+            return true;
         }
-        return true;
+        if (token.type == option->token.type && lowercase(token.text) == lowercase(option->token.text)) {
+            return true;
+        }
+        return checkTerm(token, signature, index);
     }
     if (auto argument = std::get_if<Signature::Argument>(&term)) {
         return isPrimary(token);
@@ -649,6 +652,9 @@ Owned<Expression> Parser::parseCall() {
     struct Candidate {
         Signature signature;
         size_t offset;
+        bool isComplete() const {
+            return offset == signature.terms.size();
+        }
     };
     std::vector<Candidate> candidates;
     for (auto decl : _functionDecls) {
@@ -661,21 +667,24 @@ Owned<Expression> Parser::parseCall() {
         candidates = Filter(candidates, [&](Candidate &candidate) {
             return checkTerm(peek(), candidate.signature, candidate.offset);
         });
-        if (candidates.size() == 1 && candidates[0].offset == candidates[0].signature.terms.size()) {
+        trace(Concat("Candidates: ", candidates.size()));
+        if (candidates.size() == 1 && candidates[0].isComplete()) {
+            // Special case lower parsing precedence for trailing arguments.
+            // This allows chaining calls and right associativity.
             if (candidates[0].signature.endsWithArgument()) {
                 primaries.push_back(parseList());
             } else {
                 primaries.push_back(parsePrimary());
             }
             break;
-        } else {
+        } else if (candidates.size() > 0) {
             primaries.push_back(parsePrimary());
         }
     }
 
     // Filter incomplete matches.
     candidates = Filter(candidates, [&](Candidate &candidate) {
-        return candidate.offset == candidate.signature.terms.size();
+        return candidate.isComplete();
     });
     
     // No matching signatures.
@@ -683,6 +692,8 @@ Owned<Expression> Parser::parseCall() {
         // Special case single primaries.
         if (primaries.size() == 1) {
             return std::move(primaries[0]);
+        } else if (primaries.size() == 0) {
+            return parsePrimary();
         }
         throw SyntaxError(startToken, "no matching function for expression");
     }
