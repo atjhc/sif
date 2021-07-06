@@ -43,6 +43,24 @@ SIF_NAMESPACE_END
 
 using namespace sif;
 
+static std::string gather(const std::string &source, const std::string &context) {
+    const std::string search = "(-- " + context + "\n";
+    std::ostringstream ss;
+    size_t offset = 0;
+    while (true) {
+        auto start = source.find(search, offset);
+        if (start == source.npos) {
+            break;
+        }
+        start += search.size();
+        offset = start;
+        auto end = source.find("--)", offset);
+        offset = end;
+        ss << source.substr(start, end - start);
+    }
+    return ss.str();
+}
+
 TEST_CASE(TranscriptTests, All) {
     for (auto pstr : suite.files_in("transcripts")) {
         auto path = std::filesystem::path(pstr);
@@ -53,37 +71,26 @@ TEST_CASE(TranscriptTests, All) {
         auto source = suite.file_contents(path);
         ASSERT_NEQ(source, "");
 
-        const std::string search = "(-- expect\n";
-        std::ostringstream ss;
-        size_t offset = 0;
-        while (true) {
-            auto start = source.find(search, offset);
-            if (start == source.npos) {
-                break;
-            }
-            start += search.size();
-            offset = start;
-            auto end = source.find("--)", offset);
-            offset = end;
-            ss << source.substr(start, end - start);
-        }
-        auto expectedResult = ss.str();
+        auto expectedResult = gather(source, "expect");
+        auto input = gather(source, "input");
 
         Scanner scanner(source.c_str(), source.c_str() + source.length());
         Parser parser(ParserConfig(), scanner);
         parser.declare(Signature::Make("print {}"));
+        parser.declare(Signature::Make("read (a) line"));
         auto statement = parser.parse();
         ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl << Join(parser.errors(), "\n");
         if (!statement) continue;
 
         Compiler compiler(std::move(statement));
         compiler.addExtern("print {}");
+        compiler.addExtern("read (a) line");
         auto bytecode = compiler.compile();
         ASSERT_TRUE(bytecode) << path << " failed to compile" << std::endl << Join(compiler.errors(), "\n");
         if (!bytecode) continue;
 
         VirtualMachine vm;
-        ss = std::ostringstream();
+        std::ostringstream ss;
         vm.add("print {}", MakeStrong<Native>([&](Value *values) -> Value {
             if (const auto &list = values[0].as<List>()) {
                 ss << Join(list->values(), " ");
@@ -93,6 +100,13 @@ TEST_CASE(TranscriptTests, All) {
             ss << std::endl;
             return Value();
         }));
+        std::istringstream iss(input);
+        vm.add("read (a) line",  MakeStrong<Native>([&](Value *values) -> Value {
+            std::string input;
+            std::getline(iss, input);
+            return input;
+        }));
+
         vm.execute(bytecode);
         ASSERT_FALSE(vm.error().has_value()) << path << " failed: " << vm.error();
         ASSERT_EQ(expectedResult, ss.str()) << path << " failed:" << std::endl 

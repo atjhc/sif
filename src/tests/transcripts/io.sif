@@ -1,0 +1,9 @@
+read a line
+(-- input
+hello
+--)
+
+print it
+(-- expect
+hello
+--)
