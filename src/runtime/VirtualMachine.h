@@ -58,7 +58,11 @@ class VirtualMachine {
     friend std::ostream &operator<<(std::ostream &out, const VirtualMachine::CallFrame &f);
 #endif
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
     VirtualMachineConfig _config;
+#pragma clang diagnostic pop
+    
     Optional<RuntimeError> _error;
     std::vector<Value> _stack;
     std::vector<CallFrame> _callStack;

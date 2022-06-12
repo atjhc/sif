@@ -119,6 +119,8 @@ Filter(Iterable &container, Functor f) {
 	return result;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 template <typename Iterable, typename Functor>
 std::vector<typename std::result_of<Functor(ValueType<Iterable>)>::type>
 Map(const Iterable &container, Functor f) {
@@ -127,6 +129,7 @@ Map(const Iterable &container, Functor f) {
 	std::transform(container.begin(), container.end(), std::back_inserter(values), f);
 	return values;
 }
+#pragma clang diagnostic pop
 
 struct Location {
     unsigned int position = 1;
