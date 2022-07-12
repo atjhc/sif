@@ -269,12 +269,12 @@ int evaluate(const std::string &name, const std::string &source) {
         return Success;
     }
 
-    Compiler compiler(std::move(statement));
+    Compiler compiler;
     for (const auto &pair : natives) {
         compiler.addExtern(pair.first);
     }
 
-    auto bytecode = compiler.compile();
+    auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
         for (auto error : compiler.errors()) {
             report(name, error.node().location, source, Concat("compiler error, ", error.what()));

@@ -168,6 +168,10 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
         return disassembleLocal(out, "GetLocal", position);
     case Opcode::SetLocal:
         return disassembleLocal(out, "SetLocal", position);
+    case Opcode::GetCapture:
+        return disassembleLocal(out, "GetCapture", position);
+    case Opcode::SetCapture:
+        return disassembleLocal(out, "SetCapture", position);
     case Opcode::Negate:
         out << "Negate";
         return position + 1;

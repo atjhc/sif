@@ -25,10 +25,16 @@ SIF_NAMESPACE_BEGIN
 
 class Function : public Object {
   public:
-    Function(const Signature &signature, const Strong<Bytecode> &bytecode);
+    struct Capture {
+        int index;
+        bool isLocal;
+    };
+
+    Function(const Signature &signature, const Strong<Bytecode> &bytecode, const std::vector<Capture> &captures = {});
 
     const Strong<Bytecode> &bytecode() const;
-
+    const std::vector<Capture> &captures() const;
+    
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
@@ -36,6 +42,7 @@ class Function : public Object {
   private:
     Signature _signature;
     Strong<Bytecode> _bytecode;
+    std::vector<Capture> _captures;
 };
 
 SIF_NAMESPACE_END

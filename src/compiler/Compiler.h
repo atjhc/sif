@@ -22,32 +22,47 @@
 #include "ast/Repeat.h"
 #include "ast/Statement.h"
 #include "compiler/Bytecode.h"
+#include "runtime/objects/Function.h"
 
 SIF_NAMESPACE_BEGIN
 
 class Compiler : public Statement::Visitor, public Expression::Visitor {
   public:
-    Compiler(Owned<Statement> statement);
+    Compiler();
 
-    Strong<Bytecode> compile();
     void addExtern(const std::string &name);
+    Strong<Bytecode> compile(const Statement &statement);
 
     const std::vector<CompileError> &errors() const;
 
   private:
-    Bytecode &bytecode();
     void error(const Node &node, const std::string &message);
 
     struct Local {
         std::string name;
-        int depth;
+        int scopeDepth;
     };
 
-    int findLocal(const std::string &name) const;
+    struct Frame {
+        Strong<Bytecode> bytecode;
+        std::vector<Local> locals;
+        std::vector<Function::Capture> captures;
+    };
+
+    Bytecode &bytecode();
+    std::vector<Local> &locals();
+    std::vector<Function::Capture> &captures();
+
+    int findLocal(const Frame &frame, const std::string &name);
+    int findCapture(const std::string &name);
+    bool findGlobal(const std::string &name);
+    int addCapture(Frame &frame, int index, bool isLocal);
 
     void assign(Location location, const std::string &name);
     void resolve(Location location, const std::string &name);
     void addReturn();
+    void beginScope();
+    void endScope(const Location &location);
 
 #pragma mark - Statement::Visitor
 
@@ -75,10 +90,8 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     void visit(const DictionaryLiteral &) override;
     void visit(const Literal &) override;
 
-    int _depth;
-    Strong<Bytecode> _bytecode;
-    Owned<Statement> _statement;
-    Owned<std::vector<Local>> _locals;
+    int _scopeDepth;
+    std::vector<Frame> _frames;
     Mapping<std::string, uint16_t> _globals;
     std::vector<CompileError> _errors;
     uint16_t _nextRepeat;

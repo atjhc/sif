@@ -77,7 +77,8 @@ std::ostream &operator<<(std::ostream &out, const VirtualMachine::CallFrame &f) 
 
 Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     _error = None;
-    _callStack.push_back({bytecode, bytecode->code().begin(), 0});
+    _callStack.push_back({bytecode, bytecode->code().begin(), std::vector<size_t>(), 0});
+    _variables["it"] = Value();
     Push(_stack, Value());
     while (true) {
 #if defined(DEBUG)
@@ -175,6 +176,16 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::GetLocal: {
             auto index = ReadConstant(frame().ip);
             Push(_stack, _stack[frame().sp + index]);
+            break;
+        }
+        case Opcode::SetCapture: {
+            auto index = ReadConstant(frame().ip);
+            _stack[frame().captures[index]] = Pop(_stack);
+            break;
+        }
+        case Opcode::GetCapture: {
+            auto index = ReadConstant(frame().ip);
+            Push(_stack, _stack[frame().captures[index]]);
             break;
         }
         case Opcode::OpenRange: {
@@ -368,8 +379,20 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
 
 bool VirtualMachine::call(Value object, int count) {
     if (auto fn = object.as<Function>()) {
-        _callStack.push_back(
-            {fn->bytecode(), fn->bytecode()->code().begin(), _stack.size() - count - 1});
+        std::vector<size_t> captures;
+        for (auto capture : fn->captures()) {
+            if (capture.isLocal) {
+                captures.push_back(frame().sp + capture.index);
+            } else {
+                captures.push_back(frame().captures[capture.index]);
+            }
+        }
+        _callStack.push_back({
+            fn->bytecode(),
+            fn->bytecode()->code().begin(),
+            captures,
+            _stack.size() - count - 1
+        });
     } else if (auto native = object.as<Native>()) {
         try {
             auto result = native->callable()(&_stack.end()[-count]);

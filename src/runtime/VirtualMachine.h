@@ -49,6 +49,7 @@ class VirtualMachine {
     struct CallFrame {
         Strong<Bytecode> bytecode;
         Bytecode::Iterator ip;
+        std::vector<size_t> captures;
         size_t sp;
     };
 

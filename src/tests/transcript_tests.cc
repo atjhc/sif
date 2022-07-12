@@ -82,10 +82,10 @@ TEST_CASE(TranscriptTests, All) {
         ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl << Join(parser.errors(), "\n");
         if (!statement) continue;
 
-        Compiler compiler(std::move(statement));
+        Compiler compiler;
         compiler.addExtern("print {}");
         compiler.addExtern("read (a) line");
-        auto bytecode = compiler.compile();
+        auto bytecode = compiler.compile(*statement);
         ASSERT_TRUE(bytecode) << path << " failed to compile" << std::endl << Join(compiler.errors(), "\n");
         if (!bytecode) continue;
 

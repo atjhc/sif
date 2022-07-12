@@ -135,8 +135,13 @@ class Parser {
     Scanner &_scanner;
     std::vector<SyntaxError> _errors;
 
-    std::set<Signature> _functionDecls;
+    struct SignatureDecl {
+        Signature signature;
+        int depth;
+    };
+    std::vector<SignatureDecl> _signatureDecls;
     std::vector<Variable> _variableDecls;
+    int _depth;
 
     std::vector<Token> _tokens;
     std::stack<size_t> _saved;

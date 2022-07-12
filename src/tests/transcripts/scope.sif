@@ -1,0 +1,94 @@
+-- Global scope
+set foo to "outer"
+function A
+  set foo to "inner"
+  print foo
+end function
+A
+(-- expect
+inner
+--)
+
+print foo
+(-- expect
+inner
+--)
+
+-- Local scope
+function A
+  set bar to "local"
+  if true then
+    print bar
+    set bar to "local2"
+  end if
+  print bar
+end function
+A
+(-- expect
+local
+local2
+--)
+
+-- Block scope
+function A
+  if true then
+    set local to 1
+  end if
+  print local
+end function
+A
+(-- expect
+1
+--)
+
+-- Local functions
+function A
+  print "outer"
+end function
+
+function B
+  function A
+    print "inner"
+  end function
+  A
+end function
+
+B
+(-- expect
+inner
+--)
+
+A
+(-- expect
+inner
+--)
+
+-- Nested functions
+function A
+  set foo to "bar"
+  function B
+    print foo
+  end function
+  B
+end function
+A
+(-- expect
+bar
+--)
+
+
+function A
+  set foo to "bar"
+  function B
+    function C
+      print foo
+    end function
+    C
+  end function
+  B
+end function
+A
+(-- expect
+bar
+--)
+

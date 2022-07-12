@@ -31,14 +31,18 @@ SIF_NAMESPACE_BEGIN
 
 static inline std::string Describe(const Token &token) { return token.description(); }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
 static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
     return out << Describe(token);
 }
+#pragma clang diagnostic pop
 
 Parser::Parser(const ParserConfig &config, Scanner &scanner) : _config(config), _scanner(scanner) {
     _parsingRepeat = false;
     _recording = false;
     _index = 0;
+    _depth = 0;
 }
 
 Owned<Statement> Parser::parse() {
@@ -49,7 +53,9 @@ Owned<Statement> Parser::parse() {
     return result;
 }
 
-void Parser::declare(const Signature &signature) { _functionDecls.insert(signature); }
+void Parser::declare(const Signature &signature) {
+    _signatureDecls.push_back({signature, _depth});
+}
 
 const std::vector<SyntaxError> &Parser::errors() { return _errors; }
 
@@ -252,6 +258,7 @@ bool Parser::checkTerm(const Token &token, const Signature &signature, size_t &i
 
 Owned<Statement> Parser::parseBlock(const std::initializer_list<Token::Type> &endTypes) {
     std::vector<Owned<Statement>> statements;
+    _depth++;
     while (!isAtEnd()) {
         if (match({Token::Type::NewLine})) {
             continue;
@@ -259,7 +266,6 @@ Owned<Statement> Parser::parseBlock(const std::initializer_list<Token::Type> &en
         if (check(endTypes)) {
             break;
         }
-
         try {
             statements.push_back(parseStatement());
         } catch (const SyntaxError &error) {
@@ -267,6 +273,12 @@ Owned<Statement> Parser::parseBlock(const std::initializer_list<Token::Type> &en
             synchronize();
         }
     }
+
+    _depth--;
+    while (_signatureDecls.size() > 0 && _signatureDecls.back().depth > _depth) {
+        _signatureDecls.pop_back();
+    }
+
     return MakeOwned<Block>(std::move(statements));
 }
 
@@ -657,8 +669,12 @@ Owned<Expression> Parser::parseCall() {
         }
     };
     std::vector<Candidate> candidates;
-    for (auto decl : _functionDecls) {
-        candidates.push_back({decl, 0});
+    std::set<Signature> signatures;
+    for (auto it = _signatureDecls.rbegin(); it != _signatureDecls.rend(); it++) {
+        if (signatures.find(it->signature) == signatures.end()) {
+            candidates.push_back({it->signature, 0});
+            signatures.insert(it->signature);
+        }
     }
     auto startToken = peek();
     std::vector<Owned<Expression>> primaries;
@@ -703,7 +719,7 @@ Owned<Expression> Parser::parseCall() {
         auto ambiguousList = Map(candidates, [](auto &&candidate) {
             return Concat("  ", candidate.signature.name());
         });
-        throw SyntaxError(startToken, Concat("ambiguous expression. Possible candidates: \n", Join(ambiguousList, "\n")));
+        throw SyntaxError(startToken, Concat("ambiguous expression. Possible candidates:\n", Join(ambiguousList, "\n")));
     }
 
     auto signature = candidates[0].signature;

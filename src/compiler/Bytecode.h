@@ -57,6 +57,8 @@ enum class Opcode : uint8_t {
     GetGlobal,
     SetLocal,
     GetLocal,
+    SetCapture,
+    GetCapture,
     Show,
     Call,
     Empty,

@@ -21,58 +21,101 @@
 
 SIF_NAMESPACE_BEGIN
 
-Compiler::Compiler(Owned<Statement> statement)
-    : _depth(0), _bytecode(MakeStrong<Bytecode>()), _statement(std::move(statement)) {}
+Compiler::Compiler() : _scopeDepth(-1) {
+    _globals["it"] = 0;
+}
 
-Strong<Bytecode> Compiler::compile() {
-    _statement->accept(*this);
+Strong<Bytecode> Compiler::compile(const Statement &statement) {
+    _frames.push_back({MakeStrong<Bytecode>(), {}, {}});
+    locals().push_back({"", _scopeDepth});
+
+    statement.accept(*this);
     addReturn();
 
-    return _errors.size() > 0 ? nullptr : _bytecode;
+    return _errors.size() > 0 ? nullptr : _frames.back().bytecode;
 }
 
 void Compiler::addExtern(const std::string &name) { _globals[name] = 0; }
 
 const std::vector<CompileError> &Compiler::errors() const { return _errors; }
 
-Bytecode &Compiler::bytecode() { return *_bytecode; }
+Bytecode &Compiler::bytecode() { return *_frames.back().bytecode; }
+std::vector<Compiler::Local> &Compiler::locals() { return _frames.back().locals; }
+std::vector<Function::Capture> &Compiler::captures() { return _frames.back().captures; }
 
 void Compiler::error(const Node &node, const std::string &message) {
     _errors.push_back(CompileError(node, message));
 }
 
-int Compiler::findLocal(const std::string &name) const {
-    for (int i = 0; i < _locals->size(); i++) {
-        if (_locals->at(i).name == name) {
+int Compiler::findLocal(const Frame &frame, const std::string &name) {
+    for (int i = frame.locals.size() - 1; i >= 0; i--) {
+        if (frame.locals[i].name == name) {
             return i;
         }
     }
     return -1;
 }
 
+int Compiler::findCapture(const std::string &name) {
+    if (_frames.size() < 2) {
+        return -1;
+    }
+
+    int index = -1;
+    for (auto it = _frames.end() - 2; it >= _frames.begin(); it--) {
+        if (index = findLocal(*it, name); index > -1) {
+            it++;
+            index = addCapture(*it, index, true);
+            it++;
+            while (it < _frames.end()) {
+                index = addCapture(*it, index, false);
+                it++;
+            }
+            break;
+        }
+    }
+
+    return index;
+}
+
+int Compiler::addCapture(Frame &frame, int index, bool isLocal) {
+    for (int i = 0; i < frame.captures.size(); i++) {
+        if (frame.captures[i].index == index && frame.captures[i].isLocal == isLocal) {
+            return i;
+        }
+    }
+    frame.captures.push_back({index, isLocal});
+    return frame.captures.size() - 1;
+}
+
 void Compiler::assign(Location location, const std::string &name) {
     uint16_t index;
     Opcode opcode;
 
-    if (_depth > 0) {
-        if (int i = findLocal(name); i > -1) {
+    if (_scopeDepth > 0) {
+        if (int i = findLocal(_frames.back(), name); i > -1) {
             index = i;
             opcode = Opcode::SetLocal;
+        } else if (int i = findCapture(name); i > -1) {
+            index = i;
+            opcode = Opcode::SetCapture;
         } else if (auto it = _globals.find(name); it != _globals.end()) {
+            index = bytecode().addConstant(MakeStrong<String>(name));
             index = it->second;
             opcode = Opcode::SetGlobal;
         } else {
-            _locals->push_back({name, _depth});
+            locals().push_back({name, _scopeDepth});
             return;
         }
     } else {
         if (auto it = _globals.find(name); it != _globals.end()) {
+            index = bytecode().addConstant(MakeStrong<String>(name));
             index = it->second;
             opcode = Opcode::SetGlobal;
         } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
-            _globals[name] = index;
             opcode = Opcode::SetGlobal;
+            _globals[name] = index;
         }
     }
     bytecode().add(location, opcode, index);
@@ -82,10 +125,13 @@ void Compiler::resolve(Location location, const std::string &name) {
     uint16_t index = 0;
     Opcode opcode;
 
-    if (_depth > 0) {
-        if (int i = findLocal(name); i > -1) {
+    if (_scopeDepth > 0) {
+        if (int i = findLocal(_frames.back(), name); i > -1) {
             index = i;
             opcode = Opcode::GetLocal;
+        } else if (int i = findCapture(name); i > -1) {
+            index = i;
+            opcode = Opcode::GetCapture;
         } else if (auto it = _globals.find(name); it != _globals.end()) {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
@@ -97,10 +143,10 @@ void Compiler::resolve(Location location, const std::string &name) {
         if (auto it = _globals.find(name); it != _globals.end()) {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
-            _globals[name] = index;
         } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
+            _globals[name] = index;
         }
     }
     bytecode().add(location, opcode, index);
@@ -113,32 +159,36 @@ void Compiler::addReturn() {
     }
 }
 
-void Compiler::visit(const Block &block) {
-    for (const auto &statement : block.statements) {
-        statement->accept(*this);
+void Compiler::beginScope() {
+    _scopeDepth++;
+}
+
+void Compiler::endScope(const Location &location) {
+    while (locals().size() > 0 && locals().back().scopeDepth > _scopeDepth) {
+        locals().pop_back();
+        bytecode().add(location, Opcode::Pop);
     }
 }
 
+void Compiler::visit(const Block &block) {
+    beginScope();
+    for (const auto &statement : block.statements) {
+        statement->accept(*this);
+    }
+    endScope(block.location);
+}
+
 void Compiler::visit(const FunctionDecl &functionDecl) {
+    // Create a scope, push a new frame, add all the function params as local variables, compile the function.
+    beginScope();
     auto functionBytecode = MakeStrong<Bytecode>();
-    auto function = MakeStrong<Function>(functionDecl.signature, functionBytecode);
-    auto constant = bytecode().addConstant(function);
-    auto name = functionDecl.signature.name();
+    _frames.push_back({functionBytecode, {}, {}});
 
-    bytecode().add(functionDecl.location, Opcode::Constant, constant);
-    assign(functionDecl.location, name);
-
-    auto previousBytecode = _bytecode;
-    auto previousLocals = std::move(_locals);
-    _bytecode = functionBytecode;
-    _locals = MakeOwned<std::vector<Local>>();
-    _depth++;
-
-    _locals->push_back({"", _depth});
+    locals().push_back({"", _scopeDepth});
     for (const auto &term : functionDecl.signature.terms) {
         if (auto arg = std::get_if<Signature::Argument>(&term)) {
             if (arg->token.has_value()) {
-                _locals->push_back({arg->token.value().text, _depth});
+                locals().push_back({arg->token.value().text, _scopeDepth});
             }
         }
     }
@@ -146,9 +196,16 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     functionDecl.statement->accept(*this);
     addReturn();
 
-    _depth--;
-    _bytecode = previousBytecode;
-    _locals = std::move(previousLocals);
+    auto functionCaptures = captures();
+    _frames.pop_back();
+    endScope(functionDecl.location);
+
+    // Add the function constant to the bytecode, assign it as a local variable.
+    auto function = MakeStrong<Function>(functionDecl.signature, functionBytecode, functionCaptures);
+    auto constant = bytecode().addConstant(function);
+    auto name = functionDecl.signature.name();
+    bytecode().add(functionDecl.location, Opcode::Constant, constant);
+    assign(functionDecl.location, name);
 }
 
 void Compiler::visit(const If &ifStatement) {
