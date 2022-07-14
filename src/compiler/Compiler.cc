@@ -101,7 +101,6 @@ void Compiler::assign(Location location, const std::string &name) {
             opcode = Opcode::SetCapture;
         } else if (auto it = _globals.find(name); it != _globals.end()) {
             index = bytecode().addConstant(MakeStrong<String>(name));
-            index = it->second;
             opcode = Opcode::SetGlobal;
         } else {
             locals().push_back({name, _scopeDepth});
@@ -110,7 +109,6 @@ void Compiler::assign(Location location, const std::string &name) {
     } else {
         if (auto it = _globals.find(name); it != _globals.end()) {
             index = bytecode().addConstant(MakeStrong<String>(name));
-            index = it->second;
             opcode = Opcode::SetGlobal;
         } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
