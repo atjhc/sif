@@ -690,11 +690,11 @@ Owned<Expression> Parser::parseCall() {
             if (candidates[0].signature.endsWithArgument()) {
                 primaries.push_back(parseList());
             } else {
-                primaries.push_back(parsePrimary());
+                primaries.push_back(parseSubscript());
             }
             break;
         } else if (candidates.size() > 0) {
-            primaries.push_back(parsePrimary());
+            primaries.push_back(parseSubscript());
         }
     }
 
@@ -709,7 +709,7 @@ Owned<Expression> Parser::parseCall() {
         if (primaries.size() == 1) {
             return std::move(primaries[0]);
         } else if (primaries.size() == 0) {
-            return parsePrimary();
+            return parseSubscript();
         }
         throw SyntaxError(startToken, "no matching function for expression");
     }
