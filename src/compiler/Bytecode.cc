@@ -237,38 +237,48 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     }
 }
 
+struct BytecodePrinter {
+    int depth;
+
+    void print(std::ostream &out, const Bytecode &bytecode) const {
+        auto indent = std::string(depth * 2, ' ');
+        for (size_t i = 0; i < bytecode.constants().size(); i++) {
+            const auto &constant = bytecode.constants()[i];
+            out << indent << "[" << i << "] (" << constant.typeName() << ") " << constant << std::endl;
+            if (const auto &function = constant.as<Function>()) {
+                BytecodePrinter printer{depth + 1};
+                printer.print(out, *function->bytecode());
+            }
+        }
+
+        int width = (bytecode.code().size() / 10) + 1;
+        if (width < 4)
+            width = 4;
+
+        auto position = bytecode.code().begin();
+        Optional<Location> previousLocation;
+        while (position < bytecode.code().end()) {
+            out << indent << std::setfill('0') << std::setw(width) << position - bytecode.code().begin();
+
+            auto location = bytecode.location(position);
+            if (!previousLocation.has_value() || previousLocation.value() != location) {
+                out << std::setfill(' ') << std::setw(8) << std::right << bytecode.location(position)
+                    << " ";
+            } else {
+                out << std::setfill(' ') << std::setw(8) << std::right << "|"
+                    << " ";
+            }
+            previousLocation = location;
+
+            position = bytecode.disassemble(out, position);
+            out << std::endl;
+        }
+    }
+};
+
 std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode) {
-    for (size_t i = 0; i < bytecode.constants().size(); i++) {
-        const auto &constant = bytecode.constants()[i];
-        out << "[" << i << "] (" << constant.typeName() << ") " << constant << std::endl;
-        if (const auto &function = constant.as<Function>()) {
-            out << std::string(30, '=') << std::endl
-                << *function->bytecode() << std::string(30, '=') << std::endl;
-        }
-    }
-
-    int width = (bytecode.code().size() / 10) + 1;
-    if (width < 4)
-        width = 4;
-
-    auto position = bytecode.code().begin();
-    Optional<Location> previousLocation;
-    while (position < bytecode.code().end()) {
-        out << std::setfill('0') << std::setw(width) << position - bytecode.code().begin();
-
-        auto location = bytecode.location(position);
-        if (!previousLocation.has_value() || previousLocation.value() != location) {
-            out << std::setfill(' ') << std::setw(8) << std::right << bytecode.location(position)
-                << " ";
-        } else {
-            out << std::setfill(' ') << std::setw(8) << std::right << "|"
-                << " ";
-        }
-        previousLocation = location;
-
-        position = bytecode.disassemble(out, position);
-        out << std::endl;
-    }
+    BytecodePrinter printer{0};
+    printer.print(out, bytecode);
     return out;
 }
 

@@ -87,6 +87,7 @@ class Bytecode {
 
   private:
     friend class VirtualMachine;
+    friend struct BytecodePrinter;
 
     Iterator disassembleConstant(std::ostream &, const std::string &, Iterator) const;
     Iterator disassembleDictionary(std::ostream &out, Iterator position) const;
