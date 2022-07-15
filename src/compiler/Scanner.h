@@ -80,7 +80,8 @@ struct Token {
         StringLiteral,
         BoolLiteral,
         IntLiteral,
-        FloatLiteral
+        FloatLiteral,
+        EmptyLiteral,
     };
 
     Type type;

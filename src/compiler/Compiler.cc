@@ -119,7 +119,7 @@ void Compiler::assign(Location location, const std::string &name) {
     bytecode().add(location, opcode, index);
 }
 
-void Compiler::resolve(Location location, const std::string &name) {
+void Compiler::resolve(const Node &node, const std::string &name) {
     uint16_t index = 0;
     Opcode opcode;
 
@@ -134,7 +134,7 @@ void Compiler::resolve(Location location, const std::string &name) {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
         } else {
-            bytecode().add(location, Opcode::Empty);
+            error(node, Concat("name '", name, "' has not been assigned"));
             return;
         }
     } else {
@@ -147,7 +147,7 @@ void Compiler::resolve(Location location, const std::string &name) {
             _globals[name] = index;
         }
     }
-    bytecode().add(location, opcode, index);
+    bytecode().add(node.location, opcode, index);
 }
 
 void Compiler::addReturn() {
@@ -281,8 +281,9 @@ void Compiler::visit(const RepeatCondition &statement) {
     _exitRepeat = exitRepeat;
 }
 
-void Compiler::visit(const RepeatForEach &foreach) {
+void Compiler::visit(const RepeatFor &foreach) {
     foreach.expression->accept(*this);
+    foreach.statement->accept(*this);
     bytecode().add(foreach.location, Opcode::Pop);
 }
 
@@ -291,7 +292,7 @@ void Compiler::visit(const ExitRepeat &exit) { bytecode().addRepeat(exit.locatio
 void Compiler::visit(const NextRepeat &next) { bytecode().addRepeat(next.location, _nextRepeat); }
 
 void Compiler::visit(const Call &call) {
-    resolve(call.location, call.signature.name());
+    resolve(call, call.signature.name());
     for (const auto &argument : call.arguments) {
         argument->accept(*this);
     }
@@ -301,7 +302,7 @@ void Compiler::visit(const Call &call) {
 void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*this); }
 
 void Compiler::visit(const Variable &variable) {
-    resolve(variable.location, lowercase(variable.token.text));
+    resolve(variable, lowercase(variable.token.text));
 }
 
 void Compiler::visit(const Binary &binary) {
@@ -437,6 +438,11 @@ void Compiler::visit(const Literal &literal) {
             bytecode().add(literal.location, Opcode::Short, value);
             return;
         }
+    }
+
+    if (literal.token.type == Token::Type::EmptyLiteral) {
+        bytecode().add(literal.location, Opcode::Empty);
+        return;
     }
 
     try {

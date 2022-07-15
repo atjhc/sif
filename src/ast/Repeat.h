@@ -33,14 +33,6 @@ struct Repeat : Statement {
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
-// struct RepeatCount : Repeat {
-//     Owned<Expression> countExpression;
-
-//     RepeatCount(Owned<Expression> countExpression, Owned<StatementList> statements);
-
-//     void accept(Visitor &v) const override { return v.visit(*this); }
-// };
-
 struct RepeatCondition : Repeat {
     Owned<Expression> condition;
     bool conditionValue;
@@ -50,11 +42,11 @@ struct RepeatCondition : Repeat {
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
-struct RepeatForEach : Repeat {
+struct RepeatFor : Repeat {
     Owned<Variable> variable;
     Owned<Expression> expression;
 
-    RepeatForEach(Owned<Statement> statement, Owned<Variable> variable, Owned<Expression> expression);
+    RepeatFor(Owned<Statement> statement, Owned<Variable> variable, Owned<Expression> expression);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
 };

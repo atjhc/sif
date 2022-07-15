@@ -437,7 +437,6 @@ Owned<Statement> Parser::parseRepeat() {
                                           conditionValue);
     }
     if (match({Token::Type::For})) {
-        consume(Token::Type::Each, Concat("expected ", Quoted("each")));
         auto token = consumeWord();
         auto variable = MakeOwned<Variable>(token);
         variable->location = token.location;
@@ -446,7 +445,7 @@ Owned<Statement> Parser::parseRepeat() {
         consumeNewLine();
         auto statement = parseBlock({Token::Type::End});
         consumeEnd(Token::Type::Repeat);
-        return MakeOwned<RepeatForEach>(std::move(statement), std::move(variable), std::move(expression));
+        return MakeOwned<RepeatFor>(std::move(statement), std::move(variable), std::move(expression));
     }
     throw SyntaxError(peek(), "unexpected expression");
 }
@@ -753,6 +752,7 @@ Owned<Expression> Parser::parsePrimary() {
             Token::Type::IntLiteral,
             Token::Type::FloatLiteral,
             Token::Type::StringLiteral,
+            Token::Type::EmptyLiteral,
         })) {
         auto literal = MakeOwned<Literal>(token.value());
         literal->location = token.value().location;

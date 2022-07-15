@@ -59,7 +59,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     int addCapture(Frame &frame, int index, bool isLocal);
 
     void assign(Location location, const std::string &name);
-    void resolve(Location location, const std::string &name);
+    void resolve(const Node &node, const std::string &name);
     void addReturn();
     void beginScope();
     void endScope(const Location &location);
@@ -74,7 +74,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     void visit(const ExpressionStatement &) override;
     void visit(const Repeat &) override;
     void visit(const RepeatCondition &) override;
-    void visit(const RepeatForEach &) override;
+    void visit(const RepeatFor &) override;
     void visit(const ExitRepeat &) override;
     void visit(const NextRepeat &) override;
 

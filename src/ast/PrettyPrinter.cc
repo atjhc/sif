@@ -113,8 +113,8 @@ void PrettyPrinter::visit(const RepeatCondition &repeat) {
     out << indentString() << "end repeat";
 }
 
-void PrettyPrinter::visit(const RepeatForEach &foreach) {
-    out << "repeat for each ";
+void PrettyPrinter::visit(const RepeatFor &foreach) {
+    out << "repeat for ";
     foreach.variable->accept(*this);
     out << " in ";
     foreach.expression->accept(*this);
