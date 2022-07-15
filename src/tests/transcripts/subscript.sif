@@ -1,0 +1,11 @@
+set foo to [1, 2, 3]
+print foo[0]
+(-- expect
+1
+--)
+
+set foo to {"one": 1, "two": 2}
+print foo["one"]
+(-- expect
+1
+--)
