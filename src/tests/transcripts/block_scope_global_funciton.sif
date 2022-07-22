@@ -1,0 +1,9 @@
+if true then
+  function A
+    print "inner"
+  end function
+end if
+A
+(-- expect
+inner
+--)

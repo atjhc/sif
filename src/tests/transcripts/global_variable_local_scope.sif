@@ -1,0 +1,9 @@
+set foo to "outer"
+function A
+  set foo to "inner"
+end function
+A
+print foo
+(-- expect
+outer
+--)
