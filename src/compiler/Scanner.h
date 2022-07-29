@@ -66,6 +66,8 @@ struct Token {
         While,
         Until,
         Exit,
+        Local,
+        Global,
         LessThan,
         GreaterThan,
         LessThanOrEqual,

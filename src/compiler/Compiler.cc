@@ -88,7 +88,7 @@ int Compiler::addCapture(Frame &frame, int index, bool isLocal) {
     return frame.captures.size() - 1;
 }
 
-void Compiler::assign(Location location, const std::string &name) {
+void Compiler::assign(const FunctionDecl &decl, const std::string &name) {
     uint16_t index;
     Opcode opcode;
 
@@ -99,27 +99,50 @@ void Compiler::assign(Location location, const std::string &name) {
         } else if (int i = findCapture(name); i > -1) {
             index = i;
             opcode = Opcode::SetCapture;
-        } else if (auto it = _globals.find(name); it != _globals.end()) {
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::SetGlobal;
         } else {
             locals().push_back({name, _scopeDepth});
             return;
         }
     } else {
-        if (auto it = _globals.find(name); it != _globals.end()) {
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::SetGlobal;
-        } else {
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::SetGlobal;
-            _globals[name] = index;
-        }
+        index = bytecode().addConstant(MakeStrong<String>(name));
+        opcode = Opcode::SetGlobal;
+        _globals[name] = index;
     }
-    bytecode().add(location, opcode, index);
+    bytecode().add(decl.location, opcode, index);
 }
 
-void Compiler::resolve(const Node &node, const std::string &name) {
+void Compiler::assign(const Variable &variable, const std::string &name) {
+    uint16_t index;
+    Opcode opcode;
+
+    if (_scopeDepth > 0) {
+        switch (variable.scope) {
+        case Variable::Scope::Local:
+        case Variable::Scope::Unspecified:
+            if (int i = findLocal(_frames.back(), name); i > -1) {
+                index = i;
+                opcode = Opcode::SetLocal;
+            } else if (int i = findCapture(name); i > -1) {
+                index = i;
+                opcode = Opcode::SetCapture;
+            } else {
+                locals().push_back({name, _scopeDepth});
+                return;
+            }
+            break;
+        case Variable::Scope::Global:
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            opcode = Opcode::SetGlobal;
+        }
+    } else {
+        index = bytecode().addConstant(MakeStrong<String>(name));
+        opcode = Opcode::SetGlobal;
+        _globals[name] = index;
+    }
+    bytecode().add(variable.location, opcode, index);
+}
+
+void Compiler::resolve(const Call &call, const std::string &name) {
     uint16_t index = 0;
     Opcode opcode;
 
@@ -130,24 +153,57 @@ void Compiler::resolve(const Node &node, const std::string &name) {
         } else if (int i = findCapture(name); i > -1) {
             index = i;
             opcode = Opcode::GetCapture;
-        } else if (auto it = _globals.find(name); it != _globals.end()) {
+        } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
-        } else {
-            error(node, Concat("name '", name, "' has not been assigned"));
-            return;
         }
     } else {
-        if (auto it = _globals.find(name); it != _globals.end()) {
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::GetGlobal;
-        } else {
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::GetGlobal;
-            _globals[name] = index;
-        }
+        index = bytecode().addConstant(MakeStrong<String>(name));
+        opcode = Opcode::GetGlobal;
+        _globals[name] = index;
     }
-    bytecode().add(node.location, opcode, index);
+    bytecode().add(call.location, opcode, index);
+}
+
+void Compiler::resolve(const Variable &variable, const std::string &name) {
+    uint16_t index = 0;
+    Opcode opcode;
+
+    if (_scopeDepth > 0) {
+        switch (variable.scope) {
+        case Variable::Scope::Unspecified:
+            if (int i = findLocal(_frames.back(), name); i > -1) {
+                index = i;
+                opcode = Opcode::GetLocal;
+            } else if (int i = findCapture(name); i > -1) {
+                index = i;
+                opcode = Opcode::GetCapture;
+            } else {
+                index = bytecode().addConstant(MakeStrong<String>(name));
+                opcode = Opcode::GetGlobal;
+            }
+            break;
+        case Variable::Scope::Local:
+            if (int i = findLocal(_frames.back(), name); i > -1) {
+                index = i;
+                opcode = Opcode::GetLocal;
+            } else if (int i = findCapture(name); i > -1) {
+                index = i;
+                opcode = Opcode::GetCapture;
+            } else {
+                error(variable, Concat("name '", name, "' has not been assigned"));
+                return;
+            }
+            break;
+        case Variable::Scope::Global:
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            opcode = Opcode::GetGlobal;
+        }
+    } else {
+        index = bytecode().addConstant(MakeStrong<String>(name));
+        opcode = Opcode::GetGlobal;
+    }
+    bytecode().add(variable.location, opcode, index);
 }
 
 void Compiler::addReturn() {
@@ -162,6 +218,7 @@ void Compiler::beginScope() {
 }
 
 void Compiler::endScope(const Location &location) {
+    _scopeDepth--;
     while (locals().size() > 0 && locals().back().scopeDepth > _scopeDepth) {
         locals().pop_back();
         bytecode().add(location, Opcode::Pop);
@@ -198,12 +255,12 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     _frames.pop_back();
     endScope(functionDecl.location);
 
-    // Add the function constant to the bytecode, assign it as a local variable.
+    // Add the function constant to the bytecode, assign it to the given signature name.
     auto function = MakeStrong<Function>(functionDecl.signature, functionBytecode, functionCaptures);
     auto constant = bytecode().addConstant(function);
     auto name = functionDecl.signature.name();
     bytecode().add(functionDecl.location, Opcode::Constant, constant);
-    assign(functionDecl.location, name);
+    assign(functionDecl, name);
 }
 
 void Compiler::visit(const If &ifStatement) {
@@ -236,7 +293,7 @@ void Compiler::visit(const Return &statement) {
 
 void Compiler::visit(const Assignment &assignment) {
     assignment.expression->accept(*this);
-    assign(assignment.location, lowercase(assignment.variable->token.text));
+    assign(*assignment.variable, lowercase(assignment.variable->token.text));
 }
 
 void Compiler::visit(const ExpressionStatement &statement) {

@@ -55,12 +55,16 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
 
     int findLocal(const Frame &frame, const std::string &name);
     int findCapture(const std::string &name);
-    bool findGlobal(const std::string &name);
     int addCapture(Frame &frame, int index, bool isLocal);
 
-    void assign(Location location, const std::string &name);
-    void resolve(const Node &node, const std::string &name);
+    void assign(const FunctionDecl &decl, const std::string &name);
+    void assign(const Variable &variable, const std::string &name);
+
+    void resolve(const Call &call, const std::string &name);
+    void resolve(const Variable &variable, const std::string &name);
+
     void addReturn();
+
     void beginScope();
     void endScope(const Location &location);
 

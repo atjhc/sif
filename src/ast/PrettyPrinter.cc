@@ -170,6 +170,11 @@ void PrettyPrinter::visit(const Grouping &grouping) {
 }
 
 void PrettyPrinter::visit(const Variable &variable) {
+    if (variable.scope == Variable::Scope::Global) {
+        out << "global ";
+    } else if (variable.scope == Variable::Scope::Local) {
+        out << "local ";
+    }
     out << variable.token.text;
     if (variable.typeName.has_value()) {
         out << ": " << variable.typeName.value().text;

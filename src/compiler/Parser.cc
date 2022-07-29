@@ -451,6 +451,12 @@ Owned<Statement> Parser::parseRepeat() {
 }
 
 Owned<Statement> Parser::parseAssignment() {
+    Variable::Scope scope = Variable::Scope::Unspecified;
+    if (match({Token::Type::Global})) {
+        scope = Variable::Scope::Global;
+    } else if (match({Token::Type::Local})) {
+        scope = Variable::Scope::Local;
+    }
     auto token = consumeWord("expected variable name");
     Optional<Token> typeName;
     if (match({Token::Type::Colon})) {
@@ -458,7 +464,7 @@ Owned<Statement> Parser::parseAssignment() {
     }
     consume(Token::Type::To, Concat("expected ", Quoted("to")));
     auto expression = parseExpression();
-    auto variable = MakeOwned<Variable>(token, typeName);
+    auto variable = MakeOwned<Variable>(token, typeName, scope);
     return MakeOwned<Assignment>(std::move(variable), std::move(expression));
 }
 
@@ -769,6 +775,20 @@ Owned<Expression> Parser::parsePrimary() {
 
     if (match({Token::Type::LeftBracket})) {
         return parseListLiteral();
+    }
+
+    if (match({Token::Type::Global})) {
+        auto token = consumeWord("expected variable name");
+        auto variable = MakeOwned<Variable>(token, None, Variable::Scope::Global);
+        variable->location = token.location;
+        return variable;
+    }
+
+    if (match({Token::Type::Local})) {
+        auto token = consumeWord("expected variable name");
+        auto variable = MakeOwned<Variable>(token, None, Variable::Scope::Local);
+        variable->location = token.location;
+        return variable;
     }
 
     if (peek().isWord()) {

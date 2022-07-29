@@ -32,8 +32,8 @@ Unary::Unary(Operator unaryOperator, Owned<Expression> expression)
 
 Grouping::Grouping(Owned<Expression> expression) : expression(std::move(expression)) {}
 
-Variable::Variable(const Token &token, Optional<Token> typeName)
-    : token(token), typeName(typeName) {}
+Variable::Variable(const Token &token, Optional<Token> typeName, Scope scope)
+    : token(token), typeName(typeName), scope(scope) {}
 
 RangeLiteral::RangeLiteral(Owned<Expression> start, Owned<Expression> end, bool closed)
     : start(std::move(start)), end(std::move(end)), closed(closed) {}

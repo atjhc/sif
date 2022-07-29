@@ -44,6 +44,8 @@ bool Token::isWord() const {
     case Type::To:
     case Type::Until:
     case Type::While:
+    case Type::Global:
+    case Type::Local:
     case Type::Word:
         return true;
     default:
@@ -194,6 +196,8 @@ Token::Type Scanner::wordType() {
             }
         }
         break;
+    case 'g':
+        return checkKeyword(1, 5, "lobal", Token::Type::Global);
     case 't':
         if (_current - _start == 2 && std::tolower(_start[1]) == 'o') {
             return Token::Type::To;
@@ -236,6 +240,8 @@ Token::Type Scanner::wordType() {
                 return checkKeyword(2, 5, "rever", Token::Type::Forever);
             }
         }
+    case 'l':
+        return checkKeyword(1, 4, "ocal", Token::Type::Local);
     case 'n':
         if (_current - _start > 1) {
             switch (std::tolower(_start[1])) {
