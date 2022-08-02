@@ -202,7 +202,17 @@ void Parser::_trace(const std::string &message) {
 
 #pragma mark - Grammar
 
-bool Parser::isPrimary(const Token &token) {
+struct Candidate {
+    Signature signature;
+    size_t offset;
+    std::vector<size_t> arguments;
+    
+    bool isComplete() const {
+        return offset == signature.terms.size();
+    }
+};
+
+bool isPrimary(const Token &token) {
     if (token.isWord()) return true;
     switch (token.type) {
     case Token::Type::LeftBrace:
@@ -218,22 +228,26 @@ bool Parser::isPrimary(const Token &token) {
     }
 }
 
-bool Parser::checkTerm(const Token &token, const Signature &signature, size_t &index) {
-    if (index == signature.terms.size()) {
+bool checkTerm(const Token &token, size_t offset, Candidate &candidate) {
+    if (candidate.isComplete()) {
         return false;
     }
-    const auto &term = signature.terms[index++];
+    const auto &term = candidate.signature.terms[candidate.offset++];
     if (auto option = std::get_if<Signature::Option>(&term)) {
-        if (index == signature.terms.size()) {
+        if (offset == candidate.signature.terms.size()) {
             return true;
         }
         if (token.type == option->token.type && lowercase(token.text) == lowercase(option->token.text)) {
             return true;
         }
-        return checkTerm(token, signature, index);
+        return checkTerm(token, offset, candidate);
     }
     if (auto argument = std::get_if<Signature::Argument>(&term)) {
-        return isPrimary(token);
+        if (!isPrimary(token)) {
+            return false;
+        }
+        candidate.arguments.push_back(offset);
+        return true;
     }
     if (!token.isWord()) {
         return false;
@@ -666,13 +680,6 @@ Owned<Expression> Parser::parseUnary() {
 }
 
 Owned<Expression> Parser::parseCall() {
-    struct Candidate {
-        Signature signature;
-        size_t offset;
-        bool isComplete() const {
-            return offset == signature.terms.size();
-        }
-    };
     std::vector<Candidate> candidates;
     std::set<Signature> signatures;
     for (auto it = _signatureDecls.rbegin(); it != _signatureDecls.rend(); it++) {
@@ -686,7 +693,7 @@ Owned<Expression> Parser::parseCall() {
     while (candidates.size() > 0 && isPrimary(peek())) {
         trace(Concat("Checking ", Quoted(peek().text)));
         candidates = Filter(candidates, [&](Candidate &candidate) {
-            return checkTerm(peek(), candidate.signature, candidate.offset);
+            return checkTerm(peek(), primaries.size(), candidate);
         });
         trace(Concat("Candidates: ", candidates.size()));
         if (candidates.size() == 1 && candidates[0].isComplete()) {
@@ -727,15 +734,13 @@ Owned<Expression> Parser::parseCall() {
         throw SyntaxError(startToken, Concat("ambiguous expression. Possible candidates:\n", Join(ambiguousList, "\n")));
     }
 
-    auto signature = candidates[0].signature;
-    trace(Concat("Matched ", signature.name()));
+    const auto &candidate = candidates.back();
+    trace(Concat("Matched ", candidate.signature.name()));
     std::vector<Owned<Expression>> arguments;
-    for (size_t i = 0; i < signature.terms.size(); i++) {
-        if (std::holds_alternative<Signature::Argument>(signature.terms[i])) {
-            arguments.push_back(std::move(primaries[i]));
-        }
+    for (size_t i = 0; i < candidate.arguments.size(); i++) {
+        arguments.push_back(std::move(primaries[candidate.arguments[i]]));
     }
-    auto call = MakeOwned<Call>(signature, std::vector<Optional<Token>>(), std::move(arguments));
+    auto call = MakeOwned<Call>(candidate.signature, std::vector<Optional<Token>>(), std::move(arguments));
     call->location = peek().location;
     return call;
 }

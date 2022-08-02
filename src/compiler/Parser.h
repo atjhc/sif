@@ -95,9 +95,6 @@ class Parser {
     void rewind();
     void commit();
 
-    bool isPrimary(const Token &token);
-    bool checkTerm(const Token &token, const Signature &signature, size_t &index);
-
 #if defined(DEBUG)
     void _trace(const std::string &message);
 #endif
