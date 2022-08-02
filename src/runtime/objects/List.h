@@ -28,7 +28,7 @@ SIF_NAMESPACE_BEGIN
 
 class List : public Object, public Enumerable {
   public:
-    List(const std::vector<Value> &values);
+    List(const std::vector<Value> &values = {});
 
     std::vector<Value> &values();
 

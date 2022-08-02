@@ -234,6 +234,22 @@ Mapping<std::string, Strong<Native>> builtins() {
         auto text = values[0].as<String>();
         return static_cast<long>(count_chunk(chunk::line, text->string()).count);
     });
+    natives["(the) keys (of) {}"] = MakeStrong<Native>([](Value *values) -> Value {
+        auto dictionary = values[0].as<Dictionary>();
+        auto keys = MakeStrong<List>();
+        for (const auto &pair : dictionary->values()) {
+            keys->values().push_back(pair.first);
+        }
+        return keys;
+    });
+    natives["(the) values (of) {}"] = MakeStrong<Native>([](Value *values) -> Value {
+        auto dictionary = values[0].as<Dictionary>();
+        auto valuesList = MakeStrong<List>();
+        for (const auto &pair : dictionary->values()) {
+            valuesList->values().push_back(pair.second);
+        }
+        return valuesList;
+    });
     return natives;
 }
 
