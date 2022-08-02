@@ -286,10 +286,6 @@ int evaluate(const std::string &name, const std::string &source) {
     }
 
     Compiler compiler;
-    for (const auto &pair : natives) {
-        compiler.addExtern(pair.first);
-    }
-
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
         for (auto error : compiler.errors()) {

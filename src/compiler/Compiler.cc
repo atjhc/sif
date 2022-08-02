@@ -21,9 +21,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-Compiler::Compiler() : _scopeDepth(-1) {
-    _globals["it"] = 0;
-}
+Compiler::Compiler() : _scopeDepth(-1) {}
 
 Strong<Bytecode> Compiler::compile(const Statement &statement) {
     _frames.push_back({MakeStrong<Bytecode>(), {}, {}});
@@ -34,8 +32,6 @@ Strong<Bytecode> Compiler::compile(const Statement &statement) {
 
     return _errors.size() > 0 ? nullptr : _frames.back().bytecode;
 }
-
-void Compiler::addExtern(const std::string &name) { _globals[name] = 0; }
 
 const std::vector<CompileError> &Compiler::errors() const { return _errors; }
 
@@ -106,7 +102,6 @@ void Compiler::assign(const FunctionDecl &decl, const std::string &name) {
     } else {
         index = bytecode().addConstant(MakeStrong<String>(name));
         opcode = Opcode::SetGlobal;
-        _globals[name] = index;
     }
     bytecode().add(decl.location, opcode, index);
 }
@@ -137,7 +132,6 @@ void Compiler::assign(const Variable &variable, const std::string &name) {
     } else {
         index = bytecode().addConstant(MakeStrong<String>(name));
         opcode = Opcode::SetGlobal;
-        _globals[name] = index;
     }
     bytecode().add(variable.location, opcode, index);
 }
@@ -160,7 +154,6 @@ void Compiler::resolve(const Call &call, const std::string &name) {
     } else {
         index = bytecode().addConstant(MakeStrong<String>(name));
         opcode = Opcode::GetGlobal;
-        _globals[name] = index;
     }
     bytecode().add(call.location, opcode, index);
 }

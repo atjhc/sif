@@ -30,7 +30,6 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
   public:
     Compiler();
 
-    void addExtern(const std::string &name);
     Strong<Bytecode> compile(const Statement &statement);
 
     const std::vector<CompileError> &errors() const;
