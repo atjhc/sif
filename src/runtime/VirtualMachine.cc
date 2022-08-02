@@ -463,19 +463,23 @@ bool VirtualMachine::subscript(Value lhs, Value rhs) {
             Push(_stack, dictionary->values().at(rhs));
         }
     } else if (auto string = lhs.as<String>()) {
-        if (!rhs.isInteger()) {
+        Value result;
+        if (rhs.isInteger()) {
+            auto index = rhs.asInteger();
+            if (index >= string->length() || string->length() + index < 0) {
+                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                                    Concat("string index ", index, " out of bounds"));
+                return true;
+            }
+            result = string->string().substr(index < 0 ? string->string().size() + index : index, 1);
+        } else if (auto range = rhs.as<Range>()) {
+            result = string->operator[](*range);
+        } else {
             _error =
                 RuntimeError(frame().bytecode->location(frame().ip - 1), "expected an integer");
             return true;
         }
-        auto index = rhs.asInteger();
-        if (index >= string->length() || string->length() + index < 0) {
-            _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                                  Concat("string index ", index, " out of bounds"));
-            return true;
-        }
-        Push(_stack,
-             string->string().substr(index < 0 ? string->string().size() + index : index, 1));
+        Push(_stack, result);
     } else if (auto range = lhs.as<Range>()) {
         if (!rhs.isInteger()) {
             _error =
@@ -488,7 +492,7 @@ bool VirtualMachine::subscript(Value lhs, Value rhs) {
                                   "range index out of bounds");
             return true;
         }
-        Push(_stack, range->start().value() + index);
+        Push(_stack, range->start() + index);
     } else {
         _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
                               "expected a list, string, or dictionary");

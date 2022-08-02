@@ -25,22 +25,16 @@ Value String::operator[](int64_t index) const {
 }
 
 Value String::operator[](const Range &range) const {
-    auto start = _string.begin();
-    auto end = _string.end();
-    if (range.start().has_value()) {
-        start = start + range.start().value();
-        if (start < _string.begin())
-            start = _string.begin();
-        if (start > _string.end())
-            start = _string.end() - 1;
-    }
-    if (range.end().has_value()) {
-        end = _string.begin() + range.end().value() + (range.closed() ? 1 : 0);
-        if (end < _string.begin())
-            end = _string.begin();
-        if (end > _string.end())
-            end = _string.end();
-    }
+    auto start = _string.begin() + range.start();
+    auto end = _string.begin() + range.end() + (range.closed() ? 1 : 0);
+    if (start < _string.begin())
+        start = _string.begin();
+    if (start > _string.end())
+        start = _string.end() - 1;
+    if (end < _string.begin())
+        end = _string.begin();
+    if (end > _string.end())
+        end = _string.end();
     return MakeStrong<String>(std::string(start, end));
 }
 

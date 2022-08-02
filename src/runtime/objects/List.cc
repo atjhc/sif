@@ -22,22 +22,16 @@ std::vector<Value> &List::values() { return _values; }
 Value List::operator[](int64_t index) const { return _values[index]; }
 
 Value List::operator[](const Range &range) const {
-    auto start = _values.begin();
-    auto end = _values.end();
-    if (range.start().has_value()) {
-        start = start + range.start().value();
-        if (start < _values.begin())
-            start = _values.begin();
-        if (start > _values.end())
-            start = _values.end() - 1;
-    }
-    if (range.end().has_value()) {
-        end = _values.begin() + range.end().value() + (range.closed() ? 1 : 0);
-        if (end < _values.begin())
-            end = _values.begin();
-        if (end > _values.end())
-            end = _values.end();
-    }
+    auto start = _values.begin() + range.start();
+    auto end = _values.begin() + range.end() + (range.closed() ? 1 : 0);
+    if (start < _values.begin())
+        start = _values.begin();
+    if (start > _values.end())
+        start = _values.end() - 1;
+    if (end < _values.begin())
+        end = _values.begin();
+    if (end > _values.end())
+        end = _values.end();
     return MakeStrong<List>(std::vector(start, end));
 }
 

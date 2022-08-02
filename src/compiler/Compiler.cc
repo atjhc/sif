@@ -464,14 +464,14 @@ void Compiler::visit(const Unary &unary) {
     }
 }
 
-void Compiler::visit(const RangeLiteral &list) {
-    if (list.start) {
-        list.start->accept(*this);
+void Compiler::visit(const RangeLiteral &range) {
+    if (range.start) {
+        range.start->accept(*this);
     }
-    if (list.end) {
-        list.end->accept(*this);
+    if (range.end) {
+        range.end->accept(*this);
     }
-    bytecode().add(list.location, (list.closed ? Opcode::ClosedRange : Opcode::OpenRange));
+    bytecode().add(range.location, (range.closed ? Opcode::ClosedRange : Opcode::OpenRange));
 }
 
 void Compiler::visit(const ListLiteral &list) {

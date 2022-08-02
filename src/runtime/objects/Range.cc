@@ -15,12 +15,12 @@
 
 SIF_NAMESPACE_BEGIN
 
-Range::Range(Optional<int64_t> start, Optional<int64_t> end, bool closed)
+Range::Range(int64_t start, int64_t end, bool closed)
     : _start(start), _end(end), _closed(closed) {}
 
-Optional<int64_t> Range::start() const { return _start; }
+int64_t Range::start() const { return _start; }
 
-Optional<int64_t> Range::end() const { return _end; }
+int64_t Range::end() const { return _end; }
 
 bool Range::closed() const { return _closed; }
 
@@ -28,13 +28,7 @@ std::string Range::typeName() const { return "range"; }
 
 std::string Range::description() const {
     std::ostringstream ss;
-    if (_start.has_value()) {
-        ss << _start.value();
-    }
-    ss << ".." << (_closed ? "." : "<");
-    if (_end.has_value()) {
-        ss << _end.value();
-    }
+    ss << _start << ".." << (_closed ? "." : "<") << _end;
     return ss.str();
 }
 
@@ -46,11 +40,11 @@ bool Range::equals(Strong<Object> object) const {
 }
 
 int64_t Range::length() const {
-    return (_closed ? 1 : 0) + _end.value() - _start.value();
+    return (_closed ? 1 : 0) + _end - _start;
 }
 
 Value Range::operator[](int64_t index) const {
-    return _start.value() + index;
+    return _start + index;
 }
 
 SIF_NAMESPACE_END

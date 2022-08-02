@@ -27,10 +27,10 @@ SIF_NAMESPACE_BEGIN
 
 class Range : public Object, public Enumerable {
   public:
-    Range(Optional<int64_t> start, Optional<int64_t> end, bool closed);
+    Range(int64_t start, int64_t end, bool closed);
 
-    Optional<int64_t> start() const;
-    Optional<int64_t> end() const;
+    int64_t start() const;
+    int64_t end() const;
     bool closed() const;
 
     std::string typeName() const override;
@@ -42,8 +42,8 @@ class Range : public Object, public Enumerable {
     Value operator[](int64_t) const override;
 
   private:
-    Optional<int64_t> _start;
-    Optional<int64_t> _end;
+    int64_t _start;
+    int64_t _end;
     bool _closed;
 };
 
