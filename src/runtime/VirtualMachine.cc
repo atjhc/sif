@@ -54,6 +54,7 @@ static inline Value Pop(std::vector<Value> &stack) {
 }
 
 static inline Value Peek(std::vector<Value> &stack) { return stack.back(); }
+static inline Value Peek2(std::vector<Value> &stack) { return *(stack.end() - 2); }
 
 static inline void Push(std::vector<Value> &stack, const Value &value) { stack.push_back(value); }
 
@@ -129,6 +130,15 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 return None;
             }
             if (value.asBool()) {
+                frame().ip += offset;
+            }
+            break;
+        }
+        case Opcode::JumpIfEnd: {
+            auto offset = ReadJump(frame().ip);
+            auto index = Peek(_stack).asInteger();
+            auto enumerable = Peek2(_stack).as<Enumerable>();
+            if (index >= enumerable->length()) {
                 frame().ip += offset;
             }
             break;
@@ -247,6 +257,11 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             Push(_stack, !value.asBool());
             break;
         }
+        case Opcode::Increment: {
+            auto value = Pop(_stack);
+            Push(_stack, value.asInteger() + 1);
+            break;
+        }
         case Opcode::Add: {
             BINARY(+);
             break;
@@ -343,6 +358,12 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (subscript(lhs, rhs)) {
                 return None;
             }
+            break;
+        }
+        case Opcode::Index: {
+            auto rhs = Peek(_stack);
+            auto lhs = Peek2(_stack);
+            Push(_stack, lhs.as<Enumerable>()->operator[](rhs.asInteger()));
             break;
         }
         case Opcode::True: {
@@ -448,14 +469,26 @@ bool VirtualMachine::subscript(Value lhs, Value rhs) {
             return true;
         }
         auto index = rhs.asInteger();
-        if (index >= static_cast<int>(string->string().size()) ||
-            static_cast<int>(string->string().size()) + index < 0) {
+        if (index >= string->length() || string->length() + index < 0) {
             _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                                  "string index out of bounds");
+                                  Concat("string index ", index, " out of bounds"));
             return true;
         }
         Push(_stack,
              string->string().substr(index < 0 ? string->string().size() + index : index, 1));
+    } else if (auto range = lhs.as<Range>()) {
+        if (!rhs.isInteger()) {
+            _error =
+                RuntimeError(frame().bytecode->location(frame().ip - 1), "expected an integer");
+            return true;
+        }
+        auto index = rhs.asInteger();
+        if (index >= range->length() || range->length() + index < 0) {
+            _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                                  "range index out of bounds");
+            return true;
+        }
+        Push(_stack, range->start().value() + index);
     } else {
         _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
                               "expected a list, string, or dictionary");

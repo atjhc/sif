@@ -339,9 +339,31 @@ void Compiler::visit(const RepeatCondition &statement) {
 }
 
 void Compiler::visit(const RepeatFor &foreach) {
+    auto nextRepeat = _nextRepeat;
+    auto exitRepeat = _exitRepeat;
+
     foreach.expression->accept(*this);
+    bytecode().add(foreach.location, Opcode::Short, 0);
+
+    bytecode().add(foreach.location, Opcode::Jump, 3);
+    _exitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
+
+    _nextRepeat = bytecode().code().size();
+    auto jump = bytecode().add(foreach.location, Opcode::JumpIfEnd, 0);
+    bytecode().add(foreach.location, Opcode::Index);
+    assign(*foreach.variable, lowercase(foreach.variable->token.text));
+
     foreach.statement->accept(*this);
+    bytecode().add(foreach.location, Opcode::Increment);
+    bytecode().addRepeat(foreach.location, _nextRepeat);
+
+    bytecode().patchJump(_exitRepeat);
+    bytecode().patchJump(jump);
     bytecode().add(foreach.location, Opcode::Pop);
+    bytecode().add(foreach.location, Opcode::Pop);
+
+    _nextRepeat = nextRepeat;
+    _exitRepeat = exitRepeat;
 }
 
 void Compiler::visit(const ExitRepeat &exit) { bytecode().addRepeat(exit.location, _exitRepeat); }

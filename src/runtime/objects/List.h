@@ -18,6 +18,7 @@
 
 #include "Common.h"
 #include "runtime/Object.h"
+#include "runtime/Enumerable.h"
 #include "runtime/Value.h"
 #include "runtime/objects/Range.h"
 
@@ -25,18 +26,21 @@
 
 SIF_NAMESPACE_BEGIN
 
-class List : public Object {
+class List : public Object, public Enumerable {
   public:
     List(const std::vector<Value> &values);
 
     std::vector<Value> &values();
 
-    Value operator[](int64_t) const;
     Value operator[](const Range &range) const;
 
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
+
+    // Enumerable
+    int64_t length() const override;
+    Value operator[](int64_t) const override;
 
   private:
     std::vector<Value> _values;

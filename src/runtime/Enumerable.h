@@ -17,34 +17,14 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/Object.h"
-#include "runtime/Enumerable.h"
-#include "runtime/Value.h"
-
-#include <string>
+#include "Value.h"
 
 SIF_NAMESPACE_BEGIN
 
-class Range : public Object, public Enumerable {
-  public:
-    Range(Optional<int64_t> start, Optional<int64_t> end, bool closed);
-
-    Optional<int64_t> start() const;
-    Optional<int64_t> end() const;
-    bool closed() const;
-
-    std::string typeName() const override;
-    std::string description() const override;
-    bool equals(Strong<Object>) const override;
-
-    // Enumerable
-    int64_t length() const override;
-    Value operator[](int64_t) const override;
-
-  private:
-    Optional<int64_t> _start;
-    Optional<int64_t> _end;
-    bool _closed;
+struct Enumerable {
+  virtual int64_t length() const = 0;
+  virtual Value operator[](int64_t) const = 0;
 };
 
 SIF_NAMESPACE_END
+

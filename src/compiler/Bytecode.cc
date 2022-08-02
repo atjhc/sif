@@ -138,6 +138,8 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
         return disassembleJump(out, "JumpIfFalse", position);
     case Opcode::JumpIfTrue:
         return disassembleJump(out, "JumpIfTrue", position);
+    case Opcode::JumpIfEnd:
+        return disassembleJump(out, "JumpIfEnd", position);
     case Opcode::Repeat:
         return disassembleJump(out, "Repeat", position);
     case Opcode::Pop:
@@ -178,6 +180,9 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Not:
         out << "Not";
         return position + 1;
+    case Opcode::Increment:
+        out << "Increment";
+        return position + 1;
     case Opcode::Add:
         out << "Add";
         return position + 1;
@@ -213,6 +218,9 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
         return position + 1;
     case Opcode::GreaterThanOrEqual:
         out << "GreaterThanOrEqual";
+        return position + 1;
+    case Opcode::Index:
+        out << "Index";
         return position + 1;
     case Opcode::Subscript:
         out << "Subscript";

@@ -45,4 +45,12 @@ bool Range::equals(Strong<Object> object) const {
     return false;
 }
 
+int64_t Range::length() const {
+    return (_closed ? 1 : 0) + _end.value() - _start.value();
+}
+
+Value Range::operator[](int64_t index) const {
+    return _start.value() + index;
+}
+
 SIF_NAMESPACE_END
