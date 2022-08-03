@@ -126,6 +126,12 @@ std::string Value::description() const {
 }
 
 bool Value::operator==(const Value &value) const {
+    if (auto string = as<String>(); string && string->length() == 0 && value.isEmpty()) {
+        return true;
+    }
+    if (auto string = value.as<String>(); string && string->length() == 0 && isEmpty()) {
+        return true;
+    }
     if (isObject() && value.isObject()) {
         return asObject()->equals(value.asObject());
     }

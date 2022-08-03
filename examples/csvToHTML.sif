@@ -1,5 +1,6 @@
 -- http://rosettacode.org/wiki/CSV_to_HTML_translation
 
+(-- disabled for now
 function replace all (src: string) with (dst: string) in (text: string) -> string
   set result to empty
   repeat
@@ -44,3 +45,4 @@ Brians mother,I'm his mother; that's who!
 The multitude,Behold his mother! Behold his mother!"
 
 print line html of csv
+--)

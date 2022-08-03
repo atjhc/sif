@@ -1,16 +1,18 @@
-function read story
+function read a story
   print "Enter a story. A blank line marks the end of the story."
   print "Use <noun>, <verb>, etc. to mark inputs:"
   set input to empty
   repeat
     read a line
-    if it is empty then exit repeat
+    if it is "" then exit repeat
     set input to input + it
   end
   return input
 end
+read a story
+set story to it
 
-set story to read story
+(-- disabled for now
 repeat
   set startIndex to offset "<" story
   if startIndex is empty then exit repeat
@@ -19,4 +21,5 @@ repeat
   ask "Enter a " & prompt & ": "
   put it into character startIndex to endIndex of story
 end repeat
-print line story
+print story
+--)

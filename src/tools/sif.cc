@@ -250,6 +250,13 @@ Mapping<std::string, Strong<Native>> builtins() {
         }
         return valuesList;
     });
+    natives["append {} to {}"] = MakeStrong<Native>([](Value *values) -> Value {
+        auto value = values[0];
+        auto list = values[1].as<List>();
+        list->values().push_back(value);
+        return list;
+    });
+
     return natives;
 }
 

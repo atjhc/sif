@@ -1,8 +1,8 @@
--- Print a line of text to stdout using the "print line" function:
+-- Print a line of text to stdout using the "print" function:
 print "Hello, World!"
 
 -- Print text without a newline, by using the "write" function:
-write "Prompt: "
+write "Type something: "
 
 -- Read a line of text (note: "a" is optional):
 read a line
@@ -11,31 +11,32 @@ read a line
 print it
 
 -- Though less idiomatic, you may also compose these functions:
+write "Type something: "
 print read line
 
 -- Set a variable using the "set" command:
-set myName to "James"
-
--- You may optionally indicate a type decorator for readability:
-set myName: string to "James"
+set firstName to "Hari"
 
 -- "if" statements can be a single line:
-if myName is "James" then print line "Hello, James!"
+if firstName is "Hari" then set lastName to "Seldon"
 
 -- Or span multiple lines as a block:
-else
-  print "I don't know you"
-  quit program
+if firstName is "Hari" then
+  set lastName to "Seldon"
+  set nickname to "Raven"
 end if
 
+-- You can print multiple things at once:
+print "Welcome,", firstName, nickname, lastName
+
 -- Use "repeat" to loop over code:
-print "Welcome, James"
+print "Ask a question: "
 repeat
   write "> "
   read a line
   set input to it
   if input is empty then exit repeat
-  else print "I don't understand '", input, "'"
+  else print "I don't understand", input
 end repeat
 
 -- Functions may have multiple words in their name:
@@ -47,7 +48,4 @@ end function
 write "Password: "
 read a line
 if it is the password then print "Correct"
-else print "Get out"
-
--- 
-function something (optional)
+else print "Incorrect"

@@ -219,11 +219,9 @@ void Compiler::endScope(const Location &location) {
 }
 
 void Compiler::visit(const Block &block) {
-    beginScope();
     for (const auto &statement : block.statements) {
         statement->accept(*this);
     }
-    endScope(block.location);
 }
 
 void Compiler::visit(const FunctionDecl &functionDecl) {
