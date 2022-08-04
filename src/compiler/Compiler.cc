@@ -259,18 +259,14 @@ void Compiler::visit(const If &ifStatement) {
     auto ifJump = bytecode().add(ifStatement.location, Opcode::JumpIfFalse, 0);
     bytecode().add(ifStatement.location, Opcode::Pop);
     ifStatement.ifStatement->accept(*this);
-    bytecode().add(ifStatement.location, Opcode::Jump, 1);
-    bytecode().add(ifStatement.location, Opcode::Pop);
 
+    auto elseJump = bytecode().add(ifStatement.location, Opcode::Jump, 0);
+    bytecode().patchJump(ifJump);
+    bytecode().add(ifStatement.location, Opcode::Pop);
     if (ifStatement.elseStatement) {
-        auto elseJump = bytecode().add(ifStatement.location, Opcode::Jump, 0);
-        bytecode().patchJump(ifJump);
-        bytecode().add(ifStatement.location, Opcode::Pop);
         ifStatement.elseStatement->accept(*this);
-        bytecode().patchJump(elseJump);
-    } else {
-        bytecode().patchJump(ifJump);
     }
+    bytecode().patchJump(elseJump);
 }
 
 void Compiler::visit(const Return &statement) {
@@ -319,7 +315,6 @@ void Compiler::visit(const RepeatCondition &statement) {
     } else {
         jump = bytecode().add(statement.location, Opcode::JumpIfTrue, 0);
     }
-    bytecode().add(statement.location, Opcode::Pop);
     statement.statement->accept(*this);
     bytecode().addRepeat(statement.location, _nextRepeat);
     bytecode().patchJump(jump);
@@ -336,20 +331,21 @@ void Compiler::visit(const RepeatFor &foreach) {
     foreach.expression->accept(*this);
     bytecode().add(foreach.location, Opcode::Short, 0);
 
-    bytecode().add(foreach.location, Opcode::Jump, 3);
+    bytecode().add(foreach.location, Opcode::Jump, 4);
     _exitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
-
     _nextRepeat = bytecode().code().size();
-    auto jump = bytecode().add(foreach.location, Opcode::JumpIfEnd, 0);
+
+    bytecode().add(foreach.location, Opcode::Increment);
+    auto repeat = bytecode().add(foreach.location, Opcode::JumpIfEnd, 0);
     bytecode().add(foreach.location, Opcode::Index);
     assign(*foreach.variable, lowercase(foreach.variable->token.text));
 
     foreach.statement->accept(*this);
-    bytecode().add(foreach.location, Opcode::Increment);
+
     bytecode().addRepeat(foreach.location, _nextRepeat);
 
     bytecode().patchJump(_exitRepeat);
-    bytecode().patchJump(jump);
+    bytecode().patchJump(repeat);
     bytecode().add(foreach.location, Opcode::Pop);
     bytecode().add(foreach.location, Opcode::Pop);
 
