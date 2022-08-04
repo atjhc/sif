@@ -83,8 +83,6 @@ TEST_CASE(TranscriptTests, All) {
         if (!statement) continue;
 
         Compiler compiler;
-        compiler.addExtern("print {}");
-        compiler.addExtern("read (a) line");
         auto bytecode = compiler.compile(*statement);
         ASSERT_TRUE(bytecode) << path << " failed to compile" << std::endl << Join(compiler.errors(), "\n");
         if (!bytecode) continue;

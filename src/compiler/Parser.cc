@@ -192,6 +192,17 @@ void Parser::commit() {
     trace(Concat("Commit (", previous().description(), ", ", peek().description(), ")"));
 }
 
+void Parser::beginScope() {
+    _depth++;
+}
+
+void Parser::endScope() {
+    _depth--;
+    while (_signatureDecls.size() > 0 && _signatureDecls.back().depth > _depth) {
+        _signatureDecls.pop_back();
+    }
+}
+
 #if defined(DEBUG)
 void Parser::_trace(const std::string &message) {
     if (_config.enableTracing) {
@@ -272,7 +283,6 @@ bool checkTerm(const Token &token, size_t offset, Candidate &candidate) {
 
 Owned<Statement> Parser::parseBlock(const std::initializer_list<Token::Type> &endTypes) {
     std::vector<Owned<Statement>> statements;
-    _depth++;
     while (!isAtEnd()) {
         if (match({Token::Type::NewLine})) {
             continue;
@@ -287,12 +297,6 @@ Owned<Statement> Parser::parseBlock(const std::initializer_list<Token::Type> &en
             synchronize();
         }
     }
-
-    _depth--;
-    while (_signatureDecls.size() > 0 && _signatureDecls.back().depth > _depth) {
-        _signatureDecls.pop_back();
-    }
-
     return MakeOwned<Block>(std::move(statements));
 }
 
@@ -364,9 +368,12 @@ Owned<Statement> Parser::parseFunction() {
     auto signature = parseSignature();
     consumeNewLine();
     declare(signature);
+    
+    beginScope();
     auto statement = parseBlock({Token::Type::End});
     consumeEnd(Token::Type::Function);
-
+    endScope();
+    
     return MakeOwned<FunctionDecl>(signature, std::move(statement));
 }
 

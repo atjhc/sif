@@ -95,6 +95,9 @@ class Parser {
     void rewind();
     void commit();
 
+    void beginScope();
+    void endScope();
+
 #if defined(DEBUG)
     void _trace(const std::string &message);
 #endif

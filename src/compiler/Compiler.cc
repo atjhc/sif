@@ -21,7 +21,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-Compiler::Compiler() : _scopeDepth(-1) {}
+Compiler::Compiler() : _scopeDepth(0) {}
 
 Strong<Bytecode> Compiler::compile(const Statement &statement) {
     _frames.push_back({MakeStrong<Bytecode>(), {}, {}});

@@ -11,30 +11,30 @@ inner
 
 print foo
 (-- expect
-inner
+outer
 --)
 
 -- Local scope
 function A
-  set bar to "local"
+  set bar to "inner"
   if true then
     print bar
-    set bar to "local2"
+    set bar to "inner2"
   end if
   print bar
 end function
 A
 (-- expect
-local
-local2
+inner
+inner2
 --)
 
 -- Block scope
 function A
   if true then
-    set local to 1
+    set inner to 1
   end if
-  print local
+  print inner
 end function
 A
 (-- expect
@@ -60,7 +60,7 @@ inner
 
 A
 (-- expect
-inner
+outer
 --)
 
 -- Nested functions
@@ -76,7 +76,6 @@ A
 bar
 --)
 
-
 function A
   set foo to "bar"
   function B
@@ -91,4 +90,3 @@ A
 (-- expect
 bar
 --)
-
