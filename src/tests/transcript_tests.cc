@@ -18,8 +18,8 @@
 #include "compiler/Parser.h"
 #include "compiler/Scanner.h"
 #include "runtime/VirtualMachine.h"
-#include "runtime/objects/List.h"
 #include "runtime/modules/Core.h"
+#include "runtime/objects/List.h"
 #include "tests/TestSuite.h"
 
 #include <filesystem>

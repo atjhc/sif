@@ -328,8 +328,7 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto nextRepeat = _nextRepeat;
     auto exitRepeat = _exitRepeat;
 
-    foreach
-        .expression->accept(*this);
+    foreach.expression->accept(*this);
     bytecode().add(foreach.location, Opcode::Short, 0);
 
     bytecode().add(foreach.location, Opcode::Jump, 4);
@@ -341,8 +340,7 @@ void Compiler::visit(const RepeatFor &foreach) {
     bytecode().add(foreach.location, Opcode::Index);
     assign(*foreach.variable, lowercase(foreach.variable->token.text));
 
-    foreach
-        .statement->accept(*this);
+    foreach.statement->accept(*this);
 
     bytecode().addRepeat(foreach.location, _nextRepeat);
 

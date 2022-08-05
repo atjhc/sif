@@ -22,7 +22,7 @@
 SIF_NAMESPACE_BEGIN
 
 class Core : public Module {
-public:
+  public:
     std::vector<Signature> signatures() const override;
     Mapping<std::string, Strong<Native>> functions() const override;
 };

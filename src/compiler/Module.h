@@ -22,7 +22,7 @@
 SIF_NAMESPACE_BEGIN
 
 class Module {
-public:
+  public:
     virtual std::vector<Signature> signatures() const = 0;
     virtual Mapping<std::string, Strong<Native>> functions() const = 0;
 };

@@ -19,11 +19,11 @@
 #include "compiler/Compiler.h"
 #include "compiler/Parser.h"
 #include "runtime/VirtualMachine.h"
+#include "runtime/modules/Core.h"
 #include "runtime/objects/Dictionary.h"
 #include "runtime/objects/List.h"
 #include "runtime/objects/Native.h"
 #include "runtime/objects/String.h"
-#include "runtime/modules/Core.h"
 #include "utilities/chunk.h"
 
 #include <chrono>
