@@ -17,6 +17,7 @@
 #include "compiler/Bytecode.h"
 #include "runtime/objects/Function.h"
 
+#include <climits>
 #include <iomanip>
 
 SIF_NAMESPACE_BEGIN
