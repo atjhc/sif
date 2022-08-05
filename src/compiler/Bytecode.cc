@@ -252,7 +252,8 @@ struct BytecodePrinter {
         auto indent = std::string(depth * 2, ' ');
         for (size_t i = 0; i < bytecode.constants().size(); i++) {
             const auto &constant = bytecode.constants()[i];
-            out << indent << "[" << i << "] (" << constant.typeName() << ") " << constant << std::endl;
+            out << indent << "[" << i << "] (" << constant.typeName() << ") " << constant
+                << std::endl;
             if (const auto &function = constant.as<Function>()) {
                 BytecodePrinter printer{depth + 1};
                 printer.print(out, *function->bytecode());
@@ -266,12 +267,13 @@ struct BytecodePrinter {
         auto position = bytecode.code().begin();
         Optional<Location> previousLocation;
         while (position < bytecode.code().end()) {
-            out << indent << std::setfill('0') << std::setw(width) << position - bytecode.code().begin();
+            out << indent << std::setfill('0') << std::setw(width)
+                << position - bytecode.code().begin();
 
             auto location = bytecode.location(position);
             if (!previousLocation.has_value() || previousLocation.value() != location) {
-                out << std::setfill(' ') << std::setw(8) << std::right << bytecode.location(position)
-                    << " ";
+                out << std::setfill(' ') << std::setw(8) << std::right
+                    << bytecode.location(position) << " ";
             } else {
                 out << std::setfill(' ') << std::setw(8) << std::right << "|"
                     << " ";

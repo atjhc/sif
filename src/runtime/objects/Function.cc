@@ -15,7 +15,8 @@
 
 SIF_NAMESPACE_BEGIN
 
-Function::Function(const Signature &signature, const Strong<Bytecode> &bytecode, const std::vector<Capture> &captures)
+Function::Function(const Signature &signature, const Strong<Bytecode> &bytecode,
+                   const std::vector<Capture> &captures)
     : _signature(signature), _bytecode(bytecode), _captures(captures) {}
 
 const Strong<Bytecode> &Function::bytecode() const { return _bytecode; }

@@ -63,7 +63,7 @@ class VirtualMachine {
 #pragma clang diagnostic ignored "-Wunused-private-field"
     VirtualMachineConfig _config;
 #pragma clang diagnostic pop
-    
+
     Optional<RuntimeError> _error;
     std::vector<Value> _stack;
     std::vector<CallFrame> _callStack;

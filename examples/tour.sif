@@ -44,8 +44,7 @@ function the password
   return "12345"
 end function
 
--- 
 write "Password: "
 read a line
 if it is the password then print "Correct"
-else print "Incorrect"
+else print "Incorrect, trusting you for now..."

@@ -387,7 +387,8 @@ void Scanner::skipWhitespace() {
 }
 
 void Scanner::skipComments() {
-    if (isAtEnd()) return;
+    if (isAtEnd())
+        return;
 
     int depth = 0;
     do {
@@ -395,7 +396,8 @@ void Scanner::skipComments() {
             advance(3);
             depth++;
         } else if (depth > 0) {
-            if (_current + 1 < _end && _current[0] == '-' && _current[1] == '-' && _current[2] == ')') {
+            if (_current + 1 < _end && _current[0] == '-' && _current[1] == '-' &&
+                _current[2] == ')') {
                 advance(3);
                 depth--;
             } else {

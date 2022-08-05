@@ -49,8 +49,6 @@ bool String::equals(Strong<Object> object) const {
     return false;
 }
 
-int64_t String::length() const {
-    return _string.size();
-}
+int64_t String::length() const { return _string.size(); }
 
 SIF_NAMESPACE_END

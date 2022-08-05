@@ -64,7 +64,8 @@ template <typename... Args> static inline std::string Concat(Args &&...args) {
 
 static inline std::string Quoted(const std::string &str) { return "\"" + str + "\""; }
 
-template <typename Iterable> static inline std::string Join(const Iterable &v, const std::string &sep) {
+template <typename Iterable>
+static inline std::string Join(const Iterable &v, const std::string &sep) {
     std::ostringstream ss;
     auto it = v.begin();
     while (it != v.end()) {
@@ -77,7 +78,8 @@ template <typename Iterable> static inline std::string Join(const Iterable &v, c
     return ss.str();
 }
 
-template <typename Iterable, typename Functor> static inline std::string Join(const Iterable &v, const std::string &sep, Functor f) {
+template <typename Iterable, typename Functor>
+static inline std::string Join(const Iterable &v, const std::string &sep, Functor f) {
     std::ostringstream ss;
     auto it = v.begin();
     while (it != v.end()) {
@@ -111,12 +113,11 @@ template <typename Iterable>
 using ValueType = typename std::iterator_traits<typename Iterable::iterator>::value_type;
 
 template <typename Iterable, typename Functor>
-std::vector<ValueType<Iterable>>
-Filter(Iterable &container, Functor f) {
-	Iterable result;
-	result.reserve(std::distance(container.begin(), container.end()));
-	std::copy_if(container.begin(), container.end(), std::back_inserter(result), f);
-	return result;
+std::vector<ValueType<Iterable>> Filter(Iterable &container, Functor f) {
+    Iterable result;
+    result.reserve(std::distance(container.begin(), container.end()));
+    std::copy_if(container.begin(), container.end(), std::back_inserter(result), f);
+    return result;
 }
 
 #pragma clang diagnostic push
@@ -124,10 +125,10 @@ Filter(Iterable &container, Functor f) {
 template <typename Iterable, typename Functor>
 std::vector<typename std::result_of<Functor(ValueType<Iterable>)>::type>
 Map(const Iterable &container, Functor f) {
-	std::vector<typename std::result_of<Functor(ValueType<Iterable>)>::type> values;
-	values.reserve(std::distance(container.begin(), container.end()));
-	std::transform(container.begin(), container.end(), std::back_inserter(values), f);
-	return values;
+    std::vector<typename std::result_of<Functor(ValueType<Iterable>)>::type> values;
+    values.reserve(std::distance(container.begin(), container.end()));
+    std::transform(container.begin(), container.end(), std::back_inserter(values), f);
+    return values;
 }
 #pragma clang diagnostic pop
 

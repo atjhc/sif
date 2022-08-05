@@ -14,9 +14,9 @@
 //  limitations under the License.
 //
 
-#include "compiler/Scanner.h"
-#include "compiler/Parser.h"
 #include "compiler/Compiler.h"
+#include "compiler/Parser.h"
+#include "compiler/Scanner.h"
 #include "runtime/VirtualMachine.h"
 #include "runtime/objects/List.h"
 #include "tests/TestSuite.h"
@@ -79,37 +79,42 @@ TEST_CASE(TranscriptTests, All) {
         parser.declare(Signature::Make("print {}"));
         parser.declare(Signature::Make("read (a) line"));
         auto statement = parser.parse();
-        ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl << Join(parser.errors(), "\n");
-        if (!statement) continue;
+        ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl
+                               << Join(parser.errors(), "\n");
+        if (!statement)
+            continue;
 
         Compiler compiler;
         auto bytecode = compiler.compile(*statement);
-        ASSERT_TRUE(bytecode) << path << " failed to compile" << std::endl << Join(compiler.errors(), "\n");
-        if (!bytecode) continue;
+        ASSERT_TRUE(bytecode) << path << " failed to compile" << std::endl
+                              << Join(compiler.errors(), "\n");
+        if (!bytecode)
+            continue;
 
         VirtualMachine vm;
         std::ostringstream ss;
         vm.add("print {}", MakeStrong<Native>([&](Value *values) -> Value {
-            if (const auto &list = values[0].as<List>()) {
-                ss << Join(list->values(), " ");
-            } else {
-                ss << values[0];
-            }
-            ss << std::endl;
-            return Value();
-        }));
+                   if (const auto &list = values[0].as<List>()) {
+                       ss << Join(list->values(), " ");
+                   } else {
+                       ss << values[0];
+                   }
+                   ss << std::endl;
+                   return Value();
+               }));
         std::istringstream iss(input);
-        vm.add("read (a) line",  MakeStrong<Native>([&](Value *values) -> Value {
-            std::string input;
-            std::getline(iss, input);
-            return input;
-        }));
+        vm.add("read (a) line", MakeStrong<Native>([&](Value *values) -> Value {
+                   std::string input;
+                   std::getline(iss, input);
+                   return input;
+               }));
 
         vm.execute(bytecode);
         ASSERT_FALSE(vm.error().has_value()) << path << " failed: " << vm.error();
-        ASSERT_EQ(expectedResult, ss.str()) << path << " failed:" << std::endl 
-            << "Expected: " << std::endl << expectedResult << std::endl 
-            << "Got: " << std::endl << ss.str() << std::endl;
+        ASSERT_EQ(expectedResult, ss.str()) << path << " failed:" << std::endl
+                                            << "Expected: " << std::endl
+                                            << expectedResult << std::endl
+                                            << "Got: " << std::endl
+                                            << ss.str() << std::endl;
     }
-
 }

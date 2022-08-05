@@ -206,9 +206,7 @@ void Compiler::addReturn() {
     }
 }
 
-void Compiler::beginScope() {
-    _scopeDepth++;
-}
+void Compiler::beginScope() { _scopeDepth++; }
 
 void Compiler::endScope(const Location &location) {
     _scopeDepth--;
@@ -225,7 +223,8 @@ void Compiler::visit(const Block &block) {
 }
 
 void Compiler::visit(const FunctionDecl &functionDecl) {
-    // Create a scope, push a new frame, add all the function params as local variables, compile the function.
+    // Create a scope, push a new frame, add all the function params as local variables, compile the
+    // function.
     beginScope();
     auto functionBytecode = MakeStrong<Bytecode>();
     _frames.push_back({functionBytecode, {}, {}});
@@ -247,7 +246,8 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     endScope(functionDecl.location);
 
     // Add the function constant to the bytecode, assign it to the given signature name.
-    auto function = MakeStrong<Function>(functionDecl.signature, functionBytecode, functionCaptures);
+    auto function =
+        MakeStrong<Function>(functionDecl.signature, functionBytecode, functionCaptures);
     auto constant = bytecode().addConstant(function);
     auto name = functionDecl.signature.name();
     bytecode().add(functionDecl.location, Opcode::Constant, constant);
@@ -328,7 +328,8 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto nextRepeat = _nextRepeat;
     auto exitRepeat = _exitRepeat;
 
-    foreach.expression->accept(*this);
+    foreach
+        .expression->accept(*this);
     bytecode().add(foreach.location, Opcode::Short, 0);
 
     bytecode().add(foreach.location, Opcode::Jump, 4);
@@ -340,7 +341,8 @@ void Compiler::visit(const RepeatFor &foreach) {
     bytecode().add(foreach.location, Opcode::Index);
     assign(*foreach.variable, lowercase(foreach.variable->token.text));
 
-    foreach.statement->accept(*this);
+    foreach
+        .statement->accept(*this);
 
     bytecode().addRepeat(foreach.location, _nextRepeat);
 

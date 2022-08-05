@@ -18,8 +18,8 @@
 
 #include "Common.h"
 #include "ast/Node.h"
-#include "compiler/Signature.h"
 #include "compiler/Scanner.h"
+#include "compiler/Signature.h"
 
 #include <variant>
 #include <vector>
@@ -143,11 +143,7 @@ struct DictionaryLiteral : Expression {
 struct Variable : Expression {
     Token token;
     Optional<Token> typeName;
-    enum Scope {
-        Unspecified,
-        Local,
-        Global
-    } scope;
+    enum Scope { Unspecified, Local, Global } scope;
 
     Variable(const Token &token, Optional<Token> typeName = None, Scope scope = Scope::Unspecified);
 

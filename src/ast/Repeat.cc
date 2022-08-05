@@ -26,7 +26,9 @@ RepeatCondition::RepeatCondition(Owned<Statement> statement, Owned<Expression> c
     : Repeat(std::move(statement)), condition(std::move(condition)),
       conditionValue(conditionValue) {}
 
-RepeatFor::RepeatFor(Owned<Statement> statement, Owned<Variable> variable, Owned<Expression> expression)
-    : Repeat(std::move(statement)), variable(std::move(variable)), expression(std::move(expression)) {}
+RepeatFor::RepeatFor(Owned<Statement> statement, Owned<Variable> variable,
+                     Owned<Expression> expression)
+    : Repeat(std::move(statement)), variable(std::move(variable)),
+      expression(std::move(expression)) {}
 
 SIF_NAMESPACE_END

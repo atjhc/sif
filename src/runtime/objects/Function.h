@@ -30,11 +30,12 @@ class Function : public Object {
         bool isLocal;
     };
 
-    Function(const Signature &signature, const Strong<Bytecode> &bytecode, const std::vector<Capture> &captures = {});
+    Function(const Signature &signature, const Strong<Bytecode> &bytecode,
+             const std::vector<Capture> &captures = {});
 
     const Strong<Bytecode> &bytecode() const;
     const std::vector<Capture> &captures() const;
-    
+
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;

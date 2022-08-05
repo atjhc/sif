@@ -46,8 +46,6 @@ bool List::equals(Strong<Object> object) const {
     return false;
 }
 
-int64_t List::length() const {
-    return _values.size();
-}
+int64_t List::length() const { return _values.size(); }
 
 SIF_NAMESPACE_END

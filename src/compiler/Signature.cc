@@ -15,9 +15,9 @@
 //
 
 #include "compiler/Signature.h"
+#include "Utilities.h"
 #include "compiler/Parser.h"
 #include "compiler/Scanner.h"
-#include "Utilities.h"
 
 SIF_NAMESPACE_BEGIN
 
@@ -27,9 +27,7 @@ static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
     return out << Name(token);
 }
 
-static inline std::string Name(const Signature::Choice &choice) {
-    return Join(choice.tokens, "/");
-}
+static inline std::string Name(const Signature::Choice &choice) { return Join(choice.tokens, "/"); }
 
 static inline std::ostream &operator<<(std::ostream &out, const Signature::Choice &choice) {
     return out << Name(choice);
@@ -45,8 +43,7 @@ static inline std::ostream &operator<<(std::ostream &out, const Signature::Optio
 
 static inline std::string Name(const Signature::Argument &argument) { return "{}"; }
 
-static inline std::ostream &operator<<(std::ostream &out,
-                                       const Signature::Argument &argument) {
+static inline std::ostream &operator<<(std::ostream &out, const Signature::Argument &argument) {
     out << "{";
     if (argument.token.has_value()) {
         out << argument.token.value();
@@ -92,9 +89,7 @@ std::string Signature::description() const {
     return ss.str();
 }
 
-bool Signature::endsWithArgument() const {
-    return std::holds_alternative<Argument>(terms.back());
-}
+bool Signature::endsWithArgument() const { return std::holds_alternative<Argument>(terms.back()); }
 
 bool Signature::operator<(const Signature &signature) const {
     int i = 0;
@@ -117,8 +112,6 @@ bool Signature::operator<(const Signature &signature) const {
     return false;
 }
 
-bool Signature::operator==(const Signature &signature) const {
-    return name() == signature.name();
-}
+bool Signature::operator==(const Signature &signature) const { return name() == signature.name(); }
 
 SIF_NAMESPACE_END

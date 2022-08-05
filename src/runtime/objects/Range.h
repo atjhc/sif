@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/Object.h"
 #include "runtime/Enumerable.h"
+#include "runtime/Object.h"
 #include "runtime/Value.h"
 
 #include <string>

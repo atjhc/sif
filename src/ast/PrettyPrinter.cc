@@ -115,9 +115,11 @@ void PrettyPrinter::visit(const RepeatCondition &repeat) {
 
 void PrettyPrinter::visit(const RepeatFor &foreach) {
     out << "repeat for ";
-    foreach.variable->accept(*this);
+    foreach
+        .variable->accept(*this);
     out << " in ";
-    foreach.expression->accept(*this);
+    foreach
+        .expression->accept(*this);
     printBlock(*foreach.statement);
     out << indentString() << "end repeat";
 }
@@ -134,28 +136,26 @@ void PrettyPrinter::visit(const Call &call) {
     while (it < call.signature.terms.end()) {
         const auto &term = *it;
         bool skip = false;
-        std::visit(
-            Overload {
-                [&](Token token) { out << token.text; },
-                [&](Signature::Argument argument) {
-                    (*argsIt)->accept(*this);
-                    argsIt++;
-                },
-                [&](Signature::Choice choice) {
-                    out << tokensIt->value().text;
-                    tokensIt++;
-                },
-                [&](Signature::Option argument) {
-                    if (tokensIt->has_value()) {
-                        out << tokensIt->value().text;
-                    } else {
-                        skip = true;
-                    }
-                    tokensIt++;
-                },
-            },
-            term
-        );
+        std::visit(Overload{
+                       [&](Token token) { out << token.text; },
+                       [&](Signature::Argument argument) {
+                           (*argsIt)->accept(*this);
+                           argsIt++;
+                       },
+                       [&](Signature::Choice choice) {
+                           out << tokensIt->value().text;
+                           tokensIt++;
+                       },
+                       [&](Signature::Option argument) {
+                           if (tokensIt->has_value()) {
+                               out << tokensIt->value().text;
+                           } else {
+                               skip = true;
+                           }
+                           tokensIt++;
+                       },
+                   },
+                   term);
         it++;
         if (it != call.signature.terms.end() && !skip) {
             out << " ";

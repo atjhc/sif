@@ -15,8 +15,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-Range::Range(int64_t start, int64_t end, bool closed)
-    : _start(start), _end(end), _closed(closed) {}
+Range::Range(int64_t start, int64_t end, bool closed) : _start(start), _end(end), _closed(closed) {}
 
 int64_t Range::start() const { return _start; }
 
@@ -39,12 +38,8 @@ bool Range::equals(Strong<Object> object) const {
     return false;
 }
 
-int64_t Range::length() const {
-    return (_closed ? 1 : 0) + _end - _start;
-}
+int64_t Range::length() const { return (_closed ? 1 : 0) + _end - _start; }
 
-Value Range::operator[](int64_t index) const {
-    return _start + index;
-}
+Value Range::operator[](int64_t index) const { return _start + index; }
 
 SIF_NAMESPACE_END

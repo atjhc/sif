@@ -408,12 +408,8 @@ bool VirtualMachine::call(Value object, int count) {
                 captures.push_back(frame().captures[capture.index]);
             }
         }
-        _callStack.push_back({
-            fn->bytecode(),
-            fn->bytecode()->code().begin(),
-            captures,
-            _stack.size() - count - 1
-        });
+        _callStack.push_back(
+            {fn->bytecode(), fn->bytecode()->code().begin(), captures, _stack.size() - count - 1});
     } else if (auto native = object.as<Native>()) {
         try {
             auto result = native->callable()(&_stack.end()[-count]);
@@ -468,10 +464,11 @@ bool VirtualMachine::subscript(Value lhs, Value rhs) {
             auto index = rhs.asInteger();
             if (index >= string->length() || string->length() + index < 0) {
                 _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                                    Concat("string index ", index, " out of bounds"));
+                                      Concat("string index ", index, " out of bounds"));
                 return true;
             }
-            result = string->string().substr(index < 0 ? string->string().size() + index : index, 1);
+            result =
+                string->string().substr(index < 0 ? string->string().size() + index : index, 1);
         } else if (auto range = rhs.as<Range>()) {
             result = string->operator[](*range);
         } else {
