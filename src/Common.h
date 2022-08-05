@@ -18,6 +18,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
