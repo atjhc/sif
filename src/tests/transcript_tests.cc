@@ -19,6 +19,7 @@
 #include "compiler/Scanner.h"
 #include "runtime/VirtualMachine.h"
 #include "runtime/objects/List.h"
+#include "runtime/modules/Core.h"
 #include "tests/TestSuite.h"
 
 #include <filesystem>
@@ -76,8 +77,10 @@ TEST_CASE(TranscriptTests, All) {
 
         Scanner scanner(source.c_str(), source.c_str() + source.length());
         Parser parser(ParserConfig(), scanner);
-        parser.declare(Signature::Make("print {}"));
-        parser.declare(Signature::Make("read (a) line"));
+        Core core;
+        for (const auto &signature : core.signatures()) {
+            parser.declare(signature);
+        }
         auto statement = parser.parse();
         ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl
                                << Join(parser.errors(), "\n");
@@ -92,6 +95,10 @@ TEST_CASE(TranscriptTests, All) {
             continue;
 
         VirtualMachine vm;
+        for (const auto &function : core.functions()) {
+            vm.add(function.first, function.second);
+        }
+
         std::ostringstream ss;
         vm.add("print {}", MakeStrong<Native>([&](Value *values) -> Value {
                    if (const auto &list = values[0].as<List>()) {
