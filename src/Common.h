@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
@@ -24,6 +25,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #define SIF_NAMESPACE_BEGIN namespace sif {
 #define SIF_NAMESPACE_END }
