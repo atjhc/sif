@@ -85,10 +85,10 @@ class Parser {
     Token consumeEnd(Token::Type type);
     Token consumeNewLine();
     Token consumeWord(const std::string &message = "expected a word");
-    Token &scan();
-    Token &advance();
-    Token &peek();
-    Token &previous();
+    Token scan();
+    Token advance();
+    Token peek();
+    Token previous();
     void synchronize();
 
     void checkpoint();

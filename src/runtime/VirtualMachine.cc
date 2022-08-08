@@ -21,6 +21,8 @@
 #include "runtime/objects/Range.h"
 #include "runtime/objects/String.h"
 
+#include <cmath>
+
 SIF_NAMESPACE_BEGIN
 
 VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : _config(config) {}
@@ -302,7 +304,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto lhs = Pop(_stack);
             auto rhs = Pop(_stack);
             if (lhs.isNumber() && rhs.isNumber()) {
-                Push(_stack, pow(lhs.castFloat(), rhs.castFloat()));
+                Push(_stack, std::pow(lhs.castFloat(), rhs.castFloat()));
             } else {
                 _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
                                       "expected floating point values");
@@ -316,7 +318,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (lhs.isInteger() && rhs.isInteger()) {
                 Push(_stack, lhs.asInteger() % rhs.asInteger());
             } else if (lhs.isFloat() && rhs.isFloat()) {
-                Push(_stack, fmod(lhs.asFloat(), rhs.asFloat()));
+                Push(_stack, std::fmod(lhs.asFloat(), rhs.asFloat()));
             } else {
                 _error =
                     RuntimeError(frame().bytecode->location(frame().ip - 1), "mismatched types");

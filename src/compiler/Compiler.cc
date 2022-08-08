@@ -19,6 +19,8 @@
 #include "runtime/objects/String.h"
 #include "utilities/strings.h"
 
+#include <climits>
+
 SIF_NAMESPACE_BEGIN
 
 Compiler::Compiler() : _scopeDepth(0) {}

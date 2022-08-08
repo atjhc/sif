@@ -17,13 +17,14 @@
 #include "TestSuite.h"
 
 #include <getopt.h>
-#include <libgen.h>
 #include <sys/types.h>
 
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+
+#undef basename
 
 template <class cT, class traits = std::char_traits<cT>>
 class basic_nullbuf : public std::basic_streambuf<cT, traits> {
@@ -50,7 +51,8 @@ TestSuite &MainTestSuite() {
 }
 
 static int usage(int argc, char *argv[]) {
-    std::cout << "Usage: " << basename(argv[0]) << " [options...] [file]" << std::endl
+    auto basename = std::filesystem::path(argv[0]).filename();
+    std::cout << "Usage: " << basename << " [options...] [file]" << std::endl
               << " -t, --test"
               << "\t Run a specific test, requires -g" << std::endl
               << " -g, --group"

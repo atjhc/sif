@@ -116,7 +116,7 @@ bool Parser::check(const std::initializer_list<Token::Type> &types) {
 
 bool Parser::isAtEnd() { return peek().type == Token::Type::EndOfFile; }
 
-Token &Parser::scan() {
+Token Parser::scan() {
     auto token = _scanner.scan();
     _tokens.push_back(token);
     trace(Concat("Scanned ", Describe(token)));
@@ -124,7 +124,7 @@ Token &Parser::scan() {
     return _tokens.back();
 }
 
-Token &Parser::advance() {
+Token Parser::advance() {
     if (!isAtEnd()) {
         if (!_recording && _tokens.size() > 1) {
             _tokens.erase(_tokens.begin());
@@ -139,14 +139,14 @@ Token &Parser::advance() {
     return previous();
 }
 
-Token &Parser::peek() {
+Token Parser::peek() {
     if (_tokens.size() == 0) {
         return scan();
     }
     return _tokens[_index];
 }
 
-Token &Parser::previous() {
+Token Parser::previous() {
     if (_tokens.size() > 1) {
         return _tokens[_index - 1];
     }
