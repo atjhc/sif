@@ -67,8 +67,9 @@ struct ParserConfig {
 
 class Parser {
   public:
-    Parser(const ParserConfig &config, Scanner &scanner);
-
+    Parser(const ParserConfig &config, Strong<Scanner> scanner);
+    ~Parser();
+    
     Owned<Statement> parse();
     Signature parseSignature();
 
@@ -132,7 +133,7 @@ class Parser {
     Owned<Expression> parseDictionaryLiteral();
 
     ParserConfig _config;
-    Scanner &_scanner;
+    Strong<Scanner> _scanner;
     std::vector<SyntaxError> _errors;
 
     struct SignatureDecl {

@@ -63,17 +63,18 @@ void report(const std::string &name, Location location, const std::string &sourc
 }
 
 int evaluate(const std::string &name, const std::string &source) {
-    Scanner scanner(source.c_str(), source.c_str() + source.length());
+    auto scanner = MakeStrong<Scanner>(source.c_str(), source.c_str() + source.length());
     ParserConfig parserConfig;
 #if defined(DEBUG)
     parserConfig.enableTracing = traceParsing;
 #endif
-    Core core;
-
     Parser parser(parserConfig, scanner);
+
+    Core core;
     for (const auto &signature : core.signatures()) {
         parser.declare(signature);
     }
+
     auto statement = parser.parse();
     if (!statement) {
         for (auto error : parser.errors()) {

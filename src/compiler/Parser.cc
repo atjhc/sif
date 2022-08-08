@@ -38,12 +38,14 @@ static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
 }
 #pragma clang diagnostic pop
 
-Parser::Parser(const ParserConfig &config, Scanner &scanner) : _config(config), _scanner(scanner) {
+Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner) : _config(config), _scanner(scanner) {
     _parsingRepeat = false;
     _recording = false;
     _index = 0;
     _depth = 0;
 }
+
+Parser::~Parser() {}
 
 Owned<Statement> Parser::parse() {
     auto result = parseBlock();
@@ -117,7 +119,7 @@ bool Parser::check(const std::initializer_list<Token::Type> &types) {
 bool Parser::isAtEnd() { return peek().type == Token::Type::EndOfFile; }
 
 Token Parser::scan() {
-    auto token = _scanner.scan();
+    auto token = _scanner->scan();
     _tokens.push_back(token);
     trace(Concat("Scanned ", Describe(token)));
     trace(Concat("Tokens [", Join(_tokens, ", "), "] ", _index));

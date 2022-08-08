@@ -75,10 +75,10 @@ TEST_CASE(TranscriptTests, All) {
         auto expectedResult = gather(source, "expect");
         auto input = gather(source, "input");
 
-        Scanner scanner(source.c_str(), source.c_str() + source.length());
+        auto scanner = MakeStrong<Scanner>(source.c_str(), source.c_str() + source.length());
         Parser parser(ParserConfig(), scanner);
-        Core core;
-        for (const auto &signature : core.signatures()) {
+
+        for (const auto &signature : Core().signatures()) {
             parser.declare(signature);
         }
         auto statement = parser.parse();
@@ -95,7 +95,7 @@ TEST_CASE(TranscriptTests, All) {
             continue;
 
         VirtualMachine vm;
-        for (const auto &function : core.functions()) {
+        for (const auto &function : Core().functions()) {
             vm.add(function.first, function.second);
         }
 
