@@ -56,7 +56,6 @@ static inline Value Pop(std::vector<Value> &stack) {
 }
 
 static inline Value Peek(std::vector<Value> &stack) { return stack.back(); }
-static inline Value Peek2(std::vector<Value> &stack) { return *(stack.end() - 2); }
 
 static inline void Push(std::vector<Value> &stack, const Value &value) { stack.push_back(value); }
 
@@ -136,11 +135,10 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             }
             break;
         }
-        case Opcode::JumpIfEnd: {
+        case Opcode::JumpIfEmpty: {
             auto offset = ReadJump(frame().ip);
-            auto index = Peek(_stack).asInteger();
-            auto enumerable = Peek2(_stack).as<Enumerable>();
-            if (index >= enumerable->length()) {
+            auto value = Peek(_stack);
+            if (value.isEmpty()) {
                 frame().ip += offset;
             }
             break;
@@ -161,6 +159,17 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         }
         case Opcode::Short: {
             Push(_stack, ReadConstant(frame().ip));
+            break;
+        }
+        case Opcode::GetEnumerator: {
+            auto value = Pop(_stack);
+            auto enumerable = value.as<Enumerable>();
+            if (!enumerable) {
+                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                                      "expected a string, range, list, or dictionary");
+                return None;
+            }
+            Push(_stack, enumerable->enumerator(value));
             break;
         }
         case Opcode::SetGlobal: {
@@ -362,10 +371,9 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             }
             break;
         }
-        case Opcode::Index: {
-            auto rhs = Peek(_stack);
-            auto lhs = Peek2(_stack);
-            Push(_stack, lhs.as<Enumerable>()->operator[](rhs.asInteger()));
+        case Opcode::Enumerate: {
+            auto value = Peek(_stack);
+            Push(_stack, value.as<Enumerator>()->enumerate());
             break;
         }
         case Opcode::True: {
@@ -464,7 +472,7 @@ bool VirtualMachine::subscript(Value lhs, Value rhs) {
         Value result;
         if (rhs.isInteger()) {
             auto index = rhs.asInteger();
-            if (index >= string->length() || string->length() + index < 0) {
+            if (index >= string->string().size() || string->string().size() + index < 0) {
                 _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
                                       Concat("string index ", index, " out of bounds"));
                 return true;
@@ -486,7 +494,7 @@ bool VirtualMachine::subscript(Value lhs, Value rhs) {
             return true;
         }
         auto index = rhs.asInteger();
-        if (index >= range->length() || range->length() + index < 0) {
+        if (index >= range->size() || range->size() + index < 0) {
             _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
                                   "range index out of bounds");
             return true;

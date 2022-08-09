@@ -20,10 +20,6 @@ String::String(const std::string &string) : _string(string) {}
 
 const std::string &String::string() const { return _string; }
 
-Value String::operator[](int64_t index) const {
-    return MakeStrong<String>(_string.substr(index, 1));
-}
-
 Value String::operator[](const Range &range) const {
     auto start = _string.begin() + range.start();
     auto end = _string.begin() + range.end() + (range.closed() ? 1 : 0);
@@ -49,6 +45,27 @@ bool String::equals(Strong<Object> object) const {
     return false;
 }
 
-int64_t String::length() const { return _string.size(); }
+Value String::enumerator(Value self) const {
+    return MakeStrong<StringEnumerator>(self.as<String>());
+}
+
+StringEnumerator::StringEnumerator(Strong<String> string) : _string(string), _index(0) {}
+
+Value StringEnumerator::enumerate() {
+    if (_index >= _string->string().size()) {
+        return Value();
+    }
+    std::string value = _string->string().substr(_index, 1);
+    _index++;
+    return value;
+}
+
+std::string StringEnumerator::typeName() const { return "StringEnumerator"; }
+
+std::string StringEnumerator::description() const {
+    return Concat("E(", _string->description(), ")");
+}
+
+bool StringEnumerator::equals(Strong<Object>) const { return false; }
 
 SIF_NAMESPACE_END

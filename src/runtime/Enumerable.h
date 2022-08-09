@@ -17,13 +17,17 @@
 #pragma once
 
 #include "Common.h"
+#include "Object.h"
 #include "Value.h"
 
 SIF_NAMESPACE_BEGIN
 
 struct Enumerable {
-    virtual int64_t length() const = 0;
-    virtual Value operator[](int64_t) const = 0;
+    virtual Value enumerator(Value) const = 0;
+};
+
+struct Enumerator : public Object {
+    virtual Value enumerate() = 0;
 };
 
 SIF_NAMESPACE_END

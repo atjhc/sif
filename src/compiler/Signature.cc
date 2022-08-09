@@ -65,11 +65,7 @@ Signature Signature::Make(const std::string &format) {
     auto scanner = MakeStrong<Scanner>(format.c_str(), format.c_str() + format.length());
     Parser parser(ParserConfig(), scanner);
     Signature signature;
-    try { 
-        signature = parser.parseSignature();
-    } catch (...) { 
-        std::cout << "Fuck" << std::endl;
-    }
+    signature = parser.parseSignature();
     return signature;
 }
 

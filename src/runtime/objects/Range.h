@@ -32,19 +32,33 @@ class Range : public Object, public Enumerable {
     int64_t start() const;
     int64_t end() const;
     bool closed() const;
+    int64_t size() const;
 
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
 
-    // Enumerable
-    int64_t length() const override;
-    Value operator[](int64_t) const override;
+    Value enumerator(Value self) const override;
 
   private:
     int64_t _start;
     int64_t _end;
     bool _closed;
+};
+
+class RangeEnumerator : public Enumerator {
+  public:
+    RangeEnumerator(Strong<Range> range);
+
+    Value enumerate() override;
+
+    virtual std::string typeName() const override;
+    virtual std::string description() const override;
+    virtual bool equals(Strong<Object>) const override;
+
+  private:
+    Strong<Range> _range;
+    size_t _index;
 };
 
 SIF_NAMESPACE_END

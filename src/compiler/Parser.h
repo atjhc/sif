@@ -69,7 +69,7 @@ class Parser {
   public:
     Parser(const ParserConfig &config, Strong<Scanner> scanner);
     ~Parser();
-    
+
     Owned<Statement> parse();
     Signature parseSignature();
 

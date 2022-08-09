@@ -36,14 +36,28 @@ class List : public Object, public Enumerable {
 
     std::string typeName() const override;
     std::string description() const override;
-    bool equals(Strong<Object>) const override;
+    bool equals(Strong<Object> object) const override;
 
     // Enumerable
-    int64_t length() const override;
-    Value operator[](int64_t) const override;
+    Value enumerator(Value self) const override;
 
   private:
     std::vector<Value> _values;
+};
+
+class ListEnumerator : public Enumerator {
+  public:
+    ListEnumerator(Strong<List> list);
+
+    Value enumerate() override;
+
+    virtual std::string typeName() const override;
+    virtual std::string description() const override;
+    virtual bool equals(Strong<Object>) const override;
+
+  private:
+    Strong<List> _list;
+    size_t _index;
 };
 
 SIF_NAMESPACE_END

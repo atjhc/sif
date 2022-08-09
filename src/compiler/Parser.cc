@@ -38,7 +38,8 @@ static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
 }
 #pragma clang diagnostic pop
 
-Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner) : _config(config), _scanner(scanner) {
+Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner)
+    : _config(config), _scanner(scanner) {
     _parsingRepeat = false;
     _recording = false;
     _index = 0;

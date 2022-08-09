@@ -126,10 +126,10 @@ std::string Value::description() const {
 }
 
 bool Value::operator==(const Value &value) const {
-    if (auto string = as<String>(); string && string->length() == 0 && value.isEmpty()) {
+    if (auto string = as<String>(); string && string->string().size() == 0 && value.isEmpty()) {
         return true;
     }
-    if (auto string = value.as<String>(); string && string->length() == 0 && isEmpty()) {
+    if (auto string = value.as<String>(); string && string->string().size() == 0 && isEmpty()) {
         return true;
     }
     if (isObject() && value.isObject()) {

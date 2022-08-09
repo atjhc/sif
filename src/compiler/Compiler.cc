@@ -27,7 +27,7 @@ Compiler::Compiler() : _scopeDepth(0) {}
 
 Strong<Bytecode> Compiler::compile(const Statement &statement) {
     _frames.push_back({MakeStrong<Bytecode>(), {}, {}});
-    locals().push_back({"", _scopeDepth});
+    addLocal();
 
     statement.accept(*this);
     addReturn();
@@ -208,6 +208,8 @@ void Compiler::addReturn() {
     }
 }
 
+void Compiler::addLocal() { locals().push_back({"", _scopeDepth}); }
+
 void Compiler::beginScope() { _scopeDepth++; }
 
 void Compiler::endScope(const Location &location) {
@@ -231,7 +233,7 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     auto functionBytecode = MakeStrong<Bytecode>();
     _frames.push_back({functionBytecode, {}, {}});
 
-    locals().push_back({"", _scopeDepth});
+    addLocal();
     for (const auto &term : functionDecl.signature.terms) {
         if (auto arg = std::get_if<Signature::Argument>(&term)) {
             if (arg->token.has_value()) {
@@ -331,24 +333,25 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto exitRepeat = _exitRepeat;
 
     foreach.expression->accept(*this);
-    bytecode().add(foreach.location, Opcode::Short, 0);
+    bytecode().add(foreach.expression->location, Opcode::GetEnumerator);
+    addLocal();
 
-    bytecode().add(foreach.location, Opcode::Jump, 4);
-    _exitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
-    _nextRepeat = bytecode().code().size();
+    bytecode().add(foreach.statement->location, Opcode::Jump, 3);
+    _exitRepeat = bytecode().add(foreach.statement->location, Opcode::Jump, 0);
+    _nextRepeat = bytecode().add(foreach.statement->location, Opcode::Enumerate);
+    auto jump = bytecode().add(foreach.statement->location, Opcode::JumpIfEmpty, 0);
 
-    bytecode().add(foreach.location, Opcode::Increment);
-    auto repeat = bytecode().add(foreach.location, Opcode::JumpIfEnd, 0);
-    bytecode().add(foreach.location, Opcode::Index);
+    beginScope();
     assign(*foreach.variable, lowercase(foreach.variable->token.text));
-
     foreach.statement->accept(*this);
+    endScope(foreach.statement->location);
 
     bytecode().addRepeat(foreach.location, _nextRepeat);
 
-    bytecode().patchJump(_exitRepeat);
-    bytecode().patchJump(repeat);
+    bytecode().patchJump(jump);
     bytecode().add(foreach.location, Opcode::Pop);
+
+    bytecode().patchJump(_exitRepeat);
     bytecode().add(foreach.location, Opcode::Pop);
 
     _nextRepeat = nextRepeat;

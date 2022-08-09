@@ -242,8 +242,6 @@ std::vector<Signature> Core::signatures() const {
     return signatures;
 }
 
-Mapping<std::string, Strong<Native>> Core::functions() const {
-    return _functions;
-}
+Mapping<std::string, Strong<Native>> Core::functions() const { return _functions; }
 
 SIF_NAMESPACE_END

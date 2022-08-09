@@ -38,8 +38,27 @@ bool Range::equals(Strong<Object> object) const {
     return false;
 }
 
-int64_t Range::length() const { return (_closed ? 1 : 0) + _end - _start; }
+int64_t Range::size() const { return (_closed ? 1 : 0) + _end - _start; }
 
-Value Range::operator[](int64_t index) const { return _start + index; }
+Value Range::enumerator(Value self) const { return MakeStrong<RangeEnumerator>(self.as<Range>()); }
+
+RangeEnumerator::RangeEnumerator(Strong<Range> range) : _range(range), _index(0) {}
+
+Value RangeEnumerator::enumerate() {
+    if (_index >= _range->size()) {
+        return Value();
+    }
+    int64_t value = _range->start() + _index;
+    _index++;
+    return value;
+}
+
+std::string RangeEnumerator::typeName() const { return "RangeEnumerator"; }
+
+std::string RangeEnumerator::description() const {
+    return Concat("E(", _range->description(), ")");
+}
+
+bool RangeEnumerator::equals(Strong<Object>) const { return false; }
 
 SIF_NAMESPACE_END

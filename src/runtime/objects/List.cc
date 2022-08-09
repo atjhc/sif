@@ -19,8 +19,6 @@ List::List(const std::vector<Value> &values) : _values(values) {}
 
 std::vector<Value> &List::values() { return _values; }
 
-Value List::operator[](int64_t index) const { return _values[index]; }
-
 Value List::operator[](const Range &range) const {
     auto start = _values.begin() + range.start();
     auto end = _values.begin() + range.end() + (range.closed() ? 1 : 0);
@@ -46,6 +44,23 @@ bool List::equals(Strong<Object> object) const {
     return false;
 }
 
-int64_t List::length() const { return _values.size(); }
+Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
+
+ListEnumerator::ListEnumerator(Strong<List> list) : _list(list), _index(0) {}
+
+Value ListEnumerator::enumerate() {
+    if (_index >= _list->values().size()) {
+        return Value();
+    }
+    auto value = _list->values()[_index];
+    _index++;
+    return value;
+}
+
+std::string ListEnumerator::typeName() const { return "ListEnumerator"; }
+
+std::string ListEnumerator::description() const { return Concat("E(", _list->description(), ")"); }
+
+bool ListEnumerator::equals(Strong<Object>) const { return false; }
 
 SIF_NAMESPACE_END
