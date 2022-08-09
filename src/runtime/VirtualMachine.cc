@@ -366,7 +366,17 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::Subscript: {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
-            if (subscript(lhs, rhs)) {
+            if (auto subscriptable = lhs.as<Subscriptable>()) {
+                if (auto result =
+                        subscriptable->subscript(frame().bytecode->location(frame().ip - 1), rhs)) {
+                    Push(_stack, result.value());
+                } else {
+                    _error = result.error();
+                    return None;
+                }
+            } else {
+                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                                      "expected a list, string, dictionary, or range");
                 return None;
             }
             break;
@@ -436,73 +446,6 @@ bool VirtualMachine::call(Value object, int count) {
     } else {
         _error = RuntimeError(frame().bytecode->location(frame().ip - 3),
                               "unexpected type for function call");
-        return true;
-    }
-    return false;
-}
-
-bool VirtualMachine::subscript(Value lhs, Value rhs) {
-    if (auto list = lhs.as<List>()) {
-        if (auto range = rhs.as<Range>()) {
-            Push(_stack, (*list)[*range]);
-            return false;
-        }
-        if (rhs.isInteger()) {
-            auto index = rhs.asInteger();
-            if (index >= static_cast<int>(list->values().size()) ||
-                static_cast<int>(list->values().size()) + index < 0) {
-                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                                      "array index out of bounds");
-                return true;
-            }
-            Push(_stack, list->values()[index < 0 ? list->values().size() + index : index]);
-            return false;
-        }
-        _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                              "expected an integer or range");
-        return true;
-    } else if (auto dictionary = lhs.as<Dictionary>()) {
-        auto it = dictionary->values().find(rhs);
-        if (it == dictionary->values().end()) {
-            Push(_stack, Value());
-        } else {
-            Push(_stack, dictionary->values().at(rhs));
-        }
-    } else if (auto string = lhs.as<String>()) {
-        Value result;
-        if (rhs.isInteger()) {
-            auto index = rhs.asInteger();
-            if (index >= string->string().size() || string->string().size() + index < 0) {
-                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                                      Concat("string index ", index, " out of bounds"));
-                return true;
-            }
-            result =
-                string->string().substr(index < 0 ? string->string().size() + index : index, 1);
-        } else if (auto range = rhs.as<Range>()) {
-            result = string->operator[](*range);
-        } else {
-            _error =
-                RuntimeError(frame().bytecode->location(frame().ip - 1), "expected an integer");
-            return true;
-        }
-        Push(_stack, result);
-    } else if (auto range = lhs.as<Range>()) {
-        if (!rhs.isInteger()) {
-            _error =
-                RuntimeError(frame().bytecode->location(frame().ip - 1), "expected an integer");
-            return true;
-        }
-        auto index = rhs.asInteger();
-        if (index >= range->size() || range->size() + index < 0) {
-            _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                                  "range index out of bounds");
-            return true;
-        }
-        Push(_stack, range->start() + index);
-    } else {
-        _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                              "expected a list, string, or dictionary");
         return true;
     }
     return false;

@@ -49,6 +49,22 @@ Value String::enumerator(Value self) const {
     return MakeStrong<StringEnumerator>(self.as<String>());
 }
 
+Result<Value, RuntimeError> String::subscript(Location location, Value value) const {
+    if (value.isInteger()) {
+        auto index = value.asInteger();
+        if (index >= _string.size() || _string.size() + index < 0) {
+            return Error(RuntimeError(location, Concat("index ", index, " out of bounds")));
+            return true;
+        }
+        return _string.substr(index < 0 ? _string.size() + index : index, 1);
+    } else if (auto range = value.as<Range>()) {
+        return operator[](*range);
+    }
+    return Error(RuntimeError(location, "expected an integer or range"));
+}
+
+#pragma mark - StringEnumerator
+
 StringEnumerator::StringEnumerator(Strong<String> string) : _string(string), _index(0) {}
 
 Value StringEnumerator::enumerate() {

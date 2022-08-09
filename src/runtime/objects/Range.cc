@@ -42,6 +42,20 @@ int64_t Range::size() const { return (_closed ? 1 : 0) + _end - _start; }
 
 Value Range::enumerator(Value self) const { return MakeStrong<RangeEnumerator>(self.as<Range>()); }
 
+Result<Value, RuntimeError> Range::subscript(Location location, Value value) const {
+    if (!value.isInteger()) {
+        return Error(RuntimeError(location, "expected an integer"));
+        return true;
+    }
+    auto index = value.asInteger();
+    if (index >= size() || size() + index < 0) {
+        return Error(RuntimeError(location, "range index out of bounds"));
+    }
+    return Value(start() + index);
+}
+
+#pragma mark - RangeEnumerator
+
 RangeEnumerator::RangeEnumerator(Strong<Range> range) : _range(range), _index(0) {}
 
 Value RangeEnumerator::enumerate() {

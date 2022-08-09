@@ -17,29 +17,12 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/Object.h"
-#include "runtime/Subscriptable.h"
-#include "runtime/Value.h"
-
-#include <string>
+#include "Value.h"
 
 SIF_NAMESPACE_BEGIN
 
-class Dictionary : public Object, public Subscriptable {
-  public:
-    Dictionary(const ValueMap &values);
-
-    ValueMap &values();
-
-    std::string typeName() const override;
-    std::string description() const override;
-    bool equals(Strong<Object>) const override;
-
-    // Subscriptable
-    Result<Value, RuntimeError> subscript(Location location, Value value) const override;
-
-  private:
-    ValueMap _values;
+struct Subscriptable {
+    virtual Result<Value, RuntimeError> subscript(Location, Value) const = 0;
 };
 
 SIF_NAMESPACE_END

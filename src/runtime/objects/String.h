@@ -19,6 +19,7 @@
 #include "Common.h"
 #include "runtime/Enumerable.h"
 #include "runtime/Object.h"
+#include "runtime/Subscriptable.h"
 #include "runtime/Value.h"
 #include "runtime/objects/Range.h"
 
@@ -26,7 +27,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-class String : public Object, public Enumerable {
+class String : public Object, public Enumerable, public Subscriptable {
   public:
     String(const std::string &string);
 
@@ -38,7 +39,11 @@ class String : public Object, public Enumerable {
     std::string description() const override;
     bool equals(Strong<Object>) const override;
 
+    // Enumerable
     Value enumerator(Value self) const override;
+
+    // Subscriptable
+    Result<Value, RuntimeError> subscript(Location location, Value value) const override;
 
   private:
     std::string _string;

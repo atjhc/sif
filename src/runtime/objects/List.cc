@@ -46,6 +46,23 @@ bool List::equals(Strong<Object> object) const {
 
 Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
 
+Result<Value, RuntimeError> List::subscript(Location location, Value value) const {
+    if (auto range = value.as<Range>()) {
+        return Value(this->operator[](*range));
+    }
+    if (value.isInteger()) {
+        auto index = value.asInteger();
+        if (index >= static_cast<int>(_values.size()) ||
+            static_cast<int>(_values.size()) + index < 0) {
+            return Error(RuntimeError(location, "array index out of bounds"));
+        }
+        return Value(_values[index < 0 ? _values.size() + index : index]);
+    }
+    return Error(RuntimeError(location, "expected an integer or range"));
+}
+
+#pragma mark - ListEnumerator
+
 ListEnumerator::ListEnumerator(Strong<List> list) : _list(list), _index(0) {}
 
 Value ListEnumerator::enumerate() {

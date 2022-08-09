@@ -9,3 +9,15 @@ print foo["one"]
 (-- expect
 1
 --)
+
+set foo to "hello"
+print foo[0]
+(-- expect
+h
+--)
+
+set foo to 10...20
+print foo[0]
+(-- expect
+10
+--)

@@ -19,6 +19,7 @@
 #include "Common.h"
 #include "runtime/Enumerable.h"
 #include "runtime/Object.h"
+#include "runtime/Subscriptable.h"
 #include "runtime/Value.h"
 #include "runtime/objects/Range.h"
 
@@ -26,7 +27,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-class List : public Object, public Enumerable {
+class List : public Object, public Enumerable, public Subscriptable {
   public:
     List(const std::vector<Value> &values = {});
 
@@ -40,6 +41,9 @@ class List : public Object, public Enumerable {
 
     // Enumerable
     Value enumerator(Value self) const override;
+
+    // Subscriptable
+    Result<Value, RuntimeError> subscript(Location location, Value value) const override;
 
   private:
     std::vector<Value> _values;

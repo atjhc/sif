@@ -43,4 +43,13 @@ bool Dictionary::equals(Strong<Object> object) const {
     return false;
 }
 
+Result<Value, RuntimeError> Dictionary::subscript(Location location, Value value) const {
+    auto it = _values.find(value);
+    if (it == _values.end()) {
+        return Value();
+    } else {
+        return it->second;
+    }
+}
+
 SIF_NAMESPACE_END

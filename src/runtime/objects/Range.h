@@ -19,13 +19,14 @@
 #include "Common.h"
 #include "runtime/Enumerable.h"
 #include "runtime/Object.h"
+#include "runtime/Subscriptable.h"
 #include "runtime/Value.h"
 
 #include <string>
 
 SIF_NAMESPACE_BEGIN
 
-class Range : public Object, public Enumerable {
+class Range : public Object, public Enumerable, public Subscriptable {
   public:
     Range(int64_t start, int64_t end, bool closed);
 
@@ -38,7 +39,11 @@ class Range : public Object, public Enumerable {
     std::string description() const override;
     bool equals(Strong<Object>) const override;
 
+    // Enumerable
     Value enumerator(Value self) const override;
+
+    // Subscriptable
+    Result<Value, RuntimeError> subscript(Location location, Value value) const override;
 
   private:
     int64_t _start;
