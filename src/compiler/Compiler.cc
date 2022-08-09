@@ -164,37 +164,32 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
     uint16_t index = 0;
     Opcode opcode;
 
-    if (_scopeDepth > 0) {
-        switch (variable.scope) {
-        case Variable::Scope::Unspecified:
-            if (int i = findLocal(_frames.back(), name); i > -1) {
-                index = i;
-                opcode = Opcode::GetLocal;
-            } else if (int i = findCapture(name); i > -1) {
-                index = i;
-                opcode = Opcode::GetCapture;
-            } else {
-                index = bytecode().addConstant(MakeStrong<String>(name));
-                opcode = Opcode::GetGlobal;
-            }
-            break;
-        case Variable::Scope::Local:
-            if (int i = findLocal(_frames.back(), name); i > -1) {
-                index = i;
-                opcode = Opcode::GetLocal;
-            } else if (int i = findCapture(name); i > -1) {
-                index = i;
-                opcode = Opcode::GetCapture;
-            } else {
-                error(variable, Concat("name '", name, "' has not been assigned"));
-                return;
-            }
-            break;
-        case Variable::Scope::Global:
+    switch (variable.scope) {
+    case Variable::Scope::Unspecified:
+        if (int i = findLocal(_frames.back(), name); i > -1) {
+            index = i;
+            opcode = Opcode::GetLocal;
+        } else if (int i = findCapture(name); i > -1) {
+            index = i;
+            opcode = Opcode::GetCapture;
+        } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
         }
-    } else {
+        break;
+    case Variable::Scope::Local:
+        if (int i = findLocal(_frames.back(), name); i > -1) {
+            index = i;
+            opcode = Opcode::GetLocal;
+        } else if (int i = findCapture(name); i > -1) {
+            index = i;
+            opcode = Opcode::GetCapture;
+        } else {
+            error(variable, Concat("name '", name, "' has not been assigned"));
+            return;
+        }
+        break;
+    case Variable::Scope::Global:
         index = bytecode().addConstant(MakeStrong<String>(name));
         opcode = Opcode::GetGlobal;
     }
