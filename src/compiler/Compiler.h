@@ -63,7 +63,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     void resolve(const Variable &variable, const std::string &name);
 
     void addReturn();
-    void addLocal();
+    void addLocal(const std::string &name = "");
 
     void beginScope();
     void endScope(const Location &location);

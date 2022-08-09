@@ -208,7 +208,7 @@ void Compiler::addReturn() {
     }
 }
 
-void Compiler::addLocal() { locals().push_back({"", _scopeDepth}); }
+void Compiler::addLocal(const std::string &name) { locals().push_back({name, _scopeDepth}); }
 
 void Compiler::beginScope() { _scopeDepth++; }
 
@@ -341,11 +341,9 @@ void Compiler::visit(const RepeatFor &foreach) {
     _nextRepeat = bytecode().add(foreach.statement->location, Opcode::Enumerate);
     auto jump = bytecode().add(foreach.statement->location, Opcode::JumpIfEmpty, 0);
 
-    beginScope();
-    assign(*foreach.variable, lowercase(foreach.variable->token.text));
+    addLocal(lowercase(foreach.variable->token.text));
     foreach.statement->accept(*this);
-    endScope(foreach.statement->location);
-
+    bytecode().add(foreach.location, Opcode::Pop);
     bytecode().addRepeat(foreach.location, _nextRepeat);
 
     bytecode().patchJump(jump);
