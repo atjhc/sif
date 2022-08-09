@@ -112,7 +112,7 @@ Mapping<std::string, Strong<Native>> _functions = []() -> Mapping<std::string, S
         return values[1];
     });
     natives["(the) type (of) {}"] =
-        MakeStrong<Native>([](Value *values) -> Value { return values[0].typeName(); });
+        MakeStrong<Native>([](Value *values) -> Value { return lowercase(values[0].typeName()); });
     natives["(the) sin (of) {}"] = MakeStrong<Native>([](Value *values) -> Value {
         auto argument = values[0].castFloat();
         return sin(argument);

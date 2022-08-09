@@ -166,7 +166,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto enumerable = value.as<Enumerable>();
             if (!enumerable) {
                 _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                                      "expected a string, range, list, or dictionary");
+                                      "expected a list, dictionary, string, or range");
                 return None;
             }
             Push(_stack, enumerable->enumerator(value));
