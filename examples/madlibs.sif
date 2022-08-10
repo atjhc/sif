@@ -1,3 +1,5 @@
+-- http://rosettacode.org/wiki/Mad_Libs
+
 function read a story
   print "Enter a story. A blank line marks the end of the story."
   print "Use <noun>, <verb>, etc. to mark inputs:"

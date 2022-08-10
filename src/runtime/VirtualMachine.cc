@@ -431,16 +431,13 @@ bool VirtualMachine::call(Value object, int count) {
         _callStack.push_back(
             {fn->bytecode(), fn->bytecode()->code().begin(), captures, _stack.size() - count - 1});
     } else if (auto native = object.as<Native>()) {
-        try {
-            auto result = native->callable()(&_stack.end()[-count]);
-            _stack.erase(_stack.end() - count - 1, _stack.end());
-            Push(_stack, result);
-        } catch (const RuntimeError &error) {
-            _error = error;
-            return true;
-        } catch (...) {
-            _error = RuntimeError(frame().bytecode->location(frame().ip - 3),
-                                  "an unexpected error occurred");
+        auto result = native->callable()(frame().bytecode->location(frame().ip - 3), &_stack.end()[-count]);
+        _stack.erase(_stack.end() - count - 1, _stack.end());
+        if (result) {
+            Push(_stack, result.value());
+            return false;
+        } else {
+            _error = result.error();
             return true;
         }
     } else {

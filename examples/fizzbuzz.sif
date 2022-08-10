@@ -1,9 +1,7 @@
-set x to 1
-repeat until x is 100
+repeat for x in 1...100
   if x % 15 is 0 then print "FizzBuzz" else
     if x % 5 is 0 then print "Buzz" else
       if x % 3 is 0 then print "Fizz" else print x
     end if
   end if
-  set x to x + 1
 end repeat

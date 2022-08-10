@@ -25,7 +25,7 @@ SIF_NAMESPACE_BEGIN
 
 class Native : public Object {
   public:
-    using Callable = std::function<Value(Value *)>;
+    using Callable = std::function<Result<Value, RuntimeError>(Location, Value *)>;
 
     Native(const Callable &callable);
 
