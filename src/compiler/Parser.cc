@@ -481,13 +481,20 @@ Owned<Statement> Parser::parseAssignment() {
     }
     auto token = consumeWord("expected variable name");
     Optional<Token> typeName;
+    std::vector<Owned<Expression>> subscripts;
     if (match({Token::Type::Colon})) {
         typeName = consumeWord();
+    } else {
+        while (match({Token::Type::LeftBracket})) {
+            auto subscript = parseExpression();
+            subscripts.push_back(std::move(subscript));
+            consume(Token::Type::RightBracket, Concat("expected ", Quoted("]")));
+        }
     }
     consume(Token::Type::To, Concat("expected ", Quoted("to")));
     auto expression = parseExpression();
     auto variable = MakeOwned<Variable>(token, typeName, scope);
-    return MakeOwned<Assignment>(std::move(variable), std::move(expression));
+    return MakeOwned<Assignment>(std::move(variable), std::move(subscripts), std::move(expression));
 }
 
 Owned<Statement> Parser::parseExit() {

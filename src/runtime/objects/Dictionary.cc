@@ -52,4 +52,9 @@ Result<Value, RuntimeError> Dictionary::subscript(Location location, Value value
     }
 }
 
+Result<Value, RuntimeError> Dictionary::setSubscript(Location, Value key, Value value) {
+    _values[key] = value;
+    return Value();
+}
+
 SIF_NAMESPACE_END

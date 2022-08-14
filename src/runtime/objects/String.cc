@@ -63,6 +63,27 @@ Result<Value, RuntimeError> String::subscript(Location location, Value value) co
     return Error(RuntimeError(location, "expected an integer or range"));
 }
 
+Result<Value, RuntimeError> String::setSubscript(Location location, Value key, Value value) {
+    if (auto range = key.as<Range>()) {
+        if (auto string = value.as<String>()) {
+            _string.replace(_string.begin() + range->start(),
+                            _string.begin() + range->end() + (range->closed() ? 1 : 0),
+                            string->string());
+            return Value();
+        }
+        return Error(RuntimeError(location, "expected string"));
+    }
+    if (key.isInteger()) {
+        if (auto string = value.as<String>()) {
+            _string.replace(_string.begin() + key.asInteger(),
+                            _string.begin() + key.asInteger() + 1, string->string());
+            return Value();
+        }
+        return Error(RuntimeError(location, "expected string"));
+    }
+    return Error(RuntimeError(location, "expected integer or range"));
+}
+
 #pragma mark - StringEnumerator
 
 StringEnumerator::StringEnumerator(Strong<String> string) : _string(string), _index(0) {}

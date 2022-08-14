@@ -77,9 +77,11 @@ struct FunctionDecl : Statement {
 
 struct Assignment : Statement {
     Owned<Variable> variable;
+    std::vector<Owned<Expression>> subscripts;
     Owned<Expression> expression;
 
-    Assignment(Owned<Variable> variable, Owned<Expression> expression);
+    Assignment(Owned<Variable> variable, std::vector<Owned<Expression>> subscripts,
+               Owned<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };

@@ -1,0 +1,40 @@
+set a to [1, 2, 3]
+set a[0] to 10
+print a
+(-- expect
+10 2 3
+--)
+
+set a[0...1] to 10, 20
+print a
+(-- expect
+10 20 3
+--)
+
+set a to {"one": 1}
+set a["one"] to 10
+print a["one"]
+(-- expect
+10
+--)
+
+set a to {"one": {two: 2}}
+set a["one"]["two"] to 20
+print a["one"]["two"]
+(-- expect
+20
+--)
+
+set a to "one two three"
+set a[0] to "1"
+print a
+(-- expect
+1ne two three
+--)
+
+set a to "four five six"
+set a[5...8] to "5"
+print a
+(-- expect
+four 5 six
+--)

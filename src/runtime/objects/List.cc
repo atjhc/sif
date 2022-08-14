@@ -61,6 +61,22 @@ Result<Value, RuntimeError> List::subscript(Location location, Value value) cons
     return Error(RuntimeError(location, "expected an integer or range"));
 }
 
+Result<Value, RuntimeError> List::setSubscript(Location location, Value key, Value value) {
+    if (auto range = key.as<Range>()) {
+        _values.erase(_values.begin() + range->start(),
+                      _values.begin() + range->end() + (range->closed() ? 1 : 0));
+        if (auto list = value.as<List>()) {
+            _values.insert(_values.begin(), list->values().begin(), list->values().end());
+        } else {
+            _values.insert(_values.begin() + range->start(), value);
+        }
+    }
+    if (key.isInteger()) {
+        _values[key.asInteger()] = value;
+    }
+    return Value();
+}
+
 #pragma mark - ListEnumerator
 
 ListEnumerator::ListEnumerator(Strong<List> list) : _list(list), _index(0) {}

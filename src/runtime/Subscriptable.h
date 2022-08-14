@@ -23,6 +23,7 @@ SIF_NAMESPACE_BEGIN
 
 struct Subscriptable {
     virtual Result<Value, RuntimeError> subscript(Location, Value) const = 0;
+    virtual Result<Value, RuntimeError> setSubscript(Location, Value, Value) = 0;
 };
 
 SIF_NAMESPACE_END

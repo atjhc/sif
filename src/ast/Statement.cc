@@ -23,8 +23,10 @@ Block::Block(std::vector<Owned<Statement>> statements) : statements(std::move(st
 FunctionDecl::FunctionDecl(const Signature &signature, Owned<Statement> statement)
     : signature(signature), statement(std::move(statement)) {}
 
-Assignment::Assignment(Owned<Variable> variable, Owned<Expression> expression)
-    : variable(std::move(variable)), expression(std::move(expression)) {}
+Assignment::Assignment(Owned<Variable> variable, std::vector<Owned<Expression>> subscripts,
+                       Owned<Expression> expression)
+    : variable(std::move(variable)), subscripts(std::move(subscripts)),
+      expression(std::move(expression)) {}
 
 If::If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statement> elseStatement)
     : condition(std::move(condition)), ifStatement(std::move(ifStatement)),

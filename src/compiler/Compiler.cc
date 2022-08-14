@@ -278,8 +278,19 @@ void Compiler::visit(const Return &statement) {
 }
 
 void Compiler::visit(const Assignment &assignment) {
-    assignment.expression->accept(*this);
-    assign(*assignment.variable, lowercase(assignment.variable->token.text));
+    if (assignment.subscripts.size() > 0) {
+        assignment.variable->accept(*this);
+        for (int i = 0; i < assignment.subscripts.size() - 1; i++) {
+            assignment.subscripts[i]->accept(*this);
+            bytecode().add(assignment.subscripts[i]->location, Opcode::Subscript);
+        }
+        assignment.subscripts.back()->accept(*this);
+        assignment.expression->accept(*this);
+        bytecode().add(assignment.location, Opcode::SetSubscript);
+    } else {
+        assignment.expression->accept(*this);
+        assign(*assignment.variable, lowercase(assignment.variable->token.text));
+    }
 }
 
 void Compiler::visit(const ExpressionStatement &statement) {

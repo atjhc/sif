@@ -52,6 +52,7 @@ enum class Opcode : uint8_t {
     LessThanOrEqual,
     GreaterThanOrEqual,
     Subscript,
+    SetSubscript,
     Enumerate,
     Return,
     True,

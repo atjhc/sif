@@ -44,6 +44,7 @@ class List : public Object, public Enumerable, public Subscriptable {
 
     // Subscriptable
     Result<Value, RuntimeError> subscript(Location location, Value value) const override;
+    Result<Value, RuntimeError> setSubscript(Location, Value, Value) override;
 
   private:
     std::vector<Value> _values;

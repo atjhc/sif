@@ -100,7 +100,8 @@ TEST_CASE(TranscriptTests, All) {
         }
 
         std::ostringstream ss;
-        vm.add("print {}", MakeStrong<Native>([&](Location location, Value *values) -> Result<Value, RuntimeError> {
+        vm.add("print {}", MakeStrong<Native>([&](Location location,
+                                                  Value *values) -> Result<Value, RuntimeError> {
                    if (const auto &list = values[0].as<List>()) {
                        ss << Join(list->values(), " ");
                    } else {
@@ -110,11 +111,13 @@ TEST_CASE(TranscriptTests, All) {
                    return Value();
                }));
         std::istringstream iss(input);
-        vm.add("read (a) line", MakeStrong<Native>([&](Location location, Value *values) -> Result<Value, RuntimeError> {
-                   std::string input;
-                   std::getline(iss, input);
-                   return input;
-               }));
+        vm.add("read (a) line",
+               MakeStrong<Native>(
+                   [&](Location location, Value *values) -> Result<Value, RuntimeError> {
+                       std::string input;
+                       std::getline(iss, input);
+                       return input;
+                   }));
 
         vm.execute(bytecode);
         ASSERT_FALSE(vm.error().has_value()) << path << " failed: " << vm.error();

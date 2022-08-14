@@ -229,6 +229,9 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Subscript:
         out << "Subscript";
         return position + 1;
+    case Opcode::SetSubscript:
+        out << "SetSubscript";
+        return position + 1;
     case Opcode::True:
         out << "True";
         return position + 1;

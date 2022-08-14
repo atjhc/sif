@@ -381,6 +381,24 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             }
             break;
         }
+        case Opcode::SetSubscript: {
+            auto value = Pop(_stack);
+            auto subscript = Pop(_stack);
+            auto target = Pop(_stack);
+            if (auto subscriptable = target.as<Subscriptable>()) {
+                auto result = subscriptable->setSubscript(
+                    frame().bytecode->location(frame().ip - 1), subscript, value);
+                if (!result) {
+                    _error = result.error();
+                    return None;
+                }
+            } else {
+                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                                      "expected a list, string, dictionary, or range");
+                return None;
+            }
+            break;
+        }
         case Opcode::Enumerate: {
             auto value = Peek(_stack);
             Push(_stack, value.as<Enumerator>()->enumerate());
@@ -431,7 +449,8 @@ bool VirtualMachine::call(Value object, int count) {
         _callStack.push_back(
             {fn->bytecode(), fn->bytecode()->code().begin(), captures, _stack.size() - count - 1});
     } else if (auto native = object.as<Native>()) {
-        auto result = native->callable()(frame().bytecode->location(frame().ip - 3), &_stack.end()[-count]);
+        auto result =
+            native->callable()(frame().bytecode->location(frame().ip - 3), &_stack.end()[-count]);
         _stack.erase(_stack.end() - count - 1, _stack.end());
         if (result) {
             Push(_stack, result.value());

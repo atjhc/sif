@@ -54,6 +54,10 @@ Result<Value, RuntimeError> Range::subscript(Location location, Value value) con
     return Value(start() + index);
 }
 
+Result<Value, RuntimeError> Range::setSubscript(Location location, Value key, Value value) {
+    return Error(RuntimeError(location, "ranges may not be modified"));
+}
+
 #pragma mark - RangeEnumerator
 
 RangeEnumerator::RangeEnumerator(Strong<Range> range) : _range(range), _index(0) {}

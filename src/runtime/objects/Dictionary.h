@@ -37,6 +37,7 @@ class Dictionary : public Object, public Subscriptable {
 
     // Subscriptable
     Result<Value, RuntimeError> subscript(Location location, Value value) const override;
+    Result<Value, RuntimeError> setSubscript(Location, Value, Value) override;
 
   private:
     ValueMap _values;
