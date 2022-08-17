@@ -16,6 +16,7 @@
 
 #include "runtime/Value.h"
 #include "runtime/Object.h"
+
 #include "runtime/objects/String.h"
 
 #include <iostream>
@@ -144,7 +145,9 @@ bool Value::operator==(const Value &value) const {
 size_t ValueHasher::operator()(const Value &value) const {
     if (value.isEmpty())
         return 0;
-
+    if (value.isObject()) {
+        return value.asObject()->hash();
+    }
     size_t hash;
     std::visit([&](auto arg) { hash = std::hash<decltype(arg)>{}(arg); }, value._value);
     return hash;

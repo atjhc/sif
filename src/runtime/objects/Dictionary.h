@@ -34,6 +34,7 @@ class Dictionary : public Object, public Subscriptable {
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
+    size_t hash() const override;
 
     // Subscriptable
     Result<Value, RuntimeError> subscript(Location location, Value value) const override;

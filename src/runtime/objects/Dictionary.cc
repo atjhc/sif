@@ -12,6 +12,7 @@
 //
 
 #include "runtime/objects/Dictionary.h"
+#include "utilities/hasher.h"
 
 SIF_NAMESPACE_BEGIN
 
@@ -37,10 +38,19 @@ std::string Dictionary::description() const {
 }
 
 bool Dictionary::equals(Strong<Object> object) const {
-    if (const auto &dictionary = std::dynamic_pointer_cast<Dictionary>(object)) {
+    if (const auto &dictionary = Cast<Dictionary>(object)) {
         return _values == dictionary->_values;
     }
     return false;
+}
+
+size_t Dictionary::hash() const {
+    hasher h;
+    for (const auto &pair : _values) {
+        h.hash(pair.first, ValueHasher());
+        h.hash(pair.second, ValueHasher());
+    }
+    return h.value();
 }
 
 Result<Value, RuntimeError> Dictionary::subscript(Location location, Value value) const {

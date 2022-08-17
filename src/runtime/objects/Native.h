@@ -33,7 +33,6 @@ class Native : public Object {
 
     std::string typeName() const override;
     std::string description() const override;
-    bool equals(Strong<Object>) const override;
 
   private:
     Callable _callable;

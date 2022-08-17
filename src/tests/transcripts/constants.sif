@@ -1,0 +1,9 @@
+set a to "123"
+set a[0] to "4"
+print a
+set a to "123"
+print a
+(-- expect
+423
+123
+--)

@@ -154,7 +154,12 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         }
         case Opcode::Constant: {
             auto index = ReadConstant(frame().ip);
-            Push(_stack, frame().bytecode->constants()[index]);
+            auto constant = frame().bytecode->constants()[index];
+            if (auto copyable = constant.as<Copyable>()) {
+                Push(_stack, copyable->copy());
+            } else {
+                Push(_stack, constant);
+            }
             break;
         }
         case Opcode::Short: {

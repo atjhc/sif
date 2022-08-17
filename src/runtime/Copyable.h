@@ -17,19 +17,12 @@
 #pragma once
 
 #include "Common.h"
+#include "Value.h"
 
 SIF_NAMESPACE_BEGIN
 
-class Object {
-  public:
-    virtual ~Object() = default;
-
-    virtual std::string typeName() const = 0;
-    virtual std::string description() const = 0;
-    virtual bool equals(Strong<Object>) const;
-    virtual size_t hash() const;
+struct Copyable {
+    virtual Strong<Object> copy() const = 0;
 };
-
-std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);
 
 SIF_NAMESPACE_END

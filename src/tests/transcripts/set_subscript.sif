@@ -18,7 +18,7 @@ print a["one"]
 10
 --)
 
-set a to {"one": {two: 2}}
+set a to {"one": {"two": 2}}
 set a["one"]["two"] to 20
 print a["one"]["two"]
 (-- expect

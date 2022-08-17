@@ -38,6 +38,7 @@ class List : public Object, public Enumerable, public Subscriptable {
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object> object) const override;
+    size_t hash() const override;
 
     // Enumerable
     Value enumerator(Value self) const override;
@@ -56,9 +57,8 @@ class ListEnumerator : public Enumerator {
 
     Value enumerate() override;
 
-    virtual std::string typeName() const override;
-    virtual std::string description() const override;
-    virtual bool equals(Strong<Object>) const override;
+    std::string typeName() const override;
+    std::string description() const override;
 
   private:
     Strong<List> _list;

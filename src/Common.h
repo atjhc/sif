@@ -65,6 +65,10 @@ template <class T, class... Args> std::shared_ptr<T> MakeStrong(Args &&...args) 
     return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+template <class T, class U> Strong<T> Cast(const Strong<U> &arg) {
+    return std::dynamic_pointer_cast<T>(arg);
+}
+
 static inline std::string Concat() { return std::string(); }
 
 template <typename... Args> static inline std::string Concat(Args &&...args) {
@@ -101,14 +105,6 @@ static inline std::string Join(const Iterable &v, const std::string &sep, Functo
         }
     }
     return ss.str();
-}
-
-template <typename T> size_t HashRange(const T &v) {
-    size_t result = 1;
-    for (const auto &i : v) {
-        result = result * 31 + std::hash<typename T::value_type>{}(i);
-    }
-    return result;
 }
 
 template <typename... Args> [[noreturn]] static inline void Abort(Args... args) {

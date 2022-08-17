@@ -38,7 +38,6 @@ class Function : public Object {
 
     std::string typeName() const override;
     std::string description() const override;
-    bool equals(Strong<Object>) const override;
 
   private:
     Signature _signature;

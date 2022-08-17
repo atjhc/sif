@@ -12,6 +12,7 @@
 //
 
 #include "runtime/objects/List.h"
+#include "utilities/hasher.h"
 
 SIF_NAMESPACE_BEGIN
 
@@ -38,10 +39,18 @@ std::string List::typeName() const { return "list"; }
 std::string List::description() const { return Concat("[", Join(_values, ", "), "]"); }
 
 bool List::equals(Strong<Object> object) const {
-    if (const auto &list = std::dynamic_pointer_cast<List>(object)) {
+    if (const auto &list = Cast<List>(object)) {
         return _values == list->_values;
     }
     return false;
+}
+
+size_t List::hash() const {
+    hasher h;
+    for (const auto &v : _values) {
+        h.hash(v, ValueHasher());
+    }
+    return h.value();
 }
 
 Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
@@ -93,7 +102,5 @@ Value ListEnumerator::enumerate() {
 std::string ListEnumerator::typeName() const { return "ListEnumerator"; }
 
 std::string ListEnumerator::description() const { return Concat("E(", _list->description(), ")"); }
-
-bool ListEnumerator::equals(Strong<Object>) const { return false; }
 
 SIF_NAMESPACE_END

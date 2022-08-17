@@ -17,6 +17,7 @@
 #pragma once
 
 #include "Common.h"
+#include "runtime/Copyable.h"
 #include "runtime/Enumerable.h"
 #include "runtime/Object.h"
 #include "runtime/Subscriptable.h"
@@ -27,7 +28,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-class String : public Object, public Enumerable, public Subscriptable {
+class String : public Object, public Enumerable, public Subscriptable, public Copyable {
   public:
     String(const std::string &string);
 
@@ -38,6 +39,7 @@ class String : public Object, public Enumerable, public Subscriptable {
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
+    size_t hash() const override;
 
     // Enumerable
     Value enumerator(Value self) const override;
@@ -45,6 +47,9 @@ class String : public Object, public Enumerable, public Subscriptable {
     // Subscriptable
     Result<Value, RuntimeError> subscript(Location location, Value value) const override;
     Result<Value, RuntimeError> setSubscript(Location, Value, Value) override;
+
+    // Copyable
+    Strong<Object> copy() const override;
 
   private:
     std::string _string;
@@ -56,9 +61,8 @@ class StringEnumerator : public Enumerator {
 
     Value enumerate() override;
 
-    virtual std::string typeName() const override;
-    virtual std::string description() const override;
-    virtual bool equals(Strong<Object>) const override;
+    std::string typeName() const override;
+    std::string description() const override;
 
   private:
     Strong<String> _string;

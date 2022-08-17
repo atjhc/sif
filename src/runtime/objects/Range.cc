@@ -12,6 +12,7 @@
 //
 
 #include "runtime/objects/Range.h"
+#include "utilities/hasher.h"
 
 SIF_NAMESPACE_BEGIN
 
@@ -32,10 +33,16 @@ std::string Range::description() const {
 }
 
 bool Range::equals(Strong<Object> object) const {
-    if (const auto &range = std::dynamic_pointer_cast<Range>(object)) {
+    if (const auto &range = Cast<Range>(object)) {
         return _start == range->start() && _end == range->end() && _closed == range->closed();
     }
     return false;
+}
+
+size_t Range::hash() const {
+    hasher hasher;
+    hasher.combine(_start, _end, _closed);
+    return hasher.value();
 }
 
 int64_t Range::size() const { return (_closed ? 1 : 0) + _end - _start; }
@@ -76,7 +83,5 @@ std::string RangeEnumerator::typeName() const { return "RangeEnumerator"; }
 std::string RangeEnumerator::description() const {
     return Concat("E(", _range->description(), ")");
 }
-
-bool RangeEnumerator::equals(Strong<Object>) const { return false; }
 
 SIF_NAMESPACE_END

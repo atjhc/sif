@@ -26,6 +26,4 @@ std::string Function::typeName() const { return "function"; }
 
 std::string Function::description() const { return _signature.name(); }
 
-bool Function::equals(Strong<Object> object) const { return this == object.get(); }
-
 SIF_NAMESPACE_END

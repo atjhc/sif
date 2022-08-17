@@ -18,18 +18,29 @@
 
 #include "Common.h"
 
+#include <functional>
+
 SIF_NAMESPACE_BEGIN
 
-class Object {
+class hasher {
   public:
-    virtual ~Object() = default;
+    template <typename T, typename Hasher> void hash(const T &value, const Hasher &hasher) {
+        _value = _value ^ (hasher(value) << 1);
+    }
 
-    virtual std::string typeName() const = 0;
-    virtual std::string description() const = 0;
-    virtual bool equals(Strong<Object>) const;
-    virtual size_t hash() const;
+    template <typename T> void combine(const T &value) {
+        hash(value, std::hash<T>{});
+    }
+
+    template <typename Head, typename ...Tail> void combine(const Head &value, const Tail... remaining) {
+        hash(value, std::hash<Head>{});
+        combine(remaining...);
+    }
+
+    size_t value() const { return _value; }
+
+  private:
+    size_t _value = 1;
 };
-
-std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);
 
 SIF_NAMESPACE_END

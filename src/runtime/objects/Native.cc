@@ -23,6 +23,4 @@ std::string Native::typeName() const { return "function"; }
 
 std::string Native::description() const { return "<native function>"; }
 
-bool Native::equals(Strong<Object> object) const { return this == object.get(); }
-
 SIF_NAMESPACE_END

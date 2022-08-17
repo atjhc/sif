@@ -39,11 +39,15 @@ std::string String::typeName() const { return "string"; }
 std::string String::description() const { return _string; }
 
 bool String::equals(Strong<Object> object) const {
-    if (const auto &string = std::dynamic_pointer_cast<String>(object)) {
+    if (const auto &string = Cast<String>(object)) {
         return _string == string->_string;
     }
     return false;
 }
+
+size_t String::hash() const { return std::hash<std::string>{}(_string); }
+
+Strong<Object> String::copy() const { return MakeStrong<String>(_string); }
 
 Value String::enumerator(Value self) const {
     return MakeStrong<StringEnumerator>(self.as<String>());
@@ -102,7 +106,5 @@ std::string StringEnumerator::typeName() const { return "StringEnumerator"; }
 std::string StringEnumerator::description() const {
     return Concat("E(", _string->description(), ")");
 }
-
-bool StringEnumerator::equals(Strong<Object>) const { return false; }
 
 SIF_NAMESPACE_END

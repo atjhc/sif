@@ -74,7 +74,7 @@ class Value {
     Strong<Object> asObject() const;
 
     template <typename T> Strong<T> as() const {
-        return isObject() ? std::dynamic_pointer_cast<T>(asObject()) : nullptr;
+        return isObject() ? Cast<T>(asObject()) : nullptr;
     }
 
     std::string description() const;
