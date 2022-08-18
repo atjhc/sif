@@ -271,7 +271,7 @@ struct BytecodePrinter {
             }
         }
 
-        int width = std::log10f(bytecode.code().size()) + 1;
+        int width = log10f(bytecode.code().size()) + 1;
         if (width < 4)
             width = 4;
 
