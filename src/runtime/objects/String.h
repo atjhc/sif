@@ -17,12 +17,13 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/Copyable.h"
-#include "runtime/Enumerable.h"
 #include "runtime/Object.h"
-#include "runtime/Subscriptable.h"
 #include "runtime/Value.h"
 #include "runtime/objects/Range.h"
+
+#include "runtime/protocols/Copyable.h"
+#include "runtime/protocols/Enumerable.h"
+#include "runtime/protocols/Subscriptable.h"
 
 #include <string>
 

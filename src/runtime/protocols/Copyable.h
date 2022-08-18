@@ -17,17 +17,12 @@
 #pragma once
 
 #include "Common.h"
-#include "Object.h"
-#include "Value.h"
+#include "runtime/Value.h"
 
 SIF_NAMESPACE_BEGIN
 
-struct Enumerable {
-    virtual Value enumerator(Value) const = 0;
-};
-
-struct Enumerator : public Object {
-    virtual Value enumerate() = 0;
+struct Copyable {
+    virtual Strong<Object> copy() const = 0;
 };
 
 SIF_NAMESPACE_END

@@ -18,8 +18,9 @@
 
 #include "Common.h"
 #include "runtime/Object.h"
-#include "runtime/Subscriptable.h"
 #include "runtime/Value.h"
+
+#include "runtime/protocols/Subscriptable.h"
 
 #include <string>
 

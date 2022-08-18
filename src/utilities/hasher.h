@@ -28,11 +28,10 @@ class hasher {
         _value = _value ^ (hasher(value) << 1);
     }
 
-    template <typename T> void combine(const T &value) {
-        hash(value, std::hash<T>{});
-    }
+    template <typename T> void combine(const T &value) { hash(value, std::hash<T>{}); }
 
-    template <typename Head, typename ...Tail> void combine(const Head &value, const Tail... remaining) {
+    template <typename Head, typename... Tail>
+    void combine(const Head &value, const Tail... remaining) {
         hash(value, std::hash<Head>{});
         combine(remaining...);
     }
