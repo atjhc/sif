@@ -19,6 +19,7 @@
 
 #include <climits>
 #include <iomanip>
+#include <cmath>
 
 SIF_NAMESPACE_BEGIN
 
@@ -270,7 +271,7 @@ struct BytecodePrinter {
             }
         }
 
-        int width = log10f(bytecode.code().size()) + 1;
+        int width = std::log10f(bytecode.code().size()) + 1;
         if (width < 4)
             width = 4;
 
