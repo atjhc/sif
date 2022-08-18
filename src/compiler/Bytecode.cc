@@ -246,8 +246,11 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Empty:
         out << "Empty";
         return position + 1;
-    case Opcode::It:
-        out << "It";
+    case Opcode::GetIt:
+        out << "GetIt";
+        return position + 1;
+    case Opcode::SetIt:
+        out << "SetIt";
         return position + 1;
     }
 }
@@ -267,7 +270,7 @@ struct BytecodePrinter {
             }
         }
 
-        int width = (bytecode.code().size() / 10) + 1;
+        int width = log10f(bytecode.code().size()) + 1;
         if (width < 4)
             width = 4;
 

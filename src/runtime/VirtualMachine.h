@@ -68,6 +68,7 @@ class VirtualMachine {
     std::vector<Value> _stack;
     std::vector<CallFrame> _callStack;
     Mapping<std::string, Value> _variables;
+    Value _it;
 };
 
 SIF_NAMESPACE_END

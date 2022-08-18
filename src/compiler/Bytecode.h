@@ -67,7 +67,8 @@ enum class Opcode : uint8_t {
     Show,
     Call,
     Empty,
-    It
+    GetIt,
+    SetIt,
 };
 
 class Bytecode {

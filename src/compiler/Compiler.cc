@@ -289,13 +289,18 @@ void Compiler::visit(const Assignment &assignment) {
         bytecode().add(assignment.location, Opcode::SetSubscript);
     } else {
         assignment.expression->accept(*this);
-        assign(*assignment.variable, lowercase(assignment.variable->token.text));
+        auto name = lowercase(assignment.variable->token.text);
+        if (name == "it") {
+            bytecode().add(assignment.location, Opcode::SetIt);
+        } else {
+            assign(*assignment.variable, name);
+        }
     }
 }
 
 void Compiler::visit(const ExpressionStatement &statement) {
     statement.expression->accept(*this);
-    bytecode().add(statement.location, Opcode::It);
+    bytecode().add(statement.location, Opcode::SetIt);
 }
 
 void Compiler::visit(const Repeat &statement) {
@@ -377,7 +382,12 @@ void Compiler::visit(const Call &call) {
 void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*this); }
 
 void Compiler::visit(const Variable &variable) {
-    resolve(variable, lowercase(variable.token.text));
+    auto name = lowercase(variable.token.text);
+    if (name == "it") {
+        bytecode().add(variable.location, Opcode::GetIt);
+    } else {
+        resolve(variable, name);
+    }
 }
 
 void Compiler::visit(const Binary &binary) {
