@@ -105,9 +105,11 @@ int evaluate(const std::string &name, const std::string &source) {
     }
 
     vm.execute(bytecode);
-    if (vm.error()) {
-        report(name, vm.error().value().location(), source,
-               Concat("runtime error, ", vm.error().value().what()));
+    if (auto error = vm.error()) {
+        std::cerr << name << ":" << error.value().location().lineNumber << ": "
+                  << Concat("runtime error, ", error.value().what()) << std::endl;
+        std::cerr << index_chunk(chunk::line, error.value().location().lineNumber - 1, source).get()
+                  << std::endl;
         return RuntimeFailure;
     }
 

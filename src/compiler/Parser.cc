@@ -394,6 +394,7 @@ Owned<Statement> Parser::parseSimpleStatement() {
 }
 
 Owned<Statement> Parser::parseIf() {
+    auto location = previous().location;
     auto condition = parseExpression();
     match({Token::Type::NewLine});
     consume(Token::Type::Then, Concat("expected ", Quoted("then")));
@@ -434,11 +435,12 @@ Owned<Statement> Parser::parseIf() {
 
     auto ifStatement =
         MakeOwned<If>(std::move(condition), std::move(ifClause), std::move(elseClause));
-    ifStatement->location = ifStatement->condition->location;
+    ifStatement->location = location;
     return ifStatement;
 }
 
 Owned<Statement> Parser::parseRepeat() {
+    auto location = previous().location;
     if (auto token = match({Token::Type::Forever, Token::Type::NewLine})) {
         if (token.value().type == Token::Type::Forever) {
             consumeNewLine();
@@ -446,7 +448,9 @@ Owned<Statement> Parser::parseRepeat() {
         auto statement = parseBlock({Token::Type::End});
         consumeEnd(Token::Type::Repeat);
         consumeNewLine();
-        return MakeOwned<Repeat>(std::move(statement));
+        auto repeat = MakeOwned<Repeat>(std::move(statement));
+        repeat->location = location;
+        return repeat;
     }
     if (auto token = match({Token::Type::While, Token::Type::Until})) {
         bool conditionValue = (token.value().type == Token::Type::While ? true : false);
@@ -454,8 +458,10 @@ Owned<Statement> Parser::parseRepeat() {
         consumeNewLine();
         auto statement = parseBlock({Token::Type::End});
         consumeEnd(Token::Type::Repeat);
-        return MakeOwned<RepeatCondition>(std::move(statement), std::move(condition),
-                                          conditionValue);
+        auto repeat =
+            MakeOwned<RepeatCondition>(std::move(statement), std::move(condition), conditionValue);
+        repeat->location = location;
+        return repeat;
     }
     if (match({Token::Type::For})) {
         auto token = consumeWord();
@@ -466,13 +472,16 @@ Owned<Statement> Parser::parseRepeat() {
         consumeNewLine();
         auto statement = parseBlock({Token::Type::End});
         consumeEnd(Token::Type::Repeat);
-        return MakeOwned<RepeatFor>(std::move(statement), std::move(variable),
-                                    std::move(expression));
+        auto repeat =
+            MakeOwned<RepeatFor>(std::move(statement), std::move(variable), std::move(expression));
+        repeat->location = location;
+        return repeat;
     }
     throw SyntaxError(peek(), "unexpected expression");
 }
 
 Owned<Statement> Parser::parseAssignment() {
+    auto location = previous().location;
     Variable::Scope scope = Variable::Scope::Unspecified;
     if (match({Token::Type::Global})) {
         scope = Variable::Scope::Global;
@@ -494,30 +503,39 @@ Owned<Statement> Parser::parseAssignment() {
     consume(Token::Type::To, Concat("expected ", Quoted("to")));
     auto expression = parseExpression();
     auto variable = MakeOwned<Variable>(token, typeName, scope);
-    return MakeOwned<Assignment>(std::move(variable), std::move(subscripts), std::move(expression));
+    auto assignment =
+        MakeOwned<Assignment>(std::move(variable), std::move(subscripts), std::move(expression));
+    assignment->location = location;
+    return assignment;
 }
 
 Owned<Statement> Parser::parseExit() {
+    auto location = previous().location;
     if (!_parsingRepeat) {
         throw SyntaxError(previous(),
                           Concat("unexpected ", Quoted("exit"), " outside repeat block"));
     }
     consume(Token::Type::Repeat, Concat("expected ", Quoted("repeat")));
-    return MakeOwned<ExitRepeat>();
+    auto exitRepeat = MakeOwned<ExitRepeat>();
+    exitRepeat->location = location;
+    return exitRepeat;
 }
 
 Owned<Statement> Parser::parseNext() {
+    auto location = previous().location;
     if (!_parsingRepeat) {
         throw SyntaxError(previous(),
                           Concat("unexpected ", Quoted("next"), " outside repeat block"));
     }
     consume(Token::Type::Repeat, Concat("expected ", Quoted("repeat")));
-    return MakeOwned<NextRepeat>();
+    auto nextRepeat = MakeOwned<NextRepeat>();
+    nextRepeat->location = location;
+    return nextRepeat;
 }
 
 Owned<Statement> Parser::parseReturn() {
-    Owned<Expression> expression;
     auto location = previous().location;
+    Owned<Expression> expression;
     if (!check({Token::Type::NewLine})) {
         expression = parseExpression();
     }
