@@ -17,102 +17,19 @@
 #pragma once
 
 #include "Common.h"
+#include "Reader.h"
+#include "Token.h"
 #include "ast/Node.h"
 
 #include <iostream>
 
 SIF_NAMESPACE_BEGIN
 
-struct Token {
-    enum class Type {
-        Error,
-        EndOfFile,
-        NewLine,
-        Word,
-        End,
-        Break,
-        Next,
-        Return,
-        If,
-        Then,
-        Else,
-        Function,
-        Repeat,
-        Forever,
-        Not,
-        Is,
-        An,
-        As,
-        In,
-        For,
-        Each,
-        Comma,
-        Colon,
-        LeftParen,
-        RightParen,
-        LeftBracket,
-        RightBracket,
-        LeftBrace,
-        RightBrace,
-        Plus,
-        Minus,
-        Star,
-        Slash,
-        Equal,
-        NotEqual,
-        Bang,
-        Set,
-        To,
-        While,
-        Until,
-        Exit,
-        Local,
-        Global,
-        LessThan,
-        GreaterThan,
-        LessThanOrEqual,
-        GreaterThanOrEqual,
-        And,
-        Or,
-        Carrot,
-        Percent,
-        Arrow,
-        ThreeDots,
-        ClosedRange,
-        StringLiteral,
-        BoolLiteral,
-        IntLiteral,
-        FloatLiteral,
-        EmptyLiteral,
-    };
-
-    Type type;
-    Location location;
-    std::string text;
-
-    Token() : type(Type::EndOfFile) {}
-    Token(Type type, Location location) : type(type), location(location) {}
-
-    bool isWord() const;
-
-    std::string description() const {
-        switch (type) {
-        case Type::Error:
-            return "$error";
-        case Type::EndOfFile:
-            return "$end";
-        case Type::NewLine:
-            return "$nl";
-        default:
-            return text;
-        }
-    }
-};
-
 class Scanner {
   public:
-    Scanner(const char *start, const char *end);
+    Scanner();
 
+    void reset(const std::string &contents);
     Token scan();
 
   private:
@@ -136,6 +53,7 @@ class Scanner {
     const char *_start, *_end, *_current;
     Location _startLocation, _currentLocation;
     int _skipNewlines;
+    Strong<Reader> _reader;
 };
 
 SIF_NAMESPACE_END

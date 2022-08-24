@@ -62,10 +62,10 @@ static inline std::ostream &operator<<(std::ostream &out, const Signature::Term 
 }
 
 Signature Signature::Make(const std::string &format) {
-    auto scanner = MakeStrong<Scanner>(format.c_str(), format.c_str() + format.length());
-    Parser parser(ParserConfig(), scanner);
-    Signature signature;
-    signature = parser.parseSignature();
+    auto reader = MakeStrong<StringReader>(format);
+    auto scanner = MakeStrong<Scanner>();
+    Parser parser(ParserConfig(), scanner, reader);
+    Signature signature = parser.parseSignature();
     return signature;
 }
 

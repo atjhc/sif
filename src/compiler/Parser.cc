@@ -38,17 +38,25 @@ static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
 }
 #pragma clang diagnostic pop
 
-Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner)
-    : _config(config), _scanner(scanner) {
+Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner, Strong<Reader> reader)
+    : _config(config), _scanner(scanner), _reader(reader) {
     _parsingRepeat = false;
     _recording = false;
     _index = 0;
     _depth = 0;
+    _parsingDepth = 0;
 }
 
 Parser::~Parser() {}
 
 Owned<Statement> Parser::parse() {
+    auto error = _reader->read(0);
+    if (error) {
+        _errors.push_back(ParseError(Token(), error.value().what()));
+        return nullptr;
+    }
+    _scanner->reset(_reader->contents());
+
     auto result = parseBlock();
     if (_errors.size() > 0) {
         return nullptr;
@@ -56,9 +64,18 @@ Owned<Statement> Parser::parse() {
     return result;
 }
 
+Signature Parser::parseSignature() {
+    auto error = _reader->read(0);
+    if (error) {
+        throw ParseError(Token(), error.value().what());
+    }
+    _scanner->reset(_reader->contents());
+    return signature();
+}
+
 void Parser::declare(const Signature &signature) { _signatureDecls.push_back({signature, _depth}); }
 
-const std::vector<SyntaxError> &Parser::errors() { return _errors; }
+const std::vector<ParseError> &Parser::errors() { return _errors; }
 
 #pragma mark - Utilities
 
@@ -80,21 +97,34 @@ Token Parser::consumeWord(const std::string &message) {
     if (peek().isWord()) {
         return advance();
     }
-    throw SyntaxError(peek(), message);
+    throw ParseError(peek(), message);
 }
 
 Token Parser::consume(Token::Type type, const std::string &errorMessage) {
     if (check({type}))
         return advance();
-    throw SyntaxError(peek(), errorMessage);
+    throw ParseError(peek(), errorMessage);
 }
 
-Token Parser::consumeNewLine() {
-    if (isAtEnd())
-        return peek();
-    if (check({Token::Type::NewLine}))
-        return advance();
-    throw SyntaxError(peek(), "expected new line or end of script");
+bool Parser::consumeNewLine() {
+    if (isAtEnd() && _parsingDepth > 0 && _reader->readable()) {
+        auto error = _reader->read(_parsingDepth);
+        if (error) {
+            throw ParseError(Token(), error.value().what());
+        }
+        _scanner->reset(_reader->contents());
+        _tokens[_index].type = Token::Type::NewLine;
+        advance();
+        return true;
+    }
+    if (isAtEnd()) {
+        return true;
+    }
+    if (check({Token::Type::NewLine})) {
+        advance();
+        return true;
+    }
+    return false;
 }
 
 Token Parser::consumeEnd(Token::Type type) {
@@ -291,7 +321,7 @@ Owned<Statement> Parser::parseBlock(const std::initializer_list<Token::Type> &en
         }
         try {
             statements.push_back(parseStatement());
-        } catch (const SyntaxError &error) {
+        } catch (const ParseError &error) {
             _errors.push_back(error);
             synchronize();
         }
@@ -320,7 +350,7 @@ Owned<Statement> Parser::parseStatement() {
     return statement;
 }
 
-Signature Parser::parseSignature() {
+Signature Parser::signature() {
     Signature signature;
     while (peek().isWord() || peek().type == Token::Type::LeftParen ||
            peek().type == Token::Type::LeftBrace) {
@@ -356,7 +386,7 @@ Signature Parser::parseSignature() {
         }
     }
     if (signature.terms.size() == 0) {
-        throw SyntaxError(peek(), Concat("expected a word, ", Quoted("("), ", or ", Quoted("{")));
+        throw ParseError(peek(), Concat("expected a word, ", Quoted("("), ", or ", Quoted("{")));
     }
     if (match({Token::Type::Arrow})) {
         signature.typeName = consumeWord("expected a type name");
@@ -365,12 +395,15 @@ Signature Parser::parseSignature() {
 }
 
 Owned<Statement> Parser::parseFunction() {
-    auto signature = parseSignature();
-    consumeNewLine();
+    _parsingDepth++;
+    auto signature = this->signature();
+    if (!consumeNewLine()) {
+        throw ParseError(peek(), "expected new line or end of script");
+    }
     declare(signature);
-
     beginScope();
     auto statement = parseBlock({Token::Type::End});
+    _parsingDepth--;
     consumeEnd(Token::Type::Function);
     endScope();
 
@@ -396,34 +429,42 @@ Owned<Statement> Parser::parseSimpleStatement() {
 Owned<Statement> Parser::parseIf() {
     auto location = previous().location;
     auto condition = parseExpression();
-    match({Token::Type::NewLine});
+
+    _parsingDepth++;
+    consumeNewLine();
     consume(Token::Type::Then, Concat("expected ", Quoted("then")));
 
     Optional<Token> token;
     Owned<Statement> ifClause = nullptr;
     Owned<Statement> elseClause = nullptr;
 
-    if (match({Token::Type::NewLine})) {
+    if (consumeNewLine()) {
         ifClause = parseBlock({Token::Type::End, Token::Type::Else});
         if (!(token = match({Token::Type::End, Token::Type::Else}))) {
-            throw SyntaxError(peek(), Concat("expected ", Quoted("end"), " or ", Quoted("else")));
+            throw ParseError(peek(), Concat("expected ", Quoted("end"), " or ", Quoted("else")));
         }
         if (token.value().type == Token::Type::End) {
             match({Token::Type::If});
+            _parsingDepth--;
             consumeNewLine();
         }
     } else {
+        _parsingDepth--;
         ifClause = parseSimpleStatement();
-        match({Token::Type::NewLine});
+        consumeNewLine();
     }
 
     if ((token.has_value() && token.value().type == Token::Type::Else) ||
         (!token.has_value() && match({Token::Type::Else}))) {
-        if (match({Token::Type::NewLine})) {
+        if (consumeNewLine()) {
             elseClause = parseBlock({Token::Type::End});
             consumeEnd(Token::Type::If);
-            consumeNewLine();
+            _parsingDepth--;
+            if (!consumeNewLine()) {
+                throw ParseError(peek(), "expected new line or end of script");
+            }
         } else {
+            _parsingDepth--;
             if (match({Token::Type::If})) {
                 elseClause = parseIf();
             } else {
@@ -441,23 +482,30 @@ Owned<Statement> Parser::parseIf() {
 
 Owned<Statement> Parser::parseRepeat() {
     auto location = previous().location;
-    if (auto token = match({Token::Type::Forever, Token::Type::NewLine})) {
-        if (token.value().type == Token::Type::Forever) {
-            consumeNewLine();
+    _parsingDepth++;
+    Optional<Token> token;
+    if (consumeNewLine() || (token = match({Token::Type::Forever}))) {
+        if (token.has_value()) {
+            if (!consumeNewLine()) {
+                throw ParseError(peek(), "expected new line");
+            }
         }
         auto statement = parseBlock({Token::Type::End});
         consumeEnd(Token::Type::Repeat);
-        consumeNewLine();
+        _parsingDepth--;
         auto repeat = MakeOwned<Repeat>(std::move(statement));
         repeat->location = location;
         return repeat;
     }
-    if (auto token = match({Token::Type::While, Token::Type::Until})) {
+    if ((token = match({Token::Type::While, Token::Type::Until}))) {
         bool conditionValue = (token.value().type == Token::Type::While ? true : false);
         auto condition = parseExpression();
-        consumeNewLine();
+        if (!consumeNewLine()) {
+            throw ParseError(peek(), "expected new line or end of script");
+        }
         auto statement = parseBlock({Token::Type::End});
         consumeEnd(Token::Type::Repeat);
+        _parsingDepth--;
         auto repeat =
             MakeOwned<RepeatCondition>(std::move(statement), std::move(condition), conditionValue);
         repeat->location = location;
@@ -469,15 +517,18 @@ Owned<Statement> Parser::parseRepeat() {
         variable->location = token.location;
         consume(Token::Type::In, Concat("expected ", Quoted("in")));
         auto expression = parseList();
-        consumeNewLine();
+        if (!consumeNewLine()) {
+            throw ParseError(peek(), "expected new line or end of script");
+        }
         auto statement = parseBlock({Token::Type::End});
         consumeEnd(Token::Type::Repeat);
+        _parsingDepth--;
         auto repeat =
             MakeOwned<RepeatFor>(std::move(statement), std::move(variable), std::move(expression));
         repeat->location = location;
         return repeat;
     }
-    throw SyntaxError(peek(), "unexpected expression");
+    throw ParseError(peek(), "unexpected expression");
 }
 
 Owned<Statement> Parser::parseAssignment() {
@@ -512,8 +563,8 @@ Owned<Statement> Parser::parseAssignment() {
 Owned<Statement> Parser::parseExit() {
     auto location = previous().location;
     if (!_parsingRepeat) {
-        throw SyntaxError(previous(),
-                          Concat("unexpected ", Quoted("exit"), " outside repeat block"));
+        throw ParseError(previous(),
+                         Concat("unexpected ", Quoted("exit"), " outside repeat block"));
     }
     consume(Token::Type::Repeat, Concat("expected ", Quoted("repeat")));
     auto exitRepeat = MakeOwned<ExitRepeat>();
@@ -524,8 +575,8 @@ Owned<Statement> Parser::parseExit() {
 Owned<Statement> Parser::parseNext() {
     auto location = previous().location;
     if (!_parsingRepeat) {
-        throw SyntaxError(previous(),
-                          Concat("unexpected ", Quoted("next"), " outside repeat block"));
+        throw ParseError(previous(),
+                         Concat("unexpected ", Quoted("next"), " outside repeat block"));
     }
     consume(Token::Type::Repeat, Concat("expected ", Quoted("repeat")));
     auto nextRepeat = MakeOwned<NextRepeat>();
@@ -754,15 +805,15 @@ Owned<Expression> Parser::parseCall() {
         } else if (primaries.size() == 0) {
             return parseSubscript();
         }
-        throw SyntaxError(startToken, "no matching function for expression");
+        throw ParseError(startToken, "no matching function for expression");
     }
 
     // Partial match of multiple signatures.
     if (candidates.size() > 1) {
         auto ambiguousList = Map(
             candidates, [](auto &&candidate) { return Concat("  ", candidate.signature.name()); });
-        throw SyntaxError(startToken, Concat("ambiguous expression. Possible candidates:\n",
-                                             Join(ambiguousList, "\n")));
+        throw ParseError(startToken, Concat("ambiguous expression. Possible candidates:\n",
+                                            Join(ambiguousList, "\n")));
     }
 
     const auto &candidate = candidates.back();
@@ -834,7 +885,7 @@ Owned<Expression> Parser::parsePrimary() {
         return variable;
     }
 
-    throw SyntaxError(peek(), Concat("unexpected ", Quoted(peek().description())));
+    throw ParseError(peek(), Concat("unexpected ", Quoted(peek().description())));
 }
 
 Owned<Expression> Parser::parseGrouping() {

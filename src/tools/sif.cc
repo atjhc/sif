@@ -18,6 +18,7 @@
 #include "ast/PrettyPrinter.h"
 #include "compiler/Compiler.h"
 #include "compiler/Parser.h"
+#include "compiler/Reader.h"
 #include "runtime/VirtualMachine.h"
 #include "runtime/modules/Core.h"
 #include "runtime/objects/Dictionary.h"
@@ -55,6 +56,46 @@ static bool printBytecode = false;
 
 VirtualMachine vm;
 
+class FileReader : public Reader {
+  public:
+    FileReader(const std::string &path) : _path(path) {}
+
+    bool readable() const override { return false; }
+
+    Optional<ReadError> read(int scopeDepth) override {
+        std::ifstream file(_path);
+        if (!file) {
+            return ReadError(Concat("can't open file ", Quoted(_path)));
+        }
+        std::ostringstream ss;
+        ss << file.rdbuf();
+        _contents = ss.str();
+        return None;
+    }
+
+    const std::string &contents() const override { return _contents; }
+
+  private:
+    std::string _path;
+    std::string _contents;
+};
+
+class REPLReader : public Reader {
+  public:
+    bool readable() const override { return !std::cin.eof(); }
+
+    Optional<ReadError> read(int scopeDepth) override {
+        std::cout << std::string(scopeDepth + 1, '>') << " ";
+        std::getline(std::cin, _contents);
+        return None;
+    }
+
+    const std::string &contents() const override { return _contents; }
+
+  private:
+    std::string _contents;
+};
+
 void report(const std::string &name, Location location, const std::string &source,
             const std::string &message) {
     std::cerr << name << ":" << location << ": " << message << std::endl;
@@ -62,13 +103,14 @@ void report(const std::string &name, Location location, const std::string &sourc
     std::cerr << std::string(location.position - 1, ' ') << "^" << std::endl;
 }
 
-int evaluate(const std::string &name, const std::string &source) {
-    auto scanner = MakeStrong<Scanner>(source.c_str(), source.c_str() + source.length());
+int evaluate(const std::string &name, Strong<Reader> reader) {
+    auto scanner = MakeStrong<Scanner>();
+
     ParserConfig parserConfig;
 #if defined(DEBUG)
     parserConfig.enableTracing = traceParsing;
 #endif
-    Parser parser(parserConfig, scanner);
+    Parser parser(parserConfig, scanner, reader);
 
     Core core;
     for (const auto &signature : core.signatures()) {
@@ -78,7 +120,8 @@ int evaluate(const std::string &name, const std::string &source) {
     auto statement = parser.parse();
     if (!statement) {
         for (auto error : parser.errors()) {
-            report(name, error.token().location, source, Concat("parser error, ", error.what()));
+            report(name, error.token().location, reader->contents(),
+                   Concat("parser error, ", error.what()));
         }
         return ParseFailure;
     }
@@ -94,7 +137,8 @@ int evaluate(const std::string &name, const std::string &source) {
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
         for (auto error : compiler.errors()) {
-            report(name, error.node().location, source, Concat("compiler error, ", error.what()));
+            report(name, error.node().location, reader->contents(),
+                   Concat("compiler error, ", error.what()));
         }
         return CompileFailure;
     }
@@ -108,7 +152,9 @@ int evaluate(const std::string &name, const std::string &source) {
     if (auto error = vm.error()) {
         std::cerr << name << ":" << error.value().location().lineNumber << ": "
                   << Concat("runtime error, ", error.value().what()) << std::endl;
-        std::cerr << index_chunk(chunk::line, error.value().location().lineNumber - 1, source).get()
+        std::cerr << index_chunk(chunk::line, error.value().location().lineNumber - 1,
+                                 reader->contents())
+                         .get()
                   << std::endl;
         return RuntimeFailure;
     }
@@ -117,35 +163,20 @@ int evaluate(const std::string &name, const std::string &source) {
 }
 
 static int repl(const std::vector<std::string> &arguments) {
-    std::string line;
-
-    std::cout << "> ";
-    while (std::getline(std::cin, line)) {
-        if (line.empty())
-            continue;
-        evaluate("<stdin>", line);
-        std::cout << "> ";
+    while (!std::cin.eof()) {
+        evaluate("<stdin>", MakeStrong<REPLReader>());
     }
-
     return 0;
 }
 
 static int run(const std::vector<std::string> &arguments) {
     std::ostringstream ss;
     ss << std::cin.rdbuf();
-    return evaluate("<stdin>", ss.str());
+    return evaluate("<stdin>", MakeStrong<StringReader>(ss.str()));
 }
 
 static int run(const std::string &fileName, const std::vector<std::string> &arguments) {
-    std::ifstream file(fileName);
-    if (!file) {
-        std::cerr << "can't open file " << Quoted(fileName) << std::endl;
-    }
-
-    std::ostringstream ss;
-    ss << file.rdbuf();
-
-    return evaluate(fileName, ss.str());
+    return evaluate(fileName, MakeStrong<FileReader>(fileName));
 }
 
 int usage(int argc, char *argv[]) {

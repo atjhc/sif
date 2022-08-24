@@ -24,7 +24,6 @@ bool Token::isWord() const {
     switch (type) {
     case Type::An:
     case Type::And:
-    case Type::Each:
     case Type::Else:
     case Type::End:
     case Type::Exit:
@@ -53,8 +52,13 @@ bool Token::isWord() const {
     }
 }
 
-Scanner::Scanner(const char *start, const char *end)
-    : _start(start), _end(end), _current(start), _currentLocation{1, 1}, _skipNewlines(0) {}
+Scanner::Scanner() : _start(0), _end(0), _current(0), _currentLocation{1, 1}, _skipNewlines(0) {}
+
+void Scanner::reset(const std::string &contents) {
+    _start = _current = &contents[0];
+    _end = &contents[contents.length()];
+    _currentLocation.position = 1;
+}
 
 Token Scanner::scan() {
     skipWhitespace();
@@ -183,8 +187,6 @@ Token::Type Scanner::wordType() {
     case 'e':
         if (_current - _start > 1) {
             switch (std::tolower(_start[1])) {
-            case 'a':
-                return checkKeyword(2, 2, "ch", Token::Type::Each);
             case 'l':
                 return checkKeyword(2, 2, "se", Token::Type::Else);
             case 'n':

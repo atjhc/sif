@@ -28,31 +28,6 @@
 
 SIF_NAMESPACE_BEGIN
 
-/*
-
-program: block
-block: statement*
-statement: if | repeat | simpleStatement
-simpleStatement: expression NL | set NL | EXIT REPEAT NL | NEXT REPEAT NL
-set: SET variable TO expression
-repeat: REPEAT { [FOREVER] | WHILE expression | UNTIL expression } NL block NL END [REPEAT]
-if: IF expression [NL] THEN { singleThen | NL multiThen }
-singleThen: simpleStatement [ [NL] ELSE else ]
-multiThen: block { END [IF] NL | else }
-else: ELSE { statement | NL block END [IF] NL }
-
-expression: clause
-clause: equality ((AND | OR) equality)*
-equality: comparison (("=" | "!=" | "is" | "is not") comparison)*
-comparison: term (("<" | ">" | "<=" | ">=") term)*
-term: factor (("+" | "-") factor)*
-factor: exponent (("*" | "/" | "%") exponent)*
-exponent: unary ("^" unary)*
-unary: primary | ("!" | NOT) unary
-primary: NUMBER | STRING | TRUE | FALSE | EMPTY | "(" expression ")"
-
-*/
-
 struct ParserConfig {
     std::string fileName;
     std::ostream &cerr;
@@ -67,7 +42,7 @@ struct ParserConfig {
 
 class Parser {
   public:
-    Parser(const ParserConfig &config, Strong<Scanner> scanner);
+    Parser(const ParserConfig &config, Strong<Scanner> scanner, Strong<Reader> reader);
     ~Parser();
 
     Owned<Statement> parse();
@@ -75,7 +50,7 @@ class Parser {
 
     void declare(const Signature &signature);
 
-    const std::vector<SyntaxError> &errors();
+    const std::vector<ParseError> &errors();
 
   private:
     bool isAtEnd();
@@ -84,7 +59,9 @@ class Parser {
     Optional<Token> matchWord();
     Token consume(Token::Type type, const std::string &error);
     Token consumeEnd(Token::Type type);
-    Token consumeNewLine();
+
+    bool consumeNewLine();
+
     Token consumeWord(const std::string &message = "expected a word");
     Token scan();
     Token advance();
@@ -102,6 +79,8 @@ class Parser {
 #if defined(DEBUG)
     void _trace(const std::string &message);
 #endif
+
+    Signature signature();
 
     Owned<Statement> parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
     Owned<Statement> parseStatement();
@@ -134,7 +113,9 @@ class Parser {
 
     ParserConfig _config;
     Strong<Scanner> _scanner;
-    std::vector<SyntaxError> _errors;
+    Strong<Reader> _reader;
+
+    std::vector<ParseError> _errors;
 
     struct SignatureDecl {
         Signature signature;
@@ -150,6 +131,7 @@ class Parser {
 
     bool _recording;
     bool _parsingRepeat;
+    int _parsingDepth;
 };
 
 SIF_NAMESPACE_END

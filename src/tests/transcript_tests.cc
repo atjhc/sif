@@ -75,8 +75,9 @@ TEST_CASE(TranscriptTests, All) {
         auto expectedResult = gather(source, "expect");
         auto input = gather(source, "input");
 
-        auto scanner = MakeStrong<Scanner>(source.c_str(), source.c_str() + source.length());
-        Parser parser(ParserConfig(), scanner);
+        auto scanner = MakeStrong<Scanner>();
+        auto reader = MakeStrong<StringReader>(source);
+        Parser parser(ParserConfig(), scanner, reader);
 
         for (const auto &signature : Core().signatures()) {
             parser.declare(signature);

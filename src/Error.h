@@ -17,14 +17,20 @@
 #pragma once
 
 #include "Common.h"
+
 #include "ast/Node.h"
-#include "compiler/Scanner.h"
+#include "compiler/Token.h"
 
 SIF_NAMESPACE_BEGIN
 
-class SyntaxError : public std::runtime_error {
+class ReadError : public std::runtime_error {
   public:
-    SyntaxError(const Token &token, const std::string &what)
+    ReadError(const std::string &what) : std::runtime_error(what) {}
+};
+
+class ParseError : public std::runtime_error {
+  public:
+    ParseError(const Token &token, const std::string &what)
         : std::runtime_error(what), _token(token) {}
 
     const Token &token() const { return _token; }

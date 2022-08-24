@@ -28,10 +28,10 @@ static inline std::ostream &operator<<(std::ostream &out, Token::Type tokenType)
 }
 
 TEST_CASE(ScannerTests, All) {
-    const char str[] = "this is a 100 list of + tokens - if else (then) # this is a comment";
-    const char *end = str + sizeof(str) - 1;
+    std::string source = "this is a 100 list of + tokens - if else (then) # this is a comment";
 
-    Scanner scanner(str, end);
+    Scanner scanner;
+    scanner.reset(source);
 
     auto expectedTokens = std::vector<Token::Type>{
         Token::Type::Word,       Token::Type::Is,         Token::Type::An,
