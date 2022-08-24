@@ -29,14 +29,13 @@ SIF_NAMESPACE_BEGIN
 #define trace(msg)
 #endif
 
+#if defined(DEBUG)
 static inline std::string Describe(const Token &token) { return token.description(); }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-function"
 static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
     return out << Describe(token);
 }
-#pragma clang diagnostic pop
+#endif
 
 Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner, Strong<Reader> reader)
     : _config(config), _scanner(scanner), _reader(reader) {
