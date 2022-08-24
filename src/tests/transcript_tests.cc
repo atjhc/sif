@@ -32,7 +32,7 @@ static inline std::ostream &operator<<(std::ostream &out, const Optional<Runtime
     return out << (error.has_value() ? error.value().what() : "(none)");
 }
 
-static inline std::ostream &operator<<(std::ostream &out, const SyntaxError &error) {
+static inline std::ostream &operator<<(std::ostream &out, const ParseError &error) {
     return out << error.token().location << ": " << error.what();
 }
 
