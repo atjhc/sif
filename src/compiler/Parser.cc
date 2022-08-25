@@ -48,7 +48,7 @@ Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner, Strong<Reade
 
 Parser::~Parser() {}
 
-Owned<Statement> Parser::parse() {
+Owned<Statement> Parser::statement() {
     auto error = _reader->read(0);
     if (error) {
         _errors.push_back(ParseError(Token(), error.value().what()));
@@ -63,13 +63,15 @@ Owned<Statement> Parser::parse() {
     return result;
 }
 
-Signature Parser::parseSignature() {
+Optional<Signature> Parser::signature() {
     auto error = _reader->read(0);
     if (error) {
-        throw ParseError(Token(), error.value().what());
+        _errors.push_back(ParseError(Token(), error.value().what()));
+        return None;
     }
     _scanner->reset(_reader->contents());
-    return signature();
+
+    return parseSignature();
 }
 
 void Parser::declare(const Signature &signature) { _signatureDecls.push_back({signature, _depth}); }
@@ -349,7 +351,7 @@ Owned<Statement> Parser::parseStatement() {
     return statement;
 }
 
-Signature Parser::signature() {
+Optional<Signature> Parser::parseSignature() {
     Signature signature;
     while (peek().isWord() || peek().type == Token::Type::LeftParen ||
            peek().type == Token::Type::LeftBrace) {
@@ -395,18 +397,18 @@ Signature Parser::signature() {
 
 Owned<Statement> Parser::parseFunction() {
     _parsingDepth++;
-    auto signature = this->signature();
+    auto signature = this->parseSignature();
     if (!consumeNewLine()) {
         throw ParseError(peek(), "expected new line or end of script");
     }
-    declare(signature);
+    declare(signature.value());
     beginScope();
     auto statement = parseBlock({Token::Type::End});
     _parsingDepth--;
     consumeEnd(Token::Type::Function);
     endScope();
 
-    return MakeOwned<FunctionDecl>(signature, std::move(statement));
+    return MakeOwned<FunctionDecl>(signature.value(), std::move(statement));
 }
 
 Owned<Statement> Parser::parseSimpleStatement() {
@@ -809,8 +811,10 @@ Owned<Expression> Parser::parseCall() {
 
     // Partial match of multiple signatures.
     if (candidates.size() > 1) {
-        auto ambiguousList = Map(
-            candidates, [](auto &&candidate) { return Concat("  ", candidate.signature.name()); });
+        std::vector<std::string> ambiguousList;
+        for (const auto &candidate : candidates) {
+            ambiguousList.push_back(Concat("  ", candidate.signature.name()));
+        }
         throw ParseError(startToken, Concat("ambiguous expression. Possible candidates:\n",
                                             Join(ambiguousList, "\n")));
     }

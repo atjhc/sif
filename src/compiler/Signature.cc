@@ -61,12 +61,15 @@ static inline std::ostream &operator<<(std::ostream &out, const Signature::Term 
     return out;
 }
 
-Signature Signature::Make(const std::string &format) {
+Result<Signature, ParseError> Signature::Make(const std::string &format) {
     auto reader = MakeStrong<StringReader>(format);
     auto scanner = MakeStrong<Scanner>();
     Parser parser(ParserConfig(), scanner, reader);
-    Signature signature = parser.parseSignature();
-    return signature;
+    auto signature = parser.signature();
+    if (!signature) {
+        return Error(parser.errors()[0]);
+    }
+    return signature.value();
 }
 
 std::string Signature::name() const {

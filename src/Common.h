@@ -127,18 +127,6 @@ std::vector<ValueType<Iterable>> Filter(Iterable &container, Functor f) {
     return result;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-template <typename Iterable, typename Functor>
-std::vector<typename std::result_of<Functor(ValueType<Iterable>)>::type>
-Map(const Iterable &container, Functor f) {
-    std::vector<typename std::result_of<Functor(ValueType<Iterable>)>::type> values;
-    values.reserve(std::distance(container.begin(), container.end()));
-    std::transform(container.begin(), container.end(), std::back_inserter(values), f);
-    return values;
-}
-#pragma GCC diagnostic pop
-
 struct Location {
     unsigned int position = 1;
     unsigned int lineNumber = 1;

@@ -37,7 +37,7 @@ struct Signature {
     };
     using Term = std::variant<Token, Choice, Argument, Option>;
 
-    static Signature Make(const std::string &format);
+    static Result<Signature, ParseError> Make(const std::string &format);
 
     std::string name() const;
     std::string description() const;

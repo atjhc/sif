@@ -82,7 +82,7 @@ TEST_CASE(TranscriptTests, All) {
         for (const auto &signature : Core().signatures()) {
             parser.declare(signature);
         }
-        auto statement = parser.parse();
+        auto statement = parser.statement();
         ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl
                                << Join(parser.errors(), "\n");
         if (!statement)

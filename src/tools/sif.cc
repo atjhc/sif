@@ -117,7 +117,7 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
         parser.declare(signature);
     }
 
-    auto statement = parser.parse();
+    auto statement = parser.statement();
     if (!statement) {
         for (auto error : parser.errors()) {
             report(name, error.token().location, reader->contents(),

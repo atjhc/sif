@@ -379,7 +379,11 @@ Mapping<std::string, Strong<Native>> _functions = []() -> Mapping<std::string, S
 std::vector<Signature> Core::signatures() const {
     std::vector<Signature> signatures;
     for (const auto &pair : _functions) {
-        signatures.push_back(Signature::Make(pair.first));
+        if (auto signature = Signature::Make(pair.first)) {
+            signatures.push_back(signature.value());
+        } else {
+            Abort(signature.error().what());
+        }
     }
     return signatures;
 }

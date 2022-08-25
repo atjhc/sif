@@ -45,11 +45,12 @@ class Parser {
     Parser(const ParserConfig &config, Strong<Scanner> scanner, Strong<Reader> reader);
     ~Parser();
 
-    Owned<Statement> parse();
-    Signature parseSignature();
+    Owned<Statement> statement();
+    Optional<Signature> signature();
 
     void declare(const Signature &signature);
 
+    const std::vector<Signature> &declarations();
     const std::vector<ParseError> &errors();
 
   private:
@@ -80,7 +81,7 @@ class Parser {
     void _trace(const std::string &message);
 #endif
 
-    Signature signature();
+    Optional<Signature> parseSignature();
 
     Owned<Statement> parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
     Owned<Statement> parseStatement();

@@ -47,7 +47,7 @@ static Strong<Statement> test(const std::vector<std::string> &source) {
     auto reader = MakeStrong<TestReader>(source.begin(), source.end());
     auto scanner = MakeStrong<Scanner>();
     auto parser = MakeStrong<Parser>(ParserConfig(), scanner, reader);
-    return parser->parse();
+    return parser->statement();
 }
 
 TEST_CASE(ReaderTests, If) {
@@ -149,7 +149,7 @@ TEST_CASE(ReaderTests, Error) {
     auto reader = MakeStrong<ErrorReader>();
     auto scanner = MakeStrong<Scanner>();
     auto parser = MakeStrong<Parser>(ParserConfig(), scanner, reader);
-    auto result = parser->parse();
+    auto result = parser->statement();
 
     ASSERT_NULL(result);
     ASSERT_EQ(parser->errors().size(), 1);
