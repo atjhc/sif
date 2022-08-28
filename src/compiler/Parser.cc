@@ -162,8 +162,12 @@ bool Parser::isAtEnd() { return peek().type == Token::Type::EndOfFile; }
 Token Parser::scan() {
     auto token = _scanner->scan();
     _tokens.push_back(token);
-    trace(Concat("Scanned ", Describe(token)));
-    trace(Concat("Tokens [", Join(_tokens, ", "), "] ", _index));
+    trace(Concat("Scanned: ", Describe(token)));
+#if defined(DEBUG)
+    if (_config.enableTracing) {
+        _trace(_traceTokens());
+    }
+#endif
     return _tokens.back();
 }
 
@@ -243,11 +247,21 @@ void Parser::endScope() {
 }
 
 #if defined(DEBUG)
-void Parser::_trace(const std::string &message) {
+
+void Parser::_trace(const std::string &message) const {
     if (_config.enableTracing) {
         std::cout << message << std::endl;
     }
 }
+
+std::string Parser::_traceTokens() const {
+    std::ostringstream str;
+    for (auto i = _tokens.begin(); i < _tokens.end(); i++) {
+        str << (i - _tokens.begin() == _index ? " . " : " ") << *i;
+    }
+    return str.str();
+}
+
 #endif
 
 #pragma mark - Grammar
@@ -977,11 +991,23 @@ Result<Owned<Expression>, ParseError> Parser::parseCall() {
     auto startToken = peek();
     std::vector<Owned<Expression>> primaries;
     while (candidates.size() > 0 && isPrimary(peek())) {
-        trace(Concat("Checking ", Quoted(peek().text)));
         candidates = Filter(candidates, [&](Candidate &candidate) {
             return checkTerm(peek(), primaries.size(), candidate);
         });
-        trace(Concat("Candidates: ", candidates.size()));
+#if defined(DEBUG)
+        if (_config.enableTracing && candidates.size() > 1) {
+            _trace("Candidates: ");
+            std::vector<std::string> candidateNames;
+            for (const auto &candidate : candidates) {
+                candidateNames.push_back(Concat("  ", candidate.signature.name()));
+                if (candidateNames.size() == 5) {
+                    candidateNames.push_back(Concat("  ... (", candidates.size() - candidateNames.size(), " more)"));
+                    break;
+                }
+            }
+            _trace(Join(candidateNames, "\n"));
+        }
+#endif
         if (candidates.size() == 1 && candidates[0].isComplete()) {
             // Special case lower parsing precedence for trailing arguments.
             // This allows chaining calls and right associativity.

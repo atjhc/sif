@@ -79,7 +79,8 @@ class Parser {
     void endScope();
 
 #if defined(DEBUG)
-    void _trace(const std::string &message);
+    void _trace(const std::string &message) const;
+    std::string _traceTokens() const;
 #endif
 
     Result<Signature, ParseError> parseSignature();
