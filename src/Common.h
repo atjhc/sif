@@ -54,8 +54,6 @@ inline constexpr std::nullopt_t None = std::nullopt;
 
 template <class E> tl::unexpected<E> Error(const E &error) { return tl::unexpected(error); }
 
-template <class E> tl::unexpected<E> Error(E &&error) { return tl::unexpected(std::move(error)); }
-
 template <class T, class... Args>
 std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T>> MakeOwned(Args &&...args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));

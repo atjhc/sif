@@ -58,18 +58,19 @@ class Parser {
     bool check(const std::initializer_list<Token::Type> &types);
     Optional<Token> match(const std::initializer_list<Token::Type> &types);
     Optional<Token> matchWord();
-    Token consume(Token::Type type, const std::string &error);
-    Token consumeEnd(Token::Type type);
+
+    Optional<Token> consume(Token::Type type);
+    Optional<Token> consumeEnd(Token::Type type);
+    Optional<Token> consumeWord();
 
     bool consumeNewLine();
 
-    Token consumeWord(const std::string &message = "expected a word");
     Token scan();
     Token advance();
     Token peek();
     Token previous();
-    void synchronize();
 
+    void synchronize();
     void checkpoint();
     void rewind();
     void commit();
@@ -81,36 +82,37 @@ class Parser {
     void _trace(const std::string &message);
 #endif
 
-    Optional<Signature> parseSignature();
+    Result<Signature, ParseError> parseSignature();
 
-    Owned<Statement> parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
-    Owned<Statement> parseStatement();
-    Owned<Statement> parseSimpleStatement();
-    Owned<Statement> parseFunction();
-    Owned<Statement> parseIf();
-    Owned<Statement> parseRepeat();
-    Owned<Statement> parseAssignment();
-    Owned<Statement> parseExit();
-    Owned<Statement> parseNext();
-    Owned<Statement> parseReturn();
-    Owned<Statement> parseExpressionStatement();
+    Result<Owned<Statement>, ParseError>
+    parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
+    Result<Owned<Statement>, ParseError> parseStatement();
+    Result<Owned<Statement>, ParseError> parseSimpleStatement();
+    Result<Owned<Statement>, ParseError> parseFunction();
+    Result<Owned<Statement>, ParseError> parseIf();
+    Result<Owned<Statement>, ParseError> parseRepeat();
+    Result<Owned<Statement>, ParseError> parseAssignment();
+    Result<Owned<Statement>, ParseError> parseExit();
+    Result<Owned<Statement>, ParseError> parseNext();
+    Result<Owned<Statement>, ParseError> parseReturn();
+    Result<Owned<Statement>, ParseError> parseExpressionStatement();
 
-    Owned<Expression> parseExpression();
-    Owned<Expression> parseClause();
-    Owned<Expression> parseEquality();
-    Owned<Expression> parseComparison();
-    Owned<Expression> parseList();
-    Owned<Expression> parseRange();
-    Owned<Expression> parseTerm();
-    Owned<Expression> parseFactor();
-    Owned<Expression> parseExponent();
-    Owned<Expression> parseUnary();
-    Owned<Expression> parseCall();
-    Owned<Expression> parseSubscript();
-    Owned<Expression> parsePrimary();
-    Owned<Expression> parseGrouping();
-    Owned<Expression> parseListLiteral();
-    Owned<Expression> parseDictionaryLiteral();
+    Result<Owned<Expression>, ParseError> parseExpression();
+    Result<Owned<Expression>, ParseError> parseClause();
+    Result<Owned<Expression>, ParseError> parseEquality();
+    Result<Owned<Expression>, ParseError> parseComparison();
+    Result<Owned<Expression>, ParseError> parseList();
+    Result<Owned<Expression>, ParseError> parseRange();
+    Result<Owned<Expression>, ParseError> parseTerm();
+    Result<Owned<Expression>, ParseError> parseFactor();
+    Result<Owned<Expression>, ParseError> parseExponent();
+    Result<Owned<Expression>, ParseError> parseUnary();
+    Result<Owned<Expression>, ParseError> parseCall();
+    Result<Owned<Expression>, ParseError> parseSubscript();
+    Result<Owned<Expression>, ParseError> parsePrimary();
+    Result<Owned<Expression>, ParseError> parseGrouping();
+    Result<Owned<Expression>, ParseError> parseListLiteral();
+    Result<Owned<Expression>, ParseError> parseDictionaryLiteral();
 
     ParserConfig _config;
     Strong<Scanner> _scanner;
