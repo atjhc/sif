@@ -31,7 +31,7 @@ static std::vector<ParseError> errors(const std::string &source) {
     return parser->errors();
 }
 
-TEST_CASE(ErrorsTests, All) {
+TEST_CASE(ErrorsTests, ErrorRecoveryForBlockStatements) {
     ASSERT_EQ(2, errors(
         "function a ...\n"
         "  exit repeat\n"
@@ -88,6 +88,44 @@ TEST_CASE(ErrorsTests, All) {
     ASSERT_EQ(1, errors(
         "repeat for\n"
         " set a to 1\n"
+        "end repeat\n"
+    ).size());
+}
+
+TEST_CASE(ErrorsTests, NextRepeatEmbeddedFunction) {
+    ASSERT_EQ(1, errors(
+        "repeat while false\n"
+        "  function a\n"
+        "    next repeat\n"
+        "  end function\n"
+        "end repeat\n"
+    ).size());
+
+    ASSERT_EQ(1, errors(
+        "repeat while false\n"
+        "  function a\n"
+        "    exit repeat\n"
+        "  end function\n"
+        "end repeat\n"
+    ).size());
+
+    ASSERT_EQ(0, errors(
+        "repeat while false\n"
+        "  function a\n"
+        "    repeat while false\n"
+        "      next repeat\n"
+        "    end repeat\n"
+        "  end function\n"
+        "end repeat\n"
+    ).size());
+
+    ASSERT_EQ(0, errors(
+        "repeat while false\n"
+        "  function a\n"
+        "    repeat while false\n"
+        "      exit repeat\n"
+        "    end repeat\n"
+        "  end function\n"
         "end repeat\n"
     ).size());
 }

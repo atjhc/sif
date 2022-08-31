@@ -423,7 +423,11 @@ Owned<Statement> Parser::parseBlock(const Parser::TokenList &endTypes) {
 
 Owned<Statement> Parser::parseStatement() {
     if (match({Token::Type::Function})) {
-        return parseFunction();
+        bool wasParsingRepeat = _parsingRepeat;
+        _parsingRepeat = false;
+        auto statement = parseFunction();
+        _parsingRepeat = wasParsingRepeat;
+        return statement;
     }
     if (match({Token::Type::If})) {
         return parseIf();
