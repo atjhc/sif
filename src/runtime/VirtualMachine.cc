@@ -85,10 +85,13 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     while (true) {
 #if defined(DEBUG)
         if (_config.enableTracing) {
+            std::cout << frame().bytecode->decodePosition(frame().ip) << " ";
             frame().bytecode->disassemble(std::cout, frame().ip);
             std::cout << std::endl << "[" << _stack << "]" << std::endl;
-            std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
-            std::cout << std::string(5, '-') << std::endl;
+            if (_callStack.size() > 1) {
+                std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
+            }
+            std::cout << std::endl;
         }
 #endif
         switch (Opcode instruction = Read(frame().ip)) {

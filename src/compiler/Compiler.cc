@@ -365,6 +365,7 @@ void Compiler::visit(const RepeatFor &foreach) {
     bytecode().addRepeat(foreach.location, _nextRepeat);
 
     bytecode().patchJump(jumpIfEmpty);
+    bytecode().add(foreach.location, Opcode::Pop);
     bytecode().patchJump(jumpExitRepeat);
     bytecode().add(foreach.location, Opcode::Pop);
 

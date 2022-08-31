@@ -122,7 +122,7 @@ Bytecode::Iterator Bytecode::disassembleJump(std::ostream &out, const std::strin
 Bytecode::Iterator Bytecode::disassembleRepeat(std::ostream &out, const std::string &name,
                                                Iterator position) const {
     size_t offset = ReadUInt16(position + 1);
-    out << name << " " << decodePosition(position - (offset + 3));
+    out << name << " " << decodePosition(position - (offset - 3));
     return position + 3;
 }
 
