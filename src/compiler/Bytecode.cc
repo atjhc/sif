@@ -89,8 +89,7 @@ std::string Bytecode::decodePosition(Iterator position) const {
     if (width < 4)
         width = 4;
     std::ostringstream out;
-    out << std::setfill('0') << std::setw(width)
-        << position - code().begin();
+    out << std::setfill('0') << std::setw(width) << position - code().begin();
     return out.str();
 }
 
@@ -121,7 +120,7 @@ Bytecode::Iterator Bytecode::disassembleJump(std::ostream &out, const std::strin
 }
 
 Bytecode::Iterator Bytecode::disassembleRepeat(std::ostream &out, const std::string &name,
-                                             Iterator position) const {
+                                               Iterator position) const {
     size_t offset = ReadUInt16(position + 1);
     out << name << " " << decodePosition(position - (offset + 3));
     return position + 3;

@@ -320,19 +320,25 @@ void Compiler::visit(const Repeat &statement) {
 void Compiler::visit(const RepeatCondition &statement) {
     auto nextRepeat = _nextRepeat;
     auto exitRepeat = _exitRepeat;
+
     bytecode().add(statement.location, Opcode::Jump, 3);
     _exitRepeat = bytecode().add(statement.location, Opcode::Jump, 0);
     _nextRepeat = bytecode().code().size();
+
     statement.condition->accept(*this);
-    size_t jump;
+
+    size_t jumpIfCondition = bytecode().code().size();
     if (statement.conditionValue) {
-        jump = bytecode().add(statement.location, Opcode::JumpIfFalse, 0);
+        bytecode().add(statement.location, Opcode::JumpIfFalse, 0);
     } else {
-        jump = bytecode().add(statement.location, Opcode::JumpIfTrue, 0);
+        bytecode().add(statement.location, Opcode::JumpIfTrue, 0);
     }
+
+    bytecode().add(statement.location, Opcode::Pop);
     statement.statement->accept(*this);
     bytecode().addRepeat(statement.location, _nextRepeat);
-    bytecode().patchJump(jump);
+
+    bytecode().patchJump(jumpIfCondition);
     bytecode().add(statement.location, Opcode::Pop);
     bytecode().patchJump(_exitRepeat);
     _nextRepeat = nextRepeat;
@@ -344,23 +350,22 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto exitRepeat = _exitRepeat;
 
     foreach.expression->accept(*this);
-    bytecode().add(foreach.expression->location, Opcode::GetEnumerator);
+    bytecode().add(foreach.location, Opcode::GetEnumerator);
     addLocal();
 
-    bytecode().add(foreach.statement->location, Opcode::Jump, 3);
-    _exitRepeat = bytecode().add(foreach.statement->location, Opcode::Jump, 0);
-    _nextRepeat = bytecode().add(foreach.statement->location, Opcode::Enumerate);
-    auto jump = bytecode().add(foreach.statement->location, Opcode::JumpIfEmpty, 0);
+    bytecode().add(foreach.location, Opcode::Jump, 5);
+    _exitRepeat = bytecode().add(foreach.location, Opcode::Pop);
+    auto jumpExitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
+    _nextRepeat = bytecode().add(foreach.location, Opcode::Pop);
+    bytecode().add(foreach.location, Opcode::Enumerate);
+    auto jumpIfEmpty = bytecode().add(foreach.location, Opcode::JumpIfEmpty, 0);
 
     addLocal(lowercase(foreach.variable->token.text));
     foreach.statement->accept(*this);
-    bytecode().add(foreach.location, Opcode::Pop);
     bytecode().addRepeat(foreach.location, _nextRepeat);
 
-    bytecode().patchJump(jump);
-    bytecode().add(foreach.location, Opcode::Pop);
-
-    bytecode().patchJump(_exitRepeat);
+    bytecode().patchJump(jumpIfEmpty);
+    bytecode().patchJump(jumpExitRepeat);
     bytecode().add(foreach.location, Opcode::Pop);
 
     _nextRepeat = nextRepeat;
