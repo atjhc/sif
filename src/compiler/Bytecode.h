@@ -95,10 +95,13 @@ class Bytecode {
     friend class VirtualMachine;
     friend struct BytecodePrinter;
 
+    std::string decodePosition(Iterator position) const;
+
     Iterator disassembleConstant(std::ostream &, const std::string &, Iterator) const;
     Iterator disassembleDictionary(std::ostream &out, Iterator position) const;
     Iterator disassembleList(std::ostream &, Iterator) const;
     Iterator disassembleJump(std::ostream &, const std::string &name, Iterator) const;
+    Iterator disassembleRepeat(std::ostream &, const std::string &name, Iterator) const;
     Iterator disassembleShort(std::ostream &out, Iterator position) const;
     Iterator disassembleCall(std::ostream &out, const std::string &name, Iterator position) const;
     Iterator disassembleLocal(std::ostream &out, const std::string &name, Iterator position) const;

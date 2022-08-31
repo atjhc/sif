@@ -84,6 +84,16 @@ static inline uint16_t ReadUInt16(Bytecode::Iterator position) {
     return RawValue(position[0]) << 8 | RawValue(position[1]);
 }
 
+std::string Bytecode::decodePosition(Iterator position) const {
+    int width = log10f(code().size()) + 1;
+    if (width < 4)
+        width = 4;
+    std::ostringstream out;
+    out << std::setfill('0') << std::setw(width)
+        << position - code().begin();
+    return out.str();
+}
+
 Bytecode::Iterator Bytecode::disassembleConstant(std::ostream &out, const std::string &name,
                                                  Iterator position) const {
     size_t index = ReadUInt16(position + 1);
@@ -106,7 +116,14 @@ Bytecode::Iterator Bytecode::disassembleDictionary(std::ostream &out, Iterator p
 Bytecode::Iterator Bytecode::disassembleJump(std::ostream &out, const std::string &name,
                                              Iterator position) const {
     size_t offset = ReadUInt16(position + 1);
-    out << name << " " << offset;
+    out << name << " " << decodePosition(position + offset + 3);
+    return position + 3;
+}
+
+Bytecode::Iterator Bytecode::disassembleRepeat(std::ostream &out, const std::string &name,
+                                             Iterator position) const {
+    size_t offset = ReadUInt16(position + 1);
+    out << name << " " << decodePosition(position - (offset + 3));
     return position + 3;
 }
 
@@ -119,8 +136,7 @@ Bytecode::Iterator Bytecode::disassembleCall(std::ostream &out, const std::strin
 
 Bytecode::Iterator Bytecode::disassembleShort(std::ostream &out, Iterator position) const {
     uint16_t shortValue = ReadUInt16(position + 1);
-    out << "Short"
-        << " " << shortValue;
+    out << "Short " << shortValue;
     return position + 3;
 }
 
@@ -143,7 +159,7 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::JumpIfEmpty:
         return disassembleJump(out, "JumpIfEmpty", position);
     case Opcode::Repeat:
-        return disassembleJump(out, "Repeat", position);
+        return disassembleRepeat(out, "Repeat", position);
     case Opcode::Pop:
         out << "Pop";
         return position + 1;
@@ -271,15 +287,10 @@ struct BytecodePrinter {
             }
         }
 
-        int width = log10f(bytecode.code().size()) + 1;
-        if (width < 4)
-            width = 4;
-
         auto position = bytecode.code().begin();
         Optional<Location> previousLocation;
         while (position < bytecode.code().end()) {
-            out << indent << std::setfill('0') << std::setw(width)
-                << position - bytecode.code().begin();
+            out << indent << bytecode.decodePosition(position);
 
             auto location = bytecode.location(position);
             if (!previousLocation.has_value() || previousLocation.value() != location) {
