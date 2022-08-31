@@ -339,6 +339,8 @@ bool checkTerm(const Token &token, size_t offset, Candidate &candidate) {
 
 Optional<Signature> Parser::parseSignature() {
     Signature signature;
+    Set<std::string> argumentNames;
+
     while (peek().isWord() || peek().type == Token::Type::LeftParen ||
            peek().type == Token::Type::LeftBrace) {
         auto token = advance();
@@ -371,6 +373,10 @@ Optional<Signature> Parser::parseSignature() {
             Optional<Token> word;
             Optional<Token> typeName;
             if ((word = matchWord())) {
+                if (argumentNames.find(word.value().text) != argumentNames.end()) {
+                    return emitError(ParseError(word.value(), "duplicate argument names in function declaration"));
+                }
+                argumentNames.insert(word.value().text);
                 if (match({Token::Type::Colon})) {
                     if (auto result = consumeWord()) {
                         typeName = result.value();

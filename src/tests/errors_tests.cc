@@ -129,3 +129,10 @@ TEST_CASE(ErrorsTests, NextRepeatEmbeddedFunction) {
         "end repeat\n"
     ).size());
 }
+
+TEST_CASE(ErrorsTests, DuplicateFunctionArgumentNames) {
+    ASSERT_EQ(1, errors(
+        "function a {b} {b}\n"
+        "end function\n"
+    ).size());
+}
