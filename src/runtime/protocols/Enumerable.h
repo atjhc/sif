@@ -28,6 +28,7 @@ struct Enumerable {
 
 struct Enumerator : public Object {
     virtual Value enumerate() = 0;
+    virtual bool isAtEnd() = 0;
 };
 
 SIF_NAMESPACE_END

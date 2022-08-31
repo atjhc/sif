@@ -27,7 +27,7 @@ enum class Opcode : uint8_t {
     Jump,
     JumpIfFalse,
     JumpIfTrue,
-    JumpIfEmpty,
+    JumpIfAtEnd,
     Repeat,
     Pop,
     Constant,

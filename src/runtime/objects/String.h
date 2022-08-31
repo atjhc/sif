@@ -61,6 +61,7 @@ class StringEnumerator : public Enumerator {
     StringEnumerator(Strong<String> list);
 
     Value enumerate() override;
+    bool isAtEnd() override;
 
     std::string typeName() const override;
     std::string description() const override;

@@ -349,25 +349,28 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto nextRepeat = _nextRepeat;
     auto exitRepeat = _exitRepeat;
 
+    addLocal();
+    addLocal(lowercase(foreach.variable->token.text));
+
     foreach.expression->accept(*this);
     bytecode().add(foreach.location, Opcode::GetEnumerator);
-    addLocal();
 
     bytecode().add(foreach.location, Opcode::Jump, 5);
     _exitRepeat = bytecode().add(foreach.location, Opcode::Pop);
     auto jumpExitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
     _nextRepeat = bytecode().add(foreach.location, Opcode::Pop);
+    auto jumpIfAtEnd = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
     bytecode().add(foreach.location, Opcode::Enumerate);
-    auto jumpIfEmpty = bytecode().add(foreach.location, Opcode::JumpIfEmpty, 0);
 
-    addLocal(lowercase(foreach.variable->token.text));
     foreach.statement->accept(*this);
     bytecode().addRepeat(foreach.location, _nextRepeat);
 
-    bytecode().patchJump(jumpIfEmpty);
-    bytecode().add(foreach.location, Opcode::Pop);
+    bytecode().patchJump(jumpIfAtEnd);
     bytecode().patchJump(jumpExitRepeat);
     bytecode().add(foreach.location, Opcode::Pop);
+
+    locals().pop_back();
+    locals().pop_back();
 
     _nextRepeat = nextRepeat;
     _exitRepeat = exitRepeat;

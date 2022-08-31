@@ -59,6 +59,7 @@ class RangeEnumerator : public Enumerator {
     RangeEnumerator(Strong<Range> range);
 
     Value enumerate() override;
+    bool isAtEnd() override;
 
     std::string typeName() const override;
     std::string description() const override;

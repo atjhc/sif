@@ -155,8 +155,8 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
         return disassembleJump(out, "JumpIfFalse", position);
     case Opcode::JumpIfTrue:
         return disassembleJump(out, "JumpIfTrue", position);
-    case Opcode::JumpIfEmpty:
-        return disassembleJump(out, "JumpIfEmpty", position);
+    case Opcode::JumpIfAtEnd:
+        return disassembleJump(out, "JumpIfAtEnd", position);
     case Opcode::Repeat:
         return disassembleRepeat(out, "Repeat", position);
     case Opcode::Pop:

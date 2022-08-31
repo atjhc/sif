@@ -138,10 +138,15 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             }
             break;
         }
-        case Opcode::JumpIfEmpty: {
+        case Opcode::JumpIfAtEnd: {
             auto offset = ReadJump(frame().ip);
-            auto value = Peek(_stack);
-            if (value.isEmpty()) {
+            auto enumerator = Peek(_stack).as<Enumerator>();
+            if (!enumerator) {
+                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                        "expected an enumerator type");
+                return None;
+            }
+            if (enumerator->isAtEnd()) {
                 frame().ip += offset;
             }
             break;

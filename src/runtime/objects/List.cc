@@ -99,6 +99,10 @@ Value ListEnumerator::enumerate() {
     return value;
 }
 
+bool ListEnumerator::isAtEnd() {
+    return _list->values().size() == _index;
+}
+
 std::string ListEnumerator::typeName() const { return "ListEnumerator"; }
 
 std::string ListEnumerator::description() const { return Concat("E(", _list->description(), ")"); }
