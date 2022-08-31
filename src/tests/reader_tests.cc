@@ -44,49 +44,48 @@ class TestReader : public Reader {
 };
 
 static Strong<Statement> test(const std::vector<std::string> &source) {
-    auto reader = MakeStrong<TestReader>(source.begin(), source.end());
-    auto scanner = MakeStrong<Scanner>();
-    auto parser = MakeStrong<Parser>(ParserConfig(), scanner, reader);
+    auto parser = MakeStrong<Parser>(ParserConfig(), MakeStrong<Scanner>(),
+                                     MakeStrong<TestReader>(source.begin(), source.end()));
     return parser->statement();
 }
 
 TEST_CASE(ReaderTests, If) {
     ASSERT_NOT_NULL(test({
         "if true then",
-        "  print 1",
+        "  return",
         "end if",
     }));
 
     ASSERT_NOT_NULL(test({
         "if true",
-        "then print 1",
+        "then return",
     }));
 
     ASSERT_NOT_NULL(test({
         "if true",
         "then",
-        "  print 1",
+        "  return",
         "end if",
     }));
 
     ASSERT_NOT_NULL(test({
         "if true then",
-        "  print 1",
+        "  return",
         "else",
-        "  print 2",
+        "  return",
         "end if",
     }));
 
     ASSERT_NOT_NULL(test({
         "if true then",
-        "  print 1",
+        "  return",
         "else print 2",
     }));
 
     ASSERT_NOT_NULL(test({
         "if true then",
         "  if true then"
-        "    print 1",
+        "    return",
         "  end if",
         "end if",
     }));
@@ -95,32 +94,32 @@ TEST_CASE(ReaderTests, If) {
 TEST_CASE(ReaderTests, Repeat) {
     ASSERT_NOT_NULL(test({
         "repeat",
-        "  print 1",
+        "  return",
         "end repeat",
     }));
 
     ASSERT_NOT_NULL(test({
         "repeat forever",
-        "  print 1",
+        "  return",
         "end repeat",
     }));
 
     ASSERT_NOT_NULL(test({
         "repeat while true",
-        "  print 1",
+        "  return",
         "end repeat",
     }));
 
     ASSERT_NOT_NULL(test({
         "repeat for i in 1...10",
-        "  print 1",
+        "  return",
         "end repeat",
     }));
 
     ASSERT_NOT_NULL(test({
         "repeat",
         "  if true then",
-        "    print 1",
+        "    return",
         "  end if",
         "end repeat",
     }));
@@ -129,7 +128,7 @@ TEST_CASE(ReaderTests, Repeat) {
 TEST_CASE(ReaderTests, Function) {
     ASSERT_NOT_NULL(test({
         "function a",
-        "  print 1",
+        "  return",
         "end function",
     }));
 }

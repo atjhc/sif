@@ -30,7 +30,7 @@ SIF_NAMESPACE_BEGIN
 #endif
 
 #if defined(DEBUG)
-static inline std::string Describe(const Token &token) { return token.description(); }
+static inline std::string Describe(const Token &token) { return token.debugDescription(); }
 
 static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
     return out << Describe(token);
@@ -56,28 +56,26 @@ Owned<Statement> Parser::statement() {
     }
     _scanner->reset(_reader->contents());
 
-    auto block = parseBlock();
+    auto block = parseBlock({});
     if (_errors.size()) {
         return nullptr;
     }
-    return std::move(block.value());
+    return block;
 }
 
 Optional<Signature> Parser::signature() {
     auto error = _reader->read(0);
     if (error) {
-        _errors.push_back(ParseError(Token(), error.value().what()));
+        emitError(ParseError(Token(), error.value().what()));
         return None;
     }
     _scanner->reset(_reader->contents());
 
     auto signature = parseSignature();
-    if (signature) {
-        return signature.value();
-    } else {
-        _errors.push_back(signature.error());
+    if (_errors.size()) {
         return None;
     }
+    return signature;
 }
 
 void Parser::declare(const Signature &signature) { _signatureDecls.push_back({signature, _depth}); }
@@ -86,7 +84,7 @@ const std::vector<ParseError> &Parser::errors() { return _errors; }
 
 #pragma mark - Utilities
 
-Optional<Token> Parser::match(const std::initializer_list<Token::Type> &types) {
+Optional<Token> Parser::match(const Parser::TokenList &types) {
     if (check(types)) {
         return advance();
     }
@@ -127,7 +125,7 @@ bool Parser::consumeNewLine() {
     if (isAtEnd() && _parsingDepth > 0 && _reader->readable()) {
         auto error = _reader->read(_parsingDepth);
         if (error) {
-            _errors.push_back(ParseError(Token(), error.value().what()));
+            emitError(ParseError(Token(), error.value().what()));
             return false;
         }
         _scanner->reset(_reader->contents());
@@ -145,7 +143,7 @@ bool Parser::consumeNewLine() {
     return false;
 }
 
-bool Parser::check(const std::initializer_list<Token::Type> &types) {
+bool Parser::check(const Parser::TokenList &types) {
     if (isAtEnd()) {
         return false;
     }
@@ -200,16 +198,21 @@ Token Parser::previous() {
     throw std::runtime_error("scanner underflow");
 }
 
-void Parser::synchronize() {
+Token Parser::synchronize(const Parser::TokenList &tokenTypes) {
     trace("Synchronizing");
     _recording = false;
-    auto token = advance();
     while (!isAtEnd()) {
-        if (token.type == Token::Type::NewLine) {
-            return;
+        if (match(tokenTypes)) {
+            break;
         }
-        token = advance();
+        advance();
     }
+    return previous();
+}
+
+NoneType Parser::emitError(const ParseError &error) {
+    _errors.push_back(error);
+    return None;
 }
 
 void Parser::checkpoint() {
@@ -234,7 +237,7 @@ void Parser::commit() {
         _tokens.erase(_tokens.begin(), _tokens.begin() + _index - 1);
         _index = 1;
     }
-    trace(Concat("Commit (", previous().description(), ", ", peek().description(), ")"));
+    trace(Concat("Commit (", previous().debugDescription(), ", ", peek().debugDescription(), ")"));
 }
 
 void Parser::beginScope() { _depth++; }
@@ -263,8 +266,6 @@ std::string Parser::_traceTokens() const {
 }
 
 #endif
-
-#pragma mark - Grammar
 
 struct Candidate {
     Signature signature;
@@ -334,8 +335,77 @@ bool checkTerm(const Token &token, size_t offset, Candidate &candidate) {
     return false;
 }
 
-Result<Owned<Statement>, ParseError>
-Parser::parseBlock(const std::initializer_list<Token::Type> &endTypes) {
+#pragma mark - Grammar
+
+Optional<Signature> Parser::parseSignature() {
+    Signature signature;
+    while (peek().isWord() || peek().type == Token::Type::LeftParen ||
+           peek().type == Token::Type::LeftBrace) {
+        auto token = advance();
+        if (token.isWord()) {
+            std::vector<Token> tokens({token});
+            while (match({Token::Type::Slash})) {
+                auto word = consumeWord();
+                if (!word) {
+                    return emitError(ParseError(peek(), "expected a word"));
+                }
+                tokens.push_back(word.value());
+            }
+            if (tokens.size() > 1) {
+                std::sort(tokens.begin(), tokens.end(),
+                          [](Token lhs, Token rhs) { return lhs.text < rhs.text; });
+                signature.terms.push_back(Signature::Choice{tokens});
+            } else {
+                signature.terms.push_back(Signature::Term{token});
+            }
+        } else if (token.type == Token::Type::LeftParen) {
+            if (auto word = consumeWord()) {
+                signature.terms.push_back(Signature::Option{word.value()});
+                if (!consume(Token::Type::RightParen)) {
+                    return emitError(ParseError(peek(), Concat("expected ", Quoted(")"))));
+                }
+            } else {
+                return emitError(ParseError(peek(), "expected a word"));
+            }
+        } else {
+            Optional<Token> word;
+            Optional<Token> typeName;
+            if ((word = matchWord())) {
+                if (match({Token::Type::Colon})) {
+                    if (auto result = consumeWord()) {
+                        typeName = result.value();
+                    } else {
+                        return emitError(ParseError(peek(), "expected a type name"));
+                    }
+                }
+            } else if (match({Token::Type::Colon})) {
+                if (auto result = consumeWord()) {
+                    typeName = result.value();
+                } else {
+                    return emitError(ParseError(peek(), "expected a type name"));
+                }
+            }
+            if (!consume(Token::Type::RightBrace)) {
+                return emitError(ParseError(peek(), Concat("expected ", Quoted("}"))));
+            }
+            signature.terms.push_back(Signature::Argument{word, typeName});
+        }
+    }
+    if (signature.terms.size() == 0) {
+        return emitError(
+            ParseError(peek(), Concat("expected a word, ", Quoted("("), ", or ", Quoted("{"))));
+    }
+    if (match({Token::Type::Arrow})) {
+        if (auto word = consumeWord()) {
+            signature.typeName = word.value();
+        } else {
+            return emitError(ParseError(peek(), "expected a type name"));
+        }
+    }
+    return signature;
+}
+
+Owned<Statement> Parser::parseBlock(const Parser::TokenList &endTypes) {
     std::vector<Owned<Statement>> statements;
     while (!isAtEnd()) {
         if (match({Token::Type::NewLine})) {
@@ -344,18 +414,14 @@ Parser::parseBlock(const std::initializer_list<Token::Type> &endTypes) {
         if (check(endTypes)) {
             break;
         }
-        auto statement = parseStatement();
-        if (statement) {
-            statements.push_back(std::move(statement.value()));
-        } else {
-            _errors.push_back(statement.error());
-            synchronize();
+        if (auto statement = parseStatement()) {
+            statements.push_back(std::move(statement));
         }
     }
     return MakeOwned<Block>(std::move(statements));
 }
 
-Result<Owned<Statement>, ParseError> Parser::parseStatement() {
+Owned<Statement> Parser::parseStatement() {
     if (match({Token::Type::Function})) {
         return parseFunction();
     }
@@ -371,101 +437,257 @@ Result<Owned<Statement>, ParseError> Parser::parseStatement() {
     }
 
     auto statement = parseSimpleStatement();
-    consumeNewLine();
-
-    return statement;
+    if (!statement) {
+        emitError(statement.error());
+        synchronize();
+        return nullptr;
+    }
+    if (!consumeNewLine()) {
+        emitError(ParseError(peek(), "expected a new line"));
+        synchronize();
+        return nullptr;
+    }
+    return std::move(statement.value());
 }
 
-Result<Signature, ParseError> Parser::parseSignature() {
-    Signature signature;
-    while (peek().isWord() || peek().type == Token::Type::LeftParen ||
-           peek().type == Token::Type::LeftBrace) {
-        auto token = advance();
-        if (token.isWord()) {
-            std::vector<Token> tokens({token});
-            while (match({Token::Type::Slash})) {
-                auto word = consumeWord();
-                if (!word) {
-                    return Error(ParseError(peek(), "expected a word"));
-                }
-                tokens.push_back(word.value());
-            }
-            if (tokens.size() > 1) {
-                std::sort(tokens.begin(), tokens.end(),
-                          [](Token lhs, Token rhs) { return lhs.text < rhs.text; });
-                signature.terms.push_back(Signature::Choice{tokens});
-            } else {
-                signature.terms.push_back(Signature::Term{token});
-            }
-        } else if (token.type == Token::Type::LeftParen) {
-            if (auto word = consumeWord()) {
-                signature.terms.push_back(Signature::Option{word.value()});
-                if (!consume(Token::Type::RightParen)) {
-                    return Error(ParseError(peek(), Concat("expected ", Quoted(")"))));
-                }
-            } else {
-                return Error(ParseError(peek(), "expected a word"));
-            }
-        } else {
-            Optional<Token> word;
-            Optional<Token> typeName;
-            if ((word = matchWord())) {
-                if (match({Token::Type::Colon})) {
-                    if (auto result = consumeWord()) {
-                        typeName = result.value();
-                    } else {
-                        return Error(ParseError(peek(), "expected a type name"));
-                    }
-                }
-            } else if (match({Token::Type::Colon})) {
-                if (auto result = consumeWord()) {
-                    typeName = result.value();
-                } else {
-                    return Error(ParseError(peek(), "expected a type name"));
-                }
-            }
-            if (!consume(Token::Type::RightBrace)) {
-                return Error(ParseError(peek(), Concat("expected ", Quoted("}"))));
-            }
-            signature.terms.push_back(Signature::Argument{word, typeName});
-        }
-    }
-    if (signature.terms.size() == 0) {
-        return Error(
-            ParseError(peek(), Concat("expected a word, ", Quoted("("), ", or ", Quoted("{"))));
-    }
-    if (match({Token::Type::Arrow})) {
-        if (auto word = consumeWord()) {
-            signature.typeName = word.value();
-        } else {
-            return Error(ParseError(peek(), "expected a type name"));
-        }
-    }
-    return signature;
-}
-
-Result<Owned<Statement>, ParseError> Parser::parseFunction() {
+Owned<Statement> Parser::parseFunction() {
     _parsingDepth++;
     auto signature = parseSignature();
     if (!signature) {
-        return Error(signature.error());
+        synchronize();
+    } else if (!consumeNewLine()) {
+        emitError(ParseError(peek(), "expected a new line"));
+        synchronize();
     }
-    if (!consumeNewLine()) {
-        return Error(ParseError(peek(), "expected new line or end of script"));
+
+    if (signature) {
+        declare(signature.value());
     }
-    declare(signature.value());
+
     beginScope();
+    auto statement = parseBlock({Token::Type::End});
+    _parsingDepth--;
+    if (!consumeEnd(Token::Type::Function)) {
+        emitError(ParseError(peek(), Concat("expected ", Quoted("end"))));
+        return nullptr;
+    }
+    endScope();
+
+    if (signature) {
+        return MakeOwned<FunctionDecl>(signature.value(), std::move(statement));
+    }
+    return nullptr;
+}
+
+Owned<Statement> Parser::parseIf() {
+    auto location = previous().location;
+    auto condition = parseExpression();
+
+    _parsingDepth++;
+    if (!condition) {
+        emitError(condition.error());
+        synchronize({Token::Type::Then, Token::Type::NewLine});
+        return nullptr;
+    } else {
+        consumeNewLine();
+        if (!consume(Token::Type::Then)) {
+            emitError(ParseError(peek(), Concat("expected ", Quoted("then"))));
+            auto token = synchronize({Token::Type::Then, Token::Type::NewLine});
+            if (token.isEndOfStatement()) {
+                return nullptr;
+            }
+        }
+    }
+
+    Optional<Token> token;
+    Owned<Statement> ifClause = nullptr;
+    Owned<Statement> elseClause = nullptr;
+
+    if (consumeNewLine()) {
+        if (auto statement = parseBlock({Token::Type::End, Token::Type::Else})) {
+            ifClause = std::move(statement);
+        } else {
+            return statement;
+        }
+        token = match({Token::Type::End, Token::Type::Else});
+        if (!token) {
+            emitError(
+                ParseError(peek(), Concat("expected ", Quoted("end"), " or ", Quoted("else"))));
+        } else if (token.value().type == Token::Type::End) {
+            match({Token::Type::If});
+            _parsingDepth--;
+            consumeNewLine();
+        }
+    } else {
+        _parsingDepth--;
+        if (auto statement = parseSimpleStatement()) {
+            ifClause = std::move(statement.value());
+            consumeNewLine();
+        } else {
+            synchronize();
+            emitError(statement.error());
+            return nullptr;
+        }
+    }
+
+    if ((token.has_value() && token.value().type == Token::Type::Else) ||
+        (!token.has_value() && match({Token::Type::Else}))) {
+        if (consumeNewLine()) {
+            if (auto statement = parseBlock({Token::Type::End})) {
+                elseClause = std::move(statement);
+            } else {
+                return statement;
+            }
+
+            if (!consumeEnd(Token::Type::If)) {
+                emitError(ParseError(peek(), Concat("expected ", Quoted("end"))));
+                return nullptr;
+            }
+            _parsingDepth--;
+            if (!consumeNewLine()) {
+                emitError(ParseError(peek(), "expected new line or end of script"));
+                synchronize();
+                return nullptr;
+            }
+        } else {
+            _parsingDepth--;
+            if (match({Token::Type::If})) {
+                if (auto statement = parseIf()) {
+                    ifClause = std::move(statement);
+                } else {
+                    return statement;
+                }
+            } else {
+                if (auto statement = parseSimpleStatement()) {
+                    elseClause = std::move(statement.value());
+                    consumeNewLine();
+                } else {
+                    emitError(statement.error());
+                    synchronize();
+                    return nullptr;
+                }
+            }
+        }
+    }
+
+    auto ifStatement =
+        MakeOwned<If>(std::move(condition.value()), std::move(ifClause), std::move(elseClause));
+    ifStatement->location = location;
+    return ifStatement;
+}
+
+Owned<Statement> Parser::parseRepeat() {
+    auto location = previous().location;
+
+    _parsingDepth++;
+    Optional<Token> token;
+    if (consumeNewLine() || (token = match({Token::Type::Forever}))) {
+        if (token.has_value() && !consumeNewLine()) {
+            emitError(ParseError(peek(), "expected a new line"));
+            synchronize();
+        }
+        auto statement = parseRepeatForever();
+        if (statement) {
+            statement->location = location;
+        }
+        return statement;
+    }
+    if ((token = match({Token::Type::While, Token::Type::Until}))) {
+        auto statement = parseRepeatConditional();
+        if (statement) {
+            statement->location = location;
+        }
+        return statement;
+    }
+    if (match({Token::Type::For})) {
+        auto statement = parseRepeatFor();
+        if (statement) {
+            statement->location = location;
+        }
+        return statement;
+    }
+
+    emitError(ParseError(peek(), Concat("expected ", Quoted("forever"), ", ", Quoted("while"), ", ",
+                                        Quoted("until"), ", ", Quoted("for"), ", or a new line")));
+    synchronize();
+    return parseRepeatForever();
+}
+
+Owned<Statement> Parser::parseRepeatForever() {
+    auto statement = parseBlock({Token::Type::End});
+    if (!consumeEnd(Token::Type::Repeat)) {
+        emitError(ParseError(peek(), Concat("expected ", Quoted("end"))));
+        return nullptr;
+    }
+    _parsingDepth--;
+    auto repeat = MakeOwned<Repeat>(std::move(statement));
+    return repeat;
+}
+
+Owned<Statement> Parser::parseRepeatConditional() {
+    bool conditionValue = (previous().type == Token::Type::While ? true : false);
+    auto condition = parseExpression();
+    if (!condition) {
+        emitError(condition.error());
+        synchronize();
+    } else if (!consumeNewLine()) {
+        emitError(ParseError(peek(), "expected a new line"));
+        synchronize();
+    }
+    auto statement = parseBlock({Token::Type::End});
+    if (!consumeEnd(Token::Type::Repeat)) {
+        emitError(ParseError(peek(), Concat("expected ", Quoted("end"))));
+        return nullptr;
+    }
+    _parsingDepth--;
+    if (condition) {
+        auto repeat = MakeOwned<RepeatCondition>(std::move(statement), std::move(condition.value()),
+                                                 conditionValue);
+        return repeat;
+    }
+    return nullptr;
+}
+
+Owned<Statement> Parser::parseRepeatFor() {
+    Owned<Variable> variable;
+    Owned<Expression> expression;
+    auto token = consumeWord();
+    if (!token) {
+        emitError(ParseError(peek(), "expected a word"));
+        synchronize();
+    } else {
+        variable = MakeOwned<Variable>(token.value());
+        variable->location = token.value().location;
+        if (!consume(Token::Type::In)) {
+            emitError(ParseError(peek(), Concat("expected ", Quoted("in"))));
+            synchronize();
+        }
+    }
+    if (variable) {
+        auto list = parseList();
+        if (!list) {
+            emitError(list.error());
+            synchronize();
+        } else {
+            expression = std::move(list.value());
+            if (!consumeNewLine()) {
+                emitError(ParseError(peek(), "expected a new line"));
+                synchronize();
+            }
+        }
+    }
     auto statement = parseBlock({Token::Type::End});
     if (!statement) {
         return statement;
     }
-    _parsingDepth--;
-    if (!consumeEnd(Token::Type::Function)) {
-        return Error(ParseError(peek(), Concat("expected ", Quoted("end"))));
+    if (!consumeEnd(Token::Type::Repeat)) {
+        emitError(ParseError(peek(), Concat("expected ", Quoted("end"))));
+        return nullptr;
     }
-    endScope();
-
-    return MakeOwned<FunctionDecl>(signature.value(), std::move(statement.value()));
+    _parsingDepth--;
+    auto repeat =
+        MakeOwned<RepeatFor>(std::move(statement), std::move(variable), std::move(expression));
+    return repeat;
 }
 
 Result<Owned<Statement>, ParseError> Parser::parseSimpleStatement() {
@@ -482,168 +704,6 @@ Result<Owned<Statement>, ParseError> Parser::parseSimpleStatement() {
         return parseReturn();
     }
     return parseExpressionStatement();
-}
-
-Result<Owned<Statement>, ParseError> Parser::parseIf() {
-    auto location = previous().location;
-    auto condition = parseExpression();
-    if (!condition) {
-        return Error(condition.error());
-    }
-
-    _parsingDepth++;
-    consumeNewLine();
-    if (!consume(Token::Type::Then)) {
-        return Error(ParseError(peek(), Concat("expected ", Quoted("then"))));
-    }
-
-    Optional<Token> token;
-    Owned<Statement> ifClause = nullptr;
-    Owned<Statement> elseClause = nullptr;
-
-    if (consumeNewLine()) {
-        if (auto statement = parseBlock({Token::Type::End, Token::Type::Else})) {
-            ifClause = std::move(statement.value());
-        } else {
-            return statement;
-        }
-        token = match({Token::Type::End, Token::Type::Else});
-        if (!token) {
-            return Error(
-                ParseError(peek(), Concat("expected ", Quoted("end"), " or ", Quoted("else"))));
-        }
-        if (token.value().type == Token::Type::End) {
-            match({Token::Type::If});
-            _parsingDepth--;
-            consumeNewLine();
-        }
-    } else {
-        _parsingDepth--;
-        if (auto statement = parseSimpleStatement()) {
-            ifClause = std::move(statement.value());
-        } else {
-            return statement;
-        }
-        consumeNewLine();
-    }
-
-    if ((token.has_value() && token.value().type == Token::Type::Else) ||
-        (!token.has_value() && match({Token::Type::Else}))) {
-        if (consumeNewLine()) {
-            if (auto statement = parseBlock({Token::Type::End})) {
-                elseClause = std::move(statement.value());
-            } else {
-                return statement;
-            }
-
-            if (!consumeEnd(Token::Type::If)) {
-                return Error(ParseError(peek(), Concat("expected ", Quoted("end"))));
-            }
-            _parsingDepth--;
-            if (!consumeNewLine()) {
-                return Error(ParseError(peek(), "expected new line or end of script"));
-            }
-        } else {
-            _parsingDepth--;
-            if (match({Token::Type::If})) {
-                if (auto statement = parseIf()) {
-                    ifClause = std::move(statement.value());
-                } else {
-                    return statement;
-                }
-            } else {
-                if (auto statement = parseSimpleStatement()) {
-                    elseClause = std::move(statement.value());
-                } else {
-                    return statement;
-                }
-                consumeNewLine();
-            }
-        }
-    }
-
-    auto ifStatement =
-        MakeOwned<If>(std::move(condition.value()), std::move(ifClause), std::move(elseClause));
-    ifStatement->location = location;
-    return ifStatement;
-}
-
-Result<Owned<Statement>, ParseError> Parser::parseRepeat() {
-    auto location = previous().location;
-    _parsingDepth++;
-    Optional<Token> token;
-    if (consumeNewLine() || (token = match({Token::Type::Forever}))) {
-        if (token.has_value()) {
-            if (!consumeNewLine()) {
-                return Error(ParseError(peek(), "expected new line"));
-            }
-        }
-        auto statement = parseBlock({Token::Type::End});
-        if (!statement) {
-            return statement;
-        }
-
-        if (!consumeEnd(Token::Type::Repeat)) {
-            return Error(ParseError(peek(), Concat("expected ", Quoted("end"))));
-        }
-        _parsingDepth--;
-        auto repeat = MakeOwned<Repeat>(std::move(statement.value()));
-        repeat->location = location;
-        return repeat;
-    }
-    if ((token = match({Token::Type::While, Token::Type::Until}))) {
-        bool conditionValue = (token.value().type == Token::Type::While ? true : false);
-        auto condition = parseExpression();
-        if (!condition) {
-            return Error(condition.error());
-        }
-        if (!consumeNewLine()) {
-            return Error(ParseError(peek(), "expected new line or end of script"));
-        }
-        auto statement = parseBlock({Token::Type::End});
-        if (!statement) {
-            return statement;
-        }
-        if (!consumeEnd(Token::Type::Repeat)) {
-            return Error(ParseError(peek(), Concat("expected ", Quoted("end"))));
-        }
-        _parsingDepth--;
-        auto repeat = MakeOwned<RepeatCondition>(std::move(statement.value()),
-                                                 std::move(condition.value()), conditionValue);
-        repeat->location = location;
-        return repeat;
-    }
-    if (match({Token::Type::For})) {
-        auto token = consumeWord();
-        if (!token) {
-            return Error(ParseError(peek(), "expected a word"));
-        }
-        auto variable = MakeOwned<Variable>(token.value());
-        variable->location = token.value().location;
-        if (!consume(Token::Type::In)) {
-            return Error(ParseError(peek(), Concat("expected ", Quoted("in"))));
-        }
-        auto expression = parseList();
-        if (!expression) {
-            return Error(expression.error());
-        }
-        if (!consumeNewLine()) {
-            return Error(ParseError(peek(), "expected new line or end of script"));
-        }
-        auto statement = parseBlock({Token::Type::End});
-        if (!statement) {
-            return statement;
-        }
-        if (!consumeEnd(Token::Type::Repeat)) {
-            return Error(ParseError(peek(), Concat("expected ", Quoted("end"))));
-        }
-        _parsingDepth--;
-        auto repeat = MakeOwned<RepeatFor>(std::move(statement.value()), std::move(variable),
-                                           std::move(expression.value()));
-        repeat->location = location;
-        return repeat;
-    }
-    return Error(ParseError(peek(), "expected forever, while, until, for, or new line"));
 }
 
 Result<Owned<Statement>, ParseError> Parser::parseAssignment() {
@@ -664,7 +724,9 @@ Result<Owned<Statement>, ParseError> Parser::parseAssignment() {
         if (auto word = consumeWord()) {
             typeName = word.value();
         } else {
-            return Error(ParseError(peek(), "expected a type name"));
+            emitError(ParseError(peek(), "expected a type name"));
+            synchronize();
+            return nullptr;
         }
     } else {
         while (match({Token::Type::LeftBracket})) {
@@ -723,7 +785,7 @@ Result<Owned<Statement>, ParseError> Parser::parseNext() {
 Result<Owned<Statement>, ParseError> Parser::parseReturn() {
     auto location = previous().location;
     Owned<Expression> expression;
-    if (!check({Token::Type::NewLine})) {
+    if (!isAtEnd() && !check({Token::Type::NewLine})) {
         if (auto returnExpression = parseExpression()) {
             expression = std::move(returnExpression.value());
         } else {
@@ -1001,7 +1063,8 @@ Result<Owned<Expression>, ParseError> Parser::parseCall() {
             for (const auto &candidate : candidates) {
                 candidateNames.push_back(Concat("  ", candidate.signature.name()));
                 if (candidateNames.size() == 5) {
-                    candidateNames.push_back(Concat("  ... (", candidates.size() - candidateNames.size(), " more)"));
+                    candidateNames.push_back(
+                        Concat("  ... (", candidates.size() - candidateNames.size(), " more)"));
                     break;
                 }
             }
@@ -1143,7 +1206,7 @@ Result<Owned<Expression>, ParseError> Parser::parsePrimary() {
         return variable;
     }
 
-    return Error(ParseError(peek(), Concat("unexpected ", Quoted(peek().description()))));
+    return Error(ParseError(peek(), Concat("unexpected ", peek().description())));
 }
 
 Result<Owned<Expression>, ParseError> Parser::parseGrouping() {

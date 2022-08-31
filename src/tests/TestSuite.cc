@@ -124,7 +124,7 @@ bool TestSuite::_runGroup(const std::string &name, const std::vector<Ref<Test>> 
         if (!testName.empty() && testName != test.get().name) {
             continue;
         }
-        passed = passed && _runTest(test.get());
+        passed = _runTest(test.get()) && passed;
     }
     config.out << "Test Group '" << name << "' " << (passed ? "passed" : "failed") << " at "
                << _currentDateString() << std::endl;

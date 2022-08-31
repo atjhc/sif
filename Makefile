@@ -55,8 +55,8 @@ install: all
 	chmod +x $(INSTALL_DIR)/$(TOOLNAME)
 
 format:
-	find src -type f -name '*.cc' -not -path 'src/vendor/*' -exec clang-format -i --style=file {} \;
-	find src -type f -name '*.h' -not -path 'src/vendor/*' -exec clang-format -i --style=file {} \;
+	find src -type f -name '*.cc' -not -path 'src/tests/*' -not -path 'src/vendor/*' -exec clang-format -i --style=file {} \;
+	find src -type f -name '*.h' -not -path 'src/tests/*' -not -path 'src/vendor/*' -exec clang-format -i --style=file {} \;
 
 dstroot:
 	mkdir -p $(DSTROOT)

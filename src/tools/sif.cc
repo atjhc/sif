@@ -121,7 +121,7 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
     if (!statement) {
         for (auto error : parser.errors()) {
             report(name, error.token().location, reader->contents(),
-                   Concat("parser error, ", error.what()));
+                   Concat("parse error, ", error.what()));
         }
         return ParseFailure;
     }
@@ -138,7 +138,7 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
     if (!bytecode) {
         for (auto error : compiler.errors()) {
             report(name, error.node().location, reader->contents(),
-                   Concat("compiler error, ", error.what()));
+                   Concat("compile error, ", error.what()));
         }
         return CompileFailure;
     }

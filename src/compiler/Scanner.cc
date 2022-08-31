@@ -20,44 +20,12 @@
 
 SIF_NAMESPACE_BEGIN
 
-bool Token::isWord() const {
-    switch (type) {
-    case Type::An:
-    case Type::And:
-    case Type::Else:
-    case Type::End:
-    case Type::Exit:
-    case Type::For:
-    case Type::Forever:
-    case Type::Function:
-    case Type::If:
-    case Type::In:
-    case Type::Is:
-    case Type::Next:
-    case Type::Not:
-    case Type::Or:
-    case Type::Repeat:
-    case Type::Return:
-    case Type::Set:
-    case Type::Then:
-    case Type::To:
-    case Type::Until:
-    case Type::While:
-    case Type::Global:
-    case Type::Local:
-    case Type::Word:
-        return true;
-    default:
-        return false;
-    }
-}
-
 Scanner::Scanner() : _start(0), _end(0), _current(0), _currentLocation{1, 1}, _skipNewlines(0) {}
 
 void Scanner::reset(const std::string &contents) {
     _start = _current = &contents[0];
     _end = &contents[contents.length()];
-    _currentLocation.position = 1;
+    _currentLocation = {1, 1};
 }
 
 Token Scanner::scan() {

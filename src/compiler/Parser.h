@@ -54,6 +54,8 @@ class Parser {
     const std::vector<ParseError> &errors();
 
   private:
+    using TokenList = std::initializer_list<Token::Type>;
+
     bool isAtEnd();
     bool check(const std::initializer_list<Token::Type> &types);
     Optional<Token> match(const std::initializer_list<Token::Type> &types);
@@ -69,8 +71,8 @@ class Parser {
     Token advance();
     Token peek();
     Token previous();
+    Token synchronize(const TokenList &tokenTypes = {Token::Type::NewLine});
 
-    void synchronize();
     void checkpoint();
     void rewind();
     void commit();
@@ -78,20 +80,25 @@ class Parser {
     void beginScope();
     void endScope();
 
+    NoneType emitError(const ParseError &error);
+
 #if defined(DEBUG)
     void _trace(const std::string &message) const;
     std::string _traceTokens() const;
 #endif
 
-    Result<Signature, ParseError> parseSignature();
+    Optional<Signature> parseSignature();
 
-    Result<Owned<Statement>, ParseError>
-    parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
-    Result<Owned<Statement>, ParseError> parseStatement();
+    Owned<Statement> parseBlock(const TokenList &endTypes = {});
+    Owned<Statement> parseStatement();
+    Owned<Statement> parseFunction();
+    Owned<Statement> parseIf();
+    Owned<Statement> parseRepeat();
+    Owned<Statement> parseRepeatForever();
+    Owned<Statement> parseRepeatConditional();
+    Owned<Statement> parseRepeatFor();
+
     Result<Owned<Statement>, ParseError> parseSimpleStatement();
-    Result<Owned<Statement>, ParseError> parseFunction();
-    Result<Owned<Statement>, ParseError> parseIf();
-    Result<Owned<Statement>, ParseError> parseRepeat();
     Result<Owned<Statement>, ParseError> parseAssignment();
     Result<Owned<Statement>, ParseError> parseExit();
     Result<Owned<Statement>, ParseError> parseNext();

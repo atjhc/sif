@@ -50,7 +50,8 @@ template <class T> using Ref = std::reference_wrapper<T>;
 
 template <class T> using Optional = std::optional<T>;
 
-inline constexpr std::nullopt_t None = std::nullopt;
+using NoneType = std::nullopt_t;
+inline constexpr NoneType None = std::nullopt;
 
 template <class E> tl::unexpected<E> Error(const E &error) { return tl::unexpected(error); }
 

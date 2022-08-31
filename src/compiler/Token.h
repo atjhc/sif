@@ -87,23 +87,14 @@ struct Token {
     Location location;
     std::string text;
 
-    Token() : type(Type::EndOfFile) {}
-    Token(Type type, Location location) : type(type), location(location) {}
+    Token();
+    Token(Type type, Location location);
 
     bool isWord() const;
+    bool isEndOfStatement() const;
 
-    std::string description() const {
-        switch (type) {
-        case Type::Error:
-            return "$error";
-        case Type::EndOfFile:
-            return "$end";
-        case Type::NewLine:
-            return "$nl";
-        default:
-            return text;
-        }
-    }
+    std::string description() const;
+    std::string debugDescription() const;
 };
 
 SIF_NAMESPACE_END
