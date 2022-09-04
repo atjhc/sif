@@ -1,0 +1,8 @@
+function a
+	if false then set x to 10
+	print x
+end function
+a
+(-- expect
+empty
+--)

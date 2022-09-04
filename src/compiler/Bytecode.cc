@@ -74,6 +74,11 @@ void Bytecode::patchJump(size_t index) {
     _code[index + 2] = static_cast<Opcode>(offset & 0xff);
 }
 
+void Bytecode::patchLocals(size_t location, short count) {
+    _code[location + 1] = static_cast<Opcode>(count >> 8);
+    _code[location + 2] = static_cast<Opcode>(count & 0xff);
+}
+
 const std::vector<Opcode> &Bytecode::code() const { return _code; }
 
 const std::vector<Value> &Bytecode::constants() const { return _constants; }
@@ -165,6 +170,8 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Return:
         out << "Return";
         return position + 1;
+    case Opcode::Locals:
+        return disassembleLocal(out, "Locals", position);
     case Opcode::Constant:
         return disassembleConstant(out, "Constant", position);
     case Opcode::Short:

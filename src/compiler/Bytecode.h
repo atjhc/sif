@@ -30,6 +30,7 @@ enum class Opcode : uint8_t {
     JumpIfAtEnd,
     Repeat,
     Pop,
+    Locals,
     Constant,
     OpenRange,
     ClosedRange,
@@ -81,7 +82,9 @@ class Bytecode {
     size_t add(Location location, Opcode opcode, uint16_t argument);
     void addRepeat(Location location, uint16_t argument);
     uint16_t addConstant(Value constant);
+
     void patchJump(size_t location);
+    void patchLocals(size_t location, short count);
 
     const std::string &name() const;
     const std::vector<Opcode> &code() const;

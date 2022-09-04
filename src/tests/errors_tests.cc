@@ -136,3 +136,9 @@ TEST_CASE(ErrorsTests, DuplicateFunctionArgumentNames) {
         "end function\n"
     ).size());
 }
+
+TEST_CASE(ErrorTests, UnassignedLocalVariable) {
+    ASSERT_EQ(1, errors(
+        "print local x"
+    ).size());
+}

@@ -58,7 +58,6 @@ int Compiler::findCapture(const std::string &name) {
     if (_frames.size() < 2) {
         return -1;
     }
-
     int index = -1;
     for (auto it = _frames.end() - 2; it >= _frames.begin(); it--) {
         if (index = findLocal(*it, name); index > -1) {
@@ -72,7 +71,6 @@ int Compiler::findCapture(const std::string &name) {
             break;
         }
     }
-
     return index;
 }
 
@@ -99,7 +97,8 @@ void Compiler::assign(const FunctionDecl &decl, const std::string &name) {
             opcode = Opcode::SetCapture;
         } else {
             locals().push_back({name, _scopeDepth});
-            return;
+            index = locals().size() - 1;
+            opcode = Opcode::SetLocal;
         }
     } else {
         index = bytecode().addConstant(MakeStrong<String>(name));
@@ -124,7 +123,8 @@ void Compiler::assign(const Variable &variable, const std::string &name) {
                 opcode = Opcode::SetCapture;
             } else {
                 locals().push_back({name, _scopeDepth});
-                return;
+                index = locals().size() - 1;
+                opcode = Opcode::SetLocal;
             }
             break;
         case Variable::Scope::Global:
@@ -185,7 +185,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
             index = i;
             opcode = Opcode::GetCapture;
         } else {
-            error(variable, Concat("name '", name, "' has not been assigned"));
+            error(variable, Concat("unused local variable ", Quoted(name), " will always be empty"));
             return;
         }
         break;
@@ -222,22 +222,27 @@ void Compiler::visit(const Block &block) {
 }
 
 void Compiler::visit(const FunctionDecl &functionDecl) {
-    // Create a scope, push a new frame, add all the function params as local variables, compile the
-    // function.
+    // Create a scope, and push a new frame.
     beginScope();
     auto functionBytecode = MakeStrong<Bytecode>();
     _frames.push_back({functionBytecode, {}, {}});
 
-    addLocal();
+    // Add function name and arguments to locals list.
+    auto localsPosition = bytecode().add(functionDecl.location, Opcode::Locals, 0);
+    addLocal(functionDecl.signature.name());
     for (const auto &term : functionDecl.signature.terms) {
-        if (auto arg = std::get_if<Signature::Argument>(&term)) {
-            if (arg->token.has_value()) {
-                locals().push_back({arg->token.value().text, _scopeDepth});
-            }
+        if (auto arg = std::get_if<Signature::Argument>(&term); arg && arg->token.has_value()) {
+            addLocal(arg->token.value().text);
         }
     }
 
+    auto localsCount = locals().size();
     functionDecl.statement->accept(*this);
+
+    // Patch the locals count with what was gathered during compilation.
+    bytecode().patchLocals(localsPosition, locals().size() - localsCount);
+
+    // Add implicit return statement if necessary.
     addReturn();
 
     auto functionCaptures = captures();

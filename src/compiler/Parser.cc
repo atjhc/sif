@@ -758,6 +758,7 @@ Result<Owned<Statement>, ParseError> Parser::parseAssignment() {
         return Error(expression.error());
     }
     auto variable = MakeOwned<Variable>(token.value(), typeName, scope);
+    variable->location = token.value().location;
     auto assignment = MakeOwned<Assignment>(std::move(variable), std::move(subscripts),
                                             std::move(expression.value()));
     assignment->location = location;
@@ -812,7 +813,9 @@ Result<Owned<Statement>, ParseError> Parser::parseExpressionStatement() {
     if (!expression) {
         return Error(expression.error());
     }
-    return MakeOwned<ExpressionStatement>(std::move(expression.value()));
+    auto statement = MakeOwned<ExpressionStatement>(std::move(expression.value()));
+    statement->location = statement->expression->location;
+    return statement;
 }
 
 Binary::Operator binaryOp(Token::Type tokenType) {
