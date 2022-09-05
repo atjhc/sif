@@ -101,9 +101,7 @@ Value StringEnumerator::enumerate() {
     return value;
 }
 
-bool StringEnumerator::isAtEnd() {
-    return _string->string().size() == _index;
-}
+bool StringEnumerator::isAtEnd() { return _string->string().size() == _index; }
 
 std::string StringEnumerator::typeName() const { return "StringEnumerator"; }
 

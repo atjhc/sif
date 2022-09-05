@@ -59,16 +59,18 @@ static inline Value Peek(std::vector<Value> &stack) { return stack.back(); }
 
 static inline void Push(std::vector<Value> &stack, const Value &value) { stack.push_back(value); }
 
-#define BINARY(OP)                                                                             \
-    auto rhs = Pop(_stack);                                                                    \
-    auto lhs = Pop(_stack);                                                                    \
-    if (lhs.isInteger() && rhs.isInteger()) {                                                  \
-        Push(_stack, lhs.asInteger() OP rhs.asInteger());                                      \
-    } else if (lhs.isFloat() && rhs.isFloat()) {                                               \
-        Push(_stack, lhs.asFloat() OP rhs.asFloat());                                          \
-    } else {                                                                                   \
-        _error = RuntimeError(frame().bytecode->location(frame().ip - 1), "mismatched types"); \
-        return None;                                                                           \
+#define BINARY(OP)                                                                        \
+    auto rhs = Pop(_stack);                                                               \
+    auto lhs = Pop(_stack);                                                               \
+    if (lhs.isInteger() && rhs.isInteger()) {                                             \
+        Push(_stack, lhs.asInteger() OP rhs.asInteger());                                 \
+    } else if (lhs.isNumber() && rhs.isNumber()) {                                        \
+        Push(_stack, lhs.castFloat() OP rhs.castFloat());                                 \
+    } else {                                                                              \
+        _error = RuntimeError(                                                            \
+            frame().bytecode->location(frame().ip - 1),                                   \
+            Concat("mismatched types: ", lhs.typeName(), " ", #OP, " ", rhs.typeName())); \
+        return None;                                                                      \
     }
 
 #if defined(DEBUG)
@@ -143,7 +145,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto enumerator = Peek(_stack).as<Enumerator>();
             if (!enumerator) {
                 _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                        "expected an enumerator type");
+                                      "expected an enumerator");
                 return None;
             }
             if (enumerator->isAtEnd()) {
@@ -272,8 +274,8 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             } else if (value.isFloat()) {
                 Push(_stack, -value.asFloat());
             } else {
-                _error =
-                    RuntimeError(frame().bytecode->location(frame().ip - 1), "expected a number");
+                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                                      Concat("expected a number, got ", value.typeName()));
                 return None;
             }
             break;
@@ -315,16 +317,18 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                     return None;
                 }
                 Push(_stack, lhs.asInteger() / rhs.asInteger());
-            } else if (lhs.isFloat() && rhs.isFloat()) {
-                if (rhs.asFloat() == 0.0) {
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                float denom = rhs.castFloat();
+                if (denom == 0.0) {
                     _error =
                         RuntimeError(frame().bytecode->location(frame().ip - 1), "divide by zero");
                     return None;
                 }
-                Push(_stack, lhs.asFloat() / rhs.asFloat());
+                Push(_stack, lhs.castFloat() / denom);
             } else {
-                _error =
-                    RuntimeError(frame().bytecode->location(frame().ip - 1), "mismatched types");
+                _error = RuntimeError(
+                    frame().bytecode->location(frame().ip - 1),
+                    Concat("mismatched types: ", lhs.typeName(), " / ", rhs.typeName()));
                 return None;
             }
             break;
@@ -335,8 +339,9 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (lhs.isNumber() && rhs.isNumber()) {
                 Push(_stack, std::pow(lhs.castFloat(), rhs.castFloat()));
             } else {
-                _error = RuntimeError(frame().bytecode->location(frame().ip - 1),
-                                      "expected floating point values");
+                _error = RuntimeError(
+                    frame().bytecode->location(frame().ip - 1),
+                    Concat("mismatched types: ", lhs.typeName(), " ^ ", rhs.typeName()));
                 return None;
             }
             break;
@@ -346,11 +351,12 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto lhs = Pop(_stack);
             if (lhs.isInteger() && rhs.isInteger()) {
                 Push(_stack, lhs.asInteger() % rhs.asInteger());
-            } else if (lhs.isFloat() && rhs.isFloat()) {
-                Push(_stack, std::fmod(lhs.asFloat(), rhs.asFloat()));
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                Push(_stack, std::fmod(lhs.castFloat(), rhs.castFloat()));
             } else {
-                _error =
-                    RuntimeError(frame().bytecode->location(frame().ip - 1), "mismatched types");
+                _error = RuntimeError(
+                    frame().bytecode->location(frame().ip - 1),
+                    Concat("mismatched types: ", lhs.typeName(), " % ", rhs.typeName()));
                 return None;
             }
             break;

@@ -47,6 +47,7 @@ bool Token::isWord() const {
     case Type::Global:
     case Type::Local:
     case Type::Word:
+    case Type::EmptyLiteral:
         return true;
     default:
         return false;

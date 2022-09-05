@@ -374,7 +374,8 @@ Optional<Signature> Parser::parseSignature() {
             Optional<Token> typeName;
             if ((word = matchWord())) {
                 if (argumentNames.find(word.value().text) != argumentNames.end()) {
-                    return emitError(ParseError(word.value(), "duplicate argument names in function declaration"));
+                    return emitError(ParseError(
+                        word.value(), "duplicate argument names in function declaration"));
                 }
                 argumentNames.insert(word.value().text);
                 if (match({Token::Type::Colon})) {

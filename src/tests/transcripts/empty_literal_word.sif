@@ -1,0 +1,4 @@
+print type of empty
+(-- expect
+empty
+--)

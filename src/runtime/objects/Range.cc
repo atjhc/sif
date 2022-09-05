@@ -78,9 +78,7 @@ Value RangeEnumerator::enumerate() {
     return value;
 }
 
-bool RangeEnumerator::isAtEnd() {
-    return _range->size() == _index;
-}
+bool RangeEnumerator::isAtEnd() { return _range->size() == _index; }
 
 std::string RangeEnumerator::typeName() const { return "RangeEnumerator"; }
 
