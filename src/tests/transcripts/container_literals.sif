@@ -1,0 +1,10 @@
+print type of {}
+print type of {:}
+print {1, 2, 3}
+print {1: "one"}
+(-- expect
+list
+dictionary
+1 2 3
+{1: one}
+--)

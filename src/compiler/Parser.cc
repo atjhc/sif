@@ -1185,11 +1185,7 @@ Result<Owned<Expression>, ParseError> Parser::parsePrimary() {
     }
 
     if (match({Token::Type::LeftBrace})) {
-        return parseDictionaryLiteral();
-    }
-
-    if (match({Token::Type::LeftBracket})) {
-        return parseListLiteral();
+        return parseContainerLiteral();
     }
 
     if (match({Token::Type::Global})) {
@@ -1235,10 +1231,50 @@ Result<Owned<Expression>, ParseError> Parser::parseGrouping() {
     return grouping;
 }
 
-Result<Owned<Expression>, ParseError> Parser::parseListLiteral() {
-    std::vector<Owned<Expression>> values;
+Result<Owned<Expression>, ParseError> Parser::parseContainerLiteral() {
+    if (match({Token::Type::RightBrace})) {
+        return MakeOwned<ListLiteral>();
+    }
+    if (match({Token::Type::Colon})) {
+        if (!consume(Token::Type::RightBrace)) {
+            return Error(ParseError(peek(), Concat("expected ", Quoted("}"))));
+        }
+        return MakeOwned<DictionaryLiteral>();
+    }
 
-    if (!match({Token::Type::RightBracket})) {
+    Owned<Expression> containerExpression;
+    auto expression = parseTerm();
+    if (!expression) {
+        return expression;
+    }
+
+    if (match({Token::Type::Colon})) {
+        Mapping<Owned<Expression>, Owned<Expression>> values;
+        auto valueExpression = parseTerm();
+        if (!valueExpression) {
+            return valueExpression;
+        }
+        values[std::move(expression.value())] = std::move(valueExpression.value());
+        if (consume(Token::Type::Comma)) {
+            do {
+                auto keyExpression = parseTerm();
+                if (!keyExpression) {
+                    return keyExpression;
+                }
+                if (!consume(Token::Type::Colon)) {
+                    return Error(ParseError(peek(), Concat("expected ", Quoted(":"))));
+                }
+                auto valueExpression = parseTerm();
+                if (!valueExpression) {
+                    return valueExpression;
+                }
+                values[std::move(keyExpression.value())] = std::move(valueExpression.value());
+            } while (match({Token::Type::Comma}));
+        }
+        containerExpression = MakeOwned<DictionaryLiteral>(std::move(values));
+    } else if (match({Token::Type::Comma})) {
+        std::vector<Owned<Expression>> values;
+        values.push_back(std::move(expression.value()));
         do {
             auto expression = parseTerm();
             if (!expression) {
@@ -1246,37 +1282,16 @@ Result<Owned<Expression>, ParseError> Parser::parseListLiteral() {
             }
             values.push_back(std::move(expression.value()));
         } while (match({Token::Type::Comma}));
-        if (!consume(Token::Type::RightBracket)) {
-            return Error(ParseError(peek(), Concat("expected ", Quoted("]"))));
-        }
+
+        containerExpression = MakeOwned<ListLiteral>(std::move(values));
+    } else {
+        return Error(ParseError(peek(), Concat("expected ", Quoted(":"), " or ", Quoted(","))));
     }
 
-    return MakeOwned<ListLiteral>(std::move(values));
-}
-
-Result<Owned<Expression>, ParseError> Parser::parseDictionaryLiteral() {
-    Mapping<Owned<Expression>, Owned<Expression>> values;
-
-    if (!match({Token::Type::RightBrace})) {
-        do {
-            auto keyExpression = parseTerm();
-            if (!keyExpression) {
-                return keyExpression;
-            }
-            if (!consume(Token::Type::Colon)) {
-                return Error(ParseError(peek(), Concat("expected ", Quoted(":"))));
-            }
-            auto valueExpression = parseTerm();
-            if (!valueExpression) {
-                return valueExpression;
-            }
-            values[std::move(keyExpression.value())] = std::move(valueExpression.value());
-        } while (match({Token::Type::Comma}));
-        if (!consume(Token::Type::RightBrace)) {
-            return Error(ParseError(peek(), Concat("expected ", Quoted("}"))));
-        }
+    if (!consume(Token::Type::RightBrace)) {
+        return Error(ParseError(peek(), Concat("expected ", Quoted("}"))));
     }
-    return MakeOwned<DictionaryLiteral>(std::move(values));
+    return containerExpression;
 }
 
 SIF_NAMESPACE_END

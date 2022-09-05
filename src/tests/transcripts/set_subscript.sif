@@ -1,4 +1,4 @@
-set a to [1, 2, 3]
+set a to {1, 2, 3}
 set a[0] to 10
 print a
 (-- expect

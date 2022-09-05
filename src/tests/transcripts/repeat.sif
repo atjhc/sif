@@ -63,7 +63,7 @@ end repeat
 5
 --)
 
-repeat for i in [1, empty, 3]
+repeat for i in {1, empty, 3}
     print i
 end repeat
 (-- expect

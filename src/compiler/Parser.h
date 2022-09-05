@@ -119,8 +119,7 @@ class Parser {
     Result<Owned<Expression>, ParseError> parseSubscript();
     Result<Owned<Expression>, ParseError> parsePrimary();
     Result<Owned<Expression>, ParseError> parseGrouping();
-    Result<Owned<Expression>, ParseError> parseListLiteral();
-    Result<Owned<Expression>, ParseError> parseDictionaryLiteral();
+    Result<Owned<Expression>, ParseError> parseContainerLiteral();
 
     ParserConfig _config;
     Strong<Scanner> _scanner;

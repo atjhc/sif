@@ -127,7 +127,7 @@ struct RangeLiteral : Expression {
 struct ListLiteral : Expression {
     std::vector<Owned<Expression>> expressions;
 
-    ListLiteral(std::vector<Owned<Expression>> expressions);
+    ListLiteral(std::vector<Owned<Expression>> expressions = {});
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
@@ -135,7 +135,7 @@ struct ListLiteral : Expression {
 struct DictionaryLiteral : Expression {
     Mapping<Owned<Expression>, Owned<Expression>> values;
 
-    DictionaryLiteral(Mapping<Owned<Expression>, Owned<Expression>>);
+    DictionaryLiteral(Mapping<Owned<Expression>, Owned<Expression>> = {});
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

@@ -1,4 +1,4 @@
-set foo to [1, 2, 3]
+set foo to {1, 2, 3}
 print foo[0]
 (-- expect
 1
