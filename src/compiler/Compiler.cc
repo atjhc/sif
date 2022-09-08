@@ -532,6 +532,7 @@ void Compiler::visit(const Literal &literal) {
         return;
     }
 
+    // Special case generating inline shorts for smaller values.
     if (literal.token.type == Token::Type::IntLiteral) {
         auto value = std::stol(literal.token.text);
         if (value <= USHRT_MAX) {
