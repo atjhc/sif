@@ -13,12 +13,13 @@
 //
 
 #include "runtime/objects/String.h"
+#include "utilities/strings.h"
 
 SIF_NAMESPACE_BEGIN
 
 String::String(const std::string &string) : _string(string) {}
 
-const std::string &String::string() const { return _string; }
+std::string &String::string() { return _string; }
 
 Value String::operator[](const Range &range) const {
     auto start = _string.begin() + range.start();
@@ -37,6 +38,8 @@ Value String::operator[](const Range &range) const {
 std::string String::typeName() const { return "string"; }
 
 std::string String::description() const { return _string; }
+
+std::string String::debugDescription() const { return escaped_string_from_string(description()); }
 
 bool String::equals(Strong<Object> object) const {
     if (const auto &string = Cast<String>(object)) {

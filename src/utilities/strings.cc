@@ -94,4 +94,33 @@ std::string string_from_escaped_string(const std::string &str) {
     return ss.str();
 }
 
+std::string escaped_string_from_string(const std::string &str) {
+    std::ostringstream ss;
+    auto i = str.begin();
+    auto end = str.end();
+    while (i < end) {
+        switch (*i) {
+        case '\n':
+            ss << "\\n";
+            break;
+        case '\r':
+            ss << "\\r";
+            break;
+        case '"':
+            ss << "\\\"";
+            break;
+        case '\'':
+            ss << "\\'";
+            break;
+        case '\\':
+            ss << "\\\\";
+            break;
+        default:
+            ss << *i;
+        }
+        i++;
+    }
+    return ss.str();
+}
+
 SIF_NAMESPACE_END

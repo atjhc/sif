@@ -36,7 +36,7 @@ Value List::operator[](const Range &range) const {
 
 std::string List::typeName() const { return "list"; }
 
-std::string List::description() const { return Concat("[", Join(_values, ", "), "]"); }
+std::string List::description() const { return Concat("{", Join(_values, ", "), "}"); }
 
 bool List::equals(Strong<Object> object) const {
     if (const auto &list = Cast<List>(object)) {
@@ -48,7 +48,7 @@ bool List::equals(Strong<Object> object) const {
 size_t List::hash() const {
     hasher h;
     for (const auto &v : _values) {
-        h.hash(v, ValueHasher());
+        h.hash(v, Value::Hasher());
     }
     return h.value();
 }

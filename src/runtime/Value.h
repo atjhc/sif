@@ -41,47 +41,50 @@ class Value {
     Value(const Value &v) = default;
     Value(Value &&v) = default;
 
+    template <typename T> Value(const T &v) : _value(v) {}
+    Value(const std::string &string);
+
     Value &operator=(const Value &v) {
         _value = v._value;
         return *this;
     }
+
     Value &operator=(Value &&v) {
         _value = std::move(v._value);
         return *this;
     }
-
-    template <typename T> Value(const T &v) : _value(v) {}
-    Value(const std::string &string);
 
     Type type() const;
     std::string typeName() const;
 
     bool isEmpty() const;
     bool isNumber() const;
-
     bool isBool() const;
-    bool asBool() const;
-
     bool isInteger() const;
-    int64_t asInteger() const;
-    int64_t castInteger() const;
-
     bool isFloat() const;
-    double asFloat() const;
-    double castFloat() const;
-
     bool isObject() const;
+
+    bool asBool() const;
+    int64_t asInteger() const;
+    double asFloat() const;
     Strong<Object> asObject() const;
+
+    int64_t castInteger() const;
+    double castFloat() const;
 
     template <typename T> Strong<T> as() const {
         return isObject() ? Cast<T>(asObject()) : nullptr;
     }
 
     std::string description() const;
+    std::string debugDescription() const;
 
     friend std::ostream &operator<<(std::ostream &out, const Value &value);
-    friend struct ValueHasher;
     bool operator==(const Value &value) const;
+
+    struct Hasher {
+        size_t operator()(const Value &) const;
+    };
 
   private:
     std::variant<std::monostate, bool, int64_t, double, Strong<Object>> _value;
@@ -89,10 +92,6 @@ class Value {
 
 std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v);
 
-struct ValueHasher {
-    size_t operator()(const Value &) const;
-};
-
-using ValueMap = std::unordered_map<Value, Value, ValueHasher>;
+using ValueMap = std::unordered_map<Value, Value, Value::Hasher>;
 
 SIF_NAMESPACE_END

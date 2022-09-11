@@ -24,4 +24,6 @@ SIF_NAMESPACE_BEGIN
 
 std::string string_from_escaped_string(const std::string &str);
 
+std::string escaped_string_from_string(const std::string &str);
+
 SIF_NAMESPACE_END

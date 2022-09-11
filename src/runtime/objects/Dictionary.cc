@@ -47,8 +47,8 @@ bool Dictionary::equals(Strong<Object> object) const {
 size_t Dictionary::hash() const {
     hasher h;
     for (const auto &pair : _values) {
-        h.hash(pair.first, ValueHasher());
-        h.hash(pair.second, ValueHasher());
+        h.hash(pair.first, Value::Hasher());
+        h.hash(pair.second, Value::Hasher());
     }
     return h.value();
 }

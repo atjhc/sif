@@ -25,9 +25,12 @@ class Object {
     virtual ~Object() = default;
 
     virtual std::string typeName() const = 0;
-    virtual std::string description() const = 0;
     virtual bool equals(Strong<Object>) const;
     virtual size_t hash() const;
+
+    virtual std::string description() const = 0;
+    virtual std::string debugDescription() const;
+
 };
 
 std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);

@@ -29,6 +29,8 @@ Value::Type Value::type() const { return Value::Type(_value.index()); }
 
 std::string Value::typeName() const {
     switch (type()) {
+    case Value::Type::Empty:
+        return "empty";
     case Value::Type::Integer:
         return "integer";
     case Value::Type::Float:
@@ -37,8 +39,6 @@ std::string Value::typeName() const {
         return "bool";
     case Value::Type::Object:
         return asObject()->typeName();
-    case Value::Type::Empty:
-        return "empty";
     }
 }
 
@@ -101,7 +101,7 @@ double Value::castFloat() const {
     if (auto v = std::get_if<double>(&_value)) {
         return *v;
     } else if (auto v = std::get_if<int64_t>(&_value)) {
-        return static_cast<int64_t>(*v);
+        return static_cast<double>(*v);
     }
     throw std::runtime_error("expected number type");
 }
@@ -120,9 +120,13 @@ Strong<Object> Value::asObject() const {
     throw std::runtime_error("expected object type");
 }
 
-std::string Value::description() const {
+std::string Value::debugDescription() const {
     std::ostringstream ss;
-    ss << "(" << typeName() << ") " << *this;
+    if (isObject()) {
+        ss << "(" << typeName() << ") " << asObject()->debugDescription();
+    } else {
+        ss << "(" << typeName() << ") " << *this;
+    }
     return ss.str();
 }
 
@@ -142,7 +146,7 @@ bool Value::operator==(const Value &value) const {
     return _value == value._value;
 }
 
-size_t ValueHasher::operator()(const Value &value) const {
+size_t Value::Hasher::operator()(const Value &value) const {
     if (value.isEmpty())
         return 0;
     if (value.isObject()) {

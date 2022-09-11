@@ -101,7 +101,7 @@ std::string Bytecode::decodePosition(Iterator position) const {
 Bytecode::Iterator Bytecode::disassembleConstant(std::ostream &out, const std::string &name,
                                                  Iterator position) const {
     size_t index = ReadUInt16(position + 1);
-    out << name << " " << index << " \"" << _constants.at(index).description() << "\"";
+    out << name << " " << index << " \"" << _constants.at(index).debugDescription() << "\"";
     return position + 3;
 }
 
@@ -285,7 +285,7 @@ struct BytecodePrinter {
         auto indent = std::string(depth * 2, ' ');
         for (size_t i = 0; i < bytecode.constants().size(); i++) {
             const auto &constant = bytecode.constants()[i];
-            out << indent << "[" << i << "] (" << constant.typeName() << ") " << constant
+            out << indent << "[" << i << "] " << constant.debugDescription()
                 << std::endl;
             if (const auto &function = constant.as<Function>()) {
                 BytecodePrinter printer{depth + 1};

@@ -17,7 +17,7 @@
 #include "tests/TestSuite.h"
 #include "utilities/strings.h"
 
-TEST_CASE(Strings, Escape) {
+TEST_CASE(Strings, string_from_escaped_string) {
     auto escape = sif::string_from_escaped_string;
 
     ASSERT_EQ(escape("Hello, World!"), "Hello, World!");
@@ -32,4 +32,15 @@ TEST_CASE(Strings, Escape) {
     ASSERT_EQ(escape("Hello, World!\\040"), "Hello, World!\040");
     ASSERT_EQ(escape("Hello, World!\\40"), "Hello, World!\40");
     ASSERT_EQ(escape("Hello\\x32, World!"), "Hello\x32, World!");
+}
+
+TEST_CASE(Strings, escaped_string_from_string) {
+    auto unescape = sif::escaped_string_from_string;
+
+    ASSERT_EQ(unescape("Hello, World!"), "Hello, World!");
+    ASSERT_EQ(unescape("Hello\n World!"), "Hello\\n World!");
+    ASSERT_EQ(unescape("Hello\r, World!"), "Hello\\r, World!");
+    ASSERT_EQ(unescape("Hello', World!"), "Hello\\', World!");
+    ASSERT_EQ(unescape("Hello\", World!"), "Hello\\\", World!");
+    ASSERT_EQ(unescape("Hello\\, World!"), "Hello\\\\, World!");
 }

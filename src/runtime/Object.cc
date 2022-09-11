@@ -22,8 +22,12 @@ bool Object::equals(Strong<Object> object) const { return this == object.get(); 
 
 size_t Object::hash() const { return reinterpret_cast<size_t>(this); }
 
+std::string Object::debugDescription() const {
+    return description();
+}
+
 std::ostream &operator<<(std::ostream &out, const Strong<Object> &object) {
-    return out << (object ? object->description() : "<nil>");
+    return out << object->description();
 }
 
 SIF_NAMESPACE_END
