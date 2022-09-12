@@ -120,6 +120,12 @@ Strong<Object> Value::asObject() const {
     throw std::runtime_error("expected object type");
 }
 
+std::string Value::description() const {
+    std::ostringstream ss;
+    ss << *this;
+    return ss.str();
+}
+
 std::string Value::debugDescription() const {
     std::ostringstream ss;
     if (isObject()) {
