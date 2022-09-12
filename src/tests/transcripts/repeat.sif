@@ -17,7 +17,7 @@ loop 2
 --)
 
 set i to 0
-repeat until i is 3
+repeat until i = 3
     print "loop 3"
     set i to i + 1
 end
@@ -54,7 +54,7 @@ loop 5
 --)
 
 repeat for i in 1...5
-    if i % 2 is 0 then next repeat
+    if i % 2 = 0 then next repeat
     print i
 end repeat
 (-- expect

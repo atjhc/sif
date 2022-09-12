@@ -164,35 +164,57 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
     uint16_t index = 0;
     Opcode opcode;
 
-    switch (variable.scope) {
-    case Variable::Scope::Unspecified:
-        if (int i = findLocal(_frames.back(), name); i > -1) {
-            index = i;
-            opcode = Opcode::GetLocal;
-        } else if (int i = findCapture(name); i > -1) {
-            index = i;
-            opcode = Opcode::GetCapture;
-        } else {
+    if (_scopeDepth > 0) {
+        switch (variable.scope) {
+        case Variable::Scope::Unspecified:
+            if (int i = findLocal(_frames.back(), name); i > -1) {
+                index = i;
+                opcode = Opcode::GetLocal;
+            } else if (int i = findCapture(name); i > -1) {
+                index = i;
+                opcode = Opcode::GetCapture;
+            } else {
+                index = bytecode().addConstant(MakeStrong<String>(name));
+                opcode = Opcode::GetGlobal;
+            }
+            break;
+        case Variable::Scope::Local:
+            if (int i = findLocal(_frames.back(), name); i > -1) {
+                index = i;
+                opcode = Opcode::GetLocal;
+            } else if (int i = findCapture(name); i > -1) {
+                index = i;
+                opcode = Opcode::GetCapture;
+            } else {
+                error(variable,
+                    Concat("unused local variable ", Quoted(name), " will always be empty"));
+                return;
+            }
+            break;
+        case Variable::Scope::Global:
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
         }
-        break;
-    case Variable::Scope::Local:
-        if (int i = findLocal(_frames.back(), name); i > -1) {
-            index = i;
-            opcode = Opcode::GetLocal;
-        } else if (int i = findCapture(name); i > -1) {
-            index = i;
-            opcode = Opcode::GetCapture;
-        } else {
-            error(variable,
-                  Concat("unused local variable ", Quoted(name), " will always be empty"));
-            return;
+    } else {
+        switch (variable.scope) {
+        case Variable::Scope::Local:
+            if (int i = findLocal(_frames.back(), name); i > -1) {
+                index = i;
+                opcode = Opcode::GetLocal;
+            } else if (int i = findCapture(name); i > -1) {
+                index = i;
+                opcode = Opcode::GetCapture;
+            } else {
+                error(variable,
+                    Concat("unused local variable ", Quoted(name), " will always be empty"));
+                return;
+            }
+            break;
+        case Variable::Scope::Unspecified:
+        case Variable::Scope::Global:
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            opcode = Opcode::GetGlobal;
         }
-        break;
-    case Variable::Scope::Global:
-        index = bytecode().addConstant(MakeStrong<String>(name));
-        opcode = Opcode::GetGlobal;
     }
     bytecode().add(variable.location, opcode, index);
 }
@@ -355,18 +377,15 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto nextRepeat = _nextRepeat;
     auto exitRepeat = _exitRepeat;
 
-    addLocal();
-    addLocal(lowercase(foreach.variable->token.text));
-
     foreach.expression->accept(*this);
     bytecode().add(foreach.location, Opcode::GetEnumerator);
 
-    bytecode().add(foreach.location, Opcode::Jump, 5);
+    bytecode().add(foreach.location, Opcode::Jump, 4);
     _exitRepeat = bytecode().add(foreach.location, Opcode::Pop);
     auto jumpExitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
-    _nextRepeat = bytecode().add(foreach.location, Opcode::Pop);
-    auto jumpIfAtEnd = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
+    auto jumpIfAtEnd = _nextRepeat = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
     bytecode().add(foreach.location, Opcode::Enumerate);
+    assign(*foreach.variable, foreach.variable->token.text);
 
     foreach.statement->accept(*this);
     bytecode().addRepeat(foreach.location, _nextRepeat);
@@ -374,9 +393,6 @@ void Compiler::visit(const RepeatFor &foreach) {
     bytecode().patchJump(jumpIfAtEnd);
     bytecode().patchJump(jumpExitRepeat);
     bytecode().add(foreach.location, Opcode::Pop);
-
-    locals().pop_back();
-    locals().pop_back();
 
     _nextRepeat = nextRepeat;
     _exitRepeat = exitRepeat;
