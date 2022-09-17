@@ -1,4 +1,4 @@
-print type of empty
+print type name of empty
 (-- expect
 empty
 --)

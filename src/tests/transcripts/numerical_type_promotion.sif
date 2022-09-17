@@ -1,33 +1,33 @@
-print type of 1 + 1
-print type of 1 + 1.0
-print type of 1.0 + 1.0
+print type name of 1 + 1
+print type name of 1 + 1.0
+print type name of 1.0 + 1.0
 (-- expect
 integer
 float
 float
 --)
 
-print type of 2 / 2
-print type of 2 / 2.0
-print type of 2.0 / 2.0
+print type name of 2 / 2
+print type name of 2 / 2.0
+print type name of 2.0 / 2.0
 (-- expect
 integer
 float
 float
 --)
 
-print type of 2 % 2
-print type of 2 % 2.0
-print type of 2.0 % 2.0
+print type name of 2 % 2
+print type name of 2 % 2.0
+print type name of 2.0 % 2.0
 (-- expect
 integer
 float
 float
 --)
 
-print type of 2 ^ 2
-print type of 2 ^ 2.0
-print type of 2.0 ^ 2.0
+print type name of 2 ^ 2
+print type name of 2 ^ 2.0
+print type name of 2.0 ^ 2.0
 (-- expect
 float
 float

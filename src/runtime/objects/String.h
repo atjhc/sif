@@ -34,6 +34,9 @@ class String : public Object, public Enumerable, public Subscriptable, public Co
     String(const std::string &string);
 
     std::string &string();
+    const std::string &string() const;
+
+    size_t size() const;
 
     Value operator[](const Range &range) const;
 
@@ -44,12 +47,23 @@ class String : public Object, public Enumerable, public Subscriptable, public Co
     bool equals(Strong<Object>) const override;
     size_t hash() const override;
 
+    void replaceAll(const String &searchString, const String &replacementString);
+    void replaceFirst(const String &searchString, const String &replacementString);
+    void replaceLast(const String &searchString, const String &replacementString);
+
+    bool contains(const String &searchString) const;
+    bool startsWith(const String &searchString) const;
+    bool endsWith(const String &searchString) const;
+
+    size_t findFirst(const String &searchString) const;
+    size_t findLast(const String &searchString) const;
+
     // Enumerable
     Value enumerator(Value self) const override;
 
     // Subscriptable
-    Result<Value, RuntimeError> subscript(Location location, Value value) const override;
-    Result<Value, RuntimeError> setSubscript(Location, Value, Value) override;
+    Result<Value, RuntimeError> subscript(Location, const Value &) const override;
+    Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
 
     // Copyable
     Strong<Object> copy() const override;

@@ -117,4 +117,8 @@ bool Signature::operator<(const Signature &signature) const {
 
 bool Signature::operator==(const Signature &signature) const { return name() == signature.name(); }
 
+size_t Signature::Hash::operator()(const Signature &signature) const {
+    return std::hash<std::string>{}(signature.name());
+}
+
 SIF_NAMESPACE_END

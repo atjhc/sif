@@ -17,8 +17,13 @@
 SIF_NAMESPACE_BEGIN
 
 List::List(const std::vector<Value> &values) : _values(values) {}
+List::List(std::vector<Value>::iterator begin, std::vector<Value>::iterator end)
+    : _values(begin, end) {}
 
 std::vector<Value> &List::values() { return _values; }
+const std::vector<Value> &List::values() const { return _values; }
+
+size_t List::size() const { return values().size(); }
 
 Value List::operator[](const Range &range) const {
     auto start = _values.begin() + range.start();
@@ -48,14 +53,64 @@ bool List::equals(Strong<Object> object) const {
 size_t List::hash() const {
     hasher h;
     for (const auto &v : _values) {
-        h.hash(v, Value::Hasher());
+        h.hash(v, Value::Hash());
     }
     return h.value();
 }
 
+void List::replaceAll(const Value &searchValue, const Value &replacementValue) {
+    auto result = std::find(_values.begin(), _values.end(), searchValue);
+    while (result != _values.end()) {
+        *result = replacementValue;
+        result = std::find(result + 1, _values.end(), searchValue);
+    }
+}
+
+void List::replaceFirst(const Value &searchValue, const Value &replacementValue) {
+    auto result = std::find(_values.begin(), _values.end(), searchValue);
+    if (result != _values.end()) {
+        *result = replacementValue;
+    }
+}
+
+void List::replaceLast(const Value &searchValue, const Value &replacementValue) {
+    auto result = std::find(_values.rbegin(), _values.rend(), searchValue);
+    if (result != _values.rend()) {
+        *result = replacementValue;
+    }
+}
+
+bool List::contains(const Value &value) const {
+    return std::find(_values.begin(), _values.end(), value) != _values.end();
+}
+
+bool List::startsWith(const Value &value) const {
+    return _values.size() > 0 && _values.front() == value;
+}
+
+bool List::endsWith(const Value &value) const {
+    return _values.size() > 0 && _values.back() == value;
+}
+
+Optional<int64_t> List::findFirst(const Value &value) const {
+    auto result = std::find(_values.begin(), _values.end(), value);
+    if (result == _values.end()) {
+        return None;
+    }
+    return result - _values.begin();
+}
+
+Optional<int64_t> List::findLast(const Value &value) const {
+    auto result = std::find(_values.rbegin(), _values.rend(), value);
+    if (result == _values.rend()) {
+        return None;
+    }
+    return result.base() - _values.begin() - 1;
+}
+
 Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
 
-Result<Value, RuntimeError> List::subscript(Location location, Value value) const {
+Result<Value, RuntimeError> List::subscript(Location location, const Value &value) const {
     if (auto range = value.as<Range>()) {
         return Value(this->operator[](*range));
     }
@@ -70,7 +125,7 @@ Result<Value, RuntimeError> List::subscript(Location location, Value value) cons
     return Error(RuntimeError(location, "expected an integer or range"));
 }
 
-Result<Value, RuntimeError> List::setSubscript(Location location, Value key, Value value) {
+Result<Value, RuntimeError> List::setSubscript(Location location, const Value &key, Value value) {
     if (auto range = key.as<Range>()) {
         _values.erase(_values.begin() + range->start(),
                       _values.begin() + range->end() + (range->closed() ? 1 : 0));

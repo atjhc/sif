@@ -37,6 +37,10 @@ struct Signature {
     };
     using Term = std::variant<Token, Choice, Argument, Option>;
 
+    struct Hash {
+        size_t operator()(const Signature &) const;
+    };
+
     static Result<Signature, ParseError> Make(const std::string &format);
 
     std::string name() const;

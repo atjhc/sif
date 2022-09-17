@@ -120,9 +120,17 @@ Strong<Object> Value::asObject() const {
     throw std::runtime_error("expected object type");
 }
 
+std::ostream &operator<<(std::ostream &out, const std::monostate &) { return out << "empty"; }
+
 std::string Value::description() const {
+    if (isBool()) {
+        return asBool() ? "true" : "false";
+    } else if (isObject()) {
+        return asObject()->description();
+    }
+
     std::ostringstream ss;
-    ss << *this;
+    std::visit([&ss](auto &&arg) { ss << arg; }, _value);
     return ss.str();
 }
 
@@ -152,7 +160,7 @@ bool Value::operator==(const Value &value) const {
     return _value == value._value;
 }
 
-size_t Value::Hasher::operator()(const Value &value) const {
+size_t Value::Hash::operator()(const Value &value) const {
     if (value.isEmpty())
         return 0;
     if (value.isObject()) {
@@ -163,17 +171,8 @@ size_t Value::Hasher::operator()(const Value &value) const {
     return hash;
 }
 
-std::ostream &operator<<(std::ostream &out, const std::monostate &) { return out << "empty"; }
-
 std::ostream &operator<<(std::ostream &out, const Value &value) {
-    if (value.isBool()) {
-        return out << (value.asBool() ? "true" : "false");
-    } else if (value.isObject()) {
-        return out << value.asObject()->description();
-    }
-
-    std::visit([&](auto &&arg) { out << arg; }, value._value);
-    return out;
+    return out << value.description();
 }
 
 std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v) {

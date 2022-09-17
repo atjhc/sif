@@ -58,9 +58,9 @@ class Value {
     std::string typeName() const;
 
     bool isEmpty() const;
-    bool isNumber() const;
     bool isBool() const;
     bool isInteger() const;
+    bool isNumber() const;
     bool isFloat() const;
     bool isObject() const;
 
@@ -79,10 +79,9 @@ class Value {
     std::string description() const;
     std::string debugDescription() const;
 
-    friend std::ostream &operator<<(std::ostream &out, const Value &value);
     bool operator==(const Value &value) const;
 
-    struct Hasher {
+    struct Hash {
         size_t operator()(const Value &) const;
     };
 
@@ -90,8 +89,9 @@ class Value {
     std::variant<std::monostate, bool, int64_t, double, Strong<Object>> _value;
 };
 
-std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v);
+std::ostream &operator<<(std::ostream &out, const Value &value);
+std::ostream &operator<<(std::ostream &out, const std::vector<Value> &values);
 
-using ValueMap = std::unordered_map<Value, Value, Value::Hasher>;
+using ValueMap = std::unordered_map<Value, Value, Value::Hash>;
 
 SIF_NAMESPACE_END

@@ -187,7 +187,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
                 opcode = Opcode::GetCapture;
             } else {
                 error(variable,
-                    Concat("unused local variable ", Quoted(name), " will always be empty"));
+                      Concat("unused local variable ", Quoted(name), " will always be empty"));
                 return;
             }
             break;
@@ -206,7 +206,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
                 opcode = Opcode::GetCapture;
             } else {
                 error(variable,
-                    Concat("unused local variable ", Quoted(name), " will always be empty"));
+                      Concat("unused local variable ", Quoted(name), " will always be empty"));
                 return;
             }
             break;

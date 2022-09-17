@@ -1,7 +1,7 @@
 repeat for x in 1...100
-  if x % 15 is 0 then print "FizzBuzz" else
-    if x % 5 is 0 then print "Buzz" else
-      if x % 3 is 0 then print "Fizz" else print x
+  if x % 15 = 0 then print "FizzBuzz" else
+    if x % 5 = 0 then print "Buzz" else
+      if x % 3 = 0 then print "Fizz" else print x
     end if
   end if
 end repeat

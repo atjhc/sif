@@ -1,5 +1,5 @@
-print type of {}
-print type of {:}
+print type name of {}
+print type name of {:}
 print {1, 2, 3}
 print {1: "one"}
 (-- expect

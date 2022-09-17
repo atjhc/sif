@@ -30,7 +30,6 @@ class Object {
 
     virtual std::string description() const = 0;
     virtual std::string debugDescription() const;
-
 };
 
 std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);

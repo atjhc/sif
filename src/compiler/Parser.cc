@@ -1285,6 +1285,10 @@ Result<Owned<Expression>, ParseError> Parser::parseContainerLiteral() {
         } while (match({Token::Type::Comma}));
 
         containerExpression = MakeOwned<ListLiteral>(std::move(values));
+    } else if (check({Token::Type::RightBrace})) {
+        std::vector<Owned<Expression>> values;
+        values.push_back(std::move(expression.value()));
+        containerExpression = MakeOwned<ListLiteral>(std::move(values));
     } else {
         return Error(ParseError(peek(), Concat("expected ", Quoted(":"), " or ", Quoted(","))));
     }

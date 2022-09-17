@@ -3,25 +3,28 @@
 function read a story
   print "Enter a story. A blank line marks the end of the story."
   print "Use <noun>, <verb>, etc. to mark inputs:"
-  set input to empty
+  set input to ""
   repeat
     read a line
-    if it is "" then exit repeat
-    set input to input + it
+    if it = empty then exit repeat
+    insert it at the end of input
+    insert "\n" at the end of input
   end
   return input
 end
+
 read a story
 set story to it
 
-(-- disabled for now
 repeat
-  set startIndex to offset "<" story
-  if startIndex is empty then exit repeat
-  put offset(">", story) into endIndex
-  put character startIndex to endIndex of story into prompt
-  ask "Enter a " & prompt & ": "
-  put it into character startIndex to endIndex of story
+  set startIndex to the offset of "<" in story
+  if startIndex = empty then exit repeat
+
+  set endIndex to the offset of ">" in story
+  set prompt to characters startIndex to endIndex of story
+
+  write "Enter a", prompt, ": "
+  read a line
+  replace characters startIndex to (endIndex + 1) with it in story
 end repeat
 print story
---)

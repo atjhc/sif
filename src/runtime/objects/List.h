@@ -31,10 +31,24 @@ SIF_NAMESPACE_BEGIN
 class List : public Object, public Enumerable, public Subscriptable {
   public:
     List(const std::vector<Value> &values = {});
+    List(std::vector<Value>::iterator begin, std::vector<Value>::iterator end);
 
     std::vector<Value> &values();
+    const std::vector<Value> &values() const;
 
+    size_t size() const;
     Value operator[](const Range &range) const;
+
+    void replaceAll(const Value &searchValue, const Value &replacementValue);
+    void replaceFirst(const Value &searchValue, const Value &replacementValue);
+    void replaceLast(const Value &searchValue, const Value &replacementValue);
+
+    bool contains(const Value &value) const;
+    bool startsWith(const Value &value) const;
+    bool endsWith(const Value &value) const;
+
+    Optional<int64_t> findFirst(const Value &value) const;
+    Optional<int64_t> findLast(const Value &value) const;
 
     std::string typeName() const override;
     std::string description() const override;
@@ -45,8 +59,8 @@ class List : public Object, public Enumerable, public Subscriptable {
     Value enumerator(Value self) const override;
 
     // Subscriptable
-    Result<Value, RuntimeError> subscript(Location location, Value value) const override;
-    Result<Value, RuntimeError> setSubscript(Location, Value, Value) override;
+    Result<Value, RuntimeError> subscript(Location, const Value &) const override;
+    Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
 
   private:
     std::vector<Value> _values;

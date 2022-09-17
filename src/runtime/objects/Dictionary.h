@@ -32,14 +32,16 @@ class Dictionary : public Object, public Subscriptable {
 
     ValueMap &values();
 
+    bool contains(const Value &value) const;
+
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
     size_t hash() const override;
 
     // Subscriptable
-    Result<Value, RuntimeError> subscript(Location location, Value value) const override;
-    Result<Value, RuntimeError> setSubscript(Location, Value, Value) override;
+    Result<Value, RuntimeError> subscript(Location, const Value &) const override;
+    Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
 
   private:
     ValueMap _values;

@@ -21,6 +21,10 @@ String::String(const std::string &string) : _string(string) {}
 
 std::string &String::string() { return _string; }
 
+const std::string &String::string() const { return _string; }
+
+size_t String::size() const { return _string.size(); }
+
 Value String::operator[](const Range &range) const {
     auto start = _string.begin() + range.start();
     auto end = _string.begin() + range.end() + (range.closed() ? 1 : 0);
@@ -52,11 +56,57 @@ size_t String::hash() const { return std::hash<std::string>{}(_string); }
 
 Strong<Object> String::copy() const { return MakeStrong<String>(_string); }
 
+void String::replaceAll(const String &searchString, const String &replacementString) {
+    size_t offset = 0;
+    while (true) {
+        auto position = string().find(searchString.string(), offset);
+        if (position == std::string::npos) {
+            return;
+        }
+        string().replace(position, searchString.string().size(), replacementString.string());
+        offset += position + replacementString.size();
+    }
+}
+
+void String::replaceFirst(const String &searchString, const String &replacementString) {
+    auto position = string().find(searchString.string());
+    if (position != std::string::npos) {
+        string().replace(position, searchString.string().size(), replacementString.string());
+    }
+}
+
+void String::replaceLast(const String &searchString, const String &replacementString) {
+    auto position = string().rfind(searchString.string());
+    if (position != std::string::npos) {
+        string().replace(position, searchString.string().size(), replacementString.string());
+    }
+}
+
+bool String::contains(const String &searchString) const {
+    return string().find(searchString.string()) != std::string::npos;
+}
+
+bool String::startsWith(const String &searchString) const {
+    return string().find(searchString.string()) == 0;
+}
+
+bool String::endsWith(const String &searchString) const {
+    return string().rfind(searchString.string()) + searchString.size() == size();
+}
+
+size_t String::findFirst(const String &searchString) const {
+    return string().find(searchString.string());
+}
+
+size_t String::findLast(const String &searchString) const {
+    return string().rfind(searchString.string());
+}
+
 Value String::enumerator(Value self) const {
     return MakeStrong<StringEnumerator>(self.as<String>());
 }
 
-Result<Value, RuntimeError> String::subscript(Location location, Value value) const {
+Result<Value, RuntimeError> String::subscript(Location location, const Value &value) const {
     if (value.isInteger()) {
         auto index = value.asInteger();
         if (index >= _string.size() || _string.size() + index < 0) {
@@ -70,7 +120,7 @@ Result<Value, RuntimeError> String::subscript(Location location, Value value) co
     return Error(RuntimeError(location, "expected an integer or range"));
 }
 
-Result<Value, RuntimeError> String::setSubscript(Location location, Value key, Value value) {
+Result<Value, RuntimeError> String::setSubscript(Location location, const Value &key, Value value) {
     if (auto range = key.as<Range>()) {
         if (auto string = value.as<String>()) {
             _string.replace(_string.begin() + range->start(),

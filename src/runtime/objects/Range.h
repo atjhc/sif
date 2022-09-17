@@ -36,6 +36,10 @@ class Range : public Object, public Enumerable, public Subscriptable {
     bool closed() const;
     int64_t size() const;
 
+    bool contains(int64_t value) const;
+    bool contains(const Range &range) const;
+    bool overlaps(const Range &range) const;
+
     std::string typeName() const override;
     std::string description() const override;
     bool equals(Strong<Object>) const override;
@@ -45,8 +49,8 @@ class Range : public Object, public Enumerable, public Subscriptable {
     Value enumerator(Value self) const override;
 
     // Subscriptable
-    Result<Value, RuntimeError> subscript(Location location, Value value) const override;
-    Result<Value, RuntimeError> setSubscript(Location, Value, Value) override;
+    Result<Value, RuntimeError> subscript(Location, const Value &) const override;
+    Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
 
   private:
     int64_t _start;

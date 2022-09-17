@@ -45,11 +45,32 @@ size_t Range::hash() const {
     return hasher.value();
 }
 
+bool Range::contains(int64_t value) const {
+    if (_closed) {
+        return value >= _start && value <= _end;
+    }
+    return value >= _start && value < _end;
+}
+
+bool Range::contains(const Range &range) const {
+    if (range.closed()) {
+        return contains(range.start()) && contains(range.end());
+    }
+    return contains(range.start()) && contains(range.end() - 1);
+}
+
+bool Range::overlaps(const Range &range) const {
+    if (range.closed()) {
+        return contains(range.start()) || contains(range.end());
+    }
+    return contains(range.start()) || contains(range.end() - 1);
+}
+
 int64_t Range::size() const { return (_closed ? 1 : 0) + _end - _start; }
 
 Value Range::enumerator(Value self) const { return MakeStrong<RangeEnumerator>(self.as<Range>()); }
 
-Result<Value, RuntimeError> Range::subscript(Location location, Value value) const {
+Result<Value, RuntimeError> Range::subscript(Location location, const Value &value) const {
     if (!value.isInteger()) {
         return Error(RuntimeError(location, "expected an integer"));
         return true;
@@ -61,7 +82,7 @@ Result<Value, RuntimeError> Range::subscript(Location location, Value value) con
     return Value(start() + index);
 }
 
-Result<Value, RuntimeError> Range::setSubscript(Location location, Value key, Value value) {
+Result<Value, RuntimeError> Range::setSubscript(Location location, const Value &key, Value value) {
     return Error(RuntimeError(location, "ranges may not be modified"));
 }
 

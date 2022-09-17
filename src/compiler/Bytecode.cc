@@ -285,8 +285,7 @@ struct BytecodePrinter {
         auto indent = std::string(depth * 2, ' ');
         for (size_t i = 0; i < bytecode.constants().size(); i++) {
             const auto &constant = bytecode.constants()[i];
-            out << indent << "[" << i << "] " << constant.debugDescription()
-                << std::endl;
+            out << indent << "[" << i << "] " << constant.debugDescription() << std::endl;
             if (const auto &function = constant.as<Function>()) {
                 BytecodePrinter printer{depth + 1};
                 printer.print(out, *function->bytecode());

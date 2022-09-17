@@ -26,6 +26,6 @@ repeat
   write "? : "
   read a line
   set question to it
-  if the size of question is 0 then exit repeat
+  if the size of question = 0 then exit repeat
   print any line of answers
 end repeat

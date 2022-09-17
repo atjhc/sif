@@ -47,13 +47,15 @@ bool Dictionary::equals(Strong<Object> object) const {
 size_t Dictionary::hash() const {
     hasher h;
     for (const auto &pair : _values) {
-        h.hash(pair.first, Value::Hasher());
-        h.hash(pair.second, Value::Hasher());
+        h.hash(pair.first, Value::Hash());
+        h.hash(pair.second, Value::Hash());
     }
     return h.value();
 }
 
-Result<Value, RuntimeError> Dictionary::subscript(Location location, Value value) const {
+bool Dictionary::contains(const Value &value) const { return _values.find(value) != _values.end(); }
+
+Result<Value, RuntimeError> Dictionary::subscript(Location location, const Value &value) const {
     auto it = _values.find(value);
     if (it == _values.end()) {
         return Value();
@@ -62,7 +64,7 @@ Result<Value, RuntimeError> Dictionary::subscript(Location location, Value value
     }
 }
 
-Result<Value, RuntimeError> Dictionary::setSubscript(Location, Value key, Value value) {
+Result<Value, RuntimeError> Dictionary::setSubscript(Location, const Value &key, Value value) {
     _values[key] = value;
     return Value();
 }

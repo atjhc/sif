@@ -1,39 +1,24 @@
 -- http://rosettacode.org/wiki/CSV_to_HTML_translation
 
-(-- disabled for now
-function replace all (src: string) with (dst: string) in (text: string) -> string
-  set result to empty
-  repeat
-    set index to the offset of src in text
-    if index is empty then
-      put text after result
-      exit repeat
-    end if
-    
-    put char 1 to (index - 1) of text after result
-    put dst after result
-    delete char 1 to (index + length(src) - 1) of text
-  end repeat
-  return result
-end function
-
-function html of (csv: string)
-  put "<table>\n" into html
-  repeat while csv <> empty
-    put line 1 of csv into row
-    put "<tr>" after html
-    repeat while row is not empty
-      put item 1 of row into theItem
-      set theItem to replace all "&" with "&amp;" in theItem
-      set theItem to replace all "<" with "&lt;" in theItem
-      set theItem to replace all ">" with "&gt;" in theItem
-      put "<td>" & theItem & "</td>" after html
-      delete item 1 of row
+function html of {csv}
+  set html to "<table>\n"
+  repeat for row in the list of lines in csv
+    insert "<tr>" at the end of html
+    repeat until row = empty
+      set offset to the offset of "," in row
+      if offset = empty then set offset to (the size of row) - 1
+      set theItem to characters 0 to offset of row
+      replace all "&" with "&amp;" in theItem
+      replace all "<" with "&lt;" in theItem
+      replace all ">" with "&gt;" in theItem
+      insert "<td>" at the end of html
+      insert theItem at the end of html
+      insert "</td>" at the end of html
+      remove characters 0 to offset from row
     end repeat
-    put "</tr>\n" after html
-    delete line 1 of csv
+    insert "</tr>\n" at the end of html
   end repeat
-  put "</table>\n" after html
+  insert "</table>\n" at the end of html
   return html
 end function
 
@@ -44,5 +29,4 @@ The multitude,Who are you?
 Brians mother,I'm his mother; that's who!
 The multitude,Behold his mother! Behold his mother!"
 
-print line html of csv
---)
+print html of csv
