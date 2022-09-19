@@ -18,54 +18,54 @@
 #include "utilities/chunk.h"
 
 TEST_CASE(ChunkTests, GetChunks) {
-    std::string string = "firstly, line 1 of the string\n"
-                         "then, line 2\n"
+    std::string string = "最初に, line 1 of the string\n"
+                         "thén, line 2\n"
                          "lastly, line 3 of the string\n";
 
-    ASSERT_EQ(sif::index_chunk(sif::chunk::character, 0, string).get(), "f");
+    ASSERT_EQ(sif::index_chunk(sif::chunk::character, 0, string).get(), "最");
     ASSERT_EQ(sif::index_chunk(sif::chunk::character, 5, string).get(), "l");
     ASSERT_EQ(sif::index_chunk(sif::chunk::character, 100, string).get(), "");
 
-    ASSERT_EQ(sif::range_chunk(sif::chunk::character, 0, 6, string).get(), "firstly");
-    ASSERT_EQ(sif::range_chunk(sif::chunk::character, 9, 12, string).get(), "line");
-    ASSERT_EQ(sif::range_chunk(sif::chunk::character, 51, 100, string).get(),
-              "line 3 of the string\n");
+    ASSERT_EQ(sif::range_chunk(sif::chunk::character, 0, 2, string).get(), "最初に");
+    ASSERT_EQ(sif::range_chunk(sif::chunk::character, 5, 8, string).get(), "line");
+    ASSERT_EQ(sif::range_chunk(sif::chunk::character, 39, 100, string).get(),
+              "lastly, line 3 of the string\n");
 
     ASSERT_EQ(sif::last_chunk(sif::chunk::character, string).get(), "\n");
 
-    ASSERT_EQ(sif::index_chunk(sif::chunk::word, 0, string).get(), "firstly,");
+    ASSERT_EQ(sif::index_chunk(sif::chunk::word, 0, string).get(), "最初に,");
     ASSERT_EQ(sif::index_chunk(sif::chunk::word, 5, string).get(), "string");
     ASSERT_EQ(sif::index_chunk(sif::chunk::word, 100, string).get(), "");
 
     ASSERT_EQ(sif::range_chunk(sif::chunk::word, 0, 5, string).get(),
-              "firstly, line 1 of the string");
-    ASSERT_EQ(sif::range_chunk(sif::chunk::word, 6, 7, string).get(), "then, line");
+              "最初に, line 1 of the string");
+    ASSERT_EQ(sif::range_chunk(sif::chunk::word, 6, 7, string).get(), "thén, line");
     ASSERT_EQ(sif::range_chunk(sif::chunk::word, 9, 100, string).get(),
               "lastly, line 3 of the string\n");
 
     ASSERT_EQ(sif::last_chunk(sif::chunk::word, string).get(), "string");
 
-    ASSERT_EQ(sif::index_chunk(sif::chunk::item, 0, string).get(), "firstly");
+    ASSERT_EQ(sif::index_chunk(sif::chunk::item, 0, string).get(), "最初に");
     ASSERT_EQ(sif::index_chunk(sif::chunk::item, 2, string).get(), " line 2\nlastly");
     ASSERT_EQ(sif::index_chunk(sif::chunk::item, 100, string).get(), "");
 
     ASSERT_EQ(sif::range_chunk(sif::chunk::item, 0, 1, string).get(),
-              "firstly, line 1 of the string\nthen");
+              "最初に, line 1 of the string\nthén");
     ASSERT_EQ(sif::range_chunk(sif::chunk::item, 1, 2, string).get(),
-              " line 1 of the string\nthen, line 2\nlastly");
+              " line 1 of the string\nthén, line 2\nlastly");
     ASSERT_EQ(sif::range_chunk(sif::chunk::item, 2, 100, string).get(),
               " line 2\nlastly, line 3 of the string\n");
 
     ASSERT_EQ(sif::last_chunk(sif::chunk::item, string).get(), " line 3 of the string\n");
 
-    ASSERT_EQ(sif::index_chunk(sif::chunk::line, 0, string).get(), "firstly, line 1 of the string");
+    ASSERT_EQ(sif::index_chunk(sif::chunk::line, 0, string).get(), "最初に, line 1 of the string");
     ASSERT_EQ(sif::index_chunk(sif::chunk::line, 2, string).get(), "lastly, line 3 of the string");
     ASSERT_EQ(sif::index_chunk(sif::chunk::line, 100, string).get(), "");
 
     ASSERT_EQ(sif::range_chunk(sif::chunk::line, 0, 1, string).get(),
-              "firstly, line 1 of the string\nthen, line 2");
+              "最初に, line 1 of the string\nthén, line 2");
     ASSERT_EQ(sif::range_chunk(sif::chunk::line, 1, 2, string).get(),
-              "then, line 2\nlastly, line 3 of the string");
+              "thén, line 2\nlastly, line 3 of the string");
     ASSERT_EQ(sif::range_chunk(sif::chunk::line, 2, 100, string).get(),
               "lastly, line 3 of the string\n");
 
@@ -74,5 +74,5 @@ TEST_CASE(ChunkTests, GetChunks) {
     ASSERT_EQ(sif::random_chunk(
                   sif::chunk::line, [](int count) { return 1; }, string)
                   .get(),
-              "then, line 2");
+              "thén, line 2");
 }

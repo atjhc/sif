@@ -709,7 +709,7 @@ ModuleMap _stringNatives = []() -> ModuleMap {
                 if (!text) {
                     return Error(RuntimeError(location, "expected a string"));
                 }
-                return static_cast<long>(count_chunk(chunkType, text->string()).count);
+                return static_cast<int64_t>(count_chunk(chunkType, text->string()).count);
             });
     };
     natives[S("(the) number of chars/characters in {}")] = numberOfChunk(chunk::character);
