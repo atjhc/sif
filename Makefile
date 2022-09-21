@@ -44,14 +44,14 @@ debug: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
 debug: all
 
 test: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
-test: $(DSTROOT)/$(TOOLNAME) $(DSTROOT)/test $(TEST_OBJ) examples
+test: $(DSTROOT)/test $(TEST_OBJ) examples
 	$(DSTROOT)/test $(SRCROOT)/tests
 
 .PHONY: examples $(EXAMPLES)
 
 examples: $(EXAMPLES)
-$(EXAMPLES):
-	sif -b $@ >/dev/null
+$(EXAMPLES): $(DSTROOT)/$(TOOLNAME)
+	$(DSTROOT)/$(TOOLNAME) -b $@ >/dev/null
 
 install: all
 	mkdir -p $(INSTALL_DIR)
