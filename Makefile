@@ -44,7 +44,7 @@ debug: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
 debug: all
 
 test: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
-test: $(DSTROOT)/test $(TEST_OBJ) examples
+test: $(DSTROOT)/$(TOOLNAME) $(DSTROOT)/test $(TEST_OBJ) examples
 	$(DSTROOT)/test $(SRCROOT)/tests
 
 .PHONY: examples $(EXAMPLES)
