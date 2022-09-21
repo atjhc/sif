@@ -96,7 +96,7 @@ void Compiler::assign(const FunctionDecl &decl, const std::string &name) {
             index = i;
             opcode = Opcode::SetCapture;
         } else {
-            locals().push_back({name, _scopeDepth});
+            addLocal(name);
             index = locals().size() - 1;
             opcode = Opcode::SetLocal;
         }
@@ -107,7 +107,7 @@ void Compiler::assign(const FunctionDecl &decl, const std::string &name) {
     bytecode().add(decl.location, opcode, index);
 }
 
-void Compiler::assign(const Variable &variable, const std::string &name) {
+void Compiler::assign(const Variable &variable, const Location &location, const std::string &name) {
     uint16_t index;
     Opcode opcode;
 
@@ -122,7 +122,7 @@ void Compiler::assign(const Variable &variable, const std::string &name) {
                 index = i;
                 opcode = Opcode::SetCapture;
             } else {
-                locals().push_back({name, _scopeDepth});
+                addLocal(name);
                 index = locals().size() - 1;
                 opcode = Opcode::SetLocal;
             }
@@ -135,7 +135,7 @@ void Compiler::assign(const Variable &variable, const std::string &name) {
         index = bytecode().addConstant(MakeStrong<String>(name));
         opcode = Opcode::SetGlobal;
     }
-    bytecode().add(variable.location, opcode, index);
+    bytecode().add(location, opcode, index);
 }
 
 void Compiler::resolve(const Call &call, const std::string &name) {
@@ -226,7 +226,10 @@ void Compiler::addReturn() {
     }
 }
 
-void Compiler::addLocal(const std::string &name) { locals().push_back({name, _scopeDepth}); }
+void Compiler::addLocal(const std::string &name) { 
+    locals().push_back({name, _scopeDepth});
+    bytecode().addLocal(name);
+}
 
 void Compiler::beginScope() { _scopeDepth++; }
 
@@ -251,7 +254,6 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     _frames.push_back({functionBytecode, {}, {}});
 
     // Add function name and arguments to locals list.
-    auto localsPosition = bytecode().add(functionDecl.location, Opcode::Locals, 0);
     addLocal(functionDecl.signature.name());
     for (const auto &term : functionDecl.signature.terms) {
         if (auto arg = std::get_if<Signature::Argument>(&term); arg && arg->token.has_value()) {
@@ -259,11 +261,8 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
         }
     }
 
-    auto localsCount = locals().size();
+    // Compile the body of the function.
     functionDecl.statement->accept(*this);
-
-    // Patch the locals count with what was gathered during compilation.
-    bytecode().patchLocals(localsPosition, locals().size() - localsCount);
 
     // Add implicit return statement if necessary.
     addReturn();
@@ -321,7 +320,7 @@ void Compiler::visit(const Assignment &assignment) {
         if (name == "it") {
             bytecode().add(assignment.location, Opcode::SetIt);
         } else {
-            assign(*assignment.variable, name);
+            assign(*assignment.variable, assignment.location, name);
         }
     }
 }
@@ -385,7 +384,7 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto jumpExitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
     auto jumpIfAtEnd = _nextRepeat = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
     bytecode().add(foreach.location, Opcode::Enumerate);
-    assign(*foreach.variable, foreach.variable->token.text);
+    assign(*foreach.variable, foreach.location, foreach.variable->token.text);
 
     foreach.statement->accept(*this);
     bytecode().addRepeat(foreach.location, _nextRepeat);

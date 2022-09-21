@@ -478,6 +478,11 @@ bool VirtualMachine::call(Value object, int count) {
         }
         _callStack.push_back(
             {fn->bytecode(), fn->bytecode()->code().begin(), captures, _stack.size() - count - 1});
+
+        auto additionalLocalsCount = frame().bytecode->locals().size() - count;
+        for (auto i = 0; i < additionalLocalsCount; i++) {
+            Push(_stack, Value());
+        }
     } else if (auto native = object.as<Native>()) {
         auto result =
             native->callable()(frame().bytecode->location(frame().ip - 3), &_stack.end()[-count]);

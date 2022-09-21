@@ -462,6 +462,8 @@ Owned<Statement> Parser::parseStatement() {
 }
 
 Owned<Statement> Parser::parseFunction() {
+    auto location = previous().location;
+
     _parsingDepth++;
     auto signature = parseSignature();
     if (!signature) {
@@ -485,7 +487,9 @@ Owned<Statement> Parser::parseFunction() {
     endScope();
 
     if (signature) {
-        return MakeOwned<FunctionDecl>(signature.value(), std::move(statement));
+        auto decl = MakeOwned<FunctionDecl>(signature.value(), std::move(statement));
+        decl->location = location;
+        return decl;
     }
     return nullptr;
 }
@@ -1056,6 +1060,7 @@ Result<Owned<Expression>, ParseError> Parser::parseUnary() {
 }
 
 Result<Owned<Expression>, ParseError> Parser::parseCall() {
+    auto location = peek().location;
     std::vector<Candidate> candidates;
     std::set<Signature> signatures;
     for (auto it = _signatureDecls.rbegin(); it != _signatureDecls.rend(); it++) {
@@ -1143,7 +1148,7 @@ Result<Owned<Expression>, ParseError> Parser::parseCall() {
     }
     auto call =
         MakeOwned<Call>(candidate.signature, std::vector<Optional<Token>>(), std::move(arguments));
-    call->location = peek().location;
+    call->location = location;
     return call;
 }
 

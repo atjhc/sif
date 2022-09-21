@@ -52,6 +52,19 @@ void Bytecode::addRepeat(Location location, uint16_t argument) {
     _locations.push_back(location);
 }
 
+uint16_t Bytecode::addLocal(std::string local) {
+    for (int i = 0; i < _locals.size(); i++) {
+        if (_locals[i] == local) {
+            return i;
+        }
+    }
+    _locals.push_back(local);
+    if (_constants.size() > USHRT_MAX) {
+        throw std::out_of_range(Concat("too many locals (", USHRT_MAX, ")"));
+    }
+    return _locals.size() - 1;
+}
+
 uint16_t Bytecode::addConstant(Value constant) {
     for (int i = 0; i < _constants.size(); i++) {
         if (_constants[i] == constant) {
@@ -74,12 +87,9 @@ void Bytecode::patchJump(size_t index) {
     _code[index + 2] = static_cast<Opcode>(offset & 0xff);
 }
 
-void Bytecode::patchLocals(size_t location, short count) {
-    _code[location + 1] = static_cast<Opcode>(count >> 8);
-    _code[location + 2] = static_cast<Opcode>(count & 0xff);
-}
-
 const std::vector<Opcode> &Bytecode::code() const { return _code; }
+
+const std::vector<std::string> &Bytecode::locals() const { return _locals; }
 
 const std::vector<Value> &Bytecode::constants() const { return _constants; }
 
@@ -170,8 +180,6 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Return:
         out << "Return";
         return position + 1;
-    case Opcode::Locals:
-        return disassembleLocal(out, "Locals", position);
     case Opcode::Constant:
         return disassembleConstant(out, "Constant", position);
     case Opcode::Short:
@@ -290,6 +298,11 @@ struct BytecodePrinter {
                 BytecodePrinter printer{depth + 1};
                 printer.print(out, *function->bytecode());
             }
+        }
+
+        out << indent << "===" << std::endl;
+        for (size_t i = 0; i < bytecode.locals().size(); i++) {
+            out << indent << "[" << i << "] " << bytecode.locals()[i] << std::endl;
         }
 
         auto position = bytecode.code().begin();
