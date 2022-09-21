@@ -84,16 +84,21 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     _callStack.push_back({bytecode, bytecode->code().begin(), std::vector<size_t>(), 0});
     _variables["it"] = Value();
     Push(_stack, Value());
-    while (true) {
 #if defined(DEBUG)
         if (_config.enableTracing) {
-            std::cout << frame().bytecode->decodePosition(frame().ip) << " ";
-            frame().bytecode->disassemble(std::cout, frame().ip);
-            std::cout << std::endl << "[" << _stack << "]" << std::endl;
+            std::cout << "[" << _stack << "]" << std::endl;
             if (_callStack.size() > 1) {
                 std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
             }
             std::cout << std::endl;
+        }
+#endif
+    while (true) {
+        Optional<Value> returnValue;
+#if defined(DEBUG)
+        if (_config.enableTracing) {
+            std::cout << frame().bytecode->decodePosition(frame().ip) << " ";
+            frame().bytecode->disassemble(std::cout, frame().ip);
         }
 #endif
         switch (Opcode instruction = Read(frame().ip)) {
@@ -103,10 +108,10 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Pop(_stack);
             }
             _callStack.pop_back();
-            if (_callStack.empty()) {
-                return value;
-            }
             Push(_stack, value);
+            if (_callStack.empty()) {
+                returnValue = value;
+            }
             break;
         }
         case Opcode::Jump: {
@@ -455,6 +460,18 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             std::cout << Peek(_stack) << std::endl;
             break;
         }
+        }
+#if defined(DEBUG)
+        if (_config.enableTracing) {
+            std::cout << std::endl << "[" << _stack << "]" << std::endl;
+            if (_callStack.size() > 1) {
+                std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
+            }
+            std::cout << std::endl;
+        }
+#endif
+        if (returnValue.has_value()) {
+            return returnValue.value();
         }
     }
 }
