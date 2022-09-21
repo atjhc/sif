@@ -1,8 +1,4 @@
 CC := clang++
-# BISON := bison
-# FLEX := flex
-BISON := /usr/local/opt/bison/bin/bison
-FLEX := /usr/local/opt/flex/bin/flex
 
 LIBNAME := sif.a
 TOOLNAME := sif
@@ -40,14 +36,22 @@ VPATH := $(SRCROOT)
 
 CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror -std=c++17
 
+EXAMPLES := $(shell find examples -name '*.sif')
+
 all: dstroot $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 
 debug: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
 debug: all
 
 test: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
-test: $(DSTROOT)/test $(TEST_OBJ)
+test: $(DSTROOT)/test $(TEST_OBJ) examples
 	$(DSTROOT)/test $(SRCROOT)/tests
+
+.PHONY: examples $(EXAMPLES)
+
+examples: $(EXAMPLES)
+$(EXAMPLES):
+	sif -b $@ >/dev/null
 
 install: all
 	mkdir -p $(INSTALL_DIR)
