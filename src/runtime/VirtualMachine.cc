@@ -162,13 +162,6 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             Pop(_stack);
             break;
         }
-        case Opcode::Locals: {
-            auto count = ReadConstant(frame().ip);
-            for (auto i = 0; i < count; i++) {
-                Push(_stack, Value());
-            }
-            break;
-        }
         case Opcode::Constant: {
             auto index = ReadConstant(frame().ip);
             auto constant = frame().bytecode->constants()[index];
