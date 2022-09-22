@@ -16,11 +16,11 @@
 
 SIF_NAMESPACE_BEGIN
 
-Range::Range(int64_t start, int64_t end, bool closed) : _start(start), _end(end), _closed(closed) {}
+Range::Range(Integer start, Integer end, bool closed) : _start(start), _end(end), _closed(closed) {}
 
-int64_t Range::start() const { return _start; }
+Integer Range::start() const { return _start; }
 
-int64_t Range::end() const { return _end; }
+Integer Range::end() const { return _end; }
 
 bool Range::closed() const { return _closed; }
 
@@ -45,7 +45,7 @@ size_t Range::hash() const {
     return hasher.value();
 }
 
-bool Range::contains(int64_t value) const {
+bool Range::contains(Integer value) const {
     if (_closed) {
         return value >= _start && value <= _end;
     }
@@ -66,7 +66,7 @@ bool Range::overlaps(const Range &range) const {
     return contains(range.start()) || contains(range.end() - 1);
 }
 
-int64_t Range::size() const { return (_closed ? 1 : 0) + _end - _start; }
+Integer Range::size() const { return (_closed ? 1 : 0) + _end - _start; }
 
 Value Range::enumerator(Value self) const { return MakeStrong<RangeEnumerator>(self.as<Range>()); }
 
@@ -94,7 +94,7 @@ Value RangeEnumerator::enumerate() {
     if (_index >= _range->size()) {
         return Value();
     }
-    int64_t value = _range->start() + _index;
+    Integer value = _range->start() + _index;
     _index++;
     return value;
 }

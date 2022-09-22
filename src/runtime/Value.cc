@@ -61,47 +61,47 @@ bool Value::asBool() const {
 }
 
 bool Value::isInteger() const {
-    if (std::holds_alternative<int64_t>(_value)) {
+    if (std::holds_alternative<Integer>(_value)) {
         return true;
     }
     return false;
 }
 
-int64_t Value::asInteger() const {
-    if (auto v = std::get_if<int64_t>(&_value)) {
+Integer Value::asInteger() const {
+    if (auto v = std::get_if<Integer>(&_value)) {
         return *v;
     }
     throw std::runtime_error("expected integer type");
 }
 
-int64_t Value::castInteger() const {
-    if (auto v = std::get_if<int64_t>(&_value)) {
+Integer Value::castInteger() const {
+    if (auto v = std::get_if<Integer>(&_value)) {
         return *v;
-    } else if (auto v = std::get_if<double>(&_value)) {
-        return static_cast<int64_t>(*v);
+    } else if (auto v = std::get_if<Float>(&_value)) {
+        return static_cast<Integer>(*v);
     }
     throw std::runtime_error("expected number type");
 }
 
 bool Value::isFloat() const {
-    if (std::holds_alternative<double>(_value)) {
+    if (std::holds_alternative<Float>(_value)) {
         return true;
     }
     return false;
 }
 
-double Value::asFloat() const {
-    if (auto v = std::get_if<double>(&_value)) {
+Float Value::asFloat() const {
+    if (auto v = std::get_if<Float>(&_value)) {
         return *v;
     }
     throw std::runtime_error("expected float type");
 }
 
-double Value::castFloat() const {
-    if (auto v = std::get_if<double>(&_value)) {
+Float Value::castFloat() const {
+    if (auto v = std::get_if<Float>(&_value)) {
         return *v;
-    } else if (auto v = std::get_if<int64_t>(&_value)) {
-        return static_cast<double>(*v);
+    } else if (auto v = std::get_if<Integer>(&_value)) {
+        return static_cast<Float>(*v);
     }
     throw std::runtime_error("expected number type");
 }

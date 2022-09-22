@@ -34,6 +34,10 @@
 
 SIF_NAMESPACE_BEGIN
 
+using Integer = int64_t;
+using Bool = bool;
+using Float = double;
+
 template <class T, class E> using Result = tl::expected<T, E>;
 
 template <class T> using Strong = std::shared_ptr<T>;

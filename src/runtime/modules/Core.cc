@@ -118,7 +118,7 @@ ModuleMap _coreNatives = []() -> ModuleMap {
         });
     natives[S("(the) hash of {}")] =
         MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
-            return int64_t(Value::Hash()(values[0]));
+            return Integer(Value::Hash()(values[0]));
         });
     natives[S("(the) type name of {}")] =
         MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
@@ -247,7 +247,7 @@ ModuleMap _commonNatives = []() -> ModuleMap {
                     return Error(RuntimeError(location, "expected a string"));
                 }
                 auto result = text->findFirst(*searchString);
-                return result == std::string::npos ? Value() : int64_t(result);
+                return result == std::string::npos ? Value() : Integer(result);
             } else if (auto list = values[1].as<List>()) {
                 if (auto result = list->findFirst(values[0])) {
                     return result.value();
@@ -264,7 +264,7 @@ ModuleMap _commonNatives = []() -> ModuleMap {
                     return Error(RuntimeError(location, "expected a string or list"));
                 }
                 auto result = text->findLast(*searchString);
-                return result == std::string::npos ? Value() : int64_t(result);
+                return result == std::string::npos ? Value() : Integer(result);
             } else if (auto list = values[1].as<List>()) {
                 if (auto result = list->findLast(values[0])) {
                     return result.value();
@@ -419,7 +419,7 @@ ModuleMap _listNatives = []() -> ModuleMap {
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
-            return int64_t(list->values().size());
+            return Integer(list->values().size());
         });
     natives[S("any item of {}")] = MakeStrong<Native>(
         [random](Location location, Value *values) -> Result<Value, RuntimeError> {
@@ -709,7 +709,7 @@ ModuleMap _stringNatives = []() -> ModuleMap {
                 if (!text) {
                     return Error(RuntimeError(location, "expected a string"));
                 }
-                return static_cast<int64_t>(count_chunk(chunkType, text->string()).count);
+                return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
             });
     };
     natives[S("(the) number of chars/characters in {}")] = numberOfChunk(chunk::character);

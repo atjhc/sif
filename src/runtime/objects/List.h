@@ -47,8 +47,8 @@ class List : public Object, public Enumerable, public Subscriptable {
     bool startsWith(const Value &value) const;
     bool endsWith(const Value &value) const;
 
-    Optional<int64_t> findFirst(const Value &value) const;
-    Optional<int64_t> findLast(const Value &value) const;
+    Optional<Integer> findFirst(const Value &value) const;
+    Optional<Integer> findLast(const Value &value) const;
 
     std::string typeName() const override;
     std::string description() const override;

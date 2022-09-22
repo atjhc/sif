@@ -64,13 +64,13 @@ class Value {
     bool isFloat() const;
     bool isObject() const;
 
-    bool asBool() const;
-    int64_t asInteger() const;
-    double asFloat() const;
+    Bool asBool() const;
+    Integer asInteger() const;
+    Float asFloat() const;
     Strong<Object> asObject() const;
 
-    int64_t castInteger() const;
-    double castFloat() const;
+    Integer castInteger() const;
+    Float castFloat() const;
 
     template <typename T> Strong<T> as() const {
         return isObject() ? Cast<T>(asObject()) : nullptr;
@@ -86,7 +86,7 @@ class Value {
     };
 
   private:
-    std::variant<std::monostate, bool, int64_t, double, Strong<Object>> _value;
+    std::variant<std::monostate, Bool, Integer, Float, Strong<Object>> _value;
 };
 
 std::ostream &operator<<(std::ostream &out, const Value &value);

@@ -92,7 +92,7 @@ bool List::endsWith(const Value &value) const {
     return _values.size() > 0 && _values.back() == value;
 }
 
-Optional<int64_t> List::findFirst(const Value &value) const {
+Optional<Integer> List::findFirst(const Value &value) const {
     auto result = std::find(_values.begin(), _values.end(), value);
     if (result == _values.end()) {
         return None;
@@ -100,7 +100,7 @@ Optional<int64_t> List::findFirst(const Value &value) const {
     return result - _values.begin();
 }
 
-Optional<int64_t> List::findLast(const Value &value) const {
+Optional<Integer> List::findLast(const Value &value) const {
     auto result = std::find(_values.rbegin(), _values.rend(), value);
     if (result == _values.rend()) {
         return None;
