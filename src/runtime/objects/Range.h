@@ -29,14 +29,14 @@ SIF_NAMESPACE_BEGIN
 
 class Range : public Object, public Enumerable, public Subscriptable {
   public:
-    Range(int64_t start, int64_t end, bool closed);
+    Range(Integer start, Integer end, bool closed);
 
-    int64_t start() const;
-    int64_t end() const;
+    Integer start() const;
+    Integer end() const;
     bool closed() const;
-    int64_t size() const;
+    Integer size() const;
 
-    bool contains(int64_t value) const;
+    bool contains(Integer value) const;
     bool contains(const Range &range) const;
     bool overlaps(const Range &range) const;
 
@@ -53,8 +53,8 @@ class Range : public Object, public Enumerable, public Subscriptable {
     Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
 
   private:
-    int64_t _start;
-    int64_t _end;
+    Integer _start;
+    Integer _end;
     bool _closed;
 };
 
