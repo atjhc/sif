@@ -85,13 +85,13 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     _variables["it"] = Value();
     Push(_stack, Value());
 #if defined(DEBUG)
-        if (_config.enableTracing) {
-            std::cout << "[" << _stack << "]" << std::endl;
-            if (_callStack.size() > 1) {
-                std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
-            }
-            std::cout << std::endl;
+    if (_config.enableTracing) {
+        std::cout << "[" << _stack << "]" << std::endl;
+        if (_callStack.size() > 1) {
+            std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
         }
+        std::cout << std::endl;
+    }
 #endif
     while (true) {
         Optional<Value> returnValue;

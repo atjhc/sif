@@ -1,0 +1,153 @@
+print the size of "My voice is my password."
+print the size of "私の声は私のパスワードです."
+(-- expect
+24
+40
+--)
+
+print the offset of "y" in "My voice is my password."
+print the offset of "の" in "私の声は私のパスワードです."
+(-- expect
+1
+1
+--)
+
+print the last offset of "y" in "My voice is my password."
+print the last offset of "の" in "私の声は私のパスワードです."
+(-- expect
+13
+5
+--)
+
+print insert "own " at character 3 in "My voice is my password."
+print insert "の" at character 1 in "私の声は私のパスワードです."
+(-- expect
+My own voice is my password.
+私のの声は私のパスワードです.
+--)
+
+print insert " Verify me." at the end of "My voice is my password."
+print insert " 私を確認してください." at the end of "私の声は私のパスワードです."
+(-- expect
+My voice is my password. Verify me.
+私の声は私のパスワードです. 私を確認してください.
+--)
+
+print remove character 1 from "My voice is my password."
+print remove character 1 from "私の声は私のパスワードです."
+(-- expect
+M voice is my password.
+私声は私のパスワードです.
+--)
+
+print remove characters 3 to 8 from "My voice is my password."
+print remove characters 4 to 5 from "私の声は私のパスワードです."
+(-- expect
+My is my password.
+私の声はパスワードです.
+--)
+
+print remove all "i" from "My voice is my password."
+print remove all "の" from "私の声は私のパスワードです."
+(-- expect
+My voce s my password.
+私声は私パスワードです.
+--)
+
+print remove first "i" from "My voice is my password."
+print remove first "の" from "私の声は私のパスワードです."
+(-- expect
+My voce is my password.
+私声は私のパスワードです.
+--)
+
+print remove last "i" from "My voice is my password."
+print remove last "の" from "私の声は私のパスワードです."
+(-- expect
+My voice s my password.
+私の声は私パスワードです.
+--)
+
+print replace characters 9 to 10 with "was" in "My voice is my password."
+print replace characters 11 to 12 with "だ" in "私の声は私のパスワードです."
+(-- expect
+My voice was my password.
+私の声は私のパスワードだ.
+--)
+
+print replace all "o" with "oh" in "My voice is my password."
+print replace all "の" with "no" in "私の声は私のパスワードです."
+(-- expect
+My vohice is my passwohrd.
+私no声は私noパスワードです.
+--)
+
+print replace first "o" with "0" in "My voice is my password."
+print replace first "の" with "no" in "私の声は私のパスワードです."
+(-- expect
+My v0ice is my password.
+私no声は私のパスワードです.
+--)
+
+print replace last "o" with "0" in "My voice is my password."
+print replace last "の" with "no" in "私の声は私のパスワードです."
+(-- expect
+My voice is my passw0rd.
+私の声は私noパスワードです.
+--)
+
+print "My voice is my password." contains "voice"
+print "私の声は私のパスワードです." contains "声"
+(-- expect
+true
+true
+--)
+
+print "voice" is in "My voice is my password."
+print "声" is in "私の声は私のパスワードです."
+(-- expect
+true
+true
+--)
+
+print "My voice is my password." contains "voice"
+print "私の声は私のパスワードです." contains "声"
+(-- expect
+true
+true
+--)
+
+print "My voice is my password." starts with "My"
+print "私の声は私のパスワードです." starts with "私"
+(-- expect
+true
+true
+--)
+
+print "My voice is my password." ends with "password."
+print "私の声は私のパスワードです." ends with "です."
+(-- expect
+true
+true
+--)
+
+print the description of the list of characters in "My voice"
+print the description of the list of characters in "私の声"
+(-- expect
+{"M", "y", " ", "v", "o", "i", "c", "e"}
+{"私", "の", "声"}
+--)
+
+print the description of the list of words in "My voice is my password."
+print the description of the list of words in "私 の 声 は 私 の パスワード です."
+(-- expect
+{"My", "voice", "is", "my", "password."}
+{"私", "の", "声", "は", "私", "の", "パスワード", "です."}
+--)
+
+print the description of the list of lines in "My\nvoice\nis\nmy\npassword."
+print the description of the list of lines in "私の声は\n私のパスワード\nです."
+(-- expect
+{"My", "voice", "is", "my", "password."}
+{"私の声は", "私のパスワード", "です."}
+--)

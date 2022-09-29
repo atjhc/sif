@@ -1117,7 +1117,8 @@ Result<Owned<Expression>, ParseError> Parser::parseCall() {
     }
 
     // Filter incomplete matches.
-    candidates = Filter(candidates, [&](Candidate &candidate) { return candidate.isComplete(); });
+    candidates =
+        Filter(candidates, [&](const Candidate &candidate) { return candidate.isComplete(); });
 
     // No matching signatures.
     if (candidates.size() == 0) {

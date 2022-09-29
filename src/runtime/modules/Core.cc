@@ -14,6 +14,7 @@
 //  limitations under the License.
 //
 
+#include "Common.h"
 #include "Error.h"
 #include "Utilities.h"
 
@@ -24,6 +25,7 @@
 #include "runtime/objects/String.h"
 
 #include "utilities/chunk.h"
+#include "vendor/utf8.h"
 
 #include <random>
 
@@ -116,7 +118,7 @@ ModuleMap _coreNatives = []() -> ModuleMap {
             ss << values[0];
             return ss.str();
         });
-    natives[S("(the) hash of {}")] =
+    natives[S("(the) hash value of {}")] =
         MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
             return Integer(Value::Hash()(values[0]));
         });
@@ -508,6 +510,76 @@ ModuleMap _stringNatives = []() -> ModuleMap {
 
     ModuleMap natives;
 
+    natives[S("insert {} at char/character {} in {}")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto insertText = values[0].as<String>();
+            if (!insertText) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            if (!values[1].isInteger()) {
+                return Error(RuntimeError(location, "expected an integer"));
+            }
+            auto text = values[2].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto chunk = index_chunk(chunk::type::character, values[1].asInteger(), text->string());
+            text->string().insert(chunk.begin(), insertText->string().begin(),
+                                  insertText->string().end());
+            return text;
+        });
+    natives[S("insert {} at (the) end of {}")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto insertText = values[0].as<String>();
+            if (!insertText) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto text = values[2].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            text->string().append(insertText->string());
+            return text;
+        });
+    natives[S("remove all {} from {}")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto removeText = values[0].as<String>();
+            if (!removeText) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto text = values[1].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            text->replaceAll(*removeText, String(""));
+            return text;
+        });
+    natives[S("remove first {} from {}")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto removeText = values[0].as<String>();
+            if (!removeText) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto text = values[1].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            text->replaceFirst(*removeText, String(""));
+            return text;
+        });
+    natives[S("remove last {} from {}")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto removeText = values[0].as<String>();
+            if (!removeText) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto text = values[1].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            text->replaceLast(*removeText, String(""));
+            return text;
+        });
     auto replaceChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>(
             [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {

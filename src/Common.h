@@ -123,6 +123,14 @@ template <typename Iterable>
 using ValueType = typename std::iterator_traits<typename Iterable::iterator>::value_type;
 
 template <typename Iterable, typename Functor>
+std::vector<ValueType<Iterable>> Filter(const Iterable &container, Functor f) {
+    Iterable result;
+    result.reserve(std::distance(container.begin(), container.end()));
+    std::copy_if(container.begin(), container.end(), std::back_inserter(result), f);
+    return result;
+}
+
+template <typename Iterable, typename Functor>
 std::vector<ValueType<Iterable>> Filter(Iterable &container, Functor f) {
     Iterable result;
     result.reserve(std::distance(container.begin(), container.end()));

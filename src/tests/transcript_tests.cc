@@ -63,7 +63,7 @@ static std::string gather(const std::string &source, const std::string &context)
 }
 
 TEST_CASE(TranscriptTests, All) {
-    for (auto pstr : suite.files_in("transcripts")) {
+    for (auto pstr : suite.all_files_in("transcripts")) {
         auto path = std::filesystem::path(pstr);
         if (path.extension() != ".sif") {
             continue;

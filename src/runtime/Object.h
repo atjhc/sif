@@ -28,6 +28,7 @@ class Object {
     virtual bool equals(Strong<Object>) const;
     virtual size_t hash() const;
 
+    virtual std::string toString() const;
     virtual std::string description() const = 0;
     virtual std::string debugDescription() const;
 };

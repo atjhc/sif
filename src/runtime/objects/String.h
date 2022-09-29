@@ -37,10 +37,13 @@ class String : public Object, public Enumerable, public Subscriptable, public Co
     const std::string &string() const;
 
     size_t size() const;
+    size_t length() const;
 
     Value operator[](const Range &range) const;
 
     std::string typeName() const override;
+
+    std::string toString() const override;
     std::string description() const override;
     std::string debugDescription() const override;
 

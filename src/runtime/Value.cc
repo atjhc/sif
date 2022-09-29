@@ -122,6 +122,13 @@ Strong<Object> Value::asObject() const {
 
 std::ostream &operator<<(std::ostream &out, const std::monostate &) { return out << "empty"; }
 
+std::string Value::toString() const {
+    if (isObject()) {
+        return asObject()->toString();
+    }
+    return description();
+}
+
 std::string Value::description() const {
     if (isBool()) {
         return asBool() ? "true" : "false";
@@ -171,9 +178,7 @@ size_t Value::Hash::operator()(const Value &value) const {
     return hash;
 }
 
-std::ostream &operator<<(std::ostream &out, const Value &value) {
-    return out << value.description();
-}
+std::ostream &operator<<(std::ostream &out, const Value &value) { return out << value.toString(); }
 
 std::ostream &operator<<(std::ostream &out, const std::vector<Value> &v) {
     auto i = v.begin();

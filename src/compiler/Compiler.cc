@@ -226,7 +226,7 @@ void Compiler::addReturn() {
     }
 }
 
-void Compiler::addLocal(const std::string &name) { 
+void Compiler::addLocal(const std::string &name) {
     locals().push_back({name, _scopeDepth});
     bytecode().addLocal(name);
 }

@@ -41,7 +41,20 @@ Value List::operator[](const Range &range) const {
 
 std::string List::typeName() const { return "list"; }
 
-std::string List::description() const { return Concat("{", Join(_values, ", "), "}"); }
+std::string List::description() const {
+    std::ostringstream ss;
+    ss << "{";
+    auto it = _values.begin();
+    while (it != _values.end()) {
+        ss << it->description();
+        it++;
+        if (it != _values.end()) {
+            ss << ", ";
+        }
+    }
+    ss << "}";
+    return ss.str();
+}
 
 bool List::equals(Strong<Object> object) const {
     if (const auto &list = Cast<List>(object)) {

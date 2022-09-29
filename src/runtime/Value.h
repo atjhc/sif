@@ -76,6 +76,7 @@ class Value {
         return isObject() ? Cast<T>(asObject()) : nullptr;
     }
 
+    std::string toString() const;
     std::string description() const;
     std::string debugDescription() const;
 

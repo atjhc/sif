@@ -27,7 +27,7 @@ std::string Dictionary::description() const {
     ss << "{";
     auto it = _values.begin();
     while (it != _values.end()) {
-        ss << it->first << ": " << it->second;
+        ss << it->first.description() << ": " << it->second;
         it++;
         if (it != _values.end()) {
             ss << ", ";

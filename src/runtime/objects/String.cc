@@ -13,7 +13,9 @@
 //
 
 #include "runtime/objects/String.h"
+
 #include "utilities/strings.h"
+#include "vendor/utf8.h"
 
 SIF_NAMESPACE_BEGIN
 
@@ -24,6 +26,8 @@ std::string &String::string() { return _string; }
 const std::string &String::string() const { return _string; }
 
 size_t String::size() const { return _string.size(); }
+
+size_t String::length() const { return utf8::distance(string().begin(), string().end()); }
 
 Value String::operator[](const Range &range) const {
     auto start = _string.begin() + range.start();
@@ -41,7 +45,9 @@ Value String::operator[](const Range &range) const {
 
 std::string String::typeName() const { return "string"; }
 
-std::string String::description() const { return _string; }
+std::string String::toString() const { return _string; }
+
+std::string String::description() const { return Quoted(_string); }
 
 std::string String::debugDescription() const { return escaped_string_from_string(description()); }
 
@@ -64,7 +70,7 @@ void String::replaceAll(const String &searchString, const String &replacementStr
             return;
         }
         string().replace(position, searchString.string().size(), replacementString.string());
-        offset += position + replacementString.size();
+        offset = position + replacementString.size();
     }
 }
 
@@ -95,11 +101,19 @@ bool String::endsWith(const String &searchString) const {
 }
 
 size_t String::findFirst(const String &searchString) const {
-    return string().find(searchString.string());
+    auto location = string().find(searchString.string());
+    if (location == std::string::npos) {
+        return location;
+    }
+    return utf8::distance(string().begin(), string().begin() + location);
 }
 
 size_t String::findLast(const String &searchString) const {
-    return string().rfind(searchString.string());
+    auto location = string().rfind(searchString.string());
+    if (location == std::string::npos) {
+        return location;
+    }
+    return utf8::distance(string().begin(), string().begin() + location);
 }
 
 Value String::enumerator(Value self) const {

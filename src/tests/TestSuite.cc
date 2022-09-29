@@ -191,18 +191,37 @@ int TestSuite::add(const std::string &groupName, const std::string &name,
 
 std::vector<std::string> TestSuite::files_in(const std::string &path) const {
     auto fullPath = std::filesystem::path(config.resourcesPath) / path;
-
     std::vector<std::string> paths;
-
     for (auto it : std::filesystem::directory_iterator(fullPath)) {
         std::string name = it.path().filename().string();
         if (name.find(".") == 0) {
             continue;
         }
-
         paths.push_back(path / it.path().filename());
     }
+    return paths;
+}
 
+std::vector<std::string> TestSuite::all_files_in(const std::string &path) const {
+    auto resourcesPath = std::filesystem::path(config.resourcesPath);
+    auto resourcesPathComponents = std::distance(resourcesPath.begin(), resourcesPath.end());
+    auto fullPath = resourcesPath / path;
+    std::vector<std::string> paths;
+    for (auto it : std::filesystem::recursive_directory_iterator(fullPath)) {
+        if (!it.is_regular_file()) {
+            continue;
+        }
+        auto entryPath = it.path();
+        auto name = entryPath.filename().string();
+        if (name.find(".") == 0) {
+            continue;
+        }
+        auto begin = entryPath.begin();
+        std::advance(begin, resourcesPathComponents);
+        std::filesystem::path relativePath;
+        std::for_each(begin, entryPath.end(), [&relativePath](auto it) { relativePath.append(it.string()); });
+        paths.push_back(relativePath.string());
+    }
     return paths;
 }
 
