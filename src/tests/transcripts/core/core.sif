@@ -44,14 +44,6 @@ two
 --)
 
 print the hash value of one
-print the hash value of two
-print the hash value of three
-print the hash value of four
-print the hash value of five
 (-- expect
 1
-5348202328944549471
-7
--6041854803609842505
-11
 --)
