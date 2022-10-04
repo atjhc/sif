@@ -1,1 +1,94 @@
-empty
+print 1 up to 10
+(-- expect
+1...10
+--)
+
+print the size of 1...10
+(-- expect
+10
+--)
+
+print the size of 1..<10
+(-- expect
+9
+--)
+
+print the lower bound of 1...10
+(-- expect
+1
+--)
+
+print the upper bound of 1...10
+(-- expect
+10
+--)
+
+print the upper bound of 1..<10
+(-- expect
+10
+--)
+
+print (1...10) is closed
+(-- expect
+true
+--)
+
+print (1..<10) is closed
+(-- expect
+false
+--)
+
+print a random number in 10...10
+(-- expect
+10
+--)
+
+print (1...10) contains 3
+(-- expect
+true
+--)
+
+print (1...10) contains 11
+(-- expect
+false
+--)
+
+print 10 is in 1...10
+(-- expect
+true
+--)
+
+print 11 is in 1...10
+(-- expect
+false
+--)
+
+print 1 is in 1...10
+(-- expect
+true
+--)
+
+print 0 is in 1...10
+(-- expect
+false
+--)
+
+print 9 is in 1..<10
+(-- expect
+true
+--)
+
+print 10 is in 1..<10
+(-- expect
+false
+--)
+
+print (1...10) overlaps with 3...20
+(-- expect
+true
+--)
+
+print (1...10) overlaps with 11...20
+(-- expect
+false
+--)
