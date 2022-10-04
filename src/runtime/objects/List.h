@@ -31,7 +31,9 @@ SIF_NAMESPACE_BEGIN
 class List : public Object, public Enumerable, public Subscriptable {
   public:
     List(const std::vector<Value> &values = {});
-    List(std::vector<Value>::iterator begin, std::vector<Value>::iterator end);
+
+    template <typename Iterator>
+    List(Iterator begin, Iterator end) : _values(begin, end) {}
 
     std::vector<Value> &values();
     const std::vector<Value> &values() const;

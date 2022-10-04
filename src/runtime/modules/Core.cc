@@ -397,11 +397,11 @@ ModuleMap _listNatives = []() -> ModuleMap {
             auto index1 = values[0].asInteger();
             auto index2 = values[1].asInteger();
             return MakeStrong<List>(list->values().begin() + index1,
-                                    list->values().begin() + index2);
+                                    list->values().begin() + index2 + 1);
         });
     natives[S("(the) mid/middle item of {}")] =
         MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
-            auto list = values[2].as<List>();
+            auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
@@ -409,15 +409,15 @@ ModuleMap _listNatives = []() -> ModuleMap {
         });
     natives[S("(the) last item of {}")] =
         MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
-            auto list = values[2].as<List>();
+            auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
             return list->values().back();
         });
-    natives[S("(the) number of item in {}")] =
+    natives[S("(the) number of items in {}")] =
         MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
-            auto list = values[2].as<List>();
+            auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
@@ -425,7 +425,7 @@ ModuleMap _listNatives = []() -> ModuleMap {
         });
     natives[S("any item of {}")] = MakeStrong<Native>(
         [random](Location location, Value *values) -> Result<Value, RuntimeError> {
-            auto list = values[2].as<List>();
+            auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
@@ -445,7 +445,8 @@ ModuleMap _listNatives = []() -> ModuleMap {
             }
             auto index1 = values[0].asInteger();
             auto index2 = values[1].asInteger();
-            list->values().erase(list->values().begin() + index1, list->values().begin() + index2);
+            list->values().erase(list->values().begin() + index1,
+                                 list->values().begin() + index2 + 1);
             return list;
         });
     natives[S("insert {} at index {} into {}")] =
@@ -476,7 +477,7 @@ ModuleMap _listNatives = []() -> ModuleMap {
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
-            return MakeStrong<List>(list->values().begin(), list->values().end());
+            return MakeStrong<List>(list->values().rbegin(), list->values().rend());
         });
     natives[S("shuffle {}")] =
         MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {

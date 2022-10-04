@@ -1,1 +1,116 @@
-empty
+print the size of {}
+print the size of {1}
+print the size of {1, 2}
+(-- expect
+0
+1
+2
+--)
+
+print item 0 in {"one", "two"}
+print item 1 in {"one", "two"}
+(-- expect
+one
+two
+--)
+
+print items 0 to 0 of {"one", "two"}
+print items 0 to 1 of {"one", "two"}
+(-- expect
+one
+one two
+--)
+
+print any item of {"one"}
+(-- expect
+one
+--)
+
+print the middle item of {1, 2, 3}
+(-- expect
+2
+--)
+
+print the last item of {1, 2, 3}
+(-- expect
+3
+--)
+
+print the number of items in {1, 2, 3}
+(-- expect
+3
+--)
+
+print the offset of "two" in {"one", "two", "three"}
+(-- expect
+1
+--)
+
+print the last offset of 2 in {1, 2, 3, 4, 2, 10}
+(-- expect
+4
+--)
+
+set list to {1, 3}
+insert 2 at index 1 into list
+print list
+(-- expect
+1 2 3
+--)
+
+insert 4 at the end of list
+print list
+(-- expect
+1 2 3 4
+--)
+
+remove item 0 from list
+print list
+(-- expect
+2 3 4
+--)
+
+remove items 1 to 2 from list
+print list
+(-- expect
+2
+--)
+
+print replace all 2 with 3 in {1, 2, 2, 3, 4}
+print replace first 2 with 1 in {1, 2, 2, 3, 4}
+print replace last 2 with 3 in {1, 2, 2, 3, 4}
+(-- expect
+1 3 3 3 4
+1 1 2 3 4
+1 2 3 3 4
+--)
+
+print {1, 2, 3} contains 2
+print 2 is in {1, 2, 3}
+(-- expect
+true
+true
+--)
+
+print {1, 2, 3, 4} starts with 1
+print {1, 2, 3, 4} ends with 4
+(-- expect
+true
+true
+--)
+
+set list to {1, 2, 3, 4}
+reverse list
+print list
+print reversed {1, 2, 3, 4}
+(-- expect
+4 3 2 1
+4 3 2 1
+--)
+
+(-- TODO:
+sort {}
+sorted {}
+shuffle {}
+shuffled {}
+--)

@@ -17,8 +17,6 @@
 SIF_NAMESPACE_BEGIN
 
 List::List(const std::vector<Value> &values) : _values(values) {}
-List::List(std::vector<Value>::iterator begin, std::vector<Value>::iterator end)
-    : _values(begin, end) {}
 
 std::vector<Value> &List::values() { return _values; }
 const std::vector<Value> &List::values() const { return _values; }
