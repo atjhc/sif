@@ -16,15 +16,17 @@
 
 #include "Scanner.h"
 
+#include "vendor/utf8.h"
+
 #include <iostream>
 
 SIF_NAMESPACE_BEGIN
 
-Scanner::Scanner() : _start(0), _end(0), _current(0), _currentLocation{1, 1}, _skipNewlines(0) {}
+Scanner::Scanner() : _currentLocation{1, 1}, _skipNewlines(0) {}
 
 void Scanner::reset(const std::string &contents) {
-    _start = _current = &contents[0];
-    _end = &contents[contents.length()];
+    _start = _current = contents.begin();
+    _end = contents.end();
     _currentLocation = {1, 1};
 }
 
@@ -39,11 +41,11 @@ Token Scanner::scan() {
         return make(Token::Type::EndOfFile);
     }
 
-    auto c = advance();
+    auto c = advanceCharacter();
 
     if (isdigit(c))
         return scanNumber();
-    if (isalpha(c) || c == '_')
+    if (isCharacter(c) || c == '_')
         return scanWord();
 
     switch (c) {
@@ -113,11 +115,11 @@ Token Scanner::scan() {
 
 Token Scanner::scanWord() {
     while (!isAtEnd()) {
-        char c = _current[0];
-        if (!isalpha(c) && !isdigit(c) && c != '_') {
+        wchar_t c = utf8::peek_next(_current, _end);
+        if (!isCharacter(c) && !isdigit(c) && c != '_') {
             break;
         }
-        advance();
+        advanceCharacter();
     }
     return make(wordType());
 }
@@ -243,14 +245,14 @@ Token::Type Scanner::checkKeyword(int offset, int length, const char *name, Toke
 
 Token Scanner::scanString(char terminal) {
     while (!isAtEnd()) {
-        char c = _current[0];
+        auto c = _current[0];
         if (c == terminal)
             break;
         if (c == '\n') {
             _currentLocation.lineNumber++;
             _currentLocation.position = 1;
         }
-        advance();
+        advanceCharacter();
     }
 
     if (isAtEnd()) {
@@ -282,13 +284,27 @@ Token Scanner::scanNumber() {
 
 bool Scanner::isAtEnd() { return _current == _end; }
 
+bool Scanner::isCharacter(wchar_t c) {
+    if (c < 128) {
+        return std::isalpha(c);
+    }
+    return true;
+}
+
 char Scanner::advance(int count) {
     _current += count;
     _currentLocation.position += count;
     return _current[-1];
 }
 
-bool Scanner::match(const char c) {
+wchar_t Scanner::advanceCharacter(int count) {
+    auto character = utf8::peek_next(_current, _end);
+    utf8::advance(_current, count, _end);
+    _currentLocation.position += count;
+    return character;
+}
+
+bool Scanner::match(const wchar_t c) {
     if (isAtEnd())
         return false;
     if (_current[0] != c)
@@ -298,16 +314,9 @@ bool Scanner::match(const char c) {
     return true;
 }
 
-char Scanner::peekNext() {
-    if (_current + 1 == _end) {
-        return '\0';
-    }
-    return _current[1];
-}
-
 Token Scanner::make(Token::Type type) {
     auto token = Token(type, _startLocation);
-    token.text = std::string(_start, _current - _start);
+    token.text = std::string(_start, _current);
     return token;
 }
 
@@ -319,7 +328,7 @@ Token Scanner::makeError(const std::string &message) {
 
 void Scanner::skipWhitespace() {
     while (!isAtEnd()) {
-        char c = _current[0];
+        auto c = utf8::peek_next(_current, _end);
         switch (c) {
         case '\n':
             if (_skipNewlines) {

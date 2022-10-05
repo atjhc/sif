@@ -1,0 +1,43 @@
+set 母 to "mother"
+print 母
+(-- expect
+mother
+--)
+
+set mother to "母"
+print mother
+(-- expect
+母
+--)
+
+set mère to "mother"
+print mère
+(-- expect
+mother
+--)
+
+set mother to "mère"
+print mother
+(-- expect
+mère
+--)
+
+set мати to "mother"
+print мати
+(-- expect
+mother
+--)
+
+set mother to "мати"
+print mother
+(-- expect
+мати
+--)
+
+function 私のパスワード
+    return "password"
+end function
+print 私のパスワード
+(-- expect
+password
+--)

@@ -163,6 +163,9 @@ Token Parser::scan() {
     trace(Concat("Scanned: ", Describe(token)));
 #if defined(DEBUG)
     if (_config.enableTracing) {
+        if (token.type == Token::Type::Error) {
+            _trace(Concat("ParseError: ", token.text));
+        }
         _trace(_traceTokens());
     }
 #endif

@@ -111,7 +111,7 @@ std::string Bytecode::decodePosition(Iterator position) const {
 Bytecode::Iterator Bytecode::disassembleConstant(std::ostream &out, const std::string &name,
                                                  Iterator position) const {
     size_t index = ReadUInt16(position + 1);
-    out << name << " " << index << " \"" << _constants.at(index).debugDescription() << "\"";
+    out << name << " " << index << " " << _constants.at(index).debugDescription();
     return position + 3;
 }
 

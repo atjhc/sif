@@ -21,7 +21,7 @@
 #include "Token.h"
 #include "ast/Node.h"
 
-#include <iostream>
+#include <string>
 
 SIF_NAMESPACE_BEGIN
 
@@ -33,10 +33,12 @@ class Scanner {
     Token scan();
 
   private:
+    bool isCharacter(wchar_t);
+
     bool isAtEnd();
     char advance(int count = 1);
-    char peekNext();
-    bool match(const char);
+    wchar_t advanceCharacter(int count = 1);
+    bool match(const wchar_t);
     void skipWhitespace();
     void skipComments();
     void skipLine();
@@ -50,7 +52,7 @@ class Scanner {
     Token::Type wordType();
     Token::Type checkKeyword(int offset, int length, const char *name, Token::Type type);
 
-    const char *_start, *_end, *_current;
+    std::string::const_iterator _start, _end, _current;
     Location _startLocation, _currentLocation;
     int _skipNewlines;
     Strong<Reader> _reader;

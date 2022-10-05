@@ -32,8 +32,7 @@ class List : public Object, public Enumerable, public Subscriptable {
   public:
     List(const std::vector<Value> &values = {});
 
-    template <typename Iterator>
-    List(Iterator begin, Iterator end) : _values(begin, end) {}
+    template <typename Iterator> List(Iterator begin, Iterator end) : _values(begin, end) {}
 
     std::vector<Value> &values();
     const std::vector<Value> &values() const;

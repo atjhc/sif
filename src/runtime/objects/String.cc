@@ -49,7 +49,7 @@ std::string String::toString() const { return _string; }
 
 std::string String::description() const { return Quoted(_string); }
 
-std::string String::debugDescription() const { return escaped_string_from_string(description()); }
+std::string String::debugDescription() const { return Quoted(escaped_string_from_string(_string)); }
 
 bool String::equals(Strong<Object> object) const {
     if (const auto &string = Cast<String>(object)) {
