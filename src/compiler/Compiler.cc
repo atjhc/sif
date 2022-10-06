@@ -542,7 +542,7 @@ static inline Value valueOf(const Token &token) {
 
 void Compiler::visit(const Literal &literal) {
     if (literal.token.type == Token::Type::BoolLiteral) {
-        auto opcode = literal.token.text == "true" ? Opcode::True : Opcode::False;
+        auto opcode = (lowercase(literal.token.text) == "true" || lowercase(literal.token.text) == "yes") ? Opcode::True : Opcode::False;
         bytecode().add(literal.location, opcode);
         return;
     }

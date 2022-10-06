@@ -99,36 +99,36 @@ My voice is my passw0rd.
 print "My voice is my password." contains "voice"
 print "私の声は私のパスワードです." contains "声"
 (-- expect
-true
-true
+yes
+yes
 --)
 
 print "voice" is in "My voice is my password."
 print "声" is in "私の声は私のパスワードです."
 (-- expect
-true
-true
+yes
+yes
 --)
 
 print "My voice is my password." contains "voice"
 print "私の声は私のパスワードです." contains "声"
 (-- expect
-true
-true
+yes
+yes
 --)
 
 print "My voice is my password." starts with "My"
 print "私の声は私のパスワードです." starts with "私"
 (-- expect
-true
-true
+yes
+yes
 --)
 
 print "My voice is my password." ends with "password."
 print "私の声は私のパスワードです." ends with "です."
 (-- expect
-true
-true
+yes
+yes
 --)
 
 print the description of the list of characters in "My voice"

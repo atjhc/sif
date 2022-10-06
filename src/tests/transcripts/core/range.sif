@@ -30,12 +30,12 @@ print the upper bound of 1..<10
 
 print (1...10) is closed
 (-- expect
-true
+yes
 --)
 
 print (1..<10) is closed
 (-- expect
-false
+no
 --)
 
 print a random number in 10...10
@@ -45,50 +45,50 @@ print a random number in 10...10
 
 print (1...10) contains 3
 (-- expect
-true
+yes
 --)
 
 print (1...10) contains 11
 (-- expect
-false
+no
 --)
 
 print 10 is in 1...10
 (-- expect
-true
+yes
 --)
 
 print 11 is in 1...10
 (-- expect
-false
+no
 --)
 
 print 1 is in 1...10
 (-- expect
-true
+yes
 --)
 
 print 0 is in 1...10
 (-- expect
-false
+no
 --)
 
 print 9 is in 1..<10
 (-- expect
-true
+yes
 --)
 
 print 10 is in 1..<10
 (-- expect
-false
+no
 --)
 
 print (1...10) overlaps with 3...20
 (-- expect
-true
+yes
 --)
 
 print (1...10) overlaps with 11...20
 (-- expect
-false
+no
 --)

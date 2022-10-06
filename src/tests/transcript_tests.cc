@@ -69,6 +69,8 @@ TEST_CASE(TranscriptTests, All) {
             continue;
         }
 
+        std::cout << "Executing " << path << std::endl;
+
         auto source = suite.file_contents(path);
         ASSERT_NEQ(source, "");
 

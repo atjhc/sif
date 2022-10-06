@@ -1,4 +1,4 @@
-if true then
+if yes then
   set foo to "bar"
 end if
 print foo

@@ -20,12 +20,12 @@ print remove item "one" from {"one": 1}
 
 print {"one": 1, "two": 2, "three": 3, "four": 4} contains "two"
 (-- expect
-true
+yes
 --)
 
 print "two" is in {"one": 1, "two": 2, "three": 3, "four": 4}
 (-- expect
-true
+yes
 --)
 
 print the keys of {"one": 1}

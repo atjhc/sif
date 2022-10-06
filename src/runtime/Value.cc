@@ -131,7 +131,7 @@ std::string Value::toString() const {
 
 std::string Value::description() const {
     if (isBool()) {
-        return asBool() ? "true" : "false";
+        return asBool() ? "yes" : "no";
     } else if (isObject()) {
         return asObject()->description();
     }

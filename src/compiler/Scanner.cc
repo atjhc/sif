@@ -220,13 +220,18 @@ Token::Type Scanner::wordType() {
             case 'e':
                 return checkKeyword(2, 2, "xt", Token::Type::Next);
             case 'o':
+                if (_current - _start == 2) {
+                    return Token::Type::BoolLiteral;
+                }
                 return checkKeyword(2, 1, "t", Token::Type::Not);
             }
         }
-    case 'w':
-        return checkKeyword(1, 4, "hile", Token::Type::While);
     case 'u':
         return checkKeyword(1, 4, "ntil", Token::Type::Until);
+    case 'w':
+        return checkKeyword(1, 4, "hile", Token::Type::While);
+    case 'y':
+        return checkKeyword(1, 2, "es", Token::Type::BoolLiteral);
     }
     return Token::Type::Word;
 }

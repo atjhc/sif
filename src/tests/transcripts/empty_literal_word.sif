@@ -1,3 +1,8 @@
+print empty
+(-- expect
+empty
+--)
+
 print type name of empty
 (-- expect
 empty

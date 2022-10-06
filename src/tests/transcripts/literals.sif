@@ -1,0 +1,39 @@
+print true
+(-- expect
+yes
+--)
+
+print false
+(-- expect
+no
+--)
+
+print True
+(-- expect
+yes
+--)
+
+print False
+(-- expect
+no
+--)
+
+print yes
+(-- expect
+yes
+--)
+
+print no
+(-- expect
+no
+--)
+
+print Yes
+(-- expect
+yes
+--)
+
+print No
+(-- expect
+no
+--)
