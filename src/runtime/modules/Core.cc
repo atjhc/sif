@@ -31,7 +31,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-using ModuleMap = std::unordered_map<Signature, Strong<Native>, Signature::Hash>;
+using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
 
 ModuleMap _coreNatives = []() -> ModuleMap {

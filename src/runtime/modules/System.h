@@ -17,35 +17,30 @@
 #pragma once
 
 #include "Common.h"
-#include "runtime/Object.h"
-#include "runtime/Value.h"
-
-#include "runtime/protocols/Subscriptable.h"
-
-#include <string>
+#include "compiler/Module.h"
 
 SIF_NAMESPACE_BEGIN
 
-class Dictionary : public Object, public Subscriptable {
+class System : public Module {
   public:
-    Dictionary();
-    Dictionary(const ValueMap &values);
+    System();
 
-    ValueMap &values();
+    void setArguments(char **argv);
+    void setEnvironment(char **envp);
 
-    bool contains(const Value &value) const;
+    void setSystemName(const std::string &);
+    void setSystemVersion(const std::string &);
 
-    std::string typeName() const override;
-    std::string description() const override;
-    bool equals(Strong<Object>) const override;
-    size_t hash() const override;
-
-    // Subscriptable
-    Result<Value, RuntimeError> subscript(Location, const Value &) const override;
-    Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
+    std::vector<Signature> signatures() const override;
+    Mapping<std::string, Strong<Native>> functions() const override;
 
   private:
-    ValueMap _values;
+    Mapping<Signature, Strong<Native>, Signature::Hash> _natives;
+
+    std::vector<std::string> _arguments;
+    Mapping<std::string, std::string> _environment;
+    std::string _systemName;
+    std::string _systemVersion;
 };
 
 SIF_NAMESPACE_END

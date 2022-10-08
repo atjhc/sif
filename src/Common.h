@@ -48,7 +48,7 @@ template <class T> using Owned = std::unique_ptr<T>;
 
 template <class T> using Set = std::unordered_set<T>;
 
-template <class K, class V> using Mapping = std::unordered_map<K, V>;
+template <class K, class V, class H = std::hash<K>> using Mapping = std::unordered_map<K, V, H>;
 
 template <class T> using Ref = std::reference_wrapper<T>;
 

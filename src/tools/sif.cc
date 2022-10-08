@@ -21,6 +21,7 @@
 #include "compiler/Reader.h"
 #include "runtime/VirtualMachine.h"
 #include "runtime/modules/Core.h"
+#include "runtime/modules/System.h"
 #include "runtime/objects/Dictionary.h"
 #include "runtime/objects/List.h"
 #include "runtime/objects/Native.h"
@@ -36,7 +37,10 @@
 
 #include <getopt.h>
 #include <libgen.h>
+#include <sys/utsname.h>
 #include <unistd.h>
+
+extern char **environ;
 
 using namespace sif;
 Mapping<std::string, Strong<Native>> builtins();
@@ -55,6 +59,8 @@ static bool prettyPrint = false;
 static bool printBytecode = false;
 
 VirtualMachine vm;
+Core coreModule;
+System systemModule;
 
 class FileReader : public Reader {
   public:
@@ -112,8 +118,10 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
 #endif
     Parser parser(parserConfig, scanner, reader);
 
-    Core core;
-    for (const auto &signature : core.signatures()) {
+    for (const auto &signature : coreModule.signatures()) {
+        parser.declare(signature);
+    }
+    for (const auto &signature : systemModule.signatures()) {
         parser.declare(signature);
     }
 
@@ -232,6 +240,17 @@ int main(int argc, char *argv[]) {
         fileName = argv[0];
     }
 
+    struct utsname buffer;
+    errno = 0;
+    if (uname(&buffer) < 0) {
+        perror("uname");
+        return errno;
+    }
+    systemModule.setSystemName(buffer.sysname);
+    systemModule.setSystemVersion(buffer.release);
+    systemModule.setArguments(argv);
+    systemModule.setEnvironment(environ);
+
     std::vector<std::string> arguments;
     for (int i = 1; i < argc; i++) {
         arguments.push_back(argv[i]);
@@ -243,8 +262,10 @@ int main(int argc, char *argv[]) {
 #endif
     vm = VirtualMachine(vmConfig);
 
-    Core core;
-    for (const auto &pair : core.functions()) {
+    for (const auto &pair : coreModule.functions()) {
+        vm.add(pair.first, pair.second);
+    }
+    for (const auto &pair : systemModule.functions()) {
         vm.add(pair.first, pair.second);
     }
 

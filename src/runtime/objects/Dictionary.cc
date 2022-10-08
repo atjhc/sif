@@ -16,6 +16,8 @@
 
 SIF_NAMESPACE_BEGIN
 
+Dictionary::Dictionary() {}
+
 Dictionary::Dictionary(const ValueMap &values) : _values(values) {}
 
 ValueMap &Dictionary::values() { return _values; }
