@@ -36,6 +36,22 @@ static Signature S(const char *signature) { return Signature::Make(signature).va
 
 ModuleMap _coreNatives = []() -> ModuleMap {
     ModuleMap natives;
+    natives[S("the language version")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            return Value(std::string(Version));
+        });
+    natives[S("the language major version")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            return Value(MajorVersion);
+        });
+    natives[S("the language minor version")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            return Value(MinorVersion);
+        });
+    natives[S("the language patch version")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            return Value(PatchVersion);
+        });
     natives[S("quit")] = MakeStrong<Native>(
         [](Location location, Value *values) -> Result<Value, RuntimeError> { exit(0); });
     natives[S("quit with {}")] =

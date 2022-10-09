@@ -1,3 +1,14 @@
+print the language version
+print the language major version
+print the language minor version
+print the language patch version
+(-- expect
+0.0.0
+0
+0
+0
+--)
+
 set one to 1
 set two to "two"
 set three to {3}

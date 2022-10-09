@@ -34,6 +34,25 @@
 
 SIF_NAMESPACE_BEGIN
 
+#define MAJOR_VERSION 0
+#define MINOR_VERSION 0
+#define PATCH_VERSION 0
+
+#define XSTR(s) STR(s)
+#define STR(s) #s
+
+static const int MajorVersion = MAJOR_VERSION;
+static const int MinorVersion = MINOR_VERSION;
+static const int PatchVersion = PATCH_VERSION;
+
+static const char *Version = XSTR(MAJOR_VERSION) "." XSTR(MINOR_VERSION) "." XSTR(PATCH_VERSION);
+
+#undef STR
+#undef XSTR
+#undef PATCH_VERSION
+#undef MINOR_VERSION
+#undef MAJOR_VERSION
+
 using Integer = int64_t;
 using Bool = bool;
 using Float = double;
