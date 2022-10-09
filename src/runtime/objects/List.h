@@ -21,6 +21,7 @@
 #include "runtime/Value.h"
 #include "runtime/objects/Range.h"
 
+#include "runtime/protocols/Copyable.h"
 #include "runtime/protocols/Enumerable.h"
 #include "runtime/protocols/Subscriptable.h"
 
@@ -28,7 +29,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-class List : public Object, public Enumerable, public Subscriptable {
+class List : public Object, public Copyable, public Enumerable, public Subscriptable {
   public:
     List(const std::vector<Value> &values = {});
 
@@ -55,6 +56,9 @@ class List : public Object, public Enumerable, public Subscriptable {
     std::string description() const override;
     bool equals(Strong<Object> object) const override;
     size_t hash() const override;
+
+    // Copyable
+    Strong<Object> copy() const override;
 
     // Enumerable
     Value enumerator(Value self) const override;

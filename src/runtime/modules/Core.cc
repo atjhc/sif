@@ -126,6 +126,13 @@ ModuleMap _coreNatives = []() -> ModuleMap {
         MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
             return lowercase(values[0].typeName());
         });
+    natives[S("(a) copy of {}")] =
+        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+            if (auto copyable = values[0].as<Copyable>()) {
+                return copyable->copy();
+            }
+            return values[0];
+        });
     return natives;
 }();
 

@@ -20,13 +20,14 @@
 #include "runtime/Object.h"
 #include "runtime/Value.h"
 
+#include "runtime/protocols/Copyable.h"
 #include "runtime/protocols/Subscriptable.h"
 
 #include <string>
 
 SIF_NAMESPACE_BEGIN
 
-class Dictionary : public Object, public Subscriptable {
+class Dictionary : public Object, public Copyable, public Subscriptable {
   public:
     Dictionary();
     Dictionary(const ValueMap &values);
@@ -39,6 +40,9 @@ class Dictionary : public Object, public Subscriptable {
     std::string description() const override;
     bool equals(Strong<Object>) const override;
     size_t hash() const override;
+
+    // Copyable
+    Strong<Object> copy() const override;
 
     // Subscriptable
     Result<Value, RuntimeError> subscript(Location, const Value &) const override;

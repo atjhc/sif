@@ -15,7 +15,7 @@ print insert item 1 with key "one" into {:}
 
 print remove item "one" from {"one": 1}
 (-- expect
-{}
+{:}
 --)
 
 print {"one": 1, "two": 2, "three": 3, "four": 4} contains "two"
@@ -36,4 +36,12 @@ one
 print the values of {"one": 1}
 (-- expect
 1
+--)
+
+set a to {:}
+set b to a copy of a
+set b["one"] to 1
+print a
+(-- expect
+{:}
 --)

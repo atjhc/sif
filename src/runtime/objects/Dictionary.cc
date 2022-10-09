@@ -35,6 +35,9 @@ std::string Dictionary::description() const {
             ss << ", ";
         }
     }
+    if (_values.size() == 0) {
+        ss << ":";
+    }
     ss << "}";
     return ss.str();
 }
@@ -56,6 +59,10 @@ size_t Dictionary::hash() const {
 }
 
 bool Dictionary::contains(const Value &value) const { return _values.find(value) != _values.end(); }
+
+Strong<Object> Dictionary::copy() const {
+    return MakeOwned<Dictionary>(_values);
+}
 
 Result<Value, RuntimeError> Dictionary::subscript(Location location, const Value &value) const {
     auto it = _values.find(value);

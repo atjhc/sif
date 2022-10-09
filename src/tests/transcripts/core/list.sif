@@ -108,6 +108,14 @@ print reversed {1, 2, 3, 4}
 4 3 2 1
 --)
 
+set a to {1, 2, 3}
+set b to a copy of a
+insert 4 at the end of b
+print a
+(-- expect
+1 2 3
+--)
+
 (-- TODO:
 sort {}
 sorted {}
