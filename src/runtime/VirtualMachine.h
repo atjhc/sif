@@ -67,7 +67,7 @@ class VirtualMachine {
 
     Optional<RuntimeError> _error;
     std::vector<Value> _stack;
-    std::vector<CallFrame> _callStack;
+    std::vector<CallFrame> _frames;
     Mapping<std::string, Value> _variables;
     Value _it;
 };

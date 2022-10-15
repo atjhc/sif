@@ -32,7 +32,7 @@ Optional<RuntimeError> VirtualMachine::error() const { return _error; }
 
 void VirtualMachine::add(const std::string &name, const Value global) { _variables[name] = global; }
 
-CallFrame &VirtualMachine::frame() { return _callStack.back(); }
+CallFrame &VirtualMachine::frame() { return _frames.back(); }
 
 static inline Opcode Read(Bytecode::Iterator &it) { return *it++; }
 
@@ -78,7 +78,7 @@ std::ostream &operator<<(std::ostream &out, const CallFrame &f) { return out << 
 
 Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     _error = None;
-    _callStack.push_back({bytecode, bytecode->code().begin(), std::vector<size_t>(), 0});
+    _frames.push_back({bytecode, bytecode->code().begin(), std::vector<size_t>(), 0});
     Push(_stack, Value());
     auto localsCount = frame().bytecode->locals().size();
     for (auto i = 0; i < localsCount; i++) {
@@ -87,8 +87,8 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
 #if defined(DEBUG)
     if (_config.enableTracing) {
         std::cout << "[" << _stack << "]" << std::endl;
-        if (_callStack.size() > 1) {
-            std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
+        if (_frames.size() > 1) {
+            std::cout << "[" << Join(_frames, ", ") << "]" << std::endl;
         }
         std::cout << std::endl;
     }
@@ -108,9 +108,9 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             while (_stack.size() > frame().sp) {
                 Pop(_stack);
             }
-            _callStack.pop_back();
+            _frames.pop_back();
             Push(_stack, value);
-            if (_callStack.empty()) {
+            if (_frames.empty()) {
                 returnValue = value;
             }
             break;
@@ -473,8 +473,8 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
 #if defined(DEBUG)
         if (_config.enableTracing) {
             std::cout << std::endl << "[" << _stack << "]" << std::endl;
-            if (_callStack.size() > 1) {
-                std::cout << "[" << Join(_callStack, ", ") << "]" << std::endl;
+            if (_frames.size() > 1) {
+                std::cout << "[" << Join(_frames, ", ") << "]" << std::endl;
             }
             std::cout << std::endl;
         }
@@ -486,11 +486,11 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                     Pop(_stack);
                 }
             }
-            while (_callStack.size() > 1 && frame().jumps.size() == 0) {
+            while (_frames.size() > 1 && frame().jumps.size() == 0) {
                 while (_stack.size() > frame().sp) {
                     Pop(_stack);
                 }
-                _callStack.pop_back();
+                _frames.pop_back();
             }
             if (frame().jumps.size() == 0) {
                 _error = error;
@@ -516,7 +516,7 @@ Optional<RuntimeError> VirtualMachine::call(Value object, int count) {
                 captures.push_back(frame().captures[capture.index]);
             }
         }
-        _callStack.push_back(
+        _frames.push_back(
             {fn->bytecode(), fn->bytecode()->code().begin(), captures, _stack.size() - count - 1});
 
         auto additionalLocalsCount = frame().bytecode->locals().size() - count;
