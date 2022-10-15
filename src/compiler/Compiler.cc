@@ -132,8 +132,22 @@ void Compiler::assign(const Variable &variable, const Location &location, const 
             opcode = Opcode::SetGlobal;
         }
     } else {
-        index = bytecode().addConstant(MakeStrong<String>(name));
-        opcode = Opcode::SetGlobal;
+        switch (variable.scope) {
+        case Variable::Scope::Local:
+            if (int i = findLocal(_frames.back(), name); i > -1) {
+                index = i;
+                opcode = Opcode::SetLocal;
+            } else {
+                addLocal(name);
+                index = locals().size() - 1;
+                opcode = Opcode::SetLocal;
+            }
+            break;
+        case Variable::Scope::Unspecified:
+        case Variable::Scope::Global:
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            opcode = Opcode::SetGlobal;
+        }
     }
     bytecode().add(location, opcode, index);
 }

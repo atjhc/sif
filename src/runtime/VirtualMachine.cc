@@ -80,6 +80,10 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     _error = None;
     _callStack.push_back({bytecode, bytecode->code().begin(), std::vector<size_t>(), 0});
     Push(_stack, Value());
+    auto localsCount = frame().bytecode->locals().size();
+    for (auto i = 0; i < localsCount; i++) {
+        Push(_stack, Value());
+    }
 #if defined(DEBUG)
     if (_config.enableTracing) {
         std::cout << "[" << _stack << "]" << std::endl;

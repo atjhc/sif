@@ -1,0 +1,9 @@
+set local x to 10
+print x
+print global x
+print local x
+(-- expect
+empty
+empty
+10
+--)
