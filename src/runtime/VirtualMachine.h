@@ -19,7 +19,6 @@
 #include "Common.h"
 #include "compiler/Bytecode.h"
 #include "runtime/Value.h"
-#include "runtime/objects/Native.h"
 
 #include <stack>
 #include <vector>
@@ -32,31 +31,33 @@ struct VirtualMachineConfig {
 #endif
 };
 
+struct CallFrame {
+    Strong<Bytecode> bytecode;
+    Bytecode::Iterator ip;
+    std::vector<size_t> captures;
+    size_t sp;
+    std::vector<Bytecode::Iterator> jumps;
+    std::vector<size_t> sps;
+    Value error;
+};
+
 class VirtualMachine {
   public:
     VirtualMachine(const VirtualMachineConfig &config = VirtualMachineConfig());
 
     Optional<Value> execute(const Strong<Bytecode> &bytecode);
-    void add(const std::string &name, const Strong<Native> &nativeFunction);
+    void add(const std::string &name, const Value nativeFunction);
 
     Optional<RuntimeError> error() const;
 
   private:
-    bool call(Value, int count);
-    bool subscript(Value, Value);
-    bool range(Value, Value, bool);
-
-    struct CallFrame {
-        Strong<Bytecode> bytecode;
-        Bytecode::Iterator ip;
-        std::vector<size_t> captures;
-        size_t sp;
-    };
+    Optional<RuntimeError> call(Value, int count);
+    Optional<RuntimeError> range(Value, Value, bool);
 
     CallFrame &frame();
 
 #if defined(DEBUG)
-    friend std::ostream &operator<<(std::ostream &out, const VirtualMachine::CallFrame &f);
+    friend std::ostream &operator<<(std::ostream &out, const CallFrame &f);
 #endif
 
 #pragma GCC diagnostic push

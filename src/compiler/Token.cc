@@ -42,6 +42,7 @@ bool Token::isWord() const {
     case Type::Set:
     case Type::Then:
     case Type::To:
+    case Type::Try:
     case Type::Until:
     case Type::While:
     case Type::Global:

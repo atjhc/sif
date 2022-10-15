@@ -1,0 +1,49 @@
+try
+  print "hello"
+  print 1 + yes
+  print "world"
+end try
+(-- expect
+hello
+--)
+
+repeat for i in 1...2
+  print "hello"
+  try return 1 + 1 / 0
+end repeat
+(-- expect
+hello
+hello
+--)
+
+try print 1 + yes
+print the error
+(-- expect
+mismatched types: integer + bool
+--)
+
+try error with "test error"
+print the error
+(-- expect
+test error
+--)
+
+function a
+  error with "test error"
+end function
+try a
+print the error
+(-- expect
+test error
+--)
+
+function a
+  function b
+    error with "test error"
+  end function
+end function
+try a
+print the error
+(-- expect
+test error
+--)

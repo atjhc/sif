@@ -69,6 +69,8 @@ enum class Opcode : uint8_t {
     Empty,
     GetIt,
     SetIt,
+    PushJump,
+    PopJump,
 };
 
 class Bytecode {
@@ -83,7 +85,8 @@ class Bytecode {
     uint16_t addLocal(std::string local);
     uint16_t addConstant(Value constant);
 
-    void patchJump(size_t location);
+    void patchRelativeJump(size_t location);
+    void patchAbsoluteJump(size_t location);
 
     const std::string &name() const;
     const std::vector<Opcode> &code() const;

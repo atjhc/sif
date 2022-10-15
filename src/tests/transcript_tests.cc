@@ -103,7 +103,7 @@ TEST_CASE(TranscriptTests, All) {
         }
 
         std::ostringstream ss;
-        vm.add("print {}", MakeStrong<Native>([&](Location location,
+        vm.add("print {}", MakeStrong<Native>([&](CallFrame &, Location location,
                                                   Value *values) -> Result<Value, RuntimeError> {
                    if (const auto &list = values[0].as<List>()) {
                        ss << Join(list->values(), " ");
@@ -116,7 +116,7 @@ TEST_CASE(TranscriptTests, All) {
         std::istringstream iss(input);
         vm.add("read (a) line",
                MakeStrong<Native>(
-                   [&](Location location, Value *values) -> Result<Value, RuntimeError> {
+                   [&](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
                        std::string input;
                        std::getline(iss, input);
                        return input;

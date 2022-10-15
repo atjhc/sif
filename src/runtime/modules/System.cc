@@ -18,6 +18,7 @@
 #include "Error.h"
 #include "Utilities.h"
 
+#include "runtime/VirtualMachine.h"
 #include "runtime/modules/System.h"
 #include "runtime/objects/Dictionary.h"
 #include "runtime/objects/List.h"
@@ -29,28 +30,28 @@ SIF_NAMESPACE_BEGIN
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
 
 System::System() {
-    _natives[S("the arguments")] =
-        MakeStrong<Native>([this](Location location, Value *values) -> Result<Value, RuntimeError> {
+    _natives[S("the arguments")] = MakeStrong<Native>(
+        [this](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return MakeStrong<List>(_arguments.begin(), _arguments.end());
         });
-    _natives[S("the environment")] =
-        MakeStrong<Native>([this](Location location, Value *values) -> Result<Value, RuntimeError> {
+    _natives[S("the environment")] = MakeStrong<Native>(
+        [this](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto dictionary = MakeStrong<Dictionary>();
             for (auto pair : _environment) {
                 dictionary->values()[Value(pair.first)] = Value(pair.second);
             }
             return dictionary;
         });
-    _natives[S("the clock")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    _natives[S("the clock")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return Integer(clock());
         });
-    _natives[S("the system name")] =
-        MakeStrong<Native>([this](Location location, Value *values) -> Result<Value, RuntimeError> {
+    _natives[S("the system name")] = MakeStrong<Native>(
+        [this](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return _systemName;
         });
-    _natives[S("the system version")] =
-        MakeStrong<Native>([this](Location location, Value *values) -> Result<Value, RuntimeError> {
+    _natives[S("the system version")] = MakeStrong<Native>(
+        [this](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return _systemVersion;
         });
 }

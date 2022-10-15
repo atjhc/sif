@@ -36,33 +36,42 @@ static Signature S(const char *signature) { return Signature::Make(signature).va
 
 ModuleMap _coreNatives = []() -> ModuleMap {
     ModuleMap natives;
-    natives[S("the language version")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("the language version")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return Value(std::string(Version));
         });
-    natives[S("the language major version")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("the language major version")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return Value(MajorVersion);
         });
-    natives[S("the language minor version")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("the language minor version")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return Value(MinorVersion);
         });
-    natives[S("the language patch version")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("the language patch version")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return Value(PatchVersion);
         });
-    natives[S("quit")] = MakeStrong<Native>(
-        [](Location location, Value *values) -> Result<Value, RuntimeError> { exit(0); });
-    natives[S("quit with {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("the error")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            return frame.error;
+        });
+    natives[S("error with {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            return Error(RuntimeError(location, values[0].toString()));
+        });
+    natives[S("quit")] =
+        MakeStrong<Native>([](CallFrame &frame, Location location,
+                              Value *values) -> Result<Value, RuntimeError> { exit(0); });
+    natives[S("quit with {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (!values[0].isInteger()) {
                 return Error(RuntimeError(location, "expected an integer"));
             }
             exit(values[0].asInteger());
         });
-    natives[S("write {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("write {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (const auto &list = values[0].as<List>()) {
                 std::cout << Join(list->values(), " ");
             } else {
@@ -70,8 +79,8 @@ ModuleMap _coreNatives = []() -> ModuleMap {
             }
             return Value();
         });
-    natives[S("write error {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("write error {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (const auto &list = values[0].as<List>()) {
                 std::cerr << Join(list->values(), " ");
             } else {
@@ -79,8 +88,8 @@ ModuleMap _coreNatives = []() -> ModuleMap {
             }
             return Value();
         });
-    natives[S("print {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("print {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (const auto &list = values[0].as<List>()) {
                 std::cout << Join(list->values(), " ");
             } else {
@@ -89,8 +98,8 @@ ModuleMap _coreNatives = []() -> ModuleMap {
             std::cout << std::endl;
             return Value();
         });
-    natives[S("print error {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("print error {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (const auto &list = values[0].as<List>()) {
                 for (const auto &item : list->values()) {
                     std::cerr << item;
@@ -101,22 +110,23 @@ ModuleMap _coreNatives = []() -> ModuleMap {
             std::cerr << std::endl;
             return Value();
         });
-    natives[S("get {}")] = MakeStrong<Native>(
-        [](Location location, Value *values) -> Result<Value, RuntimeError> { return values[0]; });
-    natives[S("read (a) word")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("get {}")] =
+        MakeStrong<Native>([](CallFrame &frame, Location location,
+                              Value *values) -> Result<Value, RuntimeError> { return values[0]; });
+    natives[S("read (a) word")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             std::string input;
             std::cin >> input;
             return input;
         });
-    natives[S("read (a) line")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("read (a) line")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             std::string input;
             std::getline(std::cin, input);
             return input;
         });
-    natives[S("read (a) character")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("read (a) character")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             char input;
             if (std::cin.get(input)) {
                 return input;
@@ -124,26 +134,26 @@ ModuleMap _coreNatives = []() -> ModuleMap {
                 return Value();
             }
         });
-    natives[S("(the) debug description of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) debug description of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return values[0].debugDescription();
         });
-    natives[S("(the) description of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) description of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             std::ostringstream ss;
             ss << values[0];
             return ss.str();
         });
-    natives[S("(the) hash value of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) hash value of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return Integer(Value::Hash()(values[0]));
         });
-    natives[S("(the) type name of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) type name of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return lowercase(values[0].typeName());
         });
-    natives[S("(a) copy of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(a) copy of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto copyable = values[0].as<Copyable>()) {
                 return copyable->copy();
             }
@@ -154,8 +164,8 @@ ModuleMap _coreNatives = []() -> ModuleMap {
 
 ModuleMap _commonNatives = []() -> ModuleMap {
     ModuleMap natives;
-    natives[S("(the) size of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) size of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             size_t size = 0;
             if (auto list = values[0].as<List>()) {
                 size = list->values().size();
@@ -193,17 +203,19 @@ ModuleMap _commonNatives = []() -> ModuleMap {
         }
         return Error(RuntimeError(location, "expected a string, list, dictionary, or range"));
     };
-    natives[S("{} contains {}")] = MakeStrong<Native>(
-        [contains](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("{} contains {}")] =
+        MakeStrong<Native>([contains](CallFrame &frame, Location location,
+                                      Value *values) -> Result<Value, RuntimeError> {
             return contains(location, values[0], values[1]);
         });
-    natives[S("{} is in {}")] = MakeStrong<Native>(
-        [contains](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("{} is in {}")] =
+        MakeStrong<Native>([contains](CallFrame &frame, Location location,
+                                      Value *values) -> Result<Value, RuntimeError> {
             return contains(location, values[1], values[0]);
         });
 
-    natives[S("{} starts with {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("{} starts with {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto string = values[0].as<String>()) {
                 auto searchString = values[1].as<String>();
                 if (!searchString) {
@@ -215,8 +227,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a string or list"));
         });
-    natives[S("{} ends with {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("{} ends with {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto string = values[0].as<String>()) {
                 auto searchString = values[1].as<String>();
                 if (!searchString) {
@@ -228,8 +240,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a string or list"));
         });
-    natives[S("item {} in {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("item {} in {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto list = values[1].as<List>()) {
                 return list->subscript(location, values[0]);
             } else if (auto dictionary = values[1].as<Dictionary>()) {
@@ -237,8 +249,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a list or dictionary"));
         });
-    natives[S("insert {} at (the) end of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("insert {} at (the) end of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto list = values[1].as<List>()) {
                 list->values().push_back(values[0]);
             } else if (auto string = values[1].as<String>()) {
@@ -249,8 +261,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return values[1];
         });
-    natives[S("remove item {} from {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("remove item {} from {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto dictionary = values[1].as<Dictionary>()) {
                 dictionary->values().erase(values[0]);
                 return dictionary;
@@ -264,8 +276,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a dictionary"));
         });
-    natives[S("(the) (first) offset of {} in {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) (first) offset of {} in {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto text = values[1].as<String>()) {
                 auto searchString = values[0].as<String>();
                 if (!searchString) {
@@ -281,8 +293,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a string"));
         });
-    natives[S("(the) last offset of {} in {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) last offset of {} in {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto text = values[1].as<String>()) {
                 auto searchString = values[0].as<String>();
                 if (!searchString) {
@@ -298,8 +310,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a string or list"));
         });
-    natives[S("replace all {} with {} in {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("replace all {} with {} in {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto text = values[2].as<String>()) {
                 auto searchString = values[0].as<String>();
                 if (!searchString) {
@@ -317,8 +329,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a string or list"));
         });
-    natives[S("replace first {} with {} in {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("replace first {} with {} in {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto text = values[2].as<String>()) {
                 auto searchString = values[0].as<String>();
                 if (!searchString) {
@@ -336,8 +348,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a string or list"));
         });
-    natives[S("replace last {} with {} in {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("replace last {} with {} in {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto text = values[2].as<String>()) {
                 auto searchString = values[0].as<String>();
                 if (!searchString) {
@@ -360,8 +372,8 @@ ModuleMap _commonNatives = []() -> ModuleMap {
 
 ModuleMap _dictionaryNatives = []() -> ModuleMap {
     ModuleMap natives;
-    natives[S("(the) keys (of) {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) keys (of) {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto dictionary = values[0].as<Dictionary>();
             if (!dictionary) {
                 return Error(RuntimeError(location, "expected a dictionary"));
@@ -372,8 +384,8 @@ ModuleMap _dictionaryNatives = []() -> ModuleMap {
             }
             return keys;
         });
-    natives[S("(the) values (of) {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) values (of) {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto dictionary = values[0].as<Dictionary>();
             if (!dictionary) {
                 return Error(RuntimeError(location, "expected a dictionary"));
@@ -384,8 +396,8 @@ ModuleMap _dictionaryNatives = []() -> ModuleMap {
             }
             return valuesList;
         });
-    natives[S("insert item {} with key {} into {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("insert item {} with key {} into {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto dictionary = values[2].as<Dictionary>();
             if (!dictionary) {
                 return Error(RuntimeError(location, "expected a dictionary"));
@@ -405,8 +417,8 @@ ModuleMap _listNatives = []() -> ModuleMap {
     };
 
     ModuleMap natives;
-    natives[S("items {} to {} of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("items {} to {} of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[2].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -422,40 +434,41 @@ ModuleMap _listNatives = []() -> ModuleMap {
             return MakeStrong<List>(list->values().begin() + index1,
                                     list->values().begin() + index2 + 1);
         });
-    natives[S("(the) mid/middle item of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) mid/middle item of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
             return list->values().at(list->values().size() / 2);
         });
-    natives[S("(the) last item of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) last item of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
             return list->values().back();
         });
-    natives[S("(the) number of items in {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) number of items in {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
             return Integer(list->values().size());
         });
-    natives[S("any item of {}")] = MakeStrong<Native>(
-        [random](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("any item of {}")] =
+        MakeStrong<Native>([random](CallFrame &frame, Location location,
+                                    Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
             return list->values().at(random(list->values().size()));
         });
-    natives[S("remove items {} to {} from {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("remove items {} to {} from {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[2].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -472,8 +485,8 @@ ModuleMap _listNatives = []() -> ModuleMap {
                                  list->values().begin() + index2 + 1);
             return list;
         });
-    natives[S("insert {} at index {} into {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("insert {} at index {} into {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[2].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -485,8 +498,8 @@ ModuleMap _listNatives = []() -> ModuleMap {
             list->values().insert(list->values().begin() + index, values[0]);
             return list;
         });
-    natives[S("reverse {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("reverse {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -494,16 +507,16 @@ ModuleMap _listNatives = []() -> ModuleMap {
             std::reverse(list->values().begin(), list->values().end());
             return list;
         });
-    natives[S("reversed {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("reversed {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
             return MakeStrong<List>(list->values().rbegin(), list->values().rend());
         });
-    natives[S("shuffle {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("shuffle {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -511,8 +524,8 @@ ModuleMap _listNatives = []() -> ModuleMap {
             std::shuffle(list->values().begin(), list->values().end(), engine);
             return list;
         });
-    natives[S("shuffled {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("shuffled {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -534,8 +547,8 @@ ModuleMap _stringNatives = []() -> ModuleMap {
 
     ModuleMap natives;
 
-    natives[S("insert {} at char/character {} in {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("insert {} at char/character {} in {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto insertText = values[0].as<String>();
             if (!insertText) {
                 return Error(RuntimeError(location, "expected a string"));
@@ -552,8 +565,8 @@ ModuleMap _stringNatives = []() -> ModuleMap {
                                   insertText->string().end());
             return text;
         });
-    natives[S("insert {} at (the) end of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("insert {} at (the) end of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto insertText = values[0].as<String>();
             if (!insertText) {
                 return Error(RuntimeError(location, "expected a string"));
@@ -565,8 +578,8 @@ ModuleMap _stringNatives = []() -> ModuleMap {
             text->string().append(insertText->string());
             return text;
         });
-    natives[S("remove all {} from {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("remove all {} from {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto removeText = values[0].as<String>();
             if (!removeText) {
                 return Error(RuntimeError(location, "expected a string"));
@@ -578,8 +591,8 @@ ModuleMap _stringNatives = []() -> ModuleMap {
             text->replaceAll(*removeText, String(""));
             return text;
         });
-    natives[S("remove first {} from {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("remove first {} from {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto removeText = values[0].as<String>();
             if (!removeText) {
                 return Error(RuntimeError(location, "expected a string"));
@@ -591,8 +604,8 @@ ModuleMap _stringNatives = []() -> ModuleMap {
             text->replaceFirst(*removeText, String(""));
             return text;
         });
-    natives[S("remove last {} from {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("remove last {} from {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto removeText = values[0].as<String>();
             if (!removeText) {
                 return Error(RuntimeError(location, "expected a string"));
@@ -605,152 +618,152 @@ ModuleMap _stringNatives = []() -> ModuleMap {
             return text;
         });
     auto replaceChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                if (!values[0].isInteger()) {
-                    return Error(RuntimeError(location, "expected an integer"));
-                }
-                auto index = values[0].asInteger();
-                auto replacement = values[1].as<String>();
-                if (!replacement) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                auto text = values[2].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            if (!values[0].isInteger()) {
+                return Error(RuntimeError(location, "expected an integer"));
+            }
+            auto index = values[0].asInteger();
+            auto replacement = values[1].as<String>();
+            if (!replacement) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto text = values[2].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
 
-                auto chunk = index_chunk(chunkType, index, text->string());
-                text->string().replace(chunk.begin(), chunk.end(), replacement->string());
-                return text;
-            });
+            auto chunk = index_chunk(chunkType, index, text->string());
+            text->string().replace(chunk.begin(), chunk.end(), replacement->string());
+            return text;
+        });
     };
     natives[S("replace char/character {} with {} in {}")] = replaceChunk(chunk::character);
     natives[S("replace word {} with {} in {}")] = replaceChunk(chunk::word);
     natives[S("replace line {} with {} in {}")] = replaceChunk(chunk::line);
 
     auto replaceChunks = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                if (!values[0].isInteger() || !values[1].isInteger()) {
-                    return Error(RuntimeError(location, "expected an integer"));
-                }
-                auto start = values[0].asInteger();
-                auto end = values[1].asInteger();
-                auto replacement = values[2].as<String>();
-                if (!replacement) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                auto text = values[3].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                auto chunk = range_chunk(chunkType, start, end, text->string());
-                text->string().replace(chunk.begin(), chunk.end(), replacement->string());
-                return text;
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            if (!values[0].isInteger() || !values[1].isInteger()) {
+                return Error(RuntimeError(location, "expected an integer"));
+            }
+            auto start = values[0].asInteger();
+            auto end = values[1].asInteger();
+            auto replacement = values[2].as<String>();
+            if (!replacement) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto text = values[3].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto chunk = range_chunk(chunkType, start, end, text->string());
+            text->string().replace(chunk.begin(), chunk.end(), replacement->string());
+            return text;
+        });
     };
     natives[S("replace chars/characters {} to {} with {} in {}")] = replaceChunks(chunk::character);
     natives[S("replace words {} to {} with {} in {}")] = replaceChunks(chunk::word);
     natives[S("replace lines {} to {} with {} in {}")] = replaceChunks(chunk::line);
 
     auto removeChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                if (!values[0].isInteger()) {
-                    return Error(RuntimeError(location, "expected an integer"));
-                }
-                auto index = values[0].asInteger();
-                auto text = values[1].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                auto chunk = index_chunk(chunkType, index, text->string());
-                text->string().erase(chunk.begin(), chunk.end());
-                return text;
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            if (!values[0].isInteger()) {
+                return Error(RuntimeError(location, "expected an integer"));
+            }
+            auto index = values[0].asInteger();
+            auto text = values[1].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto chunk = index_chunk(chunkType, index, text->string());
+            text->string().erase(chunk.begin(), chunk.end());
+            return text;
+        });
     };
     natives[S("remove char/character {} from {}")] = removeChunk(chunk::character);
     natives[S("remove word {} from {}")] = removeChunk(chunk::word);
     natives[S("remove line {} from {}")] = removeChunk(chunk::line);
 
     auto removeChunks = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                if (!values[0].isInteger()) {
-                    return Error(RuntimeError(location, "expected an integer"));
-                }
-                if (!values[1].isInteger()) {
-                    return Error(RuntimeError(location, "expected an integer"));
-                }
-                auto start = values[0].asInteger();
-                auto end = values[1].asInteger();
-                auto text = values[2].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                auto chunk = range_chunk(chunkType, start, end, text->string());
-                text->string().erase(chunk.begin(), chunk.end());
-                return text;
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            if (!values[0].isInteger()) {
+                return Error(RuntimeError(location, "expected an integer"));
+            }
+            if (!values[1].isInteger()) {
+                return Error(RuntimeError(location, "expected an integer"));
+            }
+            auto start = values[0].asInteger();
+            auto end = values[1].asInteger();
+            auto text = values[2].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto chunk = range_chunk(chunkType, start, end, text->string());
+            text->string().erase(chunk.begin(), chunk.end());
+            return text;
+        });
     };
     natives[S("remove chars/characters {} to {} from {}")] = removeChunks(chunk::character);
     natives[S("remove words {} to {} from {}")] = removeChunks(chunk::word);
     natives[S("remove lines {} to {} from {}")] = removeChunks(chunk::line);
 
     auto listOf = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                auto text = values[0].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                std::vector<Value> result;
-                size_t index = 0;
-                auto chunk = index_chunk(chunkType, index++, text->string());
-                while (chunk.begin() < text->string().end()) {
-                    result.push_back(Value(chunk.get()));
-                    chunk = index_chunk(chunkType, index++, text->string());
-                }
-                return MakeStrong<List>(result);
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            auto text = values[0].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            std::vector<Value> result;
+            size_t index = 0;
+            auto chunk = index_chunk(chunkType, index++, text->string());
+            while (chunk.begin() < text->string().end()) {
+                result.push_back(Value(chunk.get()));
+                chunk = index_chunk(chunkType, index++, text->string());
+            }
+            return MakeStrong<List>(result);
+        });
     };
     natives[S("(the) list of chars/characters in {}")] = listOf(chunk::character);
     natives[S("(the) list of words in {}")] = listOf(chunk::word);
     natives[S("(the) list of lines in {}")] = listOf(chunk::line);
 
     auto chunkAt = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                if (!values[0].isInteger()) {
-                    return Error(RuntimeError(location, "expected an integer"));
-                }
-                auto index = values[0].asInteger();
-                auto text = values[1].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                return index_chunk(chunkType, index, text->string()).get();
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            if (!values[0].isInteger()) {
+                return Error(RuntimeError(location, "expected an integer"));
+            }
+            auto index = values[0].asInteger();
+            auto text = values[1].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            return index_chunk(chunkType, index, text->string()).get();
+        });
     };
     natives[S("char/character {} of {}")] = chunkAt(chunk::character);
     natives[S("word {} of {}")] = chunkAt(chunk::word);
     natives[S("line {} of {}")] = chunkAt(chunk::line);
 
     auto chunksAt = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                if (!values[0].isInteger() || !values[1].isInteger()) {
-                    return Error(RuntimeError(location, "expected an integer"));
-                }
-                auto start = values[0].asInteger();
-                auto end = values[1].asInteger();
-                auto text = values[2].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                return range_chunk(chunkType, start, end, text->string()).get();
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            if (!values[0].isInteger() || !values[1].isInteger()) {
+                return Error(RuntimeError(location, "expected an integer"));
+            }
+            auto start = values[0].asInteger();
+            auto end = values[1].asInteger();
+            auto text = values[2].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            return range_chunk(chunkType, start, end, text->string()).get();
+        });
     };
     natives[S("chars/characters {} to {} of {}")] = chunksAt(chunk::character);
     natives[S("words {} to {} of {}")] = chunksAt(chunk::word);
@@ -758,7 +771,8 @@ ModuleMap _stringNatives = []() -> ModuleMap {
 
     auto anyChunk = [random](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>(
-            [random, chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
+            [random, chunkType](CallFrame &frame, Location location,
+                                Value *values) -> Result<Value, RuntimeError> {
                 auto text = values[0].as<String>();
                 if (!text) {
                     return Error(RuntimeError(location, "expected a string"));
@@ -771,42 +785,42 @@ ModuleMap _stringNatives = []() -> ModuleMap {
     natives[S("any line of {}")] = anyChunk(chunk::line);
 
     auto middleChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                auto text = values[0].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                return middle_chunk(chunkType, text->string()).get();
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            auto text = values[0].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            return middle_chunk(chunkType, text->string()).get();
+        });
     };
     natives[S("(the) mid/middle char/character of {}")] = middleChunk(chunk::character);
     natives[S("(the) mid/middle word of {}")] = middleChunk(chunk::word);
     natives[S("(the) mid/middle line of {}")] = middleChunk(chunk::line);
 
     auto lastChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                auto text = values[0].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                return last_chunk(chunkType, text->string()).get();
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            auto text = values[0].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            return last_chunk(chunkType, text->string()).get();
+        });
     };
     natives[S("(the) last char/character of {}")] = lastChunk(chunk::character);
     natives[S("(the) last word of {}")] = lastChunk(chunk::word);
     natives[S("(the) last line of {}")] = lastChunk(chunk::line);
 
     auto numberOfChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [chunkType](Location location, Value *values) -> Result<Value, RuntimeError> {
-                auto text = values[0].as<String>();
-                if (!text) {
-                    return Error(RuntimeError(location, "expected a string"));
-                }
-                return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
-            });
+        return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
+                                              Value *values) -> Result<Value, RuntimeError> {
+            auto text = values[0].as<String>();
+            if (!text) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
+        });
     };
     natives[S("(the) number of chars/characters in {}")] = numberOfChunk(chunk::character);
     natives[S("(the) number of words in {}")] = numberOfChunk(chunk::word);
@@ -824,36 +838,36 @@ ModuleMap _rangeNatives = []() -> ModuleMap {
     };
 
     ModuleMap natives;
-    natives[S("{} up to {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("{} up to {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (!values[0].isInteger() || !values[1].isInteger()) {
                 return Error(RuntimeError(location, "expected an integer"));
             }
             return MakeStrong<Range>(values[0].asInteger(), values[1].asInteger(), true);
         });
-    natives[S("(the) lower bound of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) lower bound of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto range = values[0].as<Range>()) {
                 return range->start();
             }
             return Error(RuntimeError(location, "expected a range"));
         });
-    natives[S("(the) upper bound of {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) upper bound of {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto range = values[0].as<Range>()) {
                 return range->end();
             }
             return Error(RuntimeError(location, "expected a range"));
         });
-    natives[S("{} is closed")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("{} is closed")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (auto range = values[0].as<Range>()) {
                 return range->closed();
             }
             return Error(RuntimeError(location, "expected a range"));
         });
-    natives[S("{} overlaps (with) {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("{} overlaps (with) {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto range1 = values[0].as<Range>();
             auto range2 = values[1].as<Range>();
             if (!range1) {
@@ -864,8 +878,9 @@ ModuleMap _rangeNatives = []() -> ModuleMap {
             }
             return range1->overlaps(*range2);
         });
-    natives[S("(a) random number (in) {}")] = MakeStrong<Native>(
-        [random](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(a) random number (in) {}")] =
+        MakeStrong<Native>([random](CallFrame &frame, Location location,
+                                    Value *values) -> Result<Value, RuntimeError> {
             if (auto range = values[0].as<Range>()) {
                 return range->start() +
                        random(range->end() - range->start() + (range->closed() ? 1 : 0));
@@ -878,14 +893,14 @@ ModuleMap _rangeNatives = []() -> ModuleMap {
 ModuleMap _mathNatives = []() -> ModuleMap {
     ModuleMap natives;
     auto basicFunction = [](double (*func)(double)) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [func](Location location, Value *values) -> Result<Value, RuntimeError> {
-                if (!values[0].isNumber()) {
-                    return Error(RuntimeError(location, "expected a number"));
-                }
-                auto argument = values[0].castFloat();
-                return func(argument);
-            });
+        return MakeStrong<Native>([func](CallFrame &frame, Location location,
+                                         Value *values) -> Result<Value, RuntimeError> {
+            if (!values[0].isNumber()) {
+                return Error(RuntimeError(location, "expected a number"));
+            }
+            auto argument = values[0].castFloat();
+            return func(argument);
+        });
     };
     natives[S("(the) sin (of) {}")] = basicFunction(sin);
     natives[S("(the) cos (of) {}")] = basicFunction(cos);
@@ -904,8 +919,8 @@ ModuleMap _mathNatives = []() -> ModuleMap {
     natives[S("round {}")] = basicFunction(round);
     natives[S("trunc/truncate {}")] = basicFunction(trunc);
 
-    natives[S("(the) max/maximum (of) {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) max/maximum (of) {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -929,8 +944,8 @@ ModuleMap _mathNatives = []() -> ModuleMap {
             }
             return max;
         });
-    natives[S("(the) min/minimum (of) {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) min/minimum (of) {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -954,8 +969,8 @@ ModuleMap _mathNatives = []() -> ModuleMap {
             }
             return min;
         });
-    natives[S("(the) average/avg (of) {}")] =
-        MakeStrong<Native>([](Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("(the) average/avg (of) {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));

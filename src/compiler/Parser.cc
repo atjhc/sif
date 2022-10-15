@@ -442,6 +442,9 @@ Owned<Statement> Parser::parseStatement() {
     if (match({Token::Type::If})) {
         return parseIf();
     }
+    if (match({Token::Type::Try})) {
+        return parseTry();
+    }
     if (match({Token::Type::Repeat})) {
         bool wasParsingRepeat = _parsingRepeat;
         _parsingRepeat = true;
@@ -592,6 +595,33 @@ Owned<Statement> Parser::parseIf() {
         MakeOwned<If>(std::move(condition.value()), std::move(ifClause), std::move(elseClause));
     ifStatement->location = location;
     return ifStatement;
+}
+
+Owned<Statement> Parser::parseTry() {
+    auto location = previous().location;
+
+    Owned<Statement> statement;
+    if (consumeNewLine()) {
+        statement = parseBlock({Token::Type::End});
+        if (!consumeEnd(Token::Type::Try)) {
+            emitError(ParseError(peek(), Concat("expected ", Quoted("end"))));
+            return nullptr;
+        }
+    } else {
+        _parsingDepth--;
+        if (auto result = parseSimpleStatement()) {
+            statement = std::move(result.value());
+            consumeNewLine();
+        } else {
+            synchronize();
+            emitError(result.error());
+            return nullptr;
+        }
+    }
+
+    auto tryStatement = MakeOwned<Try>(std::move(statement));
+    tryStatement->location = location;
+    return tryStatement;
 }
 
 Owned<Statement> Parser::parseRepeat() {

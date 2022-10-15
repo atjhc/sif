@@ -119,9 +119,7 @@ Optional<Integer> List::findLast(const Value &value) const {
     return result.base() - _values.begin() - 1;
 }
 
-Strong<Object> List::copy() const {
-    return MakeOwned<List>(values());
-}
+Strong<Object> List::copy() const { return MakeOwned<List>(values()); }
 
 Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
 

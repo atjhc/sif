@@ -32,6 +32,8 @@ If::If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statemen
     : condition(std::move(condition)), ifStatement(std::move(ifStatement)),
       elseStatement(std::move(elseStatement)) {}
 
+Try::Try(Owned<Statement> statement) : statement(std::move(statement)) {}
+
 Return::Return(Owned<Expression> expression) : expression(std::move(expression)) {}
 
 ExpressionStatement::ExpressionStatement(Owned<Expression> expression)

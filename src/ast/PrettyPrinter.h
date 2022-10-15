@@ -45,6 +45,7 @@ class PrettyPrinter : public Statement::Visitor, public Expression::Visitor {
     void visit(const Block &) override;
     void visit(const FunctionDecl &) override;
     void visit(const If &) override;
+    void visit(const Try &) override;
     void visit(const Assignment &) override;
     void visit(const Return &) override;
     void visit(const ExpressionStatement &) override;

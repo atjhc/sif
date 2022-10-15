@@ -178,7 +178,11 @@ Token::Type Scanner::wordType() {
             case 'h':
                 return checkKeyword(2, 2, "en", Token::Type::Then);
             case 'r':
-                return checkKeyword(2, 2, "ue", Token::Type::BoolLiteral);
+                if (_current - _start == 3 && std::tolower(_start[2]) == 'y') {
+                    return Token::Type::Try;
+                } else {
+                    return checkKeyword(2, 2, "ue", Token::Type::BoolLiteral);
+                }
             }
         }
         break;

@@ -30,6 +30,7 @@ struct Block;
 struct FunctionDecl;
 struct Assignment;
 struct If;
+struct Try;
 struct Repeat;
 struct RepeatCondition;
 struct RepeatFor;
@@ -44,6 +45,7 @@ struct Statement : Node {
         virtual void visit(const FunctionDecl &) = 0;
         virtual void visit(const Assignment &) = 0;
         virtual void visit(const If &) = 0;
+        virtual void visit(const Try &) = 0;
         virtual void visit(const Repeat &) = 0;
         virtual void visit(const RepeatFor &) = 0;
         virtual void visit(const RepeatCondition &) = 0;
@@ -92,6 +94,14 @@ struct If : Statement {
     Owned<Statement> elseStatement;
 
     If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statement> elseStatement);
+
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
+};
+
+struct Try : Statement {
+    Owned<Statement> statement;
+
+    Try(Owned<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };

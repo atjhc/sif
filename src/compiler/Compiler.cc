@@ -287,12 +287,19 @@ void Compiler::visit(const If &ifStatement) {
     ifStatement.ifStatement->accept(*this);
 
     auto elseJump = bytecode().add(ifStatement.location, Opcode::Jump, 0);
-    bytecode().patchJump(ifJump);
+    bytecode().patchRelativeJump(ifJump);
     bytecode().add(ifStatement.location, Opcode::Pop);
     if (ifStatement.elseStatement) {
         ifStatement.elseStatement->accept(*this);
     }
-    bytecode().patchJump(elseJump);
+    bytecode().patchRelativeJump(elseJump);
+}
+
+void Compiler::visit(const Try &tryStatement) {
+    auto tryJump = bytecode().add(tryStatement.location, Opcode::PushJump, 0);
+    tryStatement.statement->accept(*this);
+    bytecode().add(tryStatement.location, Opcode::PopJump);
+    bytecode().patchAbsoluteJump(tryJump);
 }
 
 void Compiler::visit(const Return &statement) {
@@ -339,7 +346,7 @@ void Compiler::visit(const Repeat &statement) {
     auto repeat = bytecode().code().size();
     statement.statement->accept(*this);
     bytecode().addRepeat(statement.location, repeat);
-    bytecode().patchJump(_exitRepeat);
+    bytecode().patchRelativeJump(_exitRepeat);
     _nextRepeat = nextRepeat;
     _exitRepeat = exitRepeat;
 }
@@ -365,9 +372,9 @@ void Compiler::visit(const RepeatCondition &statement) {
     statement.statement->accept(*this);
     bytecode().addRepeat(statement.location, _nextRepeat);
 
-    bytecode().patchJump(jumpIfCondition);
+    bytecode().patchRelativeJump(jumpIfCondition);
     bytecode().add(statement.location, Opcode::Pop);
-    bytecode().patchJump(_exitRepeat);
+    bytecode().patchRelativeJump(_exitRepeat);
     _nextRepeat = nextRepeat;
     _exitRepeat = exitRepeat;
 }
@@ -389,8 +396,8 @@ void Compiler::visit(const RepeatFor &foreach) {
     foreach.statement->accept(*this);
     bytecode().addRepeat(foreach.location, _nextRepeat);
 
-    bytecode().patchJump(jumpIfAtEnd);
-    bytecode().patchJump(jumpExitRepeat);
+    bytecode().patchRelativeJump(jumpIfAtEnd);
+    bytecode().patchRelativeJump(jumpExitRepeat);
     bytecode().add(foreach.location, Opcode::Pop);
 
     _nextRepeat = nextRepeat;
@@ -426,7 +433,7 @@ void Compiler::visit(const Binary &binary) {
         auto jump = bytecode().add(binary.location, Opcode::JumpIfFalse, 0);
         bytecode().add(binary.location, Opcode::Pop);
         binary.rightExpression->accept(*this);
-        bytecode().patchJump(jump);
+        bytecode().patchRelativeJump(jump);
         return;
     }
 
@@ -435,7 +442,7 @@ void Compiler::visit(const Binary &binary) {
         auto jump = bytecode().add(binary.location, Opcode::JumpIfTrue, 0);
         bytecode().add(binary.location, Opcode::Pop);
         binary.rightExpression->accept(*this);
-        bytecode().patchJump(jump);
+        bytecode().patchRelativeJump(jump);
         return;
     }
 

@@ -20,12 +20,13 @@
 #include "compiler/Signature.h"
 #include "runtime/Object.h"
 #include "runtime/Value.h"
+#include "runtime/VirtualMachine.h"
 
 SIF_NAMESPACE_BEGIN
 
 class Native : public Object {
   public:
-    using Callable = std::function<Result<Value, RuntimeError>(Location, Value *)>;
+    using Callable = std::function<Result<Value, RuntimeError>(CallFrame &, Location, Value *)>;
 
     Native(const Callable &callable);
 

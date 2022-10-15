@@ -78,13 +78,22 @@ uint16_t Bytecode::addConstant(Value constant) {
     return _constants.size() - 1;
 }
 
-void Bytecode::patchJump(size_t index) {
+void Bytecode::patchRelativeJump(size_t index) {
     auto offset = _code.size() - index - 3;
     if (offset > USHRT_MAX) {
-        throw std::out_of_range(Concat("jump too far (", USHRT_MAX, ")"));
+        throw std::out_of_range(Concat("jump out of range (", USHRT_MAX, ")"));
     }
     _code[index + 1] = static_cast<Opcode>(offset >> 8);
     _code[index + 2] = static_cast<Opcode>(offset & 0xff);
+}
+
+void Bytecode::patchAbsoluteJump(size_t index) {
+    auto destination = _code.size();
+    if (destination > USHRT_MAX) {
+        throw std::out_of_range(Concat("jump out of range (", USHRT_MAX, ")"));
+    }
+    _code[index + 1] = static_cast<Opcode>(destination >> 8);
+    _code[index + 2] = static_cast<Opcode>(destination & 0xff);
 }
 
 const std::vector<Opcode> &Bytecode::code() const { return _code; }
@@ -172,6 +181,11 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
         return disassembleJump(out, "JumpIfTrue", position);
     case Opcode::JumpIfAtEnd:
         return disassembleJump(out, "JumpIfAtEnd", position);
+    case Opcode::PushJump:
+        return disassembleJump(out, "PushJump", position);
+    case Opcode::PopJump:
+        out << "PopJump";
+        return position + 1;
     case Opcode::Repeat:
         return disassembleRepeat(out, "Repeat", position);
     case Opcode::Pop:

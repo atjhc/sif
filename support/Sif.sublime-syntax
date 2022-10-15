@@ -34,7 +34,7 @@ contexts:
       scope: punctuation.definition.comment.sif
       push: line_comment
 
-    - match: '\b(if|else|then|repeat|until|while|end|function|exit|return|next|set|to|in|for|each|up|global|local)\b'
+    - match: '\b(if|else|then|try|repeat|until|while|end|function|exit|return|next|set|to|in|for|each|up|global|local)\b'
       scope: keyword.control.sif
 
     - match: '\b(is|not|and|or)\b'

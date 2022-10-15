@@ -68,6 +68,12 @@ void PrettyPrinter::visit(const If &ifs) {
     out << indentString() << "end if";
 }
 
+void PrettyPrinter::visit(const Try &trys) {
+    out << "try";
+    printBlock(*trys.statement);
+    out << indentString() << "end try";
+}
+
 void PrettyPrinter::visit(const Return &statement) {
     out << "return";
     if (statement.expression) {

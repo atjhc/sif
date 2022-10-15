@@ -34,6 +34,7 @@ struct Token {
         If,
         Then,
         Else,
+        Try,
         Function,
         Repeat,
         Forever,
