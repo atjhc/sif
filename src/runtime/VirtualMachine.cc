@@ -78,7 +78,7 @@ std::ostream &operator<<(std::ostream &out, const CallFrame &f) { return out << 
 
 Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     _error = None;
-    _frames.push_back({bytecode, bytecode->code().begin(), std::vector<size_t>(), 0});
+    _frames.push_back(CallFrame(bytecode, {}, 0));
     Push(_stack, Value());
     auto localsCount = frame().bytecode->locals().size();
     for (auto i = 0; i < localsCount; i++) {
@@ -516,8 +516,8 @@ Optional<RuntimeError> VirtualMachine::call(Value object, int count) {
                 captures.push_back(frame().captures[capture.index]);
             }
         }
-        _frames.push_back(
-            {fn->bytecode(), fn->bytecode()->code().begin(), captures, _stack.size() - count - 1});
+        auto sp = _stack.size() - count - 1;
+        _frames.push_back(CallFrame(fn->bytecode(), captures, sp));
 
         auto additionalLocalsCount = frame().bytecode->locals().size() - count;
         for (auto i = 0; i < additionalLocalsCount; i++) {
