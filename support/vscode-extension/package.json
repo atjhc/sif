@@ -1,0 +1,25 @@
+{
+  "name": "sif-syntax-highlighting",
+  "displayName": "Sif Syntax Highlighting",
+  "description": "This extension provides syntax highlighting support for the Sif programming language.",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.72.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "sif",
+      "aliases": ["Sif", "sif"],
+      "extensions": [".sif"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "sif",
+      "scopeName": "source.sif",
+      "path": "./syntaxes/Sif.tmLanguage"
+    }]
+  }
+}
