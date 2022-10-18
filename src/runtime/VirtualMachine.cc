@@ -496,7 +496,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 _error = error;
                 return None;
             }
-            frame().error = std::string(error.value().what());
+            frame().error = error.value().value();
             frame().ip = Pop(frame().jumps);
         }
         if (returnValue.has_value()) {

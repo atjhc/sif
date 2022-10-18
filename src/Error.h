@@ -20,6 +20,7 @@
 
 #include "ast/Node.h"
 #include "compiler/Token.h"
+#include "runtime/Value.h"
 
 SIF_NAMESPACE_BEGIN
 
@@ -52,13 +53,18 @@ class CompileError : public std::runtime_error {
 
 class RuntimeError : public std::runtime_error {
   public:
+    RuntimeError(const Location &location, const std::string &what, Value value)
+        : std::runtime_error(what), _location(location), _value(value) {}
+
     RuntimeError(const Location &location, const std::string &what)
-        : std::runtime_error(what), _location(location) {}
+        : std::runtime_error(what), _location(location), _value(what) {}
 
     const Location &location() const { return _location; }
 
+    const Value &value() const { return _value; }
   private:
     Location _location;
+    Value _value;
 };
 
 SIF_NAMESPACE_END

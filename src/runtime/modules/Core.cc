@@ -58,7 +58,7 @@ ModuleMap _coreNatives = []() -> ModuleMap {
         });
     natives[S("error with {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
-            return Error(RuntimeError(location, values[0].toString()));
+            return Error(RuntimeError(location, values[0].toString(), values[0]));
         });
     natives[S("quit")] =
         MakeStrong<Native>([](CallFrame &frame, Location location,

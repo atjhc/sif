@@ -18,6 +18,7 @@
 
 #include "Common.h"
 #include "runtime/Value.h"
+#include "Error.h"
 
 SIF_NAMESPACE_BEGIN
 

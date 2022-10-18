@@ -18,6 +18,7 @@
 #include "runtime/Object.h"
 
 #include "runtime/objects/String.h"
+#include "Error.h"
 
 #include <iostream>
 
