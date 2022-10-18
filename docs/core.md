@@ -27,9 +27,9 @@ the language version
 
     the language version
 
-
 ### Description
 Returns the current version of the Sif language as a string.
+
 
 the language major version
 --------------------------
@@ -38,9 +38,9 @@ the language major version
 
     the language major version
 
-
 ### Description
 Returns the current major version of the Sif language as an integer.
+
 
 the language minor version
 --------------------------
@@ -52,6 +52,7 @@ the language minor version
 ### Description
 Returns the currentminor  version of the Sif language as an integer.
 
+
 the language patch version
 --------------------------
 
@@ -59,9 +60,9 @@ the language patch version
 
     the language patch version
 
-
 ### Description
 Returns the current patch version of the Sif language as an integer.
+
 
 quit
 ----
@@ -70,9 +71,9 @@ quit
 
     quit
 
-
 ### Description
 Quit the program successfully.
+
 
 quit with {}
 ------------
@@ -86,6 +87,7 @@ quit with {}
 ### Description
 Quit the program using **errorCode** as the status code.
 
+
 print {}
 --------
 
@@ -97,6 +99,7 @@ print {}
 
 ### Description
 Prints a value to stdout, followed by a new line character.
+
 
 print error {}
 --------------
@@ -110,6 +113,7 @@ print error {}
 ### Description
 Print a value to stderr, followed by a new line character.
 
+
 write {}
 --------
 
@@ -122,6 +126,7 @@ write {}
 ### Description
 Write a value to stdout.
 
+
 write error {}
 --------------
 
@@ -133,6 +138,7 @@ write error {}
 
 ### Description
 Write a value to stderr.
+
 
 get {}
 ------
@@ -148,9 +154,9 @@ get {}
     get the language version
     print it
 
-
 ### Description
 Evaluates to **value**. This function has no affect on the value it returns, but may be used to make statements read more naturally.
+
 
 (the) type name (of) {}
 -----------------------
@@ -163,6 +169,7 @@ Evaluates to **value**. This function has no affect on the value it returns, but
 
 ### Description
 This function evaluates to the type name of **value** as a string.
+
 
 (a) copy (of) {}
 ----------------
@@ -178,9 +185,9 @@ This function evaluates to the type name of **value** as a string.
     a copy of {1, 2, 3}
     a copy of "Hello, World!"
 
-
 ### Description
 Evaluates to a copy of **value**.
+
 
 (the) description of {}
 -----------------------
@@ -197,9 +204,9 @@ Evaluates to a copy of **value**.
     the description of {1, 2, 3}
     the description of {"one": 1, "two": 2}
 
-
 ### Description
 Evaluates to a string describing **value**.
+
 
 (the) hash value of {}
 ----------------------
@@ -219,6 +226,7 @@ Evaluates to a string describing **value**.
 ### Description
 Evaluates to an integer representing a has of **value**.
 
+
 read (a) word
 -------------
 
@@ -235,6 +243,7 @@ Evaluates to a string read from stdin. This command will read one word from stdi
 - horizontal tab (0x09, "\t")
 - or vertical tab (0x0b, "\v")
 
+
 read (a) line
 -------------
 
@@ -244,6 +253,7 @@ read (a) line
 
 ### Description
 Evaluates to a string read from stdin. This command will read one whole line from stdin, stopping once the line feed (0x0d, "\n") character is encountered. The line feed character will be left in stdin.
+
 
 read (a) character
 ------------------
