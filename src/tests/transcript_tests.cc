@@ -98,36 +98,21 @@ TEST_CASE(TranscriptTests, All) {
             continue;
 
         VirtualMachine vm;
-        for (const auto &function : Core().functions()) {
+
+        std::ostringstream out, err;
+        std::istringstream in(input);
+
+        Core core(CoreConfig{out, in, err});
+        for (const auto &function : core.functions()) {
             vm.add(function.first, function.second);
         }
 
-        std::ostringstream ss;
-        vm.add("print {}", MakeStrong<Native>([&](CallFrame &, Location location,
-                                                  Value *values) -> Result<Value, RuntimeError> {
-                   if (const auto &list = values[0].as<List>()) {
-                       ss << Join(list->values(), " ");
-                   } else {
-                       ss << values[0];
-                   }
-                   ss << std::endl;
-                   return Value();
-               }));
-        std::istringstream iss(input);
-        vm.add("read (a) line",
-               MakeStrong<Native>(
-                   [&](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
-                       std::string input;
-                       std::getline(iss, input);
-                       return input;
-                   }));
-
         vm.execute(bytecode);
         ASSERT_FALSE(vm.error().has_value()) << path << " failed: " << vm.error();
-        ASSERT_EQ(expectedResult, ss.str()) << path << " failed:" << std::endl
+        ASSERT_EQ(expectedResult, out.str()) << path << " failed:" << std::endl
                                             << "Expected: " << std::endl
                                             << expectedResult << std::endl
                                             << "Got: " << std::endl
-                                            << ss.str() << std::endl;
+                                            << out.str() << std::endl;
     }
 }

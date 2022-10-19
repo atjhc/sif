@@ -62,6 +62,7 @@ class RuntimeError : public std::runtime_error {
     const Location &location() const { return _location; }
 
     const Value &value() const { return _value; }
+
   private:
     Location _location;
     Value _value;

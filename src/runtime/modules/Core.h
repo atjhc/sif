@@ -21,10 +21,21 @@
 
 SIF_NAMESPACE_BEGIN
 
+struct CoreConfig {
+    std::ostream &out = std::cout;
+    std::istream &in = std::cin;
+    std::ostream &err = std::cerr;
+};
+
 class Core : public Module {
   public:
+    Core(const CoreConfig &config = CoreConfig());
+
     std::vector<Signature> signatures() const override;
     Mapping<std::string, Strong<Native>> functions() const override;
+
+  private:
+    Mapping<Signature, Strong<Native>, Signature::Hash> _natives;
 };
 
 SIF_NAMESPACE_END

@@ -17,9 +17,9 @@
 #pragma once
 
 #include "Common.h"
+#include "Error.h"
 #include "compiler/Bytecode.h"
 #include "runtime/Value.h"
-#include "Error.h"
 
 #include <stack>
 #include <vector>

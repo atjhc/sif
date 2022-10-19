@@ -34,8 +34,7 @@ SIF_NAMESPACE_BEGIN
 using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
 
-ModuleMap _coreNatives = []() -> ModuleMap {
-    ModuleMap natives;
+static void _core(ModuleMap &natives, std::ostream &out, std::istream &in, std::ostream &err) {
     natives[S("the language version")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return Value(std::string(Version));
@@ -71,68 +70,72 @@ ModuleMap _coreNatives = []() -> ModuleMap {
             exit(values[0].asInteger());
         });
     natives[S("write {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+        [&out](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (const auto &list = values[0].as<List>()) {
-                std::cout << Join(list->values(), " ");
+                out << Join(list->values(), " ");
             } else {
-                std::cout << values[0];
+                out << values[0];
             }
             return Value();
         });
     natives[S("write error {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+        [&err](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (const auto &list = values[0].as<List>()) {
-                std::cerr << Join(list->values(), " ");
+                err << Join(list->values(), " ");
             } else {
-                std::cerr << values[0];
+                err << values[0];
             }
             return Value();
         });
     natives[S("print {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+        [&out](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (const auto &list = values[0].as<List>()) {
-                std::cout << Join(list->values(), " ");
+                out << Join(list->values(), " ");
             } else {
-                std::cout << values[0];
+                out << values[0];
             }
-            std::cout << std::endl;
+            out << std::endl;
             return Value();
         });
     natives[S("print error {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+        [&err](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (const auto &list = values[0].as<List>()) {
                 for (const auto &item : list->values()) {
-                    std::cerr << item;
+                    err << item;
                 }
             } else {
-                std::cerr << values[0];
+                err << values[0];
             }
-            std::cerr << std::endl;
+            err << std::endl;
             return Value();
         });
     natives[S("get {}")] =
         MakeStrong<Native>([](CallFrame &frame, Location location,
                               Value *values) -> Result<Value, RuntimeError> { return values[0]; });
     natives[S("read (a) word")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+        [&in](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             std::string input;
-            std::cin >> input;
+            in >> input;
             return input;
         });
     natives[S("read (a) line")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+        [&in](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             std::string input;
-            std::getline(std::cin, input);
+            std::getline(in, input);
             return input;
         });
     natives[S("read (a) character")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
-            char input;
-            if (std::cin.get(input)) {
-                return input;
-            } else {
-                return Value();
+        [&in](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            std::istreambuf_iterator<char> it(in.rdbuf());
+            std::istreambuf_iterator<char> eos;
+            std::string result;
+            try {
+                char32_t input = utf8::next(it, eos);
+                result = utf8::utf32to8(std::u32string_view(&input, 1));
+            } catch (const utf8::exception &exception) {
+                return Error(RuntimeError(location, exception.what()));
             }
+            return result;
         });
     natives[S("(the) debug description of {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
@@ -159,11 +162,9 @@ ModuleMap _coreNatives = []() -> ModuleMap {
             }
             return values[0];
         });
-    return natives;
-}();
+}
 
-ModuleMap _commonNatives = []() -> ModuleMap {
-    ModuleMap natives;
+static void _common(ModuleMap &natives) {
     natives[S("(the) size of {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             size_t size = 0;
@@ -254,7 +255,11 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             if (auto list = values[1].as<List>()) {
                 list->values().push_back(values[0]);
             } else if (auto string = values[1].as<String>()) {
-                string->string() += Concat(values[0]);
+                auto insertText = values[0].as<String>();
+                if (!insertText) {
+                    return Error(RuntimeError(location, "expected a string"));
+                }
+                string->string().append(insertText->string());
             } else {
                 return Error(RuntimeError(
                     location, Concat("expected a list or string, got ", values[1].typeName())));
@@ -367,11 +372,9 @@ ModuleMap _commonNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a string or list"));
         });
-    return natives;
-}();
+}
 
-ModuleMap _dictionaryNatives = []() -> ModuleMap {
-    ModuleMap natives;
+static void _dictionary(ModuleMap &natives) {
     natives[S("(the) keys (of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto dictionary = values[0].as<Dictionary>();
@@ -405,10 +408,9 @@ ModuleMap _dictionaryNatives = []() -> ModuleMap {
             dictionary->values()[values[1]] = values[0];
             return dictionary;
         });
-    return natives;
-}();
+}
 
-ModuleMap _listNatives = []() -> ModuleMap {
+static void _list(ModuleMap &natives) {
     static std::random_device rd;
     static std::mt19937 engine(rd());
     auto random = [&](int max) {
@@ -416,7 +418,6 @@ ModuleMap _listNatives = []() -> ModuleMap {
         return dist(engine);
     };
 
-    ModuleMap natives;
     natives[S("items {} to {} of {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[2].as<List>();
@@ -534,18 +535,15 @@ ModuleMap _listNatives = []() -> ModuleMap {
             std::shuffle(result->values().begin(), result->values().end(), engine);
             return result;
         });
-    return natives;
-}();
+}
 
-ModuleMap _stringNatives = []() -> ModuleMap {
+static void _string(ModuleMap &natives) {
     static std::random_device rd;
     static std::mt19937 engine(rd());
     auto random = [&](int max) {
         std::uniform_int_distribution<int> dist(0, max - 1);
         return dist(engine);
     };
-
-    ModuleMap natives;
 
     natives[S("insert {} at char/character {} in {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
@@ -563,19 +561,6 @@ ModuleMap _stringNatives = []() -> ModuleMap {
             auto chunk = index_chunk(chunk::type::character, values[1].asInteger(), text->string());
             text->string().insert(chunk.begin(), insertText->string().begin(),
                                   insertText->string().end());
-            return text;
-        });
-    natives[S("insert {} at (the) end of {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
-            auto insertText = values[0].as<String>();
-            if (!insertText) {
-                return Error(RuntimeError(location, "expected a string"));
-            }
-            auto text = values[2].as<String>();
-            if (!text) {
-                return Error(RuntimeError(location, "expected a string"));
-            }
-            text->string().append(insertText->string());
             return text;
         });
     natives[S("remove all {} from {}")] = MakeStrong<Native>(
@@ -825,11 +810,9 @@ ModuleMap _stringNatives = []() -> ModuleMap {
     natives[S("(the) number of chars/characters in {}")] = numberOfChunk(chunk::character);
     natives[S("(the) number of words in {}")] = numberOfChunk(chunk::word);
     natives[S("(the) number of lines in {}")] = numberOfChunk(chunk::line);
+}
 
-    return natives;
-}();
-
-ModuleMap _rangeNatives = []() -> ModuleMap {
+static void _range(ModuleMap &natives) {
     static std::random_device rd;
     static std::mt19937 engine(rd());
     auto random = [&](int max) {
@@ -837,7 +820,6 @@ ModuleMap _rangeNatives = []() -> ModuleMap {
         return dist(engine);
     };
 
-    ModuleMap natives;
     natives[S("{} up to {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (!values[0].isInteger() || !values[1].isInteger()) {
@@ -887,11 +869,9 @@ ModuleMap _rangeNatives = []() -> ModuleMap {
             }
             return Error(RuntimeError(location, "expected a range"));
         });
-    return natives;
-}();
+}
 
-ModuleMap _mathNatives = []() -> ModuleMap {
-    ModuleMap natives;
+static void _math(ModuleMap &natives) {
     auto basicFunction = [](double (*func)(double)) -> Strong<Native> {
         return MakeStrong<Native>([func](CallFrame &frame, Location location,
                                          Value *values) -> Result<Value, RuntimeError> {
@@ -991,20 +971,17 @@ ModuleMap _mathNatives = []() -> ModuleMap {
             }
             return sum / list->values().size();
         });
-    return natives;
-}();
+}
 
-ModuleMap _natives = []() -> ModuleMap {
-    ModuleMap natives;
-    natives.insert(_coreNatives.begin(), _coreNatives.end());
-    natives.insert(_commonNatives.begin(), _commonNatives.end());
-    natives.insert(_dictionaryNatives.begin(), _dictionaryNatives.end());
-    natives.insert(_listNatives.begin(), _listNatives.end());
-    natives.insert(_stringNatives.begin(), _stringNatives.end());
-    natives.insert(_rangeNatives.begin(), _rangeNatives.end());
-    natives.insert(_mathNatives.begin(), _mathNatives.end());
-    return natives;
-}();
+Core::Core(const CoreConfig &config) {
+    _core(_natives, config.out, config.in, config.err);
+    _common(_natives);
+    _dictionary(_natives);
+    _list(_natives);
+    _string(_natives);
+    _range(_natives);
+    _math(_natives);
+}
 
 std::vector<Signature> Core::signatures() const {
     std::vector<Signature> signatures;

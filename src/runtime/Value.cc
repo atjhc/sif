@@ -17,8 +17,8 @@
 #include "runtime/Value.h"
 #include "runtime/Object.h"
 
-#include "runtime/objects/String.h"
 #include "Error.h"
+#include "runtime/objects/String.h"
 
 #include <iostream>
 

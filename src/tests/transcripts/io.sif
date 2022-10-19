@@ -1,9 +1,21 @@
-read a line
 (-- input
-hello
+👾 hello hello world
 --)
 
+read a character
+print it
+(-- expect
+👾
+--)
+
+read a word
 print it
 (-- expect
 hello
+--)
+
+read a line
+print it
+(-- expect
+ hello world
 --)
