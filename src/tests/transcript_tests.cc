@@ -102,7 +102,7 @@ TEST_CASE(TranscriptTests, All) {
         std::ostringstream out, err;
         std::istringstream in(input);
 
-        Core core(CoreConfig{out, in, err});
+        Core core(CoreConfig{out, in, err, std::mt19937()});
         for (const auto &function : core.functions()) {
             vm.add(function.first, function.second);
         }

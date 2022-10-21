@@ -410,9 +410,7 @@ static void _dictionary(ModuleMap &natives) {
         });
 }
 
-static void _list(ModuleMap &natives) {
-    static std::random_device rd;
-    static std::mt19937 engine(rd());
+static void _list(ModuleMap &natives, std::mt19937 &engine) {
     auto random = [&](int max) {
         std::uniform_int_distribution<int> dist(0, max - 1);
         return dist(engine);
@@ -517,7 +515,7 @@ static void _list(ModuleMap &natives) {
             return MakeStrong<List>(list->values().rbegin(), list->values().rend());
         });
     natives[S("shuffle {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+        [&engine](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -526,7 +524,7 @@ static void _list(ModuleMap &natives) {
             return list;
         });
     natives[S("shuffled {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+        [&engine](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -537,9 +535,7 @@ static void _list(ModuleMap &natives) {
         });
 }
 
-static void _string(ModuleMap &natives) {
-    static std::random_device rd;
-    static std::mt19937 engine(rd());
+static void _string(ModuleMap &natives, std::mt19937 &engine) {
     auto random = [&](int max) {
         std::uniform_int_distribution<int> dist(0, max - 1);
         return dist(engine);
@@ -812,9 +808,7 @@ static void _string(ModuleMap &natives) {
     natives[S("(the) number of lines in {}")] = numberOfChunk(chunk::line);
 }
 
-static void _range(ModuleMap &natives) {
-    static std::random_device rd;
-    static std::mt19937 engine(rd());
+static void _range(ModuleMap &natives, std::mt19937 &engine) {
     auto random = [&](int max) {
         std::uniform_int_distribution<int> dist(0, max - 1);
         return dist(engine);
@@ -973,13 +967,13 @@ static void _math(ModuleMap &natives) {
         });
 }
 
-Core::Core(const CoreConfig &config) {
-    _core(_natives, config.out, config.in, config.err);
+Core::Core(const CoreConfig &config) : _config(config) {
+    _core(_natives, _config.out, _config.in, _config.err);
     _common(_natives);
     _dictionary(_natives);
-    _list(_natives);
-    _string(_natives);
-    _range(_natives);
+    _list(_natives, _config.engine);
+    _string(_natives, _config.engine);
+    _range(_natives, _config.engine);
     _math(_natives);
 }
 

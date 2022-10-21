@@ -19,12 +19,15 @@
 #include "Common.h"
 #include "compiler/Module.h"
 
+#include <random>
+
 SIF_NAMESPACE_BEGIN
 
 struct CoreConfig {
     std::ostream &out = std::cout;
     std::istream &in = std::cin;
     std::ostream &err = std::cerr;
+    std::mt19937 engine = std::mt19937(std::random_device()());
 };
 
 class Core : public Module {
@@ -36,6 +39,7 @@ class Core : public Module {
 
   private:
     Mapping<Signature, Strong<Native>, Signature::Hash> _natives;
+    CoreConfig _config;
 };
 
 SIF_NAMESPACE_END
