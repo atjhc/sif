@@ -102,7 +102,11 @@ TEST_CASE(TranscriptTests, All) {
         std::ostringstream out, err;
         std::istringstream in(input);
 
-        Core core(CoreConfig{out, in, err, std::mt19937()});
+        CoreConfig coreConfig{out, in, err, std::mt19937_64()};
+        coreConfig.randomInteger = [&coreConfig](Integer max) {
+            return coreConfig.engine() % max;
+        };
+        Core core(coreConfig);
         for (const auto &function : core.functions()) {
             vm.add(function.first, function.second);
         }

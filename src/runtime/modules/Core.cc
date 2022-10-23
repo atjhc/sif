@@ -410,12 +410,7 @@ static void _dictionary(ModuleMap &natives) {
         });
 }
 
-static void _list(ModuleMap &natives, std::mt19937 &engine) {
-    auto random = [&](int max) {
-        std::uniform_int_distribution<int> dist(0, max - 1);
-        return dist(engine);
-    };
-
+static void _list(ModuleMap &natives, std::mt19937_64 &engine, std::function<Integer(Integer)> randomInteger) {
     natives[S("items {} to {} of {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[2].as<List>();
@@ -458,13 +453,13 @@ static void _list(ModuleMap &natives, std::mt19937 &engine) {
             return Integer(list->values().size());
         });
     natives[S("any item of {}")] =
-        MakeStrong<Native>([random](CallFrame &frame, Location location,
+        MakeStrong<Native>([randomInteger](CallFrame &frame, Location location,
                                     Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
             }
-            return list->values().at(random(list->values().size()));
+            return list->values().at(randomInteger(list->values().size()));
         });
     natives[S("remove items {} to {} from {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
@@ -535,12 +530,7 @@ static void _list(ModuleMap &natives, std::mt19937 &engine) {
         });
 }
 
-static void _string(ModuleMap &natives, std::mt19937 &engine) {
-    auto random = [&](int max) {
-        std::uniform_int_distribution<int> dist(0, max - 1);
-        return dist(engine);
-    };
-
+static void _string(ModuleMap &natives, std::mt19937_64 &engine, std::function<Integer(Integer)> randomInteger) {
     natives[S("insert {} at char/character {} in {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto insertText = values[0].as<String>();
@@ -750,15 +740,15 @@ static void _string(ModuleMap &natives, std::mt19937 &engine) {
     natives[S("words {} to {} of {}")] = chunksAt(chunk::word);
     natives[S("lines {} to {} of {}")] = chunksAt(chunk::line);
 
-    auto anyChunk = [random](chunk::type chunkType) -> Strong<Native> {
+    auto anyChunk = [randomInteger](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>(
-            [random, chunkType](CallFrame &frame, Location location,
+            [randomInteger, chunkType](CallFrame &frame, Location location,
                                 Value *values) -> Result<Value, RuntimeError> {
                 auto text = values[0].as<String>();
                 if (!text) {
                     return Error(RuntimeError(location, "expected a string"));
                 }
-                return random_chunk(chunkType, random, text->string()).get();
+                return random_chunk(chunkType, randomInteger, text->string()).get();
             });
     };
     natives[S("any char/character of {}")] = anyChunk(chunk::character);
@@ -808,12 +798,7 @@ static void _string(ModuleMap &natives, std::mt19937 &engine) {
     natives[S("(the) number of lines in {}")] = numberOfChunk(chunk::line);
 }
 
-static void _range(ModuleMap &natives, std::mt19937 &engine) {
-    auto random = [&](int max) {
-        std::uniform_int_distribution<int> dist(0, max - 1);
-        return dist(engine);
-    };
-
+static void _range(ModuleMap &natives, std::mt19937_64 &engine, std::function<Integer(Integer)> randomInteger) {
     natives[S("{} up to {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (!values[0].isInteger() || !values[1].isInteger()) {
@@ -855,11 +840,11 @@ static void _range(ModuleMap &natives, std::mt19937 &engine) {
             return range1->overlaps(*range2);
         });
     natives[S("(a) random number (in) {}")] =
-        MakeStrong<Native>([random](CallFrame &frame, Location location,
+        MakeStrong<Native>([randomInteger](CallFrame &frame, Location location,
                                     Value *values) -> Result<Value, RuntimeError> {
             if (auto range = values[0].as<Range>()) {
                 return range->start() +
-                       random(range->end() - range->start() + (range->closed() ? 1 : 0));
+                       randomInteger(range->end() - range->start() + (range->closed() ? 1 : 0));
             }
             return Error(RuntimeError(location, "expected a range"));
         });
@@ -971,9 +956,9 @@ Core::Core(const CoreConfig &config) : _config(config) {
     _core(_natives, _config.out, _config.in, _config.err);
     _common(_natives);
     _dictionary(_natives);
-    _list(_natives, _config.engine);
-    _string(_natives, _config.engine);
-    _range(_natives, _config.engine);
+    _list(_natives, _config.engine, _config.randomInteger);
+    _string(_natives, _config.engine, _config.randomInteger);
+    _range(_natives, _config.engine, _config.randomInteger);
     _math(_natives);
 }
 

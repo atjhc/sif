@@ -85,19 +85,20 @@ struct range_chunk : public chunk {
     }
 };
 
+template <typename Random>
 struct random_chunk : public chunk {
-    random_chunk(type type, const std::function<int(int)> &random, const std::string &source)
+    random_chunk(type type, const Random &random, const std::string &source)
         : chunk(type, source) {
         _seek(random);
     }
 
-    random_chunk(type type, const std::function<int(int)> &random, const chunk &source)
+    random_chunk(type type, const Random &random, const chunk &source)
         : chunk(type, source) {
         _seek(random);
     }
 
   private:
-    void _seek(const std::function<int(int)> &random) {
+    void _seek(const Random &random) {
         int count = 0;
         auto it = _begin;
         while (it < _end) {
@@ -105,7 +106,7 @@ struct random_chunk : public chunk {
             count++;
         }
 
-        int choice = random(count);
+        auto choice = random(count);
         _begin = scan(_begin, choice);
         _end = scan_end(_begin);
     }
