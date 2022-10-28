@@ -22,12 +22,125 @@
 #include "runtime/modules/System.h"
 #include "runtime/objects/Dictionary.h"
 #include "runtime/objects/List.h"
+#include "runtime/objects/String.h"
 
+#include <filesystem>
+#include <fstream>
 #include <sys/utsname.h>
 
 SIF_NAMESPACE_BEGIN
 
+using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
+
+void System::_files(ModuleMap &natives) {
+    natives[S("(the) contents of file {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto path = values[0].as<String>();
+            if (!path) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            std::ifstream file(path->string());
+            if (!file.is_open()) {
+                return Error(RuntimeError(location, "unable to open file"));
+            }
+            std::ostringstream sstr;
+            sstr << file.rdbuf();
+            return Value(sstr.str());
+        });
+    natives[S("(the) contents of directory {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto path = values[0].as<String>();
+            if (!path) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            std::error_code error;
+            auto it = std::filesystem::directory_iterator(path->string(), error);
+            if (error) {
+                return Error(RuntimeError(location, error.message()));
+            }
+            Strong<List> results = MakeStrong<List>();
+            for (auto it : std::filesystem::directory_iterator(path->string())) {
+                auto itemPath = it.path();
+                results->values().push_back(itemPath.string());
+            }
+            return results;
+        });
+    natives[S("remove file {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto pathString = values[0].as<String>();
+            if (!pathString) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto path = std::filesystem::path(pathString->string());
+
+            std::error_code error;
+            !std::filesystem::remove(path, error);
+            if (error) {
+                return Error(RuntimeError(location, error.message()));
+            }
+
+            return Value();
+        });
+    natives[S("remove directory {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto pathValue = values[0].as<String>();
+            if (!pathValue) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto path = std::filesystem::path(pathValue->string());
+
+            std::error_code error;
+            std::filesystem::remove_all(path, error);
+            if (error) {
+                return Error(RuntimeError(location, error.message()));
+            }
+
+            return Value();
+        });
+    natives[S("move file/directory {} to {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto fromValue = values[0].as<String>();
+            if (!fromValue) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto toValue = values[1].as<String>();
+            if (!toValue) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto from = std::filesystem::path(fromValue->string());
+            auto to = std::filesystem::path(toValue->string());
+
+            std::error_code error;
+            std::filesystem::rename(from, to, error);
+            if (error) {
+                return Error(RuntimeError(location, error.message()));
+            }
+
+            return Value();
+        });
+    natives[S("copy file/directory {} to {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto fromValue = values[0].as<String>();
+            if (!fromValue) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto toValue = values[0].as<String>();
+            if (!toValue) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            auto from = std::filesystem::path(fromValue->string());
+            auto to = std::filesystem::path(toValue->string());
+
+            std::error_code error;
+            std::filesystem::copy(from, to, error);
+            if (error) {
+                return Error(RuntimeError(location, error.message()));
+            }
+
+            return Value();
+        });
+}
 
 System::System() {
     _natives[S("the arguments")] = MakeStrong<Native>(
@@ -54,6 +167,7 @@ System::System() {
         [this](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             return _systemVersion;
         });
+    _files(_natives);
 }
 
 void System::setArguments(char **argv) {

@@ -85,15 +85,12 @@ struct range_chunk : public chunk {
     }
 };
 
-template <typename Random>
-struct random_chunk : public chunk {
-    random_chunk(type type, const Random &random, const std::string &source)
-        : chunk(type, source) {
+template <typename Random> struct random_chunk : public chunk {
+    random_chunk(type type, const Random &random, const std::string &source) : chunk(type, source) {
         _seek(random);
     }
 
-    random_chunk(type type, const Random &random, const chunk &source)
-        : chunk(type, source) {
+    random_chunk(type type, const Random &random, const chunk &source) : chunk(type, source) {
         _seek(random);
     }
 

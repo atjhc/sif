@@ -410,7 +410,8 @@ static void _dictionary(ModuleMap &natives) {
         });
 }
 
-static void _list(ModuleMap &natives, std::mt19937_64 &engine, std::function<Integer(Integer)> randomInteger) {
+static void _list(ModuleMap &natives, std::mt19937_64 &engine,
+                  std::function<Integer(Integer)> randomInteger) {
     natives[S("items {} to {} of {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto list = values[2].as<List>();
@@ -454,7 +455,7 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine, std::function<Int
         });
     natives[S("any item of {}")] =
         MakeStrong<Native>([randomInteger](CallFrame &frame, Location location,
-                                    Value *values) -> Result<Value, RuntimeError> {
+                                           Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -509,8 +510,9 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine, std::function<Int
             }
             return MakeStrong<List>(list->values().rbegin(), list->values().rend());
         });
-    natives[S("shuffle {}")] = MakeStrong<Native>(
-        [&engine](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("shuffle {}")] =
+        MakeStrong<Native>([&engine](CallFrame &frame, Location location,
+                                     Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -518,8 +520,9 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine, std::function<Int
             std::shuffle(list->values().begin(), list->values().end(), engine);
             return list;
         });
-    natives[S("shuffled {}")] = MakeStrong<Native>(
-        [&engine](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+    natives[S("shuffled {}")] =
+        MakeStrong<Native>([&engine](CallFrame &frame, Location location,
+                                     Value *values) -> Result<Value, RuntimeError> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Error(RuntimeError(location, "expected a list"));
@@ -530,7 +533,8 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine, std::function<Int
         });
 }
 
-static void _string(ModuleMap &natives, std::mt19937_64 &engine, std::function<Integer(Integer)> randomInteger) {
+static void _string(ModuleMap &natives, std::mt19937_64 &engine,
+                    std::function<Integer(Integer)> randomInteger) {
     natives[S("insert {} at char/character {} in {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             auto insertText = values[0].as<String>();
@@ -743,7 +747,7 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine, std::function<I
     auto anyChunk = [randomInteger](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>(
             [randomInteger, chunkType](CallFrame &frame, Location location,
-                                Value *values) -> Result<Value, RuntimeError> {
+                                       Value *values) -> Result<Value, RuntimeError> {
                 auto text = values[0].as<String>();
                 if (!text) {
                     return Error(RuntimeError(location, "expected a string"));
@@ -798,7 +802,8 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine, std::function<I
     natives[S("(the) number of lines in {}")] = numberOfChunk(chunk::line);
 }
 
-static void _range(ModuleMap &natives, std::mt19937_64 &engine, std::function<Integer(Integer)> randomInteger) {
+static void _range(ModuleMap &natives, std::mt19937_64 &engine,
+                   std::function<Integer(Integer)> randomInteger) {
     natives[S("{} up to {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
             if (!values[0].isInteger() || !values[1].isInteger()) {
@@ -841,7 +846,7 @@ static void _range(ModuleMap &natives, std::mt19937_64 &engine, std::function<In
         });
     natives[S("(a) random number (in) {}")] =
         MakeStrong<Native>([randomInteger](CallFrame &frame, Location location,
-                                    Value *values) -> Result<Value, RuntimeError> {
+                                           Value *values) -> Result<Value, RuntimeError> {
             if (auto range = values[0].as<Range>()) {
                 return range->start() +
                        randomInteger(range->end() - range->start() + (range->closed() ? 1 : 0));

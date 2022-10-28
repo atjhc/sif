@@ -35,6 +35,8 @@ class System : public Module {
     Mapping<std::string, Strong<Native>> functions() const override;
 
   private:
+    static void _files(Mapping<Signature, Strong<Native>, Signature::Hash> &natives);
+
     Mapping<Signature, Strong<Native>, Signature::Hash> _natives;
 
     std::vector<std::string> _arguments;

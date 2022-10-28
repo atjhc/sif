@@ -19,8 +19,8 @@
 #include "Common.h"
 #include "compiler/Module.h"
 
-#include <random>
 #include <functional>
+#include <random>
 
 SIF_NAMESPACE_BEGIN
 
