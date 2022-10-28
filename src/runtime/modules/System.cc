@@ -75,7 +75,7 @@ void System::_files(ModuleMap &natives) {
             auto path = std::filesystem::path(pathString->string());
 
             std::error_code error;
-            !std::filesystem::remove(path, error);
+            std::filesystem::remove(path, error);
             if (error) {
                 return Error(RuntimeError(location, error.message()));
             }

@@ -43,9 +43,11 @@
 extern char **environ;
 
 using namespace sif;
-Mapping<std::string, Strong<Native>> builtins();
 
 enum { Success = 0, ParseFailure = 1, CompileFailure = 2, RuntimeFailure = 3 };
+
+static const std::string ANSI_CLEAR_SCREEN = "\033[2J";
+static const std::string ANSI_RESET_CURSOR = "\033[0;0H";
 
 #if defined(DEBUG)
 static int traceParsing = 0;
@@ -124,6 +126,8 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
     for (const auto &signature : systemModule.signatures()) {
         parser.declare(signature);
     }
+
+    parser.declare(Signature::Make("clear").value());
 
     auto statement = parser.statement();
     if (!statement) {
@@ -268,6 +272,12 @@ int main(int argc, char *argv[]) {
     for (const auto &pair : systemModule.functions()) {
         vm.add(pair.first, pair.second);
     }
+
+    vm.add("clear", MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            std::cout << ANSI_CLEAR_SCREEN << ANSI_RESET_CURSOR;
+            return Value();
+        }));
 
     if (fileName.empty()) {
         if (isatty(STDIN_FILENO)) {
