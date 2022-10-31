@@ -116,6 +116,16 @@ print a
 1 2 3
 --)
 
+print join {1, 2, 3}
+(-- expect
+123
+--)
+
+print join {1, 2, 3} using ", "
+(-- expect
+1, 2, 3
+--)
+
 -- set a to {1, 2, 3, 4, 5}
 -- shuffle a
 -- print a

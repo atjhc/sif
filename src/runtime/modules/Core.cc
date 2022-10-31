@@ -531,6 +531,37 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine,
             std::shuffle(result->values().begin(), result->values().end(), engine);
             return result;
         });
+    natives[S("join {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto list = values[0].as<List>();
+            if (!list) {
+                return Error(RuntimeError(location, "expected a list"));
+            }
+            std::ostringstream str;
+            for (auto it = list->values().begin(); it < list->values().end(); it++) {
+                str << it->toString();
+            }
+            return str.str();
+        });
+    natives[S("join {} using {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, RuntimeError> {
+            auto list = values[0].as<List>();
+            if (!list) {
+                return Error(RuntimeError(location, "expected a list"));
+            }
+            auto joinString = values[1].as<String>();
+            if (!joinString) {
+                return Error(RuntimeError(location, "expected a string"));
+            }
+            std::ostringstream str;
+            for (auto it = list->values().begin(); it < list->values().end(); it++) {
+                str << it->toString();
+                if (it + 1 < list->values().end()) {
+                    str << joinString->string();
+                }
+            }
+            return str.str();
+        });
 }
 
 static void _string(ModuleMap &natives, std::mt19937_64 &engine,
