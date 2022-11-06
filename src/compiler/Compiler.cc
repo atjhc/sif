@@ -316,6 +316,12 @@ void Compiler::visit(const Try &tryStatement) {
     bytecode().patchAbsoluteJump(tryJump);
 }
 
+void Compiler::visit(const Use &useStatement) {
+}
+
+void Compiler::visit(const Using &usingStatement) {
+}
+
 void Compiler::visit(const Return &statement) {
     if (statement.expression) {
         statement.expression->accept(*this);

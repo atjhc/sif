@@ -210,7 +210,7 @@ Token::Type Scanner::wordType() {
             case 'a':
                 return checkKeyword(2, 3, "lse", Token::Type::BoolLiteral);
             case 'o':
-                if (_current - _start == 3 && _start[2] == 'r') {
+                if (_current - _start == 3 && std::tolower(_start[2]) == 'r') {
                     return Token::Type::For;
                 }
                 return checkKeyword(2, 5, "rever", Token::Type::Forever);
@@ -230,8 +230,20 @@ Token::Type Scanner::wordType() {
                 return checkKeyword(2, 1, "t", Token::Type::Not);
             }
         }
+        break;
     case 'u':
-        return checkKeyword(1, 4, "ntil", Token::Type::Until);
+        if (_current - _start > 1) {
+            switch (std::tolower(_start[1])) {
+            case 'n':
+                return checkKeyword(2, 3, "til", Token::Type::Until);
+            case 's':
+                if (_current - _start == 3 && std::tolower(_start[2]) == 'e') {
+                    return Token::Type::Use;
+                }
+                return checkKeyword(2, 3, "ing", Token::Type::Using);
+            }
+        }
+        break;
     case 'w':
         return checkKeyword(1, 4, "hile", Token::Type::While);
     case 'y':

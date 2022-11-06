@@ -26,14 +26,17 @@ bool Token::isWord() const {
     case Type::An:
     case Type::And:
     case Type::Else:
+    case Type::EmptyLiteral:
     case Type::End:
     case Type::Exit:
     case Type::For:
     case Type::Forever:
     case Type::Function:
+    case Type::Global:
     case Type::If:
     case Type::In:
     case Type::Is:
+    case Type::Local:
     case Type::Next:
     case Type::Not:
     case Type::Or:
@@ -44,11 +47,10 @@ bool Token::isWord() const {
     case Type::To:
     case Type::Try:
     case Type::Until:
+    case Type::Use:
+    case Type::Using:
     case Type::While:
-    case Type::Global:
-    case Type::Local:
     case Type::Word:
-    case Type::EmptyLiteral:
         return true;
     default:
         return false;
@@ -65,6 +67,8 @@ std::string Token::description() const {
         return "end of script";
     case Type::NewLine:
         return "new line";
+    case Type::StringLiteral:
+        return text;
     default:
         return Quoted(text);
     }

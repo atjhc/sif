@@ -31,6 +31,8 @@ struct FunctionDecl;
 struct Assignment;
 struct If;
 struct Try;
+struct Use;
+struct Using;
 struct Repeat;
 struct RepeatCondition;
 struct RepeatFor;
@@ -46,6 +48,8 @@ struct Statement : Node {
         virtual void visit(const Assignment &) = 0;
         virtual void visit(const If &) = 0;
         virtual void visit(const Try &) = 0;
+        virtual void visit(const Use &) = 0;
+        virtual void visit(const Using &) = 0;
         virtual void visit(const Repeat &) = 0;
         virtual void visit(const RepeatFor &) = 0;
         virtual void visit(const RepeatCondition &) = 0;
@@ -102,6 +106,23 @@ struct Try : Statement {
     Owned<Statement> statement;
 
     Try(Owned<Statement> statement);
+
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
+};
+
+struct Use : Statement {
+    Token target;
+
+    Use(Token target);
+
+    void accept(Statement::Visitor &v) const override { v.visit(*this); }
+};
+
+struct Using : Statement {
+    Token target;
+    Owned<Statement> statement;
+
+    Using(Token target, Owned<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };

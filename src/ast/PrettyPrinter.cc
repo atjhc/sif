@@ -74,6 +74,16 @@ void PrettyPrinter::visit(const Try &trys) {
     out << indentString() << "end try";
 }
 
+void PrettyPrinter::visit(const Use &use) {
+    out << "use " << use.target.description();
+}
+
+void PrettyPrinter::visit(const Using &usings) {
+    out << "using " << usings.target.description();
+    printBlock(*usings.statement);
+    out << indentString() << "end using";
+}
+
 void PrettyPrinter::visit(const Return &statement) {
     out << "return";
     if (statement.expression) {

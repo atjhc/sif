@@ -452,6 +452,12 @@ Owned<Statement> Parser::parseStatement() {
         _parsingRepeat = wasParsingRepeat;
         return statement;
     }
+    if (match({Token::Type::Use})) {
+        return parseUse();
+    }
+    if (match({Token::Type::Using})) {
+        return parseUsing();
+    }
 
     auto statement = parseSimpleStatement();
     if (!statement) {
@@ -595,6 +601,53 @@ Owned<Statement> Parser::parseIf() {
         MakeOwned<If>(std::move(condition.value()), std::move(ifClause), std::move(elseClause));
     ifStatement->location = location;
     return ifStatement;
+}
+
+Owned<Statement> Parser::parseUse() {
+    auto location = previous().location;
+    Optional<Token> token = consume(Token::Type::StringLiteral);
+    if (!token) {
+        emitError(ParseError(peek(), "expected a string literal"));
+        synchronize();
+        return nullptr;
+    }
+    consumeNewLine();
+    auto useStatement = MakeOwned<Use>(token.value());
+    useStatement->location = location;
+    return useStatement;
+}
+
+Owned<Statement> Parser::parseUsing() {
+    auto location = previous().location;
+    Optional<Token> token = consume(Token::Type::StringLiteral);
+    if (!token) {
+        emitError(ParseError(peek(), "expected a string literal"));
+        synchronize();
+        return nullptr;
+    }
+
+    Owned<Statement> statement;
+    if (consumeNewLine()) {
+        statement = parseBlock({Token::Type::End});
+        if (!consumeEnd(Token::Type::Using)) {
+            emitError(ParseError(peek(), Concat("expected ", Quoted("end"))));
+            return nullptr;
+        }
+    } else {
+        _parsingDepth--;
+        if (auto result = parseSimpleStatement()) {
+            statement = std::move(result.value());
+            consumeNewLine();
+        } else {
+            synchronize();
+            emitError(result.error());
+            return nullptr;
+        }
+    }
+    
+    auto usingStatement = MakeOwned<Using>(token.value(), std::move(statement));
+    usingStatement->location = location;
+    return usingStatement;
 }
 
 Owned<Statement> Parser::parseTry() {

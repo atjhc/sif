@@ -94,6 +94,8 @@ class Parser {
     Owned<Statement> parseFunction();
     Owned<Statement> parseIf();
     Owned<Statement> parseTry();
+    Owned<Statement> parseUse();
+    Owned<Statement> parseUsing();
     Owned<Statement> parseRepeat();
     Owned<Statement> parseRepeatForever();
     Owned<Statement> parseRepeatConditional();
