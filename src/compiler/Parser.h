@@ -32,6 +32,9 @@ struct ParserConfig {
     std::string fileName;
     std::ostream &cerr;
 
+    Strong<Scanner> scanner;
+    Strong<Reader> reader;
+
 #if defined(DEBUG)
     bool enableTracing = false;
 #endif
@@ -42,7 +45,7 @@ struct ParserConfig {
 
 class Parser {
   public:
-    Parser(const ParserConfig &config, Strong<Scanner> scanner, Strong<Reader> reader);
+    Parser(const ParserConfig &config);
     ~Parser();
 
     Owned<Statement> statement();
@@ -125,8 +128,6 @@ class Parser {
     Result<Owned<Expression>, ParseError> parseContainerLiteral();
 
     ParserConfig _config;
-    Strong<Scanner> _scanner;
-    Strong<Reader> _reader;
 
     std::vector<ParseError> _errors;
 

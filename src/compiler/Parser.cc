@@ -37,8 +37,8 @@ static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
 }
 #endif
 
-Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner, Strong<Reader> reader)
-    : _config(config), _scanner(scanner), _reader(reader) {
+Parser::Parser(const ParserConfig &config)
+    : _config(config) {
     _parsingRepeat = false;
     _recording = false;
     _index = 0;
@@ -49,12 +49,12 @@ Parser::Parser(const ParserConfig &config, Strong<Scanner> scanner, Strong<Reade
 Parser::~Parser() {}
 
 Owned<Statement> Parser::statement() {
-    auto error = _reader->read(0);
+    auto error =  _config.reader->read(0);
     if (error) {
         _errors.push_back(ParseError(Token(), error.value().what()));
         return nullptr;
     }
-    _scanner->reset(_reader->contents());
+    _config.scanner->reset(_config.reader->contents());
 
     auto block = parseBlock({});
     if (_errors.size()) {
@@ -64,12 +64,12 @@ Owned<Statement> Parser::statement() {
 }
 
 Optional<Signature> Parser::signature() {
-    auto error = _reader->read(0);
+    auto error = _config.reader->read(0);
     if (error) {
         emitError(ParseError(Token(), error.value().what()));
         return None;
     }
-    _scanner->reset(_reader->contents());
+    _config.scanner->reset(_config.reader->contents());
 
     auto signature = parseSignature();
     if (_errors.size()) {
@@ -122,13 +122,13 @@ Optional<Token> Parser::consumeEnd(Token::Type type) {
 }
 
 bool Parser::consumeNewLine() {
-    if (isAtEnd() && _parsingDepth > 0 && _reader->readable()) {
-        auto error = _reader->read(_parsingDepth);
+    if (isAtEnd() && _parsingDepth > 0 && _config.reader->readable()) {
+        auto error = _config.reader->read(_parsingDepth);
         if (error) {
             emitError(ParseError(Token(), error.value().what()));
             return false;
         }
-        _scanner->reset(_reader->contents());
+        _config.scanner->reset(_config.reader->contents());
         _tokens[_index].type = Token::Type::NewLine;
         advance();
         return true;
@@ -158,7 +158,7 @@ bool Parser::check(const Parser::TokenList &types) {
 bool Parser::isAtEnd() { return peek().type == Token::Type::EndOfFile; }
 
 Token Parser::scan() {
-    auto token = _scanner->scan();
+    auto token = _config.scanner->scan();
     _tokens.push_back(token);
     trace(Concat("Scanned: ", Describe(token)));
 #if defined(DEBUG)

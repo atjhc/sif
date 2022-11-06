@@ -44,8 +44,10 @@ class TestReader : public Reader {
 };
 
 static Strong<Statement> test(const std::vector<std::string> &source) {
-    auto parser = MakeStrong<Parser>(ParserConfig(), MakeStrong<Scanner>(),
-                                     MakeStrong<TestReader>(source.begin(), source.end()));
+    ParserConfig config;
+    config.scanner = MakeStrong<Scanner>();
+    config.reader = MakeStrong<TestReader>(source.begin(), source.end());
+    auto parser = MakeStrong<Parser>(config);
     return parser->statement();
 }
 
@@ -145,9 +147,10 @@ class ErrorReader : public Reader {
 };
 
 TEST_CASE(ReaderTests, Error) {
-    auto reader = MakeStrong<ErrorReader>();
-    auto scanner = MakeStrong<Scanner>();
-    auto parser = MakeStrong<Parser>(ParserConfig(), scanner, reader);
+    ParserConfig config;
+    config.scanner = MakeStrong<Scanner>();
+    config.reader = MakeStrong<ErrorReader>();
+    auto parser = MakeStrong<Parser>(config);
     auto result = parser->statement();
 
     ASSERT_NULL(result);

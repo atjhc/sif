@@ -120,10 +120,12 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
     auto scanner = MakeStrong<Scanner>();
 
     ParserConfig parserConfig;
+    parserConfig.scanner = scanner;
+    parserConfig.reader = reader;
 #if defined(DEBUG)
     parserConfig.enableTracing = traceParsing;
 #endif
-    Parser parser(parserConfig, scanner, reader);
+    Parser parser(parserConfig);
 
     for (const auto &signature : coreModule.signatures()) {
         parser.declare(signature);

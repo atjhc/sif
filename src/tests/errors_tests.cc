@@ -25,8 +25,10 @@
 using namespace sif;
 
 static std::vector<ParseError> errors(const std::string &source) {
-    auto parser =
-        MakeStrong<Parser>(ParserConfig(), MakeStrong<Scanner>(), MakeStrong<StringReader>(source));
+    ParserConfig config;
+    config.scanner = MakeStrong<Scanner>();
+    config.reader = MakeStrong<StringReader>(source);
+    auto parser = MakeStrong<Parser>(config);
     parser->statement();
     return parser->errors();
 }
