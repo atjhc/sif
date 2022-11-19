@@ -32,7 +32,7 @@ class System : public Module {
     void setSystemVersion(const std::string &);
 
     std::vector<Signature> signatures() const override;
-    Mapping<std::string, Strong<Native>> functions() const override;
+    Mapping<std::string, Value> values() const override;
 
   private:
     static void _files(Mapping<Signature, Strong<Native>, Signature::Hash> &natives);

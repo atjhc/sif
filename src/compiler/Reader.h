@@ -26,7 +26,7 @@ class Reader {
     virtual ~Reader() = default;
 
     virtual bool readable() const = 0;
-    virtual Optional<ReadError> read(int scopeDepth) = 0;
+    virtual Optional<Error> read(int scopeDepth) = 0;
     virtual const std::string &contents() const = 0;
 };
 
@@ -35,10 +35,23 @@ class StringReader : public Reader {
     StringReader(const std::string &contents);
 
     bool readable() const override;
-    Optional<ReadError> read(int depth) override;
+    Optional<Error> read(int depth) override;
     const std::string &contents() const override;
 
   private:
+    std::string _contents;
+};
+
+class FileReader : public Reader {
+  public:
+    FileReader(const std::string &path);
+
+    bool readable() const override;
+    Optional<Error> read(int scopeDepth) override;
+    const std::string &contents() const override;
+
+  private:
+    std::string _path;
     std::string _contents;
 };
 

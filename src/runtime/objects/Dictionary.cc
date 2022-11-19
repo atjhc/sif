@@ -62,7 +62,7 @@ bool Dictionary::contains(const Value &value) const { return _values.find(value)
 
 Strong<Object> Dictionary::copy() const { return MakeOwned<Dictionary>(_values); }
 
-Result<Value, RuntimeError> Dictionary::subscript(Location location, const Value &value) const {
+Result<Value, Error> Dictionary::subscript(Location location, const Value &value) const {
     auto it = _values.find(value);
     if (it == _values.end()) {
         return Value();
@@ -71,7 +71,7 @@ Result<Value, RuntimeError> Dictionary::subscript(Location location, const Value
     }
 }
 
-Result<Value, RuntimeError> Dictionary::setSubscript(Location, const Value &key, Value value) {
+Result<Value, Error> Dictionary::setSubscript(Location, const Value &key, Value value) {
     _values[key] = value;
     return Value();
 }

@@ -64,8 +64,8 @@ class List : public Object, public Copyable, public Enumerable, public Subscript
     Value enumerator(Value self) const override;
 
     // Subscriptable
-    Result<Value, RuntimeError> subscript(Location, const Value &) const override;
-    Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
+    Result<Value, Error> subscript(Location, const Value &) const override;
+    Result<Value, Error> setSubscript(Location, const Value &, Value) override;
 
   private:
     std::vector<Value> _values;

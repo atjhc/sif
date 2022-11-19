@@ -123,7 +123,7 @@ Strong<Object> List::copy() const { return MakeOwned<List>(values()); }
 
 Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
 
-Result<Value, RuntimeError> List::subscript(Location location, const Value &value) const {
+Result<Value, Error> List::subscript(Location location, const Value &value) const {
     if (auto range = value.as<Range>()) {
         return Value(this->operator[](*range));
     }
@@ -131,14 +131,14 @@ Result<Value, RuntimeError> List::subscript(Location location, const Value &valu
         auto index = value.asInteger();
         if (index >= static_cast<int>(_values.size()) ||
             static_cast<int>(_values.size()) + index < 0) {
-            return Error(RuntimeError(location, "array index out of bounds"));
+            return Fail(Error(location, "array index out of bounds"));
         }
         return Value(_values[index < 0 ? _values.size() + index : index]);
     }
-    return Error(RuntimeError(location, "expected an integer or range"));
+    return Fail(Error(location, "expected an integer or range"));
 }
 
-Result<Value, RuntimeError> List::setSubscript(Location location, const Value &key, Value value) {
+Result<Value, Error> List::setSubscript(Location location, const Value &key, Value value) {
     if (auto range = key.as<Range>()) {
         _values.erase(_values.begin() + range->start(),
                       _values.begin() + range->end() + (range->closed() ? 1 : 0));

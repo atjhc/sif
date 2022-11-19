@@ -65,8 +65,8 @@ class String : public Object, public Enumerable, public Subscriptable, public Co
     Value enumerator(Value self) const override;
 
     // Subscriptable
-    Result<Value, RuntimeError> subscript(Location, const Value &) const override;
-    Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
+    Result<Value, Error> subscript(Location, const Value &) const override;
+    Result<Value, Error> setSubscript(Location, const Value &, Value) override;
 
     // Copyable
     Strong<Object> copy() const override;

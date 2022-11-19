@@ -23,7 +23,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-Compiler::Compiler() : _scopeDepth(0) {}
+Compiler::Compiler(const CompilerConfig &config) : _config(config), _scopeDepth(0) {}
 
 Strong<Bytecode> Compiler::compile(const Statement &statement) {
     _frames.push_back({MakeStrong<Bytecode>(), {}, {}});
@@ -35,14 +35,14 @@ Strong<Bytecode> Compiler::compile(const Statement &statement) {
     return _errors.size() > 0 ? nullptr : _frames.back().bytecode;
 }
 
-const std::vector<CompileError> &Compiler::errors() const { return _errors; }
+const std::vector<Error> &Compiler::errors() const { return _errors; }
 
 Bytecode &Compiler::bytecode() { return *_frames.back().bytecode; }
 std::vector<Compiler::Local> &Compiler::locals() { return _frames.back().locals; }
 std::vector<Function::Capture> &Compiler::captures() { return _frames.back().captures; }
 
 void Compiler::error(const Node &node, const std::string &message) {
-    _errors.push_back(CompileError(node, message));
+    _errors.push_back(Error(node.location, message));
 }
 
 int Compiler::findLocal(const Frame &frame, const std::string &name) {
@@ -84,7 +84,7 @@ int Compiler::addCapture(Frame &frame, int index, bool isLocal) {
     return frame.captures.size() - 1;
 }
 
-void Compiler::assign(const FunctionDecl &decl, const std::string &name) {
+void Compiler::assign(const Location &location, const std::string &name) {
     uint16_t index;
     Opcode opcode;
 
@@ -104,7 +104,7 @@ void Compiler::assign(const FunctionDecl &decl, const std::string &name) {
         index = bytecode().addConstant(MakeStrong<String>(name));
         opcode = Opcode::SetGlobal;
     }
-    bytecode().add(decl.location, opcode, index);
+    bytecode().add(location, opcode, index);
 }
 
 void Compiler::assign(const Variable &variable, const Location &location, const std::string &name) {
@@ -291,7 +291,7 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     auto constant = bytecode().addConstant(function);
     auto name = functionDecl.signature.name();
     bytecode().add(functionDecl.location, Opcode::Constant, constant);
-    assign(functionDecl, name);
+    assign(functionDecl.location, name);
 }
 
 void Compiler::visit(const If &ifStatement) {
@@ -317,10 +317,24 @@ void Compiler::visit(const Try &tryStatement) {
 }
 
 void Compiler::visit(const Use &useStatement) {
+    auto source = useStatement.target.encodedString();
+    auto module = _config.moduleProvider->module(source);
+    if (!module) {
+        for (const auto &error : module.error()) {
+            _errors.push_back(error);
+        }
+        return;
+    }
+    for (const auto &pair : module.value()->values()) {
+        const auto &name = pair.first;
+        const auto &value = pair.second;
+        auto constant = bytecode().addConstant(value);
+        bytecode().add(useStatement.location, Opcode::Constant, constant);
+        assign(useStatement.location, name);
+    }
 }
 
-void Compiler::visit(const Using &usingStatement) {
-}
+void Compiler::visit(const Using &usingStatement) {}
 
 void Compiler::visit(const Return &statement) {
     if (statement.expression) {
@@ -555,8 +569,7 @@ void Compiler::visit(const DictionaryLiteral &dictionary) {
 static inline Value valueOf(const Token &token) {
     switch (token.type) {
     case Token::Type::StringLiteral: {
-        auto string = std::string(token.text.begin() + 1, token.text.end() - 1);
-        return MakeStrong<String>(string_from_escaped_string(string));
+        return token.encodedString();
     }
     case Token::Type::IntLiteral:
         return std::stol(token.text);

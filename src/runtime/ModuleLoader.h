@@ -17,27 +17,24 @@
 #pragma once
 
 #include "Common.h"
-
-#include "ast/Node.h"
-#include "compiler/Token.h"
-#include "runtime/Value.h"
+#include "compiler/Compiler.h"
+#include "compiler/Module.h"
+#include "compiler/Parser.h"
+#include "compiler/Scanner.h"
 
 SIF_NAMESPACE_BEGIN
 
-class Error : public std::runtime_error {
+class ModuleLoader {
   public:
-    Error(const std::string &what) : std::runtime_error(what) {}
-    Error(const Location &location, const std::string &what)
-        : std::runtime_error(what), _location(location) {}
-    Error(const Location &location, const Value &value, const std::string &what)
-        : std::runtime_error(what), _location(location), _value(value) {}
+    ModuleLoader();
 
-    const Location &location() const { return _location; }
-    const Value &value() const { return _value; }
+    Strong<ModuleProvider> provider();
+
+    Result<Strong<Module>, std::vector<Error>> module(const std::string &source);
 
   private:
-    Location _location;
-    Value _value;
+    Mapping<std::string, Strong<UserModule>> _modules;
+    Strong<ModuleProvider> _provider;
 };
 
 SIF_NAMESPACE_END

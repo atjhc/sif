@@ -24,7 +24,7 @@
 
 using namespace sif;
 
-static std::vector<ParseError> errors(const std::string &source) {
+static std::vector<Error> errors(const std::string &source) {
     ParserConfig config;
     config.scanner = MakeStrong<Scanner>();
     config.reader = MakeStrong<StringReader>(source);

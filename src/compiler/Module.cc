@@ -14,29 +14,17 @@
 //  limitations under the License.
 //
 
-#pragma once
-
-#include "Common.h"
-#include "compiler/Signature.h"
-#include "runtime/Object.h"
-#include "runtime/Value.h"
-#include "runtime/VirtualMachine.h"
+#include "Module.h"
 
 SIF_NAMESPACE_BEGIN
 
-class Native : public Object {
-  public:
-    using Callable = std::function<Result<Value, Error>(CallFrame &, Location, Value *)>;
+UserModule::UserModule(const std::string &name, const std::vector<Signature> &signatures,
+                       const Mapping<std::string, Value> &values)
+    : _name(name), _signatures(signatures), _values(values) {}
 
-    Native(const Callable &callable);
+const std::string &UserModule::name() const { return _name; }
 
-    const Callable &callable() const;
-
-    std::string typeName() const override;
-    std::string description() const override;
-
-  private:
-    Callable _callable;
-};
+std::vector<Signature> UserModule::signatures() const { return _signatures; }
+Mapping<std::string, Value> UserModule::values() const { return _values; }
 
 SIF_NAMESPACE_END

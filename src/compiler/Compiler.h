@@ -22,17 +22,22 @@
 #include "ast/Repeat.h"
 #include "ast/Statement.h"
 #include "compiler/Bytecode.h"
+#include "compiler/Module.h"
 #include "runtime/objects/Function.h"
 
 SIF_NAMESPACE_BEGIN
 
+struct CompilerConfig {
+    Strong<ModuleProvider> moduleProvider;
+};
+
 class Compiler : public Statement::Visitor, public Expression::Visitor {
   public:
-    Compiler();
+    Compiler(const CompilerConfig &config = CompilerConfig());
 
     Strong<Bytecode> compile(const Statement &statement);
 
-    const std::vector<CompileError> &errors() const;
+    const std::vector<Error> &errors() const;
 
   private:
     void error(const Node &node, const std::string &message);
@@ -56,7 +61,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     int findCapture(const std::string &name);
     int addCapture(Frame &frame, int index, bool isLocal);
 
-    void assign(const FunctionDecl &decl, const std::string &name);
+    void assign(const Location &location, const std::string &name);
     void assign(const Variable &variable, const Location &location, const std::string &name);
 
     void resolve(const Call &call, const std::string &name);
@@ -97,10 +102,12 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     void visit(const DictionaryLiteral &) override;
     void visit(const Literal &) override;
 
+    CompilerConfig _config;
+
     int _scopeDepth;
     std::vector<Frame> _frames;
     Mapping<std::string, uint16_t> _globals;
-    std::vector<CompileError> _errors;
+    std::vector<Error> _errors;
     uint16_t _nextRepeat;
     uint16_t _exitRepeat;
 };

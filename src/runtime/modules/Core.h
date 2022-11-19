@@ -40,7 +40,7 @@ class Core : public Module {
     Core(const CoreConfig &config = CoreConfig());
 
     std::vector<Signature> signatures() const override;
-    Mapping<std::string, Strong<Native>> functions() const override;
+    Mapping<std::string, Value> values() const override;
 
   private:
     Mapping<Signature, Strong<Native>, Signature::Hash> _natives;

@@ -24,7 +24,29 @@ SIF_NAMESPACE_BEGIN
 class Module {
   public:
     virtual std::vector<Signature> signatures() const = 0;
-    virtual Mapping<std::string, Strong<Native>> functions() const = 0;
+    virtual Mapping<std::string, Value> values() const = 0;
+};
+
+class ModuleProvider {
+  public:
+    virtual Result<Strong<Module>, std::vector<Error>> module(const std::string &source) = 0;
+};
+
+class UserModule : public Module {
+  public:
+    UserModule(const std::string &name, const std::vector<Signature> &signatures,
+               const Mapping<std::string, Value> &values);
+    virtual ~UserModule() = default;
+
+    const std::string &name() const;
+
+    std::vector<Signature> signatures() const override;
+    Mapping<std::string, Value> values() const override;
+
+  private:
+    std::string _name;
+    std::vector<Signature> _signatures;
+    Mapping<std::string, Value> _values;
 };
 
 SIF_NAMESPACE_END

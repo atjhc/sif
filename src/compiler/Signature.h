@@ -41,7 +41,7 @@ struct Signature {
         size_t operator()(const Signature &) const;
     };
 
-    static Result<Signature, ParseError> Make(const std::string &format);
+    static Result<Signature, Error> Make(const std::string &format);
 
     std::string name() const;
     std::string description() const;

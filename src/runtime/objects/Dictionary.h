@@ -45,8 +45,8 @@ class Dictionary : public Object, public Copyable, public Subscriptable {
     Strong<Object> copy() const override;
 
     // Subscriptable
-    Result<Value, RuntimeError> subscript(Location, const Value &) const override;
-    Result<Value, RuntimeError> setSubscript(Location, const Value &, Value) override;
+    Result<Value, Error> subscript(Location, const Value &) const override;
+    Result<Value, Error> setSubscript(Location, const Value &, Value) override;
 
   private:
     ValueMap _values;

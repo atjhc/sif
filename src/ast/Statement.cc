@@ -36,7 +36,8 @@ Try::Try(Owned<Statement> statement) : statement(std::move(statement)) {}
 
 Use::Use(Token target) : target(target) {}
 
-Using::Using(Token target, Owned<Statement> statement) : target(target), statement(std::move(statement)) {}
+Using::Using(Token target, Owned<Statement> statement)
+    : target(target), statement(std::move(statement)) {}
 
 Return::Return(Owned<Expression> expression) : expression(std::move(expression)) {}
 

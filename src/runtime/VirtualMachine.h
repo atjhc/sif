@@ -49,14 +49,14 @@ class VirtualMachine {
   public:
     VirtualMachine(const VirtualMachineConfig &config = VirtualMachineConfig());
 
-    Optional<Value> execute(const Strong<Bytecode> &bytecode);
-    void add(const std::string &name, const Value nativeFunction);
+    Result<Value, Error> execute(const Strong<Bytecode> &bytecode);
 
-    Optional<RuntimeError> error() const;
+    void addGlobal(const std::string &name, const Value value);
+    const Mapping<std::string, Value> globals() const;
 
   private:
-    Optional<RuntimeError> call(Value, int count);
-    Optional<RuntimeError> range(Value, Value, bool);
+    Optional<Error> call(Value, int count);
+    Optional<Error> range(Value, Value, bool);
 
     CallFrame &frame();
 
@@ -69,10 +69,9 @@ class VirtualMachine {
     VirtualMachineConfig _config;
 #pragma GCC diagnostic pop
 
-    Optional<RuntimeError> _error;
     std::vector<Value> _stack;
     std::vector<CallFrame> _frames;
-    Mapping<std::string, Value> _variables;
+    Mapping<std::string, Value> _globals;
     Value _it;
 };
 

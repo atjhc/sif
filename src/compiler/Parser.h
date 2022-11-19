@@ -20,6 +20,7 @@
 #include "Error.h"
 #include "ast/Expression.h"
 #include "ast/Statement.h"
+#include "compiler/Module.h"
 #include "compiler/Scanner.h"
 
 #include <iostream>
@@ -28,12 +29,19 @@
 
 SIF_NAMESPACE_BEGIN
 
+class SignatureProvider {
+  public:
+    virtual Result<std::vector<Signature>, Error> signatures(const std::string &name) = 0;
+};
+
 struct ParserConfig {
     std::string fileName;
     std::ostream &cerr;
 
     Strong<Scanner> scanner;
     Strong<Reader> reader;
+
+    Strong<ModuleProvider> moduleProvider;
 
 #if defined(DEBUG)
     bool enableTracing = false;
@@ -53,15 +61,15 @@ class Parser {
 
     void declare(const Signature &signature);
 
-    const std::vector<Signature> &declarations();
-    const std::vector<ParseError> &errors();
+    const std::vector<Signature> &declarations() const;
+    const std::vector<Error> &errors() const;
 
   private:
-    using TokenList = std::initializer_list<Token::Type>;
+    using TokenTypes = std::initializer_list<Token::Type>;
 
     bool isAtEnd();
-    bool check(const std::initializer_list<Token::Type> &types);
-    Optional<Token> match(const std::initializer_list<Token::Type> &types);
+    bool check(const TokenTypes &types);
+    Optional<Token> match(const TokenTypes &types);
     Optional<Token> matchWord();
 
     Optional<Token> consume(Token::Type type);
@@ -74,7 +82,7 @@ class Parser {
     Token advance();
     Token peek();
     Token previous();
-    Token synchronize(const TokenList &tokenTypes = {Token::Type::NewLine});
+    Token synchronize(const TokenTypes &tokenTypes = {Token::Type::NewLine});
 
     void checkpoint();
     void rewind();
@@ -83,7 +91,7 @@ class Parser {
     void beginScope();
     void endScope();
 
-    NoneType emitError(const ParseError &error);
+    NoneType emitError(const Error &error);
 
 #if defined(DEBUG)
     void _trace(const std::string &message) const;
@@ -92,7 +100,7 @@ class Parser {
 
     Optional<Signature> parseSignature();
 
-    Owned<Statement> parseBlock(const TokenList &endTypes = {});
+    Owned<Statement> parseBlock(const TokenTypes &endTypes = {});
     Owned<Statement> parseStatement();
     Owned<Statement> parseFunction();
     Owned<Statement> parseIf();
@@ -104,40 +112,44 @@ class Parser {
     Owned<Statement> parseRepeatConditional();
     Owned<Statement> parseRepeatFor();
 
-    Result<Owned<Statement>, ParseError> parseSimpleStatement();
-    Result<Owned<Statement>, ParseError> parseAssignment();
-    Result<Owned<Statement>, ParseError> parseExit();
-    Result<Owned<Statement>, ParseError> parseNext();
-    Result<Owned<Statement>, ParseError> parseReturn();
-    Result<Owned<Statement>, ParseError> parseExpressionStatement();
+    Result<Owned<Statement>, Error> parseSimpleStatement();
+    Result<Owned<Statement>, Error> parseAssignment();
+    Result<Owned<Statement>, Error> parseExit();
+    Result<Owned<Statement>, Error> parseNext();
+    Result<Owned<Statement>, Error> parseReturn();
+    Result<Owned<Statement>, Error> parseExpressionStatement();
 
-    Result<Owned<Expression>, ParseError> parseExpression();
-    Result<Owned<Expression>, ParseError> parseClause();
-    Result<Owned<Expression>, ParseError> parseEquality();
-    Result<Owned<Expression>, ParseError> parseComparison();
-    Result<Owned<Expression>, ParseError> parseList();
-    Result<Owned<Expression>, ParseError> parseRange();
-    Result<Owned<Expression>, ParseError> parseTerm();
-    Result<Owned<Expression>, ParseError> parseFactor();
-    Result<Owned<Expression>, ParseError> parseExponent();
-    Result<Owned<Expression>, ParseError> parseUnary();
-    Result<Owned<Expression>, ParseError> parseCall();
-    Result<Owned<Expression>, ParseError> parseSubscript();
-    Result<Owned<Expression>, ParseError> parsePrimary();
-    Result<Owned<Expression>, ParseError> parseGrouping();
-    Result<Owned<Expression>, ParseError> parseContainerLiteral();
+    Result<Owned<Expression>, Error> parseExpression();
+    Result<Owned<Expression>, Error> parseClause();
+    Result<Owned<Expression>, Error> parseEquality();
+    Result<Owned<Expression>, Error> parseComparison();
+    Result<Owned<Expression>, Error> parseList();
+    Result<Owned<Expression>, Error> parseRange();
+    Result<Owned<Expression>, Error> parseTerm();
+    Result<Owned<Expression>, Error> parseFactor();
+    Result<Owned<Expression>, Error> parseExponent();
+    Result<Owned<Expression>, Error> parseUnary();
+    Result<Owned<Expression>, Error> parseCall();
+    Result<Owned<Expression>, Error> parseSubscript();
+    Result<Owned<Expression>, Error> parsePrimary();
+    Result<Owned<Expression>, Error> parseGrouping();
+    Result<Owned<Expression>, Error> parseContainerLiteral();
 
     ParserConfig _config;
 
-    std::vector<ParseError> _errors;
+    std::vector<Error> _errors;
+
+    struct Scope {
+        std::vector<Signature> signatures;
+    };
+    std::vector<Scope> _scopes;
+    std::vector<Signature> _exportedDeclarations;
 
     struct SignatureDecl {
         Signature signature;
         int depth;
     };
-    std::vector<SignatureDecl> _signatureDecls;
     std::vector<Variable> _variableDecls;
-    int _depth;
 
     std::vector<Token> _tokens;
     std::stack<size_t> _saved;

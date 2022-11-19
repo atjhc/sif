@@ -96,6 +96,8 @@ struct Token {
     bool isWord() const;
     bool isEndOfStatement() const;
 
+    std::string encodedString() const;
+
     std::string description() const;
     std::string debugDescription() const;
 };

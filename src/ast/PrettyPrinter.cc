@@ -74,9 +74,7 @@ void PrettyPrinter::visit(const Try &trys) {
     out << indentString() << "end try";
 }
 
-void PrettyPrinter::visit(const Use &use) {
-    out << "use " << use.target.description();
-}
+void PrettyPrinter::visit(const Use &use) { out << "use " << use.target.description(); }
 
 void PrettyPrinter::visit(const Using &usings) {
     out << "using " << usings.target.description();

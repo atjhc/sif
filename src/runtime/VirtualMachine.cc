@@ -28,9 +28,10 @@ SIF_NAMESPACE_BEGIN
 
 VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : _config(config) {}
 
-Optional<RuntimeError> VirtualMachine::error() const { return _error; }
-
-void VirtualMachine::add(const std::string &name, const Value global) { _variables[name] = global; }
+void VirtualMachine::addGlobal(const std::string &name, const Value global) {
+    _globals[name] = global;
+}
+const Mapping<std::string, Value> VirtualMachine::globals() const { return _globals; }
 
 CallFrame &VirtualMachine::frame() { return _frames.back(); }
 
@@ -66,7 +67,7 @@ static inline void Push(std::vector<Value> &stack, const Value &value) { stack.p
     } else if (lhs.isNumber() && rhs.isNumber()) {                                        \
         Push(_stack, lhs.castFloat() OP rhs.castFloat());                                 \
     } else {                                                                              \
-        error = RuntimeError(                                                             \
+        error = Error(                                                             \
             frame().bytecode->location(frame().ip - 1),                                   \
             Concat("mismatched types: ", lhs.typeName(), " ", #OP, " ", rhs.typeName())); \
         break;                                                                            \
@@ -76,8 +77,7 @@ static inline void Push(std::vector<Value> &stack, const Value &value) { stack.p
 std::ostream &operator<<(std::ostream &out, const CallFrame &f) { return out << f.sp; }
 #endif
 
-Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
-    _error = None;
+Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     _frames.push_back(CallFrame(bytecode, {}, 0));
     Push(_stack, Value());
     auto localsCount = frame().bytecode->locals().size();
@@ -95,7 +95,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
 #endif
     while (true) {
         Optional<Value> returnValue;
-        Optional<RuntimeError> error;
+        Optional<Error> error;
 #if defined(DEBUG)
         if (_config.enableTracing) {
             std::cout << frame().bytecode->decodePosition(frame().ip) << " ";
@@ -124,7 +124,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto offset = ReadJump(frame().ip);
             auto value = Peek(_stack);
             if (!value.isBool()) {
-                error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                error = Error(frame().bytecode->location(frame().ip - 1),
                                      "expected true or false");
                 break;
             }
@@ -137,9 +137,9 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto offset = ReadJump(frame().ip);
             auto value = Peek(_stack);
             if (!value.isBool()) {
-                error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                error = Error(frame().bytecode->location(frame().ip - 1),
                                      "expected true or false");
-                return None;
+                break;
             }
             if (value.asBool()) {
                 frame().ip += offset;
@@ -150,7 +150,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto offset = ReadJump(frame().ip);
             auto enumerator = Peek(_stack).as<Enumerator>();
             if (!enumerator) {
-                error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                error = Error(frame().bytecode->location(frame().ip - 1),
                                      "expected an enumerator");
                 break;
             }
@@ -196,7 +196,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto value = Pop(_stack);
             auto enumerable = value.as<Enumerable>();
             if (!enumerable) {
-                error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                error = Error(frame().bytecode->location(frame().ip - 1),
                                      "expected a list, dictionary, string, or range");
                 break;
             }
@@ -206,14 +206,14 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::SetGlobal: {
             auto index = ReadConstant(frame().ip);
             auto name = frame().bytecode->constants()[index];
-            _variables[name.as<String>()->string()] = Pop(_stack);
+            _globals[name.as<String>()->string()] = Pop(_stack);
             break;
         }
         case Opcode::GetGlobal: {
             auto index = ReadConstant(frame().ip);
             auto name = frame().bytecode->constants()[index];
-            auto it = _variables.find(name.as<String>()->string());
-            if (it == _variables.end()) {
+            auto it = _globals.find(name.as<String>()->string());
+            if (it == _globals.end()) {
                 Push(_stack, Value());
             } else {
                 Push(_stack, it->second);
@@ -283,7 +283,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             } else if (value.isFloat()) {
                 Push(_stack, -value.asFloat());
             } else {
-                error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                error = Error(frame().bytecode->location(frame().ip - 1),
                                      Concat("expected a number, got ", value.typeName()));
                 break;
             }
@@ -292,7 +292,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::Not: {
             auto value = Pop(_stack);
             if (!value.isBool()) {
-                error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                error = Error(frame().bytecode->location(frame().ip - 1),
                                      "expected true or false");
                 break;
             }
@@ -322,7 +322,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (lhs.isInteger() && rhs.isInteger()) {
                 if (rhs.asInteger() == 0) {
                     error =
-                        RuntimeError(frame().bytecode->location(frame().ip - 1), "divide by zero");
+                        Error(frame().bytecode->location(frame().ip - 1), "divide by zero");
                     break;
                 }
                 Push(_stack, lhs.asInteger() / rhs.asInteger());
@@ -330,12 +330,12 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 float denom = rhs.castFloat();
                 if (denom == 0.0) {
                     error =
-                        RuntimeError(frame().bytecode->location(frame().ip - 1), "divide by zero");
+                        Error(frame().bytecode->location(frame().ip - 1), "divide by zero");
                     break;
                 }
                 Push(_stack, lhs.castFloat() / denom);
             } else {
-                error = RuntimeError(
+                error = Error(
                     frame().bytecode->location(frame().ip - 1),
                     Concat("mismatched types: ", lhs.typeName(), " / ", rhs.typeName()));
                 break;
@@ -348,7 +348,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (lhs.isNumber() && rhs.isNumber()) {
                 Push(_stack, std::pow(lhs.castFloat(), rhs.castFloat()));
             } else {
-                error = RuntimeError(
+                error = Error(
                     frame().bytecode->location(frame().ip - 1),
                     Concat("mismatched types: ", lhs.typeName(), " ^ ", rhs.typeName()));
                 break;
@@ -363,7 +363,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             } else if (lhs.isNumber() && rhs.isNumber()) {
                 Push(_stack, std::fmod(lhs.castFloat(), rhs.castFloat()));
             } else {
-                error = RuntimeError(
+                error = Error(
                     frame().bytecode->location(frame().ip - 1),
                     Concat("mismatched types: ", lhs.typeName(), " % ", rhs.typeName()));
                 break;
@@ -410,7 +410,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                     break;
                 }
             } else {
-                error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                error = Error(frame().bytecode->location(frame().ip - 1),
                                      "expected a list, string, dictionary, or range");
                 break;
             }
@@ -428,7 +428,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                     break;
                 }
             } else {
-                error = RuntimeError(frame().bytecode->location(frame().ip - 1),
+                error = Error(frame().bytecode->location(frame().ip - 1),
                                      "expected a list, string, dictionary, or range");
                 break;
             }
@@ -493,8 +493,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 _frames.pop_back();
             }
             if (frame().jumps.size() == 0) {
-                _error = error;
-                return None;
+                return Fail(error.value());
             }
             frame().error = error.value().value();
             frame().ip = Pop(frame().jumps);
@@ -506,7 +505,7 @@ Optional<Value> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     }
 }
 
-Optional<RuntimeError> VirtualMachine::call(Value object, int count) {
+Optional<Error> VirtualMachine::call(Value object, int count) {
     if (auto fn = object.as<Function>()) {
         std::vector<size_t> captures;
         for (auto capture : fn->captures()) {
@@ -534,21 +533,21 @@ Optional<RuntimeError> VirtualMachine::call(Value object, int count) {
             return result.error();
         }
     } else {
-        return RuntimeError(frame().bytecode->location(frame().ip - 3),
+        return Error(frame().bytecode->location(frame().ip - 3),
                             "unexpected type for function call");
     }
     return None;
 }
 
-Optional<RuntimeError> VirtualMachine::range(Value start, Value end, bool closed) {
+Optional<Error> VirtualMachine::range(Value start, Value end, bool closed) {
     if (!start.isInteger()) {
-        return RuntimeError(frame().bytecode->location(frame().ip - 1), "expected an integer");
+        return Error(frame().bytecode->location(frame().ip - 1), "expected an integer");
     }
     if (!end.isInteger()) {
-        return RuntimeError(frame().bytecode->location(frame().ip - 1), "expected an integer");
+        return Error(frame().bytecode->location(frame().ip - 1), "expected an integer");
     }
     if (end.asInteger() < start.asInteger()) {
-        return RuntimeError(frame().bytecode->location(frame().ip - 1),
+        return Error(frame().bytecode->location(frame().ip - 1),
                             "lower bound must be less than or equal to the upper bound");
     }
     Push(_stack, MakeStrong<Range>(start.asInteger(), end.asInteger(), closed));

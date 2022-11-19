@@ -120,21 +120,21 @@ Value String::enumerator(Value self) const {
     return MakeStrong<StringEnumerator>(self.as<String>());
 }
 
-Result<Value, RuntimeError> String::subscript(Location location, const Value &value) const {
+Result<Value, Error> String::subscript(Location location, const Value &value) const {
     if (value.isInteger()) {
         auto index = value.asInteger();
         if (index >= _string.size() || _string.size() + index < 0) {
-            return Error(RuntimeError(location, Concat("index ", index, " out of bounds")));
+            return Fail(Error(location, Concat("index ", index, " out of bounds")));
             return true;
         }
         return _string.substr(index < 0 ? _string.size() + index : index, 1);
     } else if (auto range = value.as<Range>()) {
         return operator[](*range);
     }
-    return Error(RuntimeError(location, "expected an integer or range"));
+    return Fail(Error(location, "expected an integer or range"));
 }
 
-Result<Value, RuntimeError> String::setSubscript(Location location, const Value &key, Value value) {
+Result<Value, Error> String::setSubscript(Location location, const Value &key, Value value) {
     if (auto range = key.as<Range>()) {
         if (auto string = value.as<String>()) {
             _string.replace(_string.begin() + range->start(),
@@ -142,7 +142,7 @@ Result<Value, RuntimeError> String::setSubscript(Location location, const Value 
                             string->string());
             return Value();
         }
-        return Error(RuntimeError(location, "expected string"));
+        return Fail(Error(location, "expected string"));
     }
     if (key.isInteger()) {
         if (auto string = value.as<String>()) {
@@ -150,9 +150,9 @@ Result<Value, RuntimeError> String::setSubscript(Location location, const Value 
                             _string.begin() + key.asInteger() + 1, string->string());
             return Value();
         }
-        return Error(RuntimeError(location, "expected string"));
+        return Fail(Error(location, "expected string"));
     }
-    return Error(RuntimeError(location, "expected integer or range"));
+    return Fail(Error(location, "expected integer or range"));
 }
 
 #pragma mark - StringEnumerator

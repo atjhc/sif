@@ -28,11 +28,11 @@
 
 SIF_NAMESPACE_BEGIN
 
-static inline std::ostream &operator<<(std::ostream &out, const Optional<RuntimeError> &error) {
-    return out << (error.has_value() ? error.value().what() : "(none)");
+static inline std::ostream &operator<<(std::ostream &out, const Result<Value, Error> &result) {
+    return out << (result.has_value() ? result.value().toString() : result.error().what());
 }
 
-static inline std::ostream &operator<<(std::ostream &out, const ParseError &error) {
+static inline std::ostream &operator<<(std::ostream &out, const Error &error) {
     return out << error.token().location << ": " << error.what();
 }
 
@@ -108,12 +108,12 @@ TEST_CASE(TranscriptTests, All) {
             return coreConfig.engine() % max;
         };
         Core core(coreConfig);
-        for (const auto &function : core.functions()) {
-            vm.add(function.first, function.second);
+        for (const auto &function : core.values()) {
+            vm.addGlobal(function.first, function.second);
         }
 
-        vm.execute(bytecode);
-        ASSERT_FALSE(vm.error().has_value()) << path << " failed: " << vm.error();
+        auto result = vm.execute(bytecode);
+        ASSERT_TRUE(result.has_value()) << path << " failed: " << result;
         ASSERT_EQ(expectedResult, out.str()) << path << " failed:" << std::endl
                                             << "Expected: " << std::endl
                                             << expectedResult << std::endl

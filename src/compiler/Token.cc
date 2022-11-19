@@ -15,6 +15,7 @@
 //
 
 #include "compiler/Token.h"
+#include "utilities/strings.h"
 
 SIF_NAMESPACE_BEGIN
 
@@ -58,6 +59,11 @@ bool Token::isWord() const {
 }
 
 bool Token::isEndOfStatement() const { return type == Type::NewLine || type == Type::EndOfFile; }
+
+std::string Token::encodedString() const {
+    assert(type == Type::StringLiteral);
+    return string_from_escaped_string(std::string(text.begin() + 1, text.end() - 1));
+}
 
 std::string Token::description() const {
     switch (type) {

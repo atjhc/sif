@@ -70,20 +70,20 @@ Integer Range::size() const { return (_closed ? 1 : 0) + _end - _start; }
 
 Value Range::enumerator(Value self) const { return MakeStrong<RangeEnumerator>(self.as<Range>()); }
 
-Result<Value, RuntimeError> Range::subscript(Location location, const Value &value) const {
+Result<Value, Error> Range::subscript(Location location, const Value &value) const {
     if (!value.isInteger()) {
-        return Error(RuntimeError(location, "expected an integer"));
+        return Fail(Error(location, "expected an integer"));
         return true;
     }
     auto index = value.asInteger();
     if (index >= size() || size() + index < 0) {
-        return Error(RuntimeError(location, "range index out of bounds"));
+        return Fail(Error(location, "range index out of bounds"));
     }
     return Value(start() + index);
 }
 
-Result<Value, RuntimeError> Range::setSubscript(Location location, const Value &key, Value value) {
-    return Error(RuntimeError(location, "ranges may not be modified"));
+Result<Value, Error> Range::setSubscript(Location location, const Value &key, Value value) {
+    return Fail(Error(location, "ranges may not be modified"));
 }
 
 #pragma mark - RangeEnumerator

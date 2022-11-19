@@ -19,6 +19,7 @@
 #include "compiler/Compiler.h"
 #include "compiler/Parser.h"
 #include "compiler/Reader.h"
+#include "runtime/ModuleLoader.h"
 #include "runtime/VirtualMachine.h"
 #include "runtime/modules/Core.h"
 #include "runtime/modules/System.h"
@@ -65,39 +66,16 @@ static bool prettyPrint = false;
 static bool printBytecode = false;
 static const char *codeString = nullptr;
 
+ModuleLoader loader;
 VirtualMachine vm;
 Core coreModule;
 System systemModule;
-
-class FileReader : public Reader {
-  public:
-    FileReader(const std::string &path) : _path(path) {}
-
-    bool readable() const override { return false; }
-
-    Optional<ReadError> read(int scopeDepth) override {
-        std::ifstream file(_path);
-        if (!file) {
-            return ReadError(Concat("can't open file ", Quoted(_path)));
-        }
-        std::ostringstream ss;
-        ss << file.rdbuf();
-        _contents = ss.str();
-        return None;
-    }
-
-    const std::string &contents() const override { return _contents; }
-
-  private:
-    std::string _path;
-    std::string _contents;
-};
 
 class REPLReader : public Reader {
   public:
     bool readable() const override { return !std::cin.eof(); }
 
-    Optional<ReadError> read(int scopeDepth) override {
+    Optional<Error> read(int scopeDepth) override {
         std::cout << std::string(scopeDepth + 1, '>') << " ";
         std::getline(std::cin, _contents);
         return None;
@@ -122,6 +100,7 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
     ParserConfig parserConfig;
     parserConfig.scanner = scanner;
     parserConfig.reader = reader;
+    parserConfig.moduleProvider = loader.provider();
 #if defined(DEBUG)
     parserConfig.enableTracing = traceParsing;
 #endif
@@ -139,7 +118,7 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
     auto statement = parser.statement();
     if (!statement) {
         for (auto error : parser.errors()) {
-            report(name, error.token().location, reader->contents(),
+            report(name, error.location(), reader->contents(),
                    Concat("parse error, ", error.what()));
         }
         return ParseFailure;
@@ -152,11 +131,14 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
         return Success;
     }
 
-    Compiler compiler;
+    CompilerConfig compilerConfig;
+    compilerConfig.moduleProvider = loader.provider();
+
+    Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
         for (auto error : compiler.errors()) {
-            report(name, error.node().location, reader->contents(),
+            report(name, error.location(), reader->contents(),
                    Concat("compile error, ", error.what()));
         }
         return CompileFailure;
@@ -167,11 +149,11 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
         return Success;
     }
 
-    vm.execute(bytecode);
-    if (auto error = vm.error()) {
-        std::cerr << name << ":" << error.value().location().lineNumber << ": "
-                  << Concat("runtime error, ", error.value().what()) << std::endl;
-        std::cerr << index_chunk(chunk::line, error.value().location().lineNumber - 1,
+    auto result = vm.execute(bytecode);
+    if (!result) {
+        std::cerr << name << ":" << result.error().location().lineNumber << ": "
+                  << Concat("runtime error, ", result.error().what()) << std::endl;
+        std::cerr << index_chunk(chunk::line, result.error().location().lineNumber - 1,
                                  reader->contents())
                          .get()
                   << std::endl;
@@ -284,18 +266,18 @@ int main(int argc, char *argv[]) {
 #endif
     vm = VirtualMachine(vmConfig);
 
-    for (const auto &pair : coreModule.functions()) {
-        vm.add(pair.first, pair.second);
+    for (const auto &pair : coreModule.values()) {
+        vm.addGlobal(pair.first, pair.second);
     }
-    for (const auto &pair : systemModule.functions()) {
-        vm.add(pair.first, pair.second);
+    for (const auto &pair : systemModule.values()) {
+        vm.addGlobal(pair.first, pair.second);
     }
 
-    vm.add("clear", MakeStrong<Native>([](CallFrame &frame, Location location,
-                                          Value *values) -> Result<Value, RuntimeError> {
-               std::cout << ANSI_CLEAR_SCREEN << ANSI_RESET_CURSOR;
-               return Value();
-           }));
+    vm.addGlobal("clear", MakeStrong<Native>([](CallFrame &frame, Location location,
+                                                Value *values) -> Result<Value, Error> {
+                     std::cout << ANSI_CLEAR_SCREEN << ANSI_RESET_CURSOR;
+                     return Value();
+                 }));
 
     if (codeString) {
         return run_source(codeString, arguments);

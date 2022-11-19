@@ -76,7 +76,7 @@ template <class T> using Optional = std::optional<T>;
 using NoneType = std::nullopt_t;
 inline constexpr NoneType None = std::nullopt;
 
-template <class E> tl::unexpected<E> Error(const E &error) { return tl::unexpected(error); }
+template <class E> tl::unexpected<E> Fail(const E &error) { return tl::unexpected(error); }
 
 template <class T, class... Args>
 std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T>> MakeOwned(Args &&...args) {
@@ -89,6 +89,10 @@ template <class T, class... Args> std::shared_ptr<T> MakeStrong(Args &&...args) 
 
 template <class T, class U> Strong<T> Cast(const Strong<U> &arg) {
     return std::dynamic_pointer_cast<T>(arg);
+}
+
+template <typename Container> void Append(Container &target, const Container &source) {
+    std::copy(source.begin(), source.end(), std::back_inserter(target));
 }
 
 static inline std::string Concat() { return std::string(); }
@@ -158,8 +162,8 @@ std::vector<ValueType<Iterable>> Filter(Iterable &container, Functor f) {
 }
 
 struct Location {
-    unsigned int position = 1;
-    unsigned int lineNumber = 1;
+    unsigned int position = 0;
+    unsigned int lineNumber = 0;
 
     bool operator==(const Location &location) const {
         return lineNumber == location.lineNumber && position == location.position;
