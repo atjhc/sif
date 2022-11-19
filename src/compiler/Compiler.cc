@@ -35,6 +35,8 @@ Strong<Bytecode> Compiler::compile(const Statement &statement) {
     return _errors.size() > 0 ? nullptr : _frames.back().bytecode;
 }
 
+const Set<std::string> &Compiler::globals() const { return _globals; }
+
 const std::vector<Error> &Compiler::errors() const { return _errors; }
 
 Bytecode &Compiler::bytecode() { return *_frames.back().bytecode; }
@@ -170,6 +172,7 @@ void Compiler::resolve(const Call &call, const std::string &name) {
     } else {
         index = bytecode().addConstant(MakeStrong<String>(name));
         opcode = Opcode::GetGlobal;
+        _globals.insert(name);
     }
     bytecode().add(call.location, opcode, index);
 }
@@ -190,6 +193,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
             } else {
                 index = bytecode().addConstant(MakeStrong<String>(name));
                 opcode = Opcode::GetGlobal;
+                _globals.insert(name);
             }
             break;
         case Variable::Scope::Local:
@@ -208,6 +212,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
         case Variable::Scope::Global:
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
+            _globals.insert(name);
         }
     } else {
         switch (variable.scope) {
@@ -228,6 +233,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
         case Variable::Scope::Global:
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
+            _globals.insert(name);
         }
     }
     bytecode().add(variable.location, opcode, index);

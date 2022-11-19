@@ -42,6 +42,7 @@ ModuleLoader::ModuleLoader() : _provider(MakeStrong<ModuleLoaderProxy>(*this)) {
 Strong<ModuleProvider> ModuleLoader::provider() { return _provider; }
 
 Result<Strong<Module>, std::vector<Error>> ModuleLoader::module(const std::string &source) {
+    // Check if the module has already been loaded.
     auto it = _modules.find(source);
     if (it != _modules.end()) {
         return it->second;
@@ -56,20 +57,24 @@ Result<Strong<Module>, std::vector<Error>> ModuleLoader::module(const std::strin
     parserConfig.moduleProvider = _provider;
     Parser parser(parserConfig);
 
-    Core coreModule;
-    for (const auto &signature : coreModule.signatures()) {
-        parser.declare(signature);
-    }
-    System systemModule;
-    for (const auto &signature : systemModule.signatures()) {
-        parser.declare(signature);
+    Core core;
+    System system;
+    std::vector<Ref<Module>> builtins = {core, system};
+
+    // Import all signatures from builtin modules.
+    for (auto ref : builtins) {
+        for (const auto &signature : ref.get().signatures()) {
+            parser.declare(signature);
+        }
     }
 
+    // Parse the new module.
     auto statement = parser.statement();
     if (!statement) {
         return Fail(parser.errors());
     }
 
+    // Compile the bytecode for the new module.
     CompilerConfig compilerConfig;
     compilerConfig.moduleProvider = _provider;
     Compiler compiler;
@@ -78,19 +83,23 @@ Result<Strong<Module>, std::vector<Error>> ModuleLoader::module(const std::strin
         return Fail(compiler.errors());
     }
 
+    // Insert all symbols linked from builtin modules to make sure they are available at runtime.
     VirtualMachine vm;
-    for (const auto &pair : coreModule.values()) {
-        vm.addGlobal(pair.first, pair.second);
+    for (auto ref : builtins) {
+        for (const auto &pair : ref.get().values()) {
+            if (compiler.globals().find(pair.first) != compiler.globals().end()) {
+                vm.addGlobal(pair.first, pair.second);
+            }
+        }
     }
-    for (const auto &pair : systemModule.values()) {
-        vm.addGlobal(pair.first, pair.second);
-    }
+
+    // Execute the new module to evaluate the exported values.
     auto result = vm.execute(bytecode);
     if (!result) {
         return Fail(std::vector{result.error()});
     }
 
-    auto userModule = MakeStrong<UserModule>(source, parser.declarations(), vm.globals());
+    auto userModule = MakeStrong<UserModule>(source, parser.declarations(), vm.exports());
     _modules[source] = userModule;
     return userModule;
 }

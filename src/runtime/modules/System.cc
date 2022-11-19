@@ -57,7 +57,7 @@ void System::_files(ModuleMap &natives) {
             std::error_code error;
             auto it = std::filesystem::directory_iterator(path->string(), error);
             if (error) {
-                return Fail(Error(location, Value(error.value()), error.message()));
+                return Fail(Error(location, Value(error.message())));
             }
             Strong<List> results = MakeStrong<List>();
             for (auto it : std::filesystem::directory_iterator(path->string())) {
@@ -77,7 +77,7 @@ void System::_files(ModuleMap &natives) {
             std::error_code error;
             std::filesystem::remove(path, error);
             if (error) {
-                return Fail(Error(location, Value(error.value()), error.message()));
+                return Fail(Error(location, Value(error.message())));
             }
 
             return Value();
@@ -93,7 +93,7 @@ void System::_files(ModuleMap &natives) {
             std::error_code error;
             std::filesystem::remove_all(path, error);
             if (error) {
-                return Fail(Error(location, Value(error.value()), error.message()));
+                return Fail(Error(location, Value(error.message())));
             }
 
             return Value();
@@ -114,7 +114,7 @@ void System::_files(ModuleMap &natives) {
             std::error_code error;
             std::filesystem::rename(from, to, error);
             if (error) {
-                return Fail(Error(location, Value(error.value()), error.message()));
+                return Fail(Error(location, Value(error.message())));
             }
 
             return Value();
@@ -135,7 +135,7 @@ void System::_files(ModuleMap &natives) {
             std::error_code error;
             std::filesystem::copy(from, to, error);
             if (error) {
-                return Fail(Error(location, Value(error.value()), error.message()));
+                return Fail(Error(location, Value(error.message())));
             }
 
             return Value();

@@ -37,6 +37,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
 
     Strong<Bytecode> compile(const Statement &statement);
 
+    const Set<std::string> &globals() const;
     const std::vector<Error> &errors() const;
 
   private:
@@ -106,7 +107,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
 
     int _scopeDepth;
     std::vector<Frame> _frames;
-    Mapping<std::string, uint16_t> _globals;
+    Set<std::string> _globals;
     std::vector<Error> _errors;
     uint16_t _nextRepeat;
     uint16_t _exitRepeat;

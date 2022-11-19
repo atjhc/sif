@@ -57,7 +57,7 @@ static void _core(ModuleMap &natives, std::ostream &out, std::istream &in, std::
         });
     natives[S("error with {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
-            return Fail(Error(location, values[0], values[0].toString()));
+            return Fail(Error(location, values[0]));
         });
     natives[S("quit")] =
         MakeStrong<Native>([](CallFrame &frame, Location location,

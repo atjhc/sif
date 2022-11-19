@@ -54,6 +54,8 @@ class VirtualMachine {
     void addGlobal(const std::string &name, const Value value);
     const Mapping<std::string, Value> globals() const;
 
+    const Mapping<std::string, Value> exports() const;
+
   private:
     Optional<Error> call(Value, int count);
     Optional<Error> range(Value, Value, bool);
@@ -72,6 +74,7 @@ class VirtualMachine {
     std::vector<Value> _stack;
     std::vector<CallFrame> _frames;
     Mapping<std::string, Value> _globals;
+    Mapping<std::string, Value> _exports;
     Value _it;
 };
 

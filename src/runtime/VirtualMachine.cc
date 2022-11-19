@@ -33,6 +33,8 @@ void VirtualMachine::addGlobal(const std::string &name, const Value global) {
 }
 const Mapping<std::string, Value> VirtualMachine::globals() const { return _globals; }
 
+const Mapping<std::string, Value> VirtualMachine::exports() const { return _exports; }
+
 CallFrame &VirtualMachine::frame() { return _frames.back(); }
 
 static inline Opcode Read(Bytecode::Iterator &it) { return *it++; }
@@ -206,18 +208,25 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::SetGlobal: {
             auto index = ReadConstant(frame().ip);
             auto name = frame().bytecode->constants()[index];
-            _globals[name.as<String>()->string()] = Pop(_stack);
+            _exports[name.as<String>()->string()] = Pop(_stack);
             break;
         }
         case Opcode::GetGlobal: {
             auto index = ReadConstant(frame().ip);
-            auto name = frame().bytecode->constants()[index];
-            auto it = _globals.find(name.as<String>()->string());
-            if (it == _globals.end()) {
-                Push(_stack, Value());
-            } else {
+            auto nameValue = frame().bytecode->constants()[index];
+            auto name = nameValue.as<String>()->string();
+
+            auto it = _exports.find(name);
+            if (it != _exports.end()) {
                 Push(_stack, it->second);
+                break;
             }
+            it = _globals.find(name);
+            if (it != _globals.end()) {
+                Push(_stack, it->second);
+                break;
+            }
+            Push(_stack, Value());
             break;
         }
         case Opcode::SetLocal: {

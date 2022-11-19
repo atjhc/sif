@@ -32,7 +32,7 @@ class TestReader : public Reader {
 
     bool readable() const override { return current < end; }
 
-    Optional<ReadError> read(int scopeDepth) override {
+    Optional<Error> read(int scopeDepth) override {
         current++;
         return None;
     }
@@ -138,7 +138,7 @@ TEST_CASE(ReaderTests, Function) {
 class ErrorReader : public Reader {
     bool readable() const override { return true; }
 
-    Optional<ReadError> read(int scopeDepth) override { return ReadError("failed to read"); }
+    Optional<Error> read(int scopeDepth) override { return Error("failed to read"); }
 
     const std::string &contents() const override {
         static std::string contents = "";

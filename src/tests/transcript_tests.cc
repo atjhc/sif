@@ -33,11 +33,11 @@ static inline std::ostream &operator<<(std::ostream &out, const Result<Value, Er
 }
 
 static inline std::ostream &operator<<(std::ostream &out, const Error &error) {
-    return out << error.token().location << ": " << error.what();
-}
-
-static inline std::ostream &operator<<(std::ostream &out, const CompileError &error) {
-    return out << error.node().location << ": " << error.what();
+    if (error.location().position > 0) {
+        return out << error.location() << ": " << error.what();
+    } else {
+        return out << error.what();
+    }
 }
 
 SIF_NAMESPACE_END

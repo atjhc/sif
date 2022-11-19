@@ -24,16 +24,20 @@
 
 SIF_NAMESPACE_BEGIN
 
-class Error : public std::runtime_error {
+class Error {
   public:
-    Error(const std::string &what) : std::runtime_error(what) {}
-    Error(const Location &location, const std::string &what)
-        : std::runtime_error(what), _location(location) {}
-    Error(const Location &location, const Value &value, const std::string &what)
-        : std::runtime_error(what), _location(location), _value(value) {}
+    Error(const Value &value) : _value(value) {}
+    Error(const char *str) : Error(std::string(str)) {}
+
+    Error(const Location &location, const Value &value)
+        : _location(location), _value(value) {}
+    Error(const Location &location, const char *str)
+        : Error(location, Value(std::string(str))) {}
 
     const Location &location() const { return _location; }
     const Value &value() const { return _value; }
+
+    std::string what() const { return _value.toString(); }
 
   private:
     Location _location;
