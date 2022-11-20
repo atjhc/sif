@@ -90,8 +90,10 @@ class REPLReader : public Reader {
 void report(const std::string &name, Location location, const std::string &source,
             const std::string &message) {
     std::cerr << name << ":" << location << ": " << message << std::endl;
-    std::cerr << index_chunk(chunk::line, location.lineNumber - 1, source).get() << std::endl;
-    std::cerr << std::string(location.position - 1, ' ') << "^" << std::endl;
+    if (location.position > 0) {
+        std::cerr << index_chunk(chunk::line, location.lineNumber - 1, source).get() << std::endl;
+        std::cerr << std::string(location.position - 1, ' ') << "^" << std::endl;
+    }
 }
 
 int evaluate(const std::string &name, Strong<Reader> reader) {

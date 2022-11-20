@@ -77,7 +77,7 @@ Result<Strong<Module>, std::vector<Error>> ModuleLoader::module(const std::strin
     // Compile the bytecode for the new module.
     CompilerConfig compilerConfig;
     compilerConfig.moduleProvider = _provider;
-    Compiler compiler;
+    Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
         return Fail(compiler.errors());
