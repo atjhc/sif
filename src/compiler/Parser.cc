@@ -637,7 +637,8 @@ Owned<Statement> Parser::parseUsing() {
         return nullptr;
     }
 
-    auto module = _config.moduleProvider->module(token.value().text);
+    auto source = token.value().encodedString();
+    auto module = _config.moduleProvider->module(source);
     if (module) {
         _scopes.push_back(Scope{module.value()->signatures()});
     } else {

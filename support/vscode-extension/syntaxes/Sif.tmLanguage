@@ -12,7 +12,7 @@
 	<array>
 		<dict>
 			<key>match</key>
-			<string>\b(if|else|then|try|repeat|until|while|end|function|exit|return|next|set|to|in|for|each|up|global|local)\b</string>
+			<string>\b(if|else|then|try|use|using|repeat|until|while|end|function|exit|return|next|set|to|in|for|each|up|global|local)\b</string>
 			<key>name</key>
 			<string>keyword.control.sif</string>
 		</dict>
@@ -132,6 +132,6 @@
 	<key>scopeName</key>
 	<string>source.sif</string>
 	<key>uuid</key>
-	<string>46A64BB6-C96D-4C34-A5C0-F68E7DCED830</string>
+	<string>253D2A67-238C-4388-9461-FAA69FDDB268</string>
 </dict>
 </plist>

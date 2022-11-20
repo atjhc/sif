@@ -340,7 +340,27 @@ void Compiler::visit(const Use &useStatement) {
     }
 }
 
-void Compiler::visit(const Using &usingStatement) {}
+void Compiler::visit(const Using &usingStatement) {
+    auto source = usingStatement.target.encodedString();
+    auto module = _config.moduleProvider->module(source);
+    if (!module) {
+        for (const auto &error : module.error()) {
+            _errors.push_back(error);
+        }
+        return;
+    }
+
+    beginScope();
+    for (const auto &pair : module.value()->values()) {
+        const auto &name = pair.first;
+        const auto &value = pair.second;
+        auto constant = bytecode().addConstant(value);
+        bytecode().add(usingStatement.location, Opcode::Constant, constant);
+        assign(usingStatement.location, name);
+    }
+    usingStatement.statement->accept(*this);
+    endScope(usingStatement.location);
+}
 
 void Compiler::visit(const Return &statement) {
     if (statement.expression) {
