@@ -25,29 +25,36 @@ struct ModuleLoaderProxy : public ModuleProvider {
     ModuleLoaderProxy(ModuleLoader &loader);
     virtual ~ModuleLoaderProxy() = default;
 
-    Result<Strong<Module>, std::vector<Error>> module(const std::string &source) override;
+    Strong<Module> module(const std::string &source, std::vector<Error> &errors, bool &circular) override;
 
     ModuleLoader &loader;
 };
 
 ModuleLoaderProxy::ModuleLoaderProxy(ModuleLoader &loader) : loader(loader) {}
 
-Result<Strong<Module>, std::vector<Error>>
-ModuleLoaderProxy::module(const std::string &source) {
-    return loader.module(source);
+Strong<Module> ModuleLoaderProxy::module(const std::string &source, std::vector<Error> &errors, bool &circular) {
+    return loader.module(source, errors, circular);
 }
 
 ModuleLoader::ModuleLoader() : _provider(MakeStrong<ModuleLoaderProxy>(*this)) {}
 
 Strong<ModuleProvider> ModuleLoader::provider() { return _provider; }
 
-Result<Strong<Module>, std::vector<Error>> ModuleLoader::module(const std::string &source) {
+Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error> &errors, bool &circular) {
+    // Check if the module is already in the process of loading,
+    // which implies a circular dependency.
+    if (_loading.find(source) != _loading.end()) {
+        circular = true;
+        return nullptr;
+    }
+
     // Check if the module has already been loaded.
     auto it = _modules.find(source);
     if (it != _modules.end()) {
         return it->second;
     }
 
+    _loading.insert(source);
     auto reader = MakeStrong<FileReader>(source);
     auto scanner = MakeStrong<Scanner>();
 
@@ -71,7 +78,8 @@ Result<Strong<Module>, std::vector<Error>> ModuleLoader::module(const std::strin
     // Parse the new module.
     auto statement = parser.statement();
     if (!statement) {
-        return Fail(parser.errors());
+        errors.insert(errors.end(), parser.errors().begin(), parser.errors().end());
+        return nullptr;
     }
 
     // Compile the bytecode for the new module.
@@ -80,7 +88,8 @@ Result<Strong<Module>, std::vector<Error>> ModuleLoader::module(const std::strin
     Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
-        return Fail(compiler.errors());
+        errors.insert(errors.end(), compiler.errors().begin(), compiler.errors().end());
+        return nullptr;
     }
 
     // Insert all symbols linked from builtin modules to make sure they are available at runtime.
@@ -96,9 +105,11 @@ Result<Strong<Module>, std::vector<Error>> ModuleLoader::module(const std::strin
     // Execute the new module to evaluate the exported values.
     auto result = vm.execute(bytecode);
     if (!result) {
-        return Fail(std::vector{result.error()});
+        errors.push_back(result.error());
+        return nullptr;
     }
 
+    _loading.erase(source);
     auto userModule = MakeStrong<UserModule>(source, parser.declarations(), vm.exports());
     _modules[source] = userModule;
     return userModule;

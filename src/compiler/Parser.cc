@@ -613,13 +613,18 @@ Owned<Statement> Parser::parseUse() {
     }
     consumeNewLine();
 
+    std::vector<Error> outErrors;
+    bool outIsCircular;
     auto source = token.value().encodedString();
-    auto module = _config.moduleProvider->module(source);
+    auto module = _config.moduleProvider->module(source, outErrors, outIsCircular);
     if (module) {
-        Append(_scopes.back().signatures, module.value()->signatures());
+        Append(_scopes.back().signatures, module->signatures());
     } else {
-        for (const auto &error : module.error()) {
+        for (const auto &error : outErrors) {
             emitError(error);
+        }
+        if (outIsCircular) {
+            emitError(Error(location, "circular module import"));
         }
     }
 
@@ -637,13 +642,18 @@ Owned<Statement> Parser::parseUsing() {
         return nullptr;
     }
 
+    std::vector<Error> outErrors;
+    bool outIsCircular;
     auto source = token.value().encodedString();
-    auto module = _config.moduleProvider->module(source);
+    auto module = _config.moduleProvider->module(source, outErrors, outIsCircular);
     if (module) {
-        _scopes.push_back(Scope{module.value()->signatures()});
+        _scopes.push_back(Scope{module->signatures()});
     } else {
-        for (const auto &error : module.error()) {
+        for (const auto &error : outErrors) {
             emitError(error);
+        }
+        if (outIsCircular) {
+            emitError(Error(location, "circular module import"));
         }
     }
 

@@ -30,9 +30,10 @@ class ModuleLoader {
 
     Strong<ModuleProvider> provider();
 
-    Result<Strong<Module>, std::vector<Error>> module(const std::string &source);
+    Strong<Module> module(const std::string &source, std::vector<Error> &errors, bool &circular);
 
   private:
+    Set<std::string> _loading;
     Mapping<std::string, Strong<UserModule>> _modules;
     Strong<ModuleProvider> _provider;
 };
