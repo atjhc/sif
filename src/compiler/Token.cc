@@ -16,6 +16,7 @@
 
 #include "compiler/Token.h"
 #include "utilities/strings.h"
+#include <cassert>
 
 SIF_NAMESPACE_BEGIN
 
