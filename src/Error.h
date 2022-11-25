@@ -29,10 +29,8 @@ class Error {
     Error(const Value &value) : _value(value) {}
     Error(const char *str) : Error(std::string(str)) {}
 
-    Error(const Location &location, const Value &value)
-        : _location(location), _value(value) {}
-    Error(const Location &location, const char *str)
-        : Error(location, Value(std::string(str))) {}
+    Error(const Location &location, const Value &value) : _location(location), _value(value) {}
+    Error(const Location &location, const char *str) : Error(location, Value(std::string(str))) {}
 
     const Location &location() const { return _location; }
     const Value &value() const { return _value; }

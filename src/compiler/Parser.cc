@@ -374,8 +374,8 @@ Optional<Signature> Parser::parseSignature() {
             Optional<Token> typeName;
             if ((word = matchWord())) {
                 if (argumentNames.find(word.value().text) != argumentNames.end()) {
-                    return emitError(Error(
-                        word.value().location, "duplicate argument names in function declaration"));
+                    return emitError(Error(word.value().location,
+                                           "duplicate argument names in function declaration"));
                 }
                 argumentNames.insert(word.value().text);
                 if (match({Token::Type::Colon})) {
@@ -743,8 +743,9 @@ Owned<Statement> Parser::parseRepeat() {
         return statement;
     }
 
-    emitError(Error(peek().location, Concat("expected ", Quoted("forever"), ", ", Quoted("while"), ", ",
-                                        Quoted("until"), ", ", Quoted("for"), ", or a new line")));
+    emitError(
+        Error(peek().location, Concat("expected ", Quoted("forever"), ", ", Quoted("while"), ", ",
+                                      Quoted("until"), ", ", Quoted("for"), ", or a new line")));
     synchronize();
     return parseRepeatForever();
 }
@@ -894,8 +895,8 @@ Result<Owned<Statement>, Error> Parser::parseAssignment() {
 Result<Owned<Statement>, Error> Parser::parseExit() {
     auto location = previous().location;
     if (!_parsingRepeat) {
-        return Fail(
-            Error(previous().location, Concat("unexpected ", Quoted("exit"), " outside repeat block")));
+        return Fail(Error(previous().location,
+                          Concat("unexpected ", Quoted("exit"), " outside repeat block")));
     }
     if (!consume(Token::Type::Repeat)) {
         return Fail(Error(peek().location, Concat("expected ", Quoted("repeat"))));
@@ -908,8 +909,8 @@ Result<Owned<Statement>, Error> Parser::parseExit() {
 Result<Owned<Statement>, Error> Parser::parseNext() {
     auto location = previous().location;
     if (!_parsingRepeat) {
-        return Fail(
-            Error(previous().location, Concat("unexpected ", Quoted("next"), " outside repeat block")));
+        return Fail(Error(previous().location,
+                          Concat("unexpected ", Quoted("next"), " outside repeat block")));
     }
     if (!consume(Token::Type::Repeat)) {
         return Fail(Error(peek().location, Concat("expected ", Quoted("repeat"))));
@@ -1260,8 +1261,9 @@ Result<Owned<Expression>, Error> Parser::parseCall() {
         for (const auto &candidate : candidates) {
             ambiguousList.push_back(Concat("  ", candidate.signature.name()));
         }
-        return Fail(Error(startToken.location, Concat("ambiguous expression. Possible candidates:\n",
-                                                   Join(ambiguousList, "\n"))));
+        return Fail(
+            Error(startToken.location, Concat("ambiguous expression. Possible candidates:\n",
+                                              Join(ambiguousList, "\n"))));
     }
 
     const auto &candidate = candidates.back();

@@ -155,14 +155,12 @@ System::System() {
             }
             return dictionary;
         });
-    _natives[S("the clock")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
-            return Integer(clock());
-        });
-    _natives[S("the system name")] = MakeStrong<Native>(
-        [this](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
-            return _systemName;
-        });
+    _natives[S("the clock")] =
+        MakeStrong<Native>([](CallFrame &frame, Location location,
+                              Value *values) -> Result<Value, Error> { return Integer(clock()); });
+    _natives[S("the system name")] =
+        MakeStrong<Native>([this](CallFrame &frame, Location location,
+                                  Value *values) -> Result<Value, Error> { return _systemName; });
     _natives[S("the system version")] = MakeStrong<Native>(
         [this](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             return _systemVersion;

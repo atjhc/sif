@@ -61,18 +61,18 @@ static inline Value Peek(std::vector<Value> &stack) { return stack.back(); }
 
 static inline void Push(std::vector<Value> &stack, const Value &value) { stack.push_back(value); }
 
-#define BINARY(OP)                                                                        \
-    auto rhs = Pop(_stack);                                                               \
-    auto lhs = Pop(_stack);                                                               \
-    if (lhs.isInteger() && rhs.isInteger()) {                                             \
-        Push(_stack, lhs.asInteger() OP rhs.asInteger());                                 \
-    } else if (lhs.isNumber() && rhs.isNumber()) {                                        \
-        Push(_stack, lhs.castFloat() OP rhs.castFloat());                                 \
-    } else {                                                                              \
-        error = Error(                                                             \
-            frame().bytecode->location(frame().ip - 1),                                   \
-            Concat("mismatched types: ", lhs.typeName(), " ", #OP, " ", rhs.typeName())); \
-        break;                                                                            \
+#define BINARY(OP)                                                                              \
+    auto rhs = Pop(_stack);                                                                     \
+    auto lhs = Pop(_stack);                                                                     \
+    if (lhs.isInteger() && rhs.isInteger()) {                                                   \
+        Push(_stack, lhs.asInteger() OP rhs.asInteger());                                       \
+    } else if (lhs.isNumber() && rhs.isNumber()) {                                              \
+        Push(_stack, lhs.castFloat() OP rhs.castFloat());                                       \
+    } else {                                                                                    \
+        error =                                                                                 \
+            Error(frame().bytecode->location(frame().ip - 1),                                   \
+                  Concat("mismatched types: ", lhs.typeName(), " ", #OP, " ", rhs.typeName())); \
+        break;                                                                                  \
     }
 
 #if defined(DEBUG)
@@ -126,8 +126,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto offset = ReadJump(frame().ip);
             auto value = Peek(_stack);
             if (!value.isBool()) {
-                error = Error(frame().bytecode->location(frame().ip - 1),
-                                     "expected true or false");
+                error = Error(frame().bytecode->location(frame().ip - 1), "expected true or false");
                 break;
             }
             if (!value.asBool()) {
@@ -139,8 +138,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto offset = ReadJump(frame().ip);
             auto value = Peek(_stack);
             if (!value.isBool()) {
-                error = Error(frame().bytecode->location(frame().ip - 1),
-                                     "expected true or false");
+                error = Error(frame().bytecode->location(frame().ip - 1), "expected true or false");
                 break;
             }
             if (value.asBool()) {
@@ -152,8 +150,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto offset = ReadJump(frame().ip);
             auto enumerator = Peek(_stack).as<Enumerator>();
             if (!enumerator) {
-                error = Error(frame().bytecode->location(frame().ip - 1),
-                                     "expected an enumerator");
+                error = Error(frame().bytecode->location(frame().ip - 1), "expected an enumerator");
                 break;
             }
             if (enumerator->isAtEnd()) {
@@ -199,7 +196,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto enumerable = value.as<Enumerable>();
             if (!enumerable) {
                 error = Error(frame().bytecode->location(frame().ip - 1),
-                                     "expected a list, dictionary, string, or range");
+                              "expected a list, dictionary, string, or range");
                 break;
             }
             Push(_stack, enumerable->enumerator(value));
@@ -293,7 +290,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, -value.asFloat());
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1),
-                                     Concat("expected a number, got ", value.typeName()));
+                              Concat("expected a number, got ", value.typeName()));
                 break;
             }
             break;
@@ -301,8 +298,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::Not: {
             auto value = Pop(_stack);
             if (!value.isBool()) {
-                error = Error(frame().bytecode->location(frame().ip - 1),
-                                     "expected true or false");
+                error = Error(frame().bytecode->location(frame().ip - 1), "expected true or false");
                 break;
             }
             Push(_stack, !value.asBool());
@@ -330,23 +326,20 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto lhs = Pop(_stack);
             if (lhs.isInteger() && rhs.isInteger()) {
                 if (rhs.asInteger() == 0) {
-                    error =
-                        Error(frame().bytecode->location(frame().ip - 1), "divide by zero");
+                    error = Error(frame().bytecode->location(frame().ip - 1), "divide by zero");
                     break;
                 }
                 Push(_stack, lhs.asInteger() / rhs.asInteger());
             } else if (lhs.isNumber() && rhs.isNumber()) {
                 float denom = rhs.castFloat();
                 if (denom == 0.0) {
-                    error =
-                        Error(frame().bytecode->location(frame().ip - 1), "divide by zero");
+                    error = Error(frame().bytecode->location(frame().ip - 1), "divide by zero");
                     break;
                 }
                 Push(_stack, lhs.castFloat() / denom);
             } else {
-                error = Error(
-                    frame().bytecode->location(frame().ip - 1),
-                    Concat("mismatched types: ", lhs.typeName(), " / ", rhs.typeName()));
+                error = Error(frame().bytecode->location(frame().ip - 1),
+                              Concat("mismatched types: ", lhs.typeName(), " / ", rhs.typeName()));
                 break;
             }
             break;
@@ -357,9 +350,8 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (lhs.isNumber() && rhs.isNumber()) {
                 Push(_stack, std::pow(lhs.castFloat(), rhs.castFloat()));
             } else {
-                error = Error(
-                    frame().bytecode->location(frame().ip - 1),
-                    Concat("mismatched types: ", lhs.typeName(), " ^ ", rhs.typeName()));
+                error = Error(frame().bytecode->location(frame().ip - 1),
+                              Concat("mismatched types: ", lhs.typeName(), " ^ ", rhs.typeName()));
                 break;
             }
             break;
@@ -372,9 +364,8 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             } else if (lhs.isNumber() && rhs.isNumber()) {
                 Push(_stack, std::fmod(lhs.castFloat(), rhs.castFloat()));
             } else {
-                error = Error(
-                    frame().bytecode->location(frame().ip - 1),
-                    Concat("mismatched types: ", lhs.typeName(), " % ", rhs.typeName()));
+                error = Error(frame().bytecode->location(frame().ip - 1),
+                              Concat("mismatched types: ", lhs.typeName(), " % ", rhs.typeName()));
                 break;
             }
             break;
@@ -420,7 +411,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 }
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1),
-                                     "expected a list, string, dictionary, or range");
+                              "expected a list, string, dictionary, or range");
                 break;
             }
             break;
@@ -438,7 +429,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 }
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1),
-                                     "expected a list, string, dictionary, or range");
+                              "expected a list, string, dictionary, or range");
                 break;
             }
             break;
@@ -543,7 +534,7 @@ Optional<Error> VirtualMachine::call(Value object, int count) {
         }
     } else {
         return Error(frame().bytecode->location(frame().ip - 3),
-                            "unexpected type for function call");
+                     "unexpected type for function call");
     }
     return None;
 }
@@ -557,7 +548,7 @@ Optional<Error> VirtualMachine::range(Value start, Value end, bool closed) {
     }
     if (end.asInteger() < start.asInteger()) {
         return Error(frame().bytecode->location(frame().ip - 1),
-                            "lower bound must be less than or equal to the upper bound");
+                     "lower bound must be less than or equal to the upper bound");
     }
     Push(_stack, MakeStrong<Range>(start.asInteger(), end.asInteger(), closed));
     return None;

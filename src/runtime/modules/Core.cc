@@ -51,17 +51,15 @@ static void _core(ModuleMap &natives, std::ostream &out, std::istream &in, std::
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             return Value(PatchVersion);
         });
-    natives[S("the error")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
-            return frame.error;
-        });
+    natives[S("the error")] =
+        MakeStrong<Native>([](CallFrame &frame, Location location,
+                              Value *values) -> Result<Value, Error> { return frame.error; });
     natives[S("error with {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             return Fail(Error(location, values[0]));
         });
-    natives[S("quit")] =
-        MakeStrong<Native>([](CallFrame &frame, Location location,
-                              Value *values) -> Result<Value, Error> { exit(0); });
+    natives[S("quit")] = MakeStrong<Native>([](CallFrame &frame, Location location,
+                                               Value *values) -> Result<Value, Error> { exit(0); });
     natives[S("quit with {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             if (!values[0].isInteger()) {
@@ -177,13 +175,11 @@ static void _common(ModuleMap &natives) {
             } else if (auto range = values[0].as<Range>()) {
                 size = range->size();
             } else {
-                return Fail(
-                    Error(location, "expected a string, list, dictionary, or range"));
+                return Fail(Error(location, "expected a string, list, dictionary, or range"));
             }
             return static_cast<long>(size);
         });
-    auto contains = [](Location location, Value object,
-                       Value value) -> Result<Value, Error> {
+    auto contains = [](Location location, Value object, Value value) -> Result<Value, Error> {
         if (auto list = object.as<List>()) {
             return list->contains(value);
         } else if (auto dictionary = object.as<Dictionary>()) {
@@ -204,14 +200,12 @@ static void _common(ModuleMap &natives) {
         }
         return Fail(Error(location, "expected a string, list, dictionary, or range"));
     };
-    natives[S("{} contains {}")] =
-        MakeStrong<Native>([contains](CallFrame &frame, Location location,
-                                      Value *values) -> Result<Value, Error> {
+    natives[S("{} contains {}")] = MakeStrong<Native>(
+        [contains](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             return contains(location, values[0], values[1]);
         });
-    natives[S("{} is in {}")] =
-        MakeStrong<Native>([contains](CallFrame &frame, Location location,
-                                      Value *values) -> Result<Value, Error> {
+    natives[S("{} is in {}")] = MakeStrong<Native>(
+        [contains](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             return contains(location, values[1], values[0]);
         });
 
@@ -261,8 +255,8 @@ static void _common(ModuleMap &natives) {
                 }
                 string->string().append(insertText->string());
             } else {
-                return Fail(Error(
-                    location, Concat("expected a list or string, got ", values[1].typeName())));
+                return Fail(Error(location,
+                                  Concat("expected a list or string, got ", values[1].typeName())));
             }
             return values[1];
         });
@@ -510,9 +504,8 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine,
             }
             return MakeStrong<List>(list->values().rbegin(), list->values().rend());
         });
-    natives[S("shuffle {}")] =
-        MakeStrong<Native>([&engine](CallFrame &frame, Location location,
-                                     Value *values) -> Result<Value, Error> {
+    natives[S("shuffle {}")] = MakeStrong<Native>(
+        [&engine](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Fail(Error(location, "expected a list"));
@@ -520,9 +513,8 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine,
             std::shuffle(list->values().begin(), list->values().end(), engine);
             return list;
         });
-    natives[S("shuffled {}")] =
-        MakeStrong<Native>([&engine](CallFrame &frame, Location location,
-                                     Value *values) -> Result<Value, Error> {
+    natives[S("shuffled {}")] = MakeStrong<Native>(
+        [&engine](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             auto list = values[0].as<List>();
             if (!list) {
                 return Fail(Error(location, "expected a list"));
@@ -888,14 +880,14 @@ static void _range(ModuleMap &natives, std::mt19937_64 &engine,
 
 static void _math(ModuleMap &natives) {
     auto basicFunction = [](double (*func)(double)) -> Strong<Native> {
-        return MakeStrong<Native>([func](CallFrame &frame, Location location,
-                                         Value *values) -> Result<Value, Error> {
-            if (!values[0].isNumber()) {
-                return Fail(Error(location, "expected a number"));
-            }
-            auto argument = values[0].castFloat();
-            return func(argument);
-        });
+        return MakeStrong<Native>(
+            [func](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+                if (!values[0].isNumber()) {
+                    return Fail(Error(location, "expected a number"));
+                }
+                auto argument = values[0].castFloat();
+                return func(argument);
+            });
     };
     natives[S("(the) sin (of) {}")] = basicFunction(sin);
     natives[S("(the) cos (of) {}")] = basicFunction(cos);

@@ -25,14 +25,16 @@ struct ModuleLoaderProxy : public ModuleProvider {
     ModuleLoaderProxy(ModuleLoader &loader);
     virtual ~ModuleLoaderProxy() = default;
 
-    Strong<Module> module(const std::string &source, std::vector<Error> &errors, bool &circular) override;
+    Strong<Module> module(const std::string &source, std::vector<Error> &errors,
+                          bool &circular) override;
 
     ModuleLoader &loader;
 };
 
 ModuleLoaderProxy::ModuleLoaderProxy(ModuleLoader &loader) : loader(loader) {}
 
-Strong<Module> ModuleLoaderProxy::module(const std::string &source, std::vector<Error> &errors, bool &circular) {
+Strong<Module> ModuleLoaderProxy::module(const std::string &source, std::vector<Error> &errors,
+                                         bool &circular) {
     return loader.module(source, errors, circular);
 }
 
@@ -40,7 +42,8 @@ ModuleLoader::ModuleLoader() : _provider(MakeStrong<ModuleLoaderProxy>(*this)) {
 
 Strong<ModuleProvider> ModuleLoader::provider() { return _provider; }
 
-Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error> &errors, bool &circular) {
+Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error> &errors,
+                                    bool &circular) {
     // Check if the module is already in the process of loading,
     // which implies a circular dependency.
     if (_loading.find(source) != _loading.end()) {
