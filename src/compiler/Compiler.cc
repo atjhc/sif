@@ -276,8 +276,12 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     // Add function name and arguments to locals list.
     addLocal(functionDecl.signature.name());
     for (const auto &term : functionDecl.signature.terms) {
-        if (auto arg = std::get_if<Signature::Argument>(&term); arg && arg->token.has_value()) {
-            addLocal(arg->token.value().text);
+        if (auto arg = std::get_if<Signature::Argument>(&term); arg) {
+            if (arg->token.has_value()) {
+                addLocal(arg->token.value().text);
+            } else {
+                addLocal();
+            }
         }
     }
 
