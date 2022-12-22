@@ -37,8 +37,8 @@ print the error
 test error
 --)
 
-function a
-  function b
+function x
+  function y
     error with "test error"
   end function
 end function

@@ -164,7 +164,7 @@ Token::Type Scanner::wordType() {
             case 'x':
                 return checkKeyword(2, 2, "it", Token::Type::Exit);
             case 'm':
-                return checkKeyword(2, 3, "pty", Token::Type::EmptyLiteral);
+                return checkKeyword(2, 3, "pty", Token::Type::Empty);
             }
         }
         break;

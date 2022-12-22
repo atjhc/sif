@@ -108,10 +108,10 @@ print reversed {1, 2, 3, 4}
 4 3 2 1
 --)
 
-set a to {1, 2, 3}
-set b to a copy of a
-insert 4 at the end of b
-print a
+set x to {1, 2, 3}
+set y to a copy of x
+insert 4 at the end of y
+print x
 (-- expect
 1 2 3
 --)
@@ -126,9 +126,9 @@ print join {1, 2, 3} using ", "
 1, 2, 3
 --)
 
--- set a to {1, 2, 3, 4, 5}
--- shuffle a
--- print a
+-- set x to {1, 2, 3, 4, 5}
+-- shuffle x
+-- print x
 (--! expect
 5 2 1 4 3
 --)

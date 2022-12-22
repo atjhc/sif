@@ -152,10 +152,10 @@ print the description of the list of lines in "私の声は\n私のパスワー�
 {"私の声は", "私のパスワード", "です."}
 --)
 
-set a to "hello world"
-set b to a copy of a
-remove characters 6 to 10 from b
-print a
+set x to "hello world"
+set y to a copy of x
+remove characters 6 to 10 from y
+print x
 (-- expect
 hello world
 --)

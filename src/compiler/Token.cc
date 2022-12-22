@@ -27,25 +27,21 @@ bool Token::isWord() const {
     switch (type) {
     case Type::An:
     case Type::And:
-    case Type::Else:
-    case Type::EmptyLiteral:
+    case Type::Empty:
     case Type::End:
     case Type::Exit:
     case Type::For:
     case Type::Forever:
     case Type::Function:
-    case Type::Global:
     case Type::If:
     case Type::In:
     case Type::Is:
-    case Type::Local:
     case Type::Next:
     case Type::Not:
     case Type::Or:
     case Type::Repeat:
     case Type::Return:
     case Type::Set:
-    case Type::Then:
     case Type::To:
     case Type::Try:
     case Type::Until:
@@ -53,6 +49,29 @@ bool Token::isWord() const {
     case Type::Using:
     case Type::While:
     case Type::Word:
+        return true;
+    case Type::Else:
+    case Type::Global:
+    case Type::Local:
+    case Type::Then:
+    default:
+        return false;
+    }
+}
+
+bool Token::isPrimary() const {
+    if (isWord())
+        return true;
+    switch (type) {
+    case Token::Type::LeftBrace:
+    case Token::Type::LeftBracket:
+    case Token::Type::LeftParen:
+    case Token::Type::IntLiteral:
+    case Token::Type::FloatLiteral:
+    case Token::Type::BoolLiteral:
+    case Token::Type::StringLiteral:
+    case Token::Type::Local:
+    case Token::Type::Global:
         return true;
     default:
         return false;

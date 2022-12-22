@@ -38,10 +38,10 @@ print the values of {"one": 1}
 1
 --)
 
-set a to {:}
-set b to a copy of a
-set b["one"] to 1
-print a
+set x to {:}
+set y to a copy of x
+set y["one"] to 1
+print x
 (-- expect
 {:}
 --)

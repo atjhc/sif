@@ -67,10 +67,25 @@ class Parser {
   private:
     using TokenTypes = std::initializer_list<Token::Type>;
 
+    struct Scope {
+        std::vector<Signature> signatures;
+        Set<std::string> variables;
+    };
+
+    struct Grammar {
+        Owned<Grammar> argument;
+        Mapping<std::string, Owned<Grammar>> terms;
+        Optional<Signature> signature;
+
+        bool insert(const Signature &signature, std::vector<Signature::Term>::const_iterator term);
+        bool insert(const Signature &signature) { return insert(signature, signature.terms.cbegin()); }
+
+        bool isLeaf() const;
+    };
+
     bool isAtEnd();
     bool check(const TokenTypes &types);
     Optional<Token> match(const TokenTypes &types);
-    Optional<Token> matchWord();
 
     Optional<Token> consume(Token::Type type);
     Optional<Token> consumeEnd(Token::Type type);
@@ -88,7 +103,7 @@ class Parser {
     void rewind();
     void commit();
 
-    void beginScope();
+    void beginScope(const Scope &scope = Scope());
     void endScope();
 
     NoneType emitError(const Error &error);
@@ -132,6 +147,7 @@ class Parser {
     Result<Owned<Expression>, Error> parseCall();
     Result<Owned<Expression>, Error> parseSubscript();
     Result<Owned<Expression>, Error> parsePrimary();
+    Result<Owned<Expression>, Error> parseVariable();
     Result<Owned<Expression>, Error> parseGrouping();
     Result<Owned<Expression>, Error> parseContainerLiteral();
 
@@ -139,17 +155,11 @@ class Parser {
 
     std::vector<Error> _errors;
 
-    struct Scope {
-        std::vector<Signature> signatures;
-    };
     std::vector<Scope> _scopes;
     std::vector<Signature> _exportedDeclarations;
 
-    struct SignatureDecl {
-        Signature signature;
-        int depth;
-    };
-    std::vector<Variable> _variableDecls;
+    Grammar _grammar;
+    Set<std::string> _variables;
 
     std::vector<Token> _tokens;
     std::stack<size_t> _saved;

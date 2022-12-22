@@ -633,7 +633,7 @@ void Compiler::visit(const Literal &literal) {
         }
     }
 
-    if (literal.token.type == Token::Type::EmptyLiteral) {
+    if (literal.token.type == Token::Type::Empty) {
         bytecode().add(literal.location, Opcode::Empty);
         return;
     }

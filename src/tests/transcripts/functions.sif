@@ -59,7 +59,7 @@ print current time
 function an/the H
     return "H"
 end
-print an H
+print an h
 print the H
 (-- expect
 H

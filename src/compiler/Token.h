@@ -35,7 +35,7 @@ struct Token {
         Colon,
         Comma,
         Else,
-        EmptyLiteral,
+        Empty,
         End,
         EndOfFile,
         Equal,
@@ -94,6 +94,7 @@ struct Token {
     Token(Type type, Location location);
 
     bool isWord() const;
+    bool isPrimary() const;
     bool isEndOfStatement() const;
 
     std::string encodedString() const;
