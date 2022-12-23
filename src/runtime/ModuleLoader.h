@@ -24,18 +24,15 @@
 
 SIF_NAMESPACE_BEGIN
 
-class ModuleLoader {
+class ModuleLoader : public ModuleProvider {
   public:
     ModuleLoader();
 
-    Strong<ModuleProvider> provider();
-
-    Strong<Module> module(const std::string &source, std::vector<Error> &errors, bool &circular);
+    Strong<Module> module(const std::string &source, std::vector<Error> &errors, bool &circular) override;
 
   private:
     Set<std::string> _loading;
     Mapping<std::string, Strong<UserModule>> _modules;
-    Strong<ModuleProvider> _provider;
 };
 
 SIF_NAMESPACE_END

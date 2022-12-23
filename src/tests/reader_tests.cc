@@ -17,6 +17,7 @@
 #include "compiler/Parser.h"
 #include "compiler/Reader.h"
 #include "compiler/Scanner.h"
+#include "runtime/ModuleLoader.h"
 #include "tests/TestSuite.h"
 
 #include <string>
@@ -44,11 +45,12 @@ class TestReader : public Reader {
 };
 
 static Strong<Statement> test(const std::vector<std::string> &source) {
-    ParserConfig config;
-    config.scanner = MakeStrong<Scanner>();
-    config.reader = MakeStrong<TestReader>(source.begin(), source.end());
-    auto parser = MakeStrong<Parser>(config);
-    return parser->statement();
+    auto scanner = Scanner();
+    auto reader = TestReader(source.begin(), source.end());
+    auto loader = ModuleLoader();
+    ParserConfig config{scanner, reader, loader};
+    auto parser = Parser(config);
+    return parser.statement();
 }
 
 TEST_CASE(ReaderTests, If) {
@@ -147,13 +149,14 @@ class ErrorReader : public Reader {
 };
 
 TEST_CASE(ReaderTests, Error) {
-    ParserConfig config;
-    config.scanner = MakeStrong<Scanner>();
-    config.reader = MakeStrong<ErrorReader>();
-    auto parser = MakeStrong<Parser>(config);
-    auto result = parser->statement();
+    auto scanner = Scanner();
+    auto reader = ErrorReader();
+    auto loader = ModuleLoader();
+    ParserConfig config{scanner, reader, loader};
+    auto parser = Parser(config);
+    auto result = parser.statement();
 
     ASSERT_NULL(result);
-    ASSERT_EQ(parser->errors().size(), 1);
-    ASSERT_EQ(std::string(parser->errors()[0].what()), "failed to read");
+    ASSERT_EQ(parser.errors().size(), 1);
+    ASSERT_EQ(std::string(parser.errors()[0].what()), "failed to read");
 };

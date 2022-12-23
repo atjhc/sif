@@ -20,6 +20,7 @@
 #include "runtime/VirtualMachine.h"
 #include "runtime/modules/Core.h"
 #include "runtime/objects/List.h"
+#include "runtime/ModuleLoader.h"
 #include "tests/TestSuite.h"
 
 #include <filesystem>
@@ -77,9 +78,10 @@ TEST_CASE(TranscriptTests, All) {
         auto expectedResult = gather(source, "expect");
         auto input = gather(source, "input");
 
-        ParserConfig config;
-        config.scanner = MakeStrong<Scanner>();
-        config.reader = MakeStrong<StringReader>(source);
+        auto scanner = Scanner();
+        auto reader = StringReader(source);
+        auto loader = ModuleLoader();
+        ParserConfig config{scanner, reader, loader};
         Parser parser(config);
 
         for (const auto &signature : Core().signatures()) {
@@ -91,7 +93,7 @@ TEST_CASE(TranscriptTests, All) {
         if (!statement)
             continue;
 
-        Compiler compiler;
+        Compiler compiler({loader});
         auto bytecode = compiler.compile(*statement);
         ASSERT_TRUE(bytecode) << path << " failed to compile" << std::endl
                               << Join(compiler.errors(), "\n") << std::endl;

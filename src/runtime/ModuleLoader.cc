@@ -38,9 +38,7 @@ Strong<Module> ModuleLoaderProxy::module(const std::string &source, std::vector<
     return loader.module(source, errors, circular);
 }
 
-ModuleLoader::ModuleLoader() : _provider(MakeStrong<ModuleLoaderProxy>(*this)) {}
-
-Strong<ModuleProvider> ModuleLoader::provider() { return _provider; }
+ModuleLoader::ModuleLoader() {}
 
 Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error> &errors,
                                     bool &circular) {
@@ -58,13 +56,11 @@ Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error
     }
 
     _loading.insert(source);
-    auto reader = MakeStrong<FileReader>(source);
-    auto scanner = MakeStrong<Scanner>();
 
-    ParserConfig parserConfig;
-    parserConfig.scanner = scanner;
-    parserConfig.reader = reader;
-    parserConfig.moduleProvider = _provider;
+    auto scanner = Scanner();
+    auto reader = FileReader(source);
+
+    ParserConfig parserConfig{scanner, reader, *this};
     Parser parser(parserConfig);
 
     Core core;
@@ -86,8 +82,7 @@ Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error
     }
 
     // Compile the bytecode for the new module.
-    CompilerConfig compilerConfig;
-    compilerConfig.moduleProvider = _provider;
+    CompilerConfig compilerConfig{*this};
     Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {

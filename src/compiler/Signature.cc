@@ -18,6 +18,7 @@
 #include "Utilities.h"
 #include "compiler/Parser.h"
 #include "compiler/Scanner.h"
+#include "runtime/ModuleLoader.h"
 
 SIF_NAMESPACE_BEGIN
 
@@ -62,9 +63,10 @@ static inline std::ostream &operator<<(std::ostream &out, const Signature::Term 
 }
 
 Result<Signature, Error> Signature::Make(const std::string &format) {
-    ParserConfig config;
-    config.scanner = MakeStrong<Scanner>();
-    config.reader = MakeStrong<StringReader>(format);
+    auto scanner = Scanner();
+    auto reader = StringReader(format);
+    auto loader = ModuleLoader();
+    ParserConfig config{scanner, reader, loader};
     Parser parser(config);
     auto signature = parser.signature();
     if (!signature) {

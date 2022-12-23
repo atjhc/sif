@@ -330,7 +330,7 @@ void Compiler::visit(const Use &useStatement) {
     std::vector<Error> outErrors;
     bool outIsCircular;
     auto source = useStatement.target.encodedString();
-    auto module = _config.moduleProvider->module(source, outErrors, outIsCircular);
+    auto module = _config.moduleProvider.module(source, outErrors, outIsCircular);
     if (!module) {
         for (const auto &error : outErrors) {
             _errors.push_back(error);
@@ -350,7 +350,7 @@ void Compiler::visit(const Using &usingStatement) {
     std::vector<Error> outErrors;
     bool outIsCircular;
     auto source = usingStatement.target.encodedString();
-    auto module = _config.moduleProvider->module(source, outErrors, outIsCircular);
+    auto module = _config.moduleProvider.module(source, outErrors, outIsCircular);
     if (!module) {
         for (const auto &error : outErrors) {
             _errors.push_back(error);

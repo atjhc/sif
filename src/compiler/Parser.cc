@@ -52,12 +52,12 @@ Parser::Parser(const ParserConfig &config) : _config(config) {
 Parser::~Parser() {}
 
 Owned<Statement> Parser::statement() {
-    auto error = _config.reader->read(0);
+    auto error = _config.reader.read(0);
     if (error) {
         _errors.push_back(error.value());
         return nullptr;
     }
-    _config.scanner->reset(_config.reader->contents());
+    _config.scanner.reset(_config.reader.contents());
 
     auto block = parseBlock({});
     if (_errors.size()) {
@@ -67,12 +67,12 @@ Owned<Statement> Parser::statement() {
 }
 
 Optional<Signature> Parser::signature() {
-    auto error = _config.reader->read(0);
+    auto error = _config.reader.read(0);
     if (error) {
         emitError(error.value());
         return None;
     }
-    _config.scanner->reset(_config.reader->contents());
+    _config.scanner.reset(_config.reader.contents());
 
     auto signature = parseSignature();
     if (_errors.size()) {
@@ -123,13 +123,13 @@ Optional<Token> Parser::consumeEnd(Token::Type type) {
 }
 
 bool Parser::consumeNewLine() {
-    if (isAtEnd() && _parsingDepth > 0 && _config.reader->readable()) {
-        auto error = _config.reader->read(_parsingDepth);
+    if (isAtEnd() && _parsingDepth > 0 && _config.reader.readable()) {
+        auto error = _config.reader.read(_parsingDepth);
         if (error) {
             emitError(error.value());
             return false;
         }
-        _config.scanner->reset(_config.reader->contents());
+        _config.scanner.reset(_config.reader.contents());
         _tokens[_index].type = Token::Type::NewLine;
         advance();
         return true;
@@ -159,7 +159,7 @@ bool Parser::check(const Parser::TokenTypes &types) {
 bool Parser::isAtEnd() { return peek().type == Token::Type::EndOfFile; }
 
 Token Parser::scan() {
-    auto token = _config.scanner->scan();
+    auto token = _config.scanner.scan();
     _tokens.push_back(token);
     trace(Concat("Scanned: ", Describe(token)));
 #if defined(DEBUG)
@@ -568,7 +568,7 @@ Owned<Statement> Parser::parseUse() {
     std::vector<Error> outErrors;
     bool outIsCircular;
     auto source = token.value().encodedString();
-    auto module = _config.moduleProvider->module(source, outErrors, outIsCircular);
+    auto module = _config.moduleProvider.module(source, outErrors, outIsCircular);
     if (module) {
         Append(_scopes.back().signatures, module->signatures());
     } else {
@@ -597,7 +597,7 @@ Owned<Statement> Parser::parseUsing() {
     std::vector<Error> outErrors;
     bool outIsCircular;
     auto source = token.value().encodedString();
-    auto module = _config.moduleProvider->module(source, outErrors, outIsCircular);
+    auto module = _config.moduleProvider.module(source, outErrors, outIsCircular);
     if (module) {
         beginScope(Scope{module->signatures()});
     } else {

@@ -17,6 +17,7 @@
 #include "compiler/Parser.h"
 #include "compiler/Reader.h"
 #include "compiler/Scanner.h"
+#include "runtime/ModuleLoader.h"
 #include "tests/TestSuite.h"
 
 #include <string>
@@ -25,12 +26,13 @@
 using namespace sif;
 
 static std::vector<Error> errors(const std::string &source) {
-    ParserConfig config;
-    config.scanner = MakeStrong<Scanner>();
-    config.reader = MakeStrong<StringReader>(source);
-    auto parser = MakeStrong<Parser>(config);
-    parser->statement();
-    return parser->errors();
+    auto scanner = Scanner();
+    auto reader = StringReader(source);
+    auto loader = ModuleLoader();
+    ParserConfig config{scanner, reader, loader};
+    auto parser = Parser(config);
+    parser.statement();
+    return parser.errors();
 }
 
 TEST_CASE(ErrorsTests, ErrorRecoveryForBlockStatements) {

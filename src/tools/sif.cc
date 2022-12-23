@@ -96,13 +96,10 @@ void report(const std::string &name, Location location, const std::string &sourc
     }
 }
 
-int evaluate(const std::string &name, Strong<Reader> reader) {
-    auto scanner = MakeStrong<Scanner>();
+int evaluate(const std::string &name, Reader &reader) {
+    auto scanner = Scanner();
 
-    ParserConfig parserConfig;
-    parserConfig.scanner = scanner;
-    parserConfig.reader = reader;
-    parserConfig.moduleProvider = loader.provider();
+    ParserConfig parserConfig{scanner, reader, loader};
 #if defined(DEBUG)
     parserConfig.enableTracing = traceParsing;
 #endif
@@ -120,7 +117,7 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
     auto statement = parser.statement();
     if (!statement) {
         for (auto error : parser.errors()) {
-            report(name, error.location(), reader->contents(),
+            report(name, error.location(), reader.contents(),
                    Concat("parse error, ", error.what()));
         }
         return ParseFailure;
@@ -133,14 +130,12 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
         return Success;
     }
 
-    CompilerConfig compilerConfig;
-    compilerConfig.moduleProvider = loader.provider();
-
+    CompilerConfig compilerConfig{loader};
     Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
         for (auto error : compiler.errors()) {
-            report(name, error.location(), reader->contents(),
+            report(name, error.location(), reader.contents(),
                    Concat("compile error, ", error.what()));
         }
         return CompileFailure;
@@ -156,7 +151,7 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
         std::cerr << name << ":" << result.error().location().lineNumber << ": "
                   << Concat("runtime error, ", result.error().what()) << std::endl;
         std::cerr << index_chunk(chunk::line, result.error().location().lineNumber - 1,
-                                 reader->contents())
+                                 reader.contents())
                          .get()
                   << std::endl;
         return RuntimeFailure;
@@ -167,7 +162,8 @@ int evaluate(const std::string &name, Strong<Reader> reader) {
 
 static int repl(const std::vector<std::string> &arguments) {
     while (!std::cin.eof()) {
-        evaluate("<stdin>", MakeStrong<REPLReader>());
+        auto reader = REPLReader();
+        evaluate("<stdin>", reader);
     }
     return 0;
 }
@@ -175,15 +171,18 @@ static int repl(const std::vector<std::string> &arguments) {
 static int run(const std::vector<std::string> &arguments) {
     std::ostringstream ss;
     ss << std::cin.rdbuf();
-    return evaluate("<stdin>", MakeStrong<StringReader>(ss.str()));
+    auto reader = StringReader(ss.str());
+    return evaluate("<stdin>", reader);
 }
 
 static int run_source(const char *source, const std::vector<std::string> &arguments) {
-    return evaluate("<argument>", MakeStrong<StringReader>(source));
+    auto reader = StringReader(source);
+    return evaluate("<argument>", reader);
 }
 
 static int run_file(const std::string &fileName, const std::vector<std::string> &arguments) {
-    return evaluate(fileName, MakeStrong<FileReader>(fileName));
+    auto reader = FileReader(fileName);
+    return evaluate(fileName, reader);
 }
 
 int usage(int argc, char *argv[]) {

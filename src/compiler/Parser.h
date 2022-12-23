@@ -35,20 +35,13 @@ class SignatureProvider {
 };
 
 struct ParserConfig {
-    std::string fileName;
-    std::ostream &cerr;
-
-    Strong<Scanner> scanner;
-    Strong<Reader> reader;
-
-    Strong<ModuleProvider> moduleProvider;
+    Scanner &scanner;
+    Reader &reader;
+    ModuleProvider &moduleProvider;
 
 #if defined(DEBUG)
     bool enableTracing = false;
 #endif
-
-    ParserConfig(const std::string &n = "<stdin>", std::ostream &cerr = std::cerr)
-        : fileName(n), cerr(cerr) {}
 };
 
 class Parser {

@@ -28,12 +28,12 @@
 SIF_NAMESPACE_BEGIN
 
 struct CompilerConfig {
-    Strong<ModuleProvider> moduleProvider;
+    ModuleProvider &moduleProvider;
 };
 
 class Compiler : public Statement::Visitor, public Expression::Visitor {
   public:
-    Compiler(const CompilerConfig &config = CompilerConfig());
+    Compiler(const CompilerConfig &config);
 
     Strong<Bytecode> compile(const Statement &statement);
 
