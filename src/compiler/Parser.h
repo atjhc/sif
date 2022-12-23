@@ -29,11 +29,6 @@
 
 SIF_NAMESPACE_BEGIN
 
-class SignatureProvider {
-  public:
-    virtual Result<std::vector<Signature>, Error> signatures(const std::string &name) = 0;
-};
-
 struct ParserConfig {
     Scanner &scanner;
     Reader &reader;
