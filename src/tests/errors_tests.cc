@@ -29,10 +29,11 @@ static std::vector<Error> errors(const std::string &source) {
     auto scanner = Scanner();
     auto reader = StringReader(source);
     auto loader = ModuleLoader();
-    ParserConfig config{scanner, reader, loader};
+    auto reporter = CaptureReporter();
+    ParserConfig config{scanner, reader, loader, reporter};
     auto parser = Parser(config);
     parser.statement();
-    return parser.errors();
+    return reporter.errors();
 }
 
 TEST_CASE(ErrorsTests, ErrorRecoveryForBlockStatements) {

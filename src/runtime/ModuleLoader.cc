@@ -19,34 +19,17 @@
 #include "runtime/modules/Core.h"
 #include "runtime/modules/System.h"
 
+#include "compiler/Reporter.h"
+
 SIF_NAMESPACE_BEGIN
-
-struct ModuleLoaderProxy : public ModuleProvider {
-    ModuleLoaderProxy(ModuleLoader &loader);
-    virtual ~ModuleLoaderProxy() = default;
-
-    Strong<Module> module(const std::string &source, std::vector<Error> &errors,
-                          bool &circular) override;
-
-    ModuleLoader &loader;
-};
-
-ModuleLoaderProxy::ModuleLoaderProxy(ModuleLoader &loader) : loader(loader) {}
-
-Strong<Module> ModuleLoaderProxy::module(const std::string &source, std::vector<Error> &errors,
-                                         bool &circular) {
-    return loader.module(source, errors, circular);
-}
 
 ModuleLoader::ModuleLoader() {}
 
-Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error> &errors,
-                                    bool &circular) {
+Result<Strong<Module>, Error> ModuleLoader::module(const std::string &source) {
     // Check if the module is already in the process of loading,
     // which implies a circular dependency.
     if (_loading.find(source) != _loading.end()) {
-        circular = true;
-        return nullptr;
+        return Fail(Error("Circular module import"));
     }
 
     // Check if the module has already been loaded.
@@ -54,13 +37,12 @@ Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error
     if (it != _modules.end()) {
         return it->second;
     }
-
     _loading.insert(source);
 
     auto scanner = Scanner();
     auto reader = FileReader(source);
-
-    ParserConfig parserConfig{scanner, reader, *this};
+    auto reporter = BasicReporter(source, reader.contents());
+    ParserConfig parserConfig{scanner, reader, *this, reporter};
     Parser parser(parserConfig);
 
     Core core;
@@ -77,7 +59,6 @@ Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error
     // Parse the new module.
     auto statement = parser.statement();
     if (!statement) {
-        errors.insert(errors.end(), parser.errors().begin(), parser.errors().end());
         return nullptr;
     }
 
@@ -86,7 +67,6 @@ Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error
     Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
-        errors.insert(errors.end(), compiler.errors().begin(), compiler.errors().end());
         return nullptr;
     }
 
@@ -103,8 +83,7 @@ Strong<Module> ModuleLoader::module(const std::string &source, std::vector<Error
     // Execute the new module to evaluate the exported values.
     auto result = vm.execute(bytecode);
     if (!result) {
-        errors.push_back(result.error());
-        return nullptr;
+        return Fail(result.error());
     }
 
     _loading.erase(source);

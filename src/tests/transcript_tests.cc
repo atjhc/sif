@@ -81,7 +81,8 @@ TEST_CASE(TranscriptTests, All) {
         auto scanner = Scanner();
         auto reader = StringReader(source);
         auto loader = ModuleLoader();
-        ParserConfig config{scanner, reader, loader};
+        auto reporter = CaptureReporter();
+        ParserConfig config{scanner, reader, loader, reporter};
         Parser parser(config);
 
         for (const auto &signature : Core().signatures()) {
@@ -89,7 +90,7 @@ TEST_CASE(TranscriptTests, All) {
         }
         auto statement = parser.statement();
         ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl
-                               << Join(parser.errors(), "\n") << std::endl;
+                               << Join(reporter.errors(), "\n") << std::endl;
         if (!statement)
             continue;
 

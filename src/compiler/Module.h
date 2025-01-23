@@ -29,8 +29,7 @@ class Module {
 
 class ModuleProvider {
   public:
-    virtual Strong<Module> module(const std::string &source, std::vector<Error> &errors,
-                                  bool &circular) = 0;
+    virtual Result<Strong<Module>, Error> module(const std::string &name) = 0;
 };
 
 class UserModule : public Module {

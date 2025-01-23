@@ -22,6 +22,7 @@
 #include "ast/Statement.h"
 #include "compiler/Module.h"
 #include "compiler/Scanner.h"
+#include "compiler/Reporter.h"
 
 #include <iostream>
 #include <set>
@@ -33,6 +34,7 @@ struct ParserConfig {
     Scanner &scanner;
     Reader &reader;
     ModuleProvider &moduleProvider;
+    Reporter &reporter;
 
 #if defined(DEBUG)
     bool enableTracing = false;
@@ -50,7 +52,6 @@ class Parser {
     void declare(const Signature &signature);
 
     const std::vector<Signature> &declarations() const;
-    const std::vector<Error> &errors() const;
 
   private:
     using TokenTypes = std::initializer_list<Token::Type>;
@@ -141,8 +142,6 @@ class Parser {
 
     ParserConfig _config;
 
-    std::vector<Error> _errors;
-
     std::vector<Scope> _scopes;
     std::vector<Signature> _exportedDeclarations;
 
@@ -156,6 +155,8 @@ class Parser {
     bool _recording;
     bool _parsingRepeat;
     int _parsingDepth;
+
+    bool _failed;
 };
 
 SIF_NAMESPACE_END

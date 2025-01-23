@@ -98,8 +98,9 @@ void report(const std::string &name, Location location, const std::string &sourc
 
 int evaluate(const std::string &name, Reader &reader) {
     auto scanner = Scanner();
+    auto reporter = BasicReporter(name, reader.contents());
 
-    ParserConfig parserConfig{scanner, reader, loader};
+    ParserConfig parserConfig{scanner, reader, loader, reporter};
 #if defined(DEBUG)
     parserConfig.enableTracing = traceParsing;
 #endif
@@ -116,10 +117,6 @@ int evaluate(const std::string &name, Reader &reader) {
 
     auto statement = parser.statement();
     if (!statement) {
-        for (auto error : parser.errors()) {
-            report(name, error.location(), reader.contents(),
-                   Concat("parse error, ", error.what()));
-        }
         return ParseFailure;
     }
 

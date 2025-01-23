@@ -17,22 +17,36 @@
 #pragma once
 
 #include "Common.h"
-#include "compiler/Compiler.h"
-#include "compiler/Module.h"
-#include "compiler/Parser.h"
-#include "compiler/Scanner.h"
+#include "Error.h"
 
 SIF_NAMESPACE_BEGIN
 
-class ModuleLoader : public ModuleProvider {
-  public:
-    ModuleLoader();
+class Reporter {
+public:
+    virtual void report(const Error &error) = 0;
+};
 
-    Result<Strong<Module>, Error> module(const std::string &name) override;
+class BasicReporter : public Reporter {
+public:
+    BasicReporter(const std::string &name, const std::string &source);
 
-  private:
-    Set<std::string> _loading;
-    Mapping<std::string, Strong<UserModule>> _modules;
+    void report(const Error &error) override;
+
+private:
+    const std::string &_name;
+    const std::string &_source;
+};
+
+class CaptureReporter : public Reporter {
+public:
+    virtual ~CaptureReporter() = default;
+
+    void report(const Error &error) override;
+
+    const std::vector<Error> &errors() const;
+
+private:
+    std::vector<Error> _errors;
 };
 
 SIF_NAMESPACE_END

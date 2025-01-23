@@ -327,17 +327,12 @@ void Compiler::visit(const Try &tryStatement) {
 }
 
 void Compiler::visit(const Use &useStatement) {
-    std::vector<Error> outErrors;
-    bool outIsCircular;
     auto source = useStatement.target.encodedString();
-    auto module = _config.moduleProvider.module(source, outErrors, outIsCircular);
+    auto module = _config.moduleProvider.module(source);
     if (!module) {
-        for (const auto &error : outErrors) {
-            _errors.push_back(error);
-        }
         return;
     }
-    for (const auto &pair : module->values()) {
+    for (const auto &pair : module.value()->values()) {
         const auto &name = pair.first;
         const auto &value = pair.second;
         auto constant = bytecode().addConstant(value);
@@ -347,19 +342,13 @@ void Compiler::visit(const Use &useStatement) {
 }
 
 void Compiler::visit(const Using &usingStatement) {
-    std::vector<Error> outErrors;
-    bool outIsCircular;
     auto source = usingStatement.target.encodedString();
-    auto module = _config.moduleProvider.module(source, outErrors, outIsCircular);
+    auto module = _config.moduleProvider.module(source);
     if (!module) {
-        for (const auto &error : outErrors) {
-            _errors.push_back(error);
-        }
         return;
     }
-
     beginScope();
-    for (const auto &pair : module->values()) {
+    for (const auto &pair : module.value()->values()) {
         const auto &name = pair.first;
         const auto &value = pair.second;
         auto constant = bytecode().addConstant(value);

@@ -54,13 +54,13 @@ Parser::~Parser() {}
 Owned<Statement> Parser::statement() {
     auto error = _config.reader.read(0);
     if (error) {
-        _errors.push_back(error.value());
+        emitError(error.value());
         return nullptr;
     }
     _config.scanner.reset(_config.reader.contents());
 
     auto block = parseBlock({});
-    if (_errors.size()) {
+    if (_failed) {
         return nullptr;
     }
     return block;
@@ -75,7 +75,7 @@ Optional<Signature> Parser::signature() {
     _config.scanner.reset(_config.reader.contents());
 
     auto signature = parseSignature();
-    if (_errors.size()) {
+    if (_failed) {
         return None;
     }
     return signature;
@@ -87,8 +87,6 @@ void Parser::declare(const Signature &signature) {
 }
 
 const std::vector<Signature> &Parser::declarations() const { return _exportedDeclarations; }
-
-const std::vector<Error> &Parser::errors() const { return _errors; }
 
 #pragma mark - Utilities
 
@@ -216,7 +214,8 @@ Token Parser::synchronize(const Parser::TokenTypes &tokenTypes) {
 }
 
 NoneType Parser::emitError(const Error &error) {
-    _errors.push_back(error);
+    _failed = true;
+    _config.reporter.report(error);
     return None;
 }
 
@@ -566,18 +565,12 @@ Owned<Statement> Parser::parseUse() {
     consumeNewLine();
 
     std::vector<Error> outErrors;
-    bool outIsCircular;
     auto source = token.value().encodedString();
-    auto module = _config.moduleProvider.module(source, outErrors, outIsCircular);
-    if (module) {
-        Append(_scopes.back().signatures, module->signatures());
-    } else {
-        for (const auto &error : outErrors) {
-            emitError(error);
-        }
-        if (outIsCircular) {
-            emitError(Error(location, "circular module import"));
-        }
+    auto module = _config.moduleProvider.module(source);
+    if (module && module.value()) {
+        Append(_scopes.back().signatures, module.value()->signatures());
+    } else if (!module) {
+        emitError(Error(location, module.error().what()));
     }
 
     auto useStatement = MakeOwned<Use>(token.value());
@@ -589,24 +582,18 @@ Owned<Statement> Parser::parseUsing() {
     auto location = previous().location;
     Optional<Token> token = consume(Token::Type::StringLiteral);
     if (!token) {
-        emitError(Error(peek().location, "expected a string literal"));
+        emitError(Error(peek().location, "Expected a string literal"));
         synchronize();
         return nullptr;
     }
 
     std::vector<Error> outErrors;
-    bool outIsCircular;
     auto source = token.value().encodedString();
-    auto module = _config.moduleProvider.module(source, outErrors, outIsCircular);
-    if (module) {
-        beginScope(Scope{module->signatures()});
-    } else {
-        for (const auto &error : outErrors) {
-            emitError(error);
-        }
-        if (outIsCircular) {
-            emitError(Error(location, "circular module import"));
-        }
+    auto module = _config.moduleProvider.module(source);
+    if (module && module.value()) {
+        beginScope(Scope{module.value()->signatures()});
+    } else if (!module) {
+        emitError(Error(location, module.error().what()));
     }
 
     Owned<Statement> statement;

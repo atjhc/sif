@@ -66,11 +66,12 @@ Result<Signature, Error> Signature::Make(const std::string &format) {
     auto scanner = Scanner();
     auto reader = StringReader(format);
     auto loader = ModuleLoader();
-    ParserConfig config{scanner, reader, loader};
+    auto reporter = CaptureReporter();
+    ParserConfig config{scanner, reader, loader, reporter};
     Parser parser(config);
     auto signature = parser.signature();
     if (!signature) {
-        return Fail(parser.errors().front());
+        return Fail(reporter.errors()[0]);
     }
     return signature.value();
 }

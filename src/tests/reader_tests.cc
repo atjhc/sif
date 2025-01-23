@@ -48,7 +48,8 @@ static Strong<Statement> test(const std::vector<std::string> &source) {
     auto scanner = Scanner();
     auto reader = TestReader(source.begin(), source.end());
     auto loader = ModuleLoader();
-    ParserConfig config{scanner, reader, loader};
+    auto reporter = CaptureReporter();
+    ParserConfig config{scanner, reader, loader, reporter};
     auto parser = Parser(config);
     return parser.statement();
 }
@@ -152,11 +153,12 @@ TEST_CASE(ReaderTests, Error) {
     auto scanner = Scanner();
     auto reader = ErrorReader();
     auto loader = ModuleLoader();
-    ParserConfig config{scanner, reader, loader};
+    auto reporter = CaptureReporter();
+    ParserConfig config{scanner, reader, loader, reporter};
     auto parser = Parser(config);
     auto result = parser.statement();
 
     ASSERT_NULL(result);
-    ASSERT_EQ(parser.errors().size(), 1);
-    ASSERT_EQ(std::string(parser.errors()[0].what()), "failed to read");
+    ASSERT_EQ(reporter.errors().size(), 1);
+    ASSERT_EQ(std::string(reporter.errors()[0].what()), "failed to read");
 };
