@@ -22,13 +22,24 @@
 #include "compiler/Parser.h"
 #include "compiler/Scanner.h"
 
+#include <filesystem>
+
 SIF_NAMESPACE_BEGIN
+
+struct ModuleLoaderConfig {
+    std::vector<std::filesystem::path> searchPaths;
+#if defined(DEBUG)
+    bool enableTracing = false;
+#endif
+};
 
 class ModuleLoader : public ModuleProvider {
   public:
-    ModuleLoader();
+    ModuleLoader(const ModuleLoaderConfig &config = ModuleLoaderConfig()) : config(config){};
 
     Result<Strong<Module>, Error> module(const std::string &name) override;
+
+    ModuleLoaderConfig config;
 
   private:
     Set<std::string> _loading;

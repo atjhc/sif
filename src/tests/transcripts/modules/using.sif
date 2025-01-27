@@ -1,0 +1,12 @@
+using "module1.sif"
+  say hello
+  using "module2.sif"
+    say goodbye
+  end using
+  say hello
+end using
+(-- expect
+Hello!
+Goodbye!
+Hello!
+--)

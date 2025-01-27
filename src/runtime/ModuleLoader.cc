@@ -23,25 +23,35 @@
 
 SIF_NAMESPACE_BEGIN
 
-ModuleLoader::ModuleLoader() {}
-
-Result<Strong<Module>, Error> ModuleLoader::module(const std::string &source) {
+Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
     // Check if the module is already in the process of loading,
     // which implies a circular dependency.
-    if (_loading.find(source) != _loading.end()) {
+    if (_loading.find(name) != _loading.end()) {
         return Fail(Error("Circular module import"));
     }
 
     // Check if the module has already been loaded.
-    auto it = _modules.find(source);
+    auto it = _modules.find(name);
     if (it != _modules.end()) {
         return it->second;
     }
-    _loading.insert(source);
+    _loading.insert(name);
+
+    std::filesystem::path modulePath;
+    for (auto &&location : config.searchPaths) {
+        std::filesystem::path path = location / name;
+        if (std::filesystem::exists(path)) {
+            modulePath = path;
+        }
+    }
+
+    if (modulePath.empty()) {
+        return Fail(Error("module not found"));
+    }
 
     auto scanner = Scanner();
-    auto reader = FileReader(source);
-    auto reporter = BasicReporter(source, reader.contents());
+    auto reader = FileReader(modulePath.string());
+    auto reporter = BasicReporter(name, reader.contents());
     ParserConfig parserConfig{scanner, reader, *this, reporter};
     Parser parser(parserConfig);
 
@@ -86,10 +96,10 @@ Result<Strong<Module>, Error> ModuleLoader::module(const std::string &source) {
         return Fail(result.error());
     }
 
-    _loading.erase(source);
-    auto userModule = MakeStrong<UserModule>(source, parser.declarations(), vm.exports());
-    _modules[source] = userModule;
-    return userModule;
+    _loading.erase(name);
+    auto module = MakeStrong<UserModule>(name, parser.declarations(), vm.exports());
+    _modules[name] = module;
+    return module;
 }
 
 SIF_NAMESPACE_END

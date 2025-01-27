@@ -1,0 +1,3 @@
+function say goodbye
+  print "Goodbye!"
+end function

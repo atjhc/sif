@@ -179,6 +179,8 @@ static int run_source(const char *source, const std::vector<std::string> &argume
 
 static int run_file(const std::string &fileName, const std::vector<std::string> &arguments) {
     auto reader = FileReader(fileName);
+    std::filesystem::path directoryPath = std::filesystem::path(fileName).parent_path();
+    loader.config.searchPaths.push_back(directoryPath);
     return evaluate(fileName, reader);
 }
 

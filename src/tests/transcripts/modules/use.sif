@@ -1,0 +1,5 @@
+use "module1.sif"
+say hello
+(-- expect
+Hello!
+--)

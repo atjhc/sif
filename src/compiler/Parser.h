@@ -21,8 +21,8 @@
 #include "ast/Expression.h"
 #include "ast/Statement.h"
 #include "compiler/Module.h"
-#include "compiler/Scanner.h"
 #include "compiler/Reporter.h"
+#include "compiler/Scanner.h"
 
 #include <iostream>
 #include <set>
@@ -67,9 +67,11 @@ class Parser {
         Optional<Signature> signature;
 
         bool insert(const Signature &signature, std::vector<Signature::Term>::const_iterator term);
-        bool insert(const Signature &signature) { return insert(signature, signature.terms.cbegin()); }
+        bool insert(const Signature &signature) {
+            return insert(signature, signature.terms.cbegin());
+        }
 
-        bool isLeaf() const;
+        bool isLeaf() const { return argument == nullptr && terms.size() == 0; }
     };
 
     bool isAtEnd();

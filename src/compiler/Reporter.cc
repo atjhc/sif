@@ -21,22 +21,20 @@
 
 SIF_NAMESPACE_BEGIN
 
-BasicReporter::BasicReporter(const std::string &name, const std::string &source) : _name(name), _source(source) {}
+BasicReporter::BasicReporter(const std::string &name, const std::string &source)
+    : _name(name), _source(source) {}
 
 void BasicReporter::report(const Error &error) {
     std::cerr << _name << ":" << error.location() << ": Error: " << error.what() << std::endl;
     if (error.location().position > 0) {
-        std::cerr << index_chunk(chunk::line, error.location().lineNumber - 1, _source).get() << std::endl;
+        std::cerr << index_chunk(chunk::line, error.location().lineNumber - 1, _source).get()
+                  << std::endl;
         std::cerr << std::string(error.location().position - 1, ' ') << "^" << std::endl;
     }
 }
 
-void CaptureReporter::report(const Error &error) {
-    _errors.push_back(error);
-}
+void CaptureReporter::report(const Error &error) { _errors.push_back(error); }
 
-const std::vector<Error> &CaptureReporter::errors() const {
-    return _errors;
-}
+const std::vector<Error> &CaptureReporter::errors() const { return _errors; }
 
 SIF_NAMESPACE_END

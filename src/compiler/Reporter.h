@@ -22,30 +22,30 @@
 SIF_NAMESPACE_BEGIN
 
 class Reporter {
-public:
+  public:
     virtual void report(const Error &error) = 0;
 };
 
 class BasicReporter : public Reporter {
-public:
+  public:
     BasicReporter(const std::string &name, const std::string &source);
 
     void report(const Error &error) override;
 
-private:
+  private:
     const std::string &_name;
     const std::string &_source;
 };
 
 class CaptureReporter : public Reporter {
-public:
+  public:
     virtual ~CaptureReporter() = default;
 
     void report(const Error &error) override;
 
     const std::vector<Error> &errors() const;
 
-private:
+  private:
     std::vector<Error> _errors;
 };
 

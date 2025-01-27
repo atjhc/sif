@@ -244,7 +244,12 @@ void Parser::commit() {
     trace(Concat("Commit (", previous().debugDescription(), ", ", peek().debugDescription(), ")"));
 }
 
-void Parser::beginScope(const Parser::Scope &scope) { _scopes.push_back(scope); }
+void Parser::beginScope(const Parser::Scope &scope) {
+    _scopes.push_back(scope);
+    for (auto &&signature : scope.signatures) {
+        _grammar.insert(signature, signature.terms.begin());
+    }
+}
 
 void Parser::endScope() {
     _scopes.pop_back();
@@ -569,6 +574,9 @@ Owned<Statement> Parser::parseUse() {
     auto module = _config.moduleProvider.module(source);
     if (module && module.value()) {
         Append(_scopes.back().signatures, module.value()->signatures());
+        for (auto &&signature : module.value()->signatures()) {
+            _grammar.insert(signature);
+        }
     } else if (!module) {
         emitError(Error(location, module.error().what()));
     }
@@ -582,7 +590,7 @@ Owned<Statement> Parser::parseUsing() {
     auto location = previous().location;
     Optional<Token> token = consume(Token::Type::StringLiteral);
     if (!token) {
-        emitError(Error(peek().location, "Expected a string literal"));
+        emitError(Error(peek().location, "expected a string literal"));
         synchronize();
         return nullptr;
     }
@@ -1125,7 +1133,8 @@ Result<Owned<Expression>, Error> Parser::parseUnary() {
     return parseCall();
 }
 
-bool Parser::Grammar::insert(const Signature &signature, std::vector<Signature::Term>::const_iterator term) {
+bool Parser::Grammar::insert(const Signature &signature,
+                             std::vector<Signature::Term>::const_iterator term) {
     if (term == signature.terms.end()) {
         if (this->signature) {
             return false;
@@ -1144,7 +1153,7 @@ bool Parser::Grammar::insert(const Signature &signature, std::vector<Signature::
             terms[word] = std::move(grammar);
             return;
         }
-        if(!it->second->insert(signature, std::next(term))) {
+        if (!it->second->insert(signature, std::next(term))) {
             result = false;
         }
     };
@@ -1167,18 +1176,14 @@ bool Parser::Grammar::insert(const Signature &signature, std::vector<Signature::
                        }
                    },
                    [&](Signature::Option argument) {
-                        insertToken(argument.token);
-                        if(!insert(signature, std::next(term))) {
-                            result = false;
-                        }
+                       insertToken(argument.token);
+                       if (!insert(signature, std::next(term))) {
+                           result = false;
+                       }
                    },
                },
                *term);
     return result;
-}
-
-bool Parser::Grammar::isLeaf() const {
-    return argument == nullptr && terms.size() == 0;
 }
 
 Result<Owned<Expression>, Error> Parser::parseCall() {
@@ -1194,7 +1199,9 @@ Result<Owned<Expression>, Error> Parser::parseCall() {
             auto word = lowercase(token.text);
             auto variable = _variables.find(word);
             if (variable != _variables.end() && grammar->argument) {
-                auto argument = (grammar->argument->isLeaf() && grammar != &_grammar ? parseList() : parseSubscript());
+                auto argument =
+                    (grammar->argument->isLeaf() && grammar != &_grammar ? parseList()
+                                                                         : parseSubscript());
                 if (!argument) {
                     return argument;
                 }
@@ -1214,7 +1221,9 @@ Result<Owned<Expression>, Error> Parser::parseCall() {
             }
         }
         if (grammar->argument) {
-            auto argument = (grammar->argument->isLeaf() && grammar != &_grammar ? parseList() : parseSubscript());
+            auto argument =
+                (grammar->argument->isLeaf() && grammar != &_grammar ? parseList()
+                                                                     : parseSubscript());
             if (!argument) {
                 return argument;
             }
@@ -1226,14 +1235,15 @@ Result<Owned<Expression>, Error> Parser::parseCall() {
         }
         break;
     }
-    if (matchingSignature.terms.size() == 1 ) {
+    if (matchingSignature.terms.size() == 1) {
         if (arguments.size() == 1) {
             return std::move(arguments[0]);
         }
     }
     auto signature = grammar->signature;
     if (!signature) {
-        return Fail(Error(location, Concat("No matching function ", matchingSignature.description())));
+        return Fail(
+            Error(location, Concat("no matching function ", matchingSignature.description())));
     }
     auto call =
         MakeOwned<Call>(signature.value(), std::vector<Optional<Token>>(), std::move(arguments));
@@ -1283,7 +1293,8 @@ Result<Owned<Expression>, Error> Parser::parsePrimary() {
         return parseContainerLiteral();
     }
 
-    if (peek().isWord() || peek().type == Token::Type::Global || peek().type == Token::Type::Local) {
+    if (peek().isWord() || peek().type == Token::Type::Global ||
+        peek().type == Token::Type::Local) {
         return parseVariable();
     }
 
@@ -1293,7 +1304,8 @@ Result<Owned<Expression>, Error> Parser::parsePrimary() {
 Result<Owned<Expression>, Error> Parser::parseVariable() {
     auto scope = Variable::Scope::Unspecified;
     if (peek().type == Token::Type::Global || peek().type == Token::Type::Local) {
-        scope = (peek().type == Token::Type::Global ? Variable::Scope::Global : Variable::Scope::Local);
+        scope =
+            (peek().type == Token::Type::Global ? Variable::Scope::Global : Variable::Scope::Local);
         advance();
     }
     auto token = consumeWord();

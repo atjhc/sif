@@ -82,6 +82,8 @@ TEST_CASE(TranscriptTests, All) {
         auto reader = StringReader(source);
         auto loader = ModuleLoader();
         auto reporter = CaptureReporter();
+
+        loader.config.searchPaths.push_back((suite.config.resourcesPath / path).parent_path());
         ParserConfig config{scanner, reader, loader, reporter};
         Parser parser(config);
 
