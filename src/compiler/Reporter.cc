@@ -33,6 +33,10 @@ void BasicReporter::report(const Error &error) {
     }
 }
 
+IOReporter::IOReporter(std::ostream &err) : _err(err) {}
+
+void IOReporter::report(const Error &error) { _err << error.what() << std::endl; }
+
 void CaptureReporter::report(const Error &error) { _errors.push_back(error); }
 
 const std::vector<Error> &CaptureReporter::errors() const { return _errors; }

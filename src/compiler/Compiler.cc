@@ -32,19 +32,18 @@ Strong<Bytecode> Compiler::compile(const Statement &statement) {
     statement.accept(*this);
     addReturn();
 
-    return _errors.size() > 0 ? nullptr : _frames.back().bytecode;
+    return _failed ? nullptr : _frames.back().bytecode;
 }
 
 const Set<std::string> &Compiler::globals() const { return _globals; }
-
-const std::vector<Error> &Compiler::errors() const { return _errors; }
 
 Bytecode &Compiler::bytecode() { return *_frames.back().bytecode; }
 std::vector<Compiler::Local> &Compiler::locals() { return _frames.back().locals; }
 std::vector<Function::Capture> &Compiler::captures() { return _frames.back().captures; }
 
 void Compiler::error(const Node &node, const std::string &message) {
-    _errors.push_back(Error(node.location, message));
+    _config.errorReporter.report(Error(node.location, message));
+    _failed = true;
 }
 
 int Compiler::findLocal(const Frame &frame, const std::string &name) {

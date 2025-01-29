@@ -1,0 +1,5 @@
+function a {b} {b}
+end function
+(-- error
+duplicate argument names in function declaration
+--)

@@ -27,22 +27,6 @@
 #include <iostream>
 #include <sstream>
 
-SIF_NAMESPACE_BEGIN
-
-static inline std::ostream &operator<<(std::ostream &out, const Result<Value, Error> &result) {
-    return out << (result.has_value() ? result.value().toString() : result.error().what());
-}
-
-static inline std::ostream &operator<<(std::ostream &out, const Error &error) {
-    if (error.location().position > 0) {
-        return out << error.location() << ": " << error.what();
-    } else {
-        return out << error.what();
-    }
-}
-
-SIF_NAMESPACE_END
-
 using namespace sif;
 
 static std::string gather(const std::string &source, const std::string &context) {
@@ -75,13 +59,17 @@ TEST_CASE(TranscriptTests, All) {
         auto source = suite.file_contents(path);
         ASSERT_NEQ(source, "");
 
-        auto expectedResult = gather(source, "expect");
+        auto expectedOutput = gather(source, "expect");
+        auto expectedErrors = gather(source, "error");
         auto input = gather(source, "input");
+
+        std::ostringstream out, err;
+        std::istringstream in(input);
 
         auto scanner = Scanner();
         auto reader = StringReader(source);
         auto loader = ModuleLoader();
-        auto reporter = CaptureReporter();
+        auto reporter = IOReporter(err);
 
         loader.config.searchPaths.push_back((suite.config.resourcesPath / path).parent_path());
         ParserConfig config{scanner, reader, loader, reporter};
@@ -91,38 +79,34 @@ TEST_CASE(TranscriptTests, All) {
             parser.declare(signature);
         }
         auto statement = parser.statement();
-        ASSERT_TRUE(statement) << path << " failed to parse: " << std::endl
-                               << Join(reporter.errors(), "\n") << std::endl;
-        if (!statement)
-            continue;
-
-        Compiler compiler({loader});
-        auto bytecode = compiler.compile(*statement);
-        ASSERT_TRUE(bytecode) << path << " failed to compile" << std::endl
-                              << Join(compiler.errors(), "\n") << std::endl;
-        if (!bytecode)
-            continue;
-
-        VirtualMachine vm;
-
-        std::ostringstream out, err;
-        std::istringstream in(input);
 
         CoreConfig coreConfig{out, in, err, std::mt19937_64()};
         coreConfig.randomInteger = [&coreConfig](Integer max) {
             return coreConfig.engine() % max;
         };
         Core core(coreConfig);
-        for (const auto &function : core.values()) {
-            vm.addGlobal(function.first, function.second);
+
+        if (statement) {
+            Compiler compiler(CompilerConfig{loader, reporter});
+            auto bytecode = compiler.compile(*statement);
+            if (bytecode) {
+                VirtualMachine vm;
+                for (const auto &function : core.values()) {
+                    vm.addGlobal(function.first, function.second);
+                }
+                auto result = vm.execute(bytecode);
+            }
         }
 
-        auto result = vm.execute(bytecode);
-        ASSERT_TRUE(result.has_value()) << path << " failed: " << result;
-        ASSERT_EQ(expectedResult, out.str()) << path << " failed:" << std::endl
+        ASSERT_EQ(expectedOutput, out.str()) << path << " failed the output check:" << std::endl
                                             << "Expected: " << std::endl
-                                            << expectedResult << std::endl
+                                            << expectedOutput << std::endl
                                             << "Got: " << std::endl
                                             << out.str() << std::endl;
+        ASSERT_EQ(expectedErrors, err.str()) << path << " failed the error check:" << std::endl
+                                            << "Expected: " << std::endl
+                                            << expectedErrors << std::endl
+                                            << "Got: " << std::endl
+                                            << err.str();
     }
 }

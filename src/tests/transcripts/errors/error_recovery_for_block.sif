@@ -1,0 +1,74 @@
+function a ...
+  exit repeat
+end function
+(-- error
+expected a new line
+unexpected "exit" outside repeat block
+--)
+
+if true print 1
+(-- error
+expected "then"
+--)
+
+if true true then set a to 1
+(-- error
+expected "then"
+--)
+
+if true true then
+  set a to
+end if
+(-- error
+expected "then"
+expected expression
+--)
+
+if true true then set a to 1
+else set a to 1
+(-- error
+expected "then"
+--)
+
+if true true then set a to 1
+else set a to
+(-- error
+expected "then"
+expected expression
+--)
+
+if true true then set a to
+else set a to
+(-- error
+expected "then"
+expected expression
+unexpected "else"
+--)
+
+repeat a
+  set a to 1
+end repeat
+(-- error
+expected "forever", "while", "until", "for", or a new line
+--)
+
+repeat while
+ set a to 1
+end repe
+(-- error
+expected expression
+--)
+
+repeat until
+ set a to 1
+end repeat
+(-- error
+expected expression
+--)
+
+repeat for
+ set a to 1
+end repeat
+(-- error
+expected a word
+--)

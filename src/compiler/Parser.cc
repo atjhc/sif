@@ -41,6 +41,7 @@ static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
 Parser::Parser(const ParserConfig &config) : _config(config) {
     _parsingRepeat = false;
     _recording = false;
+    _failed = false;
     _index = 0;
     _parsingDepth = 0;
     _scopes.push_back(Scope());
@@ -945,7 +946,13 @@ Unary::Operator unaryOp(Token::Type tokenType) {
     }
 }
 
-Result<Owned<Expression>, Error> Parser::parseExpression() { return parseClause(); }
+Result<Owned<Expression>, Error> Parser::parseExpression() {
+    auto token = peek();
+    if (token.isEndOfStatement()) {
+        return Fail(Error(peek().location, "expected expression"));
+    }
+    return parseClause();
+}
 
 Result<Owned<Expression>, Error> Parser::parseClause() {
     auto expression = parseEquality();
@@ -1242,6 +1249,9 @@ Result<Owned<Expression>, Error> Parser::parseCall() {
     }
     auto signature = grammar->signature;
     if (!signature) {
+        if (matchingSignature.terms.size() == 0) {
+            return Fail(Error(location, Concat("unexpected ", token.description())));
+        }
         return Fail(
             Error(location, Concat("no matching function ", matchingSignature.description())));
     }

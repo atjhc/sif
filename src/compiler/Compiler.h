@@ -23,12 +23,14 @@
 #include "ast/Statement.h"
 #include "compiler/Bytecode.h"
 #include "compiler/Module.h"
+#include "compiler/Reporter.h"
 #include "runtime/objects/Function.h"
 
 SIF_NAMESPACE_BEGIN
 
 struct CompilerConfig {
     ModuleProvider &moduleProvider;
+    Reporter &errorReporter;
 };
 
 class Compiler : public Statement::Visitor, public Expression::Visitor {
@@ -108,9 +110,9 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     int _scopeDepth;
     std::vector<Frame> _frames;
     Set<std::string> _globals;
-    std::vector<Error> _errors;
     uint16_t _nextRepeat;
     uint16_t _exitRepeat;
+    bool _failed = false;
 };
 
 SIF_NAMESPACE_END

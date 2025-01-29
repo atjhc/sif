@@ -127,14 +127,10 @@ int evaluate(const std::string &name, Reader &reader) {
         return Success;
     }
 
-    CompilerConfig compilerConfig{loader};
+    CompilerConfig compilerConfig{loader, reporter};
     Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
-        for (auto error : compiler.errors()) {
-            report(name, error.location(), reader.contents(),
-                   Concat("compile error, ", error.what()));
-        }
         return CompileFailure;
     }
 

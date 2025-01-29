@@ -1,0 +1,4 @@
+use "missing_module.sif"
+(-- error
+module not found
+--)

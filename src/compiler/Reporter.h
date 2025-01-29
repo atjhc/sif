@@ -37,6 +37,16 @@ class BasicReporter : public Reporter {
     const std::string &_source;
 };
 
+class IOReporter : public Reporter {
+  public:
+    IOReporter(std::ostream &err);
+
+    void report(const Error &error) override;
+
+  private:
+    std::ostream &_err;
+};
+
 class CaptureReporter : public Reporter {
   public:
     virtual ~CaptureReporter() = default;
