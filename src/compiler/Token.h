@@ -98,6 +98,7 @@ struct Token {
     bool isEndOfStatement() const;
 
     std::string encodedString() const;
+    std::string encodedStringOrWord() const;
 
     std::string description() const;
     std::string debugDescription() const;

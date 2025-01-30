@@ -1,4 +1,4 @@
 use "missing_module.sif"
 (-- error
-module not found
+module "missing_module.sif" not found
 --)

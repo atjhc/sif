@@ -326,7 +326,7 @@ void Compiler::visit(const Try &tryStatement) {
 }
 
 void Compiler::visit(const Use &useStatement) {
-    auto source = useStatement.target.encodedString();
+    auto source = useStatement.target.encodedStringOrWord();
     auto module = _config.moduleProvider.module(source);
     if (!module) {
         return;
@@ -341,7 +341,7 @@ void Compiler::visit(const Use &useStatement) {
 }
 
 void Compiler::visit(const Using &usingStatement) {
-    auto source = usingStatement.target.encodedString();
+    auto source = usingStatement.target.encodedStringOrWord();
     auto module = _config.moduleProvider.module(source);
     if (!module) {
         return;

@@ -24,6 +24,7 @@
 SIF_NAMESPACE_BEGIN
 
 Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
+
     // Check if the module is already in the process of loading,
     // which implies a circular dependency.
     if (_loading.find(name) != _loading.end()) {
@@ -39,14 +40,22 @@ Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
 
     std::filesystem::path modulePath;
     for (auto &&location : config.searchPaths) {
-        std::filesystem::path path = location / name;
+        auto path = location / name;
         if (std::filesystem::exists(path)) {
             modulePath = path;
+            break;
+        }
+        if (path.extension().empty()) {
+            path += ".sif";
+            if (std::filesystem::exists(path)) {
+                modulePath = path;
+                break;
+            }
         }
     }
 
     if (modulePath.empty()) {
-        return Fail(Error("module not found"));
+        return Fail(Error(Concat("module ", Quoted(name), " not found")));
     }
 
     auto scanner = Scanner();

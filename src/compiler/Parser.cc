@@ -562,16 +562,16 @@ Owned<Statement> Parser::parseIf() {
 
 Owned<Statement> Parser::parseUse() {
     auto location = previous().location;
-    Optional<Token> token = consume(Token::Type::StringLiteral);
+    Optional<Token> token = match({Token::Type::StringLiteral, Token::Type::Word});
     if (!token) {
-        emitError(Error(peek().location, "expected a string literal"));
+        emitError(Error(peek().location, "expected a string literal or word"));
         synchronize();
         return nullptr;
     }
     consumeNewLine();
 
     std::vector<Error> outErrors;
-    auto source = token.value().encodedString();
+    auto source = token.value().encodedStringOrWord();
     auto module = _config.moduleProvider.module(source);
     if (module && module.value()) {
         Append(_scopes.back().signatures, module.value()->signatures());
@@ -589,7 +589,7 @@ Owned<Statement> Parser::parseUse() {
 
 Owned<Statement> Parser::parseUsing() {
     auto location = previous().location;
-    Optional<Token> token = consume(Token::Type::StringLiteral);
+    Optional<Token> token = match({Token::Type::StringLiteral, Token::Type::Word});
     if (!token) {
         emitError(Error(peek().location, "expected a string literal"));
         synchronize();
@@ -597,7 +597,7 @@ Owned<Statement> Parser::parseUsing() {
     }
 
     std::vector<Error> outErrors;
-    auto source = token.value().encodedString();
+    auto source = token.value().encodedStringOrWord();
     auto module = _config.moduleProvider.module(source);
     if (module && module.value()) {
         beginScope(Scope{module.value()->signatures()});

@@ -1,6 +1,6 @@
 using "module1.sif"
   say hello
-  using "module2.sif"
+  using module2
     say goodbye
   end using
   say hello

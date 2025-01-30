@@ -85,6 +85,14 @@ std::string Token::encodedString() const {
     return string_from_escaped_string(std::string(text.begin() + 1, text.end() - 1));
 }
 
+std::string Token::encodedStringOrWord() const {
+    if (type == Type::StringLiteral) {
+        return encodedString();
+    }
+    assert(type == Type::Word);
+    return text;
+}
+
 std::string Token::description() const {
     switch (type) {
     case Type::Error:
