@@ -976,9 +976,9 @@ static void _math(ModuleMap &natives) {
                 return Fail(Error(location, "expected a number"));
             }
             if (values[0].isFloat()) {
-                return fabs(values[0].asFloat());
+                return std::fabs(values[0].asFloat());
             }
-            return abs(values[0].asInteger());
+            return std::abs(values[0].asInteger());
         });
     natives[S("(the) sin (of) {}")] = basicFunction(sin);
     natives[S("(the) cos (of) {}")] = basicFunction(cos);
