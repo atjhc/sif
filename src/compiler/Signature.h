@@ -46,6 +46,7 @@ struct Signature {
     std::string name() const;
     std::string description() const;
     bool endsWithArgument() const;
+    std::vector<Signature::Argument> arguments() const;
 
     bool operator<(const Signature &signature) const;
     bool operator==(const Signature &signature) const;

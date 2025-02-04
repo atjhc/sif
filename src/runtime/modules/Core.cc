@@ -27,9 +27,13 @@
 #include "utilities/chunk.h"
 #include "vendor/utf8.h"
 
+#include <charconv>
+#include <format>
 #include <random>
 
 SIF_NAMESPACE_BEGIN
+
+#define N(X) MakeStrong<Native>(X)
 
 using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
@@ -160,6 +164,49 @@ static void _core(ModuleMap &natives, std::ostream &out, std::istream &in, std::
             }
             return values[0];
         });
+}
+
+static auto _sort_list(CallFrame &frame, Location location, Strong<List> list)
+    -> Result<Value, Error> {
+    try {
+        std::sort(list->values().begin(), list->values().end(),
+                  [&location](const Value &a, const Value &b) {
+                      if (a.isInteger() && b.isInteger()) {
+                          return a.asInteger() < b.asInteger();
+                      } else if (a.isNumber() && b.isNumber()) {
+                          return a.castFloat() < b.castFloat();
+                      }
+                      if (a.type() != b.type() || a.typeName() != b.typeName()) {
+                          throw Error(location, "can't compare {} {} and {} {}", a.typeName(),
+                                      a.toString(), b.typeName(), b.toString());
+                      }
+                      return true;
+                  });
+    } catch (const Error &error) {
+        return Fail(error);
+    }
+    return Value(list);
+}
+
+static auto _sort_string(CallFrame &frame, Location location, Strong<String> string)
+    -> Result<Value, Error> {
+    return Fail(Error(location, "not supported"));
+}
+
+static auto _sort_dictionary(CallFrame &frame, Location location, Strong<Dictionary> dictionary)
+    -> Result<Value, Error> {
+    return Fail(Error(location, "not supported"));
+}
+
+static auto _sort_T(CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+    if (auto list = values[0].as<List>()) {
+        return _sort_list(frame, location, list);
+    } else if (auto string = values[0].as<String>()) {
+        return _sort_string(frame, location, string);
+    } else if (auto dictionary = values[0].as<Dictionary>()) {
+        return _sort_dictionary(frame, location, dictionary);
+    }
+    return values[0];
 }
 
 static void _common(ModuleMap &natives) {
@@ -366,6 +413,40 @@ static void _common(ModuleMap &natives) {
             }
             return Fail(Error(location, "expected a string or list"));
         });
+    natives[S("sort {}")] = N(_sort_T);
+}
+
+static auto _T_as_an_integer(CallFrame &frame, Location location, Value *values)
+    -> Result<Value, Error> {
+    if (values[0].isNumber()) {
+        return Value(values[0].castInteger());
+    }
+    if (auto castable = values[0].as<NumberCastable>()) {
+        return castable->castInteger();
+    }
+    return Fail(Error(location, "can't convert this value to a number"));
+}
+
+static auto _T_as_a_number(CallFrame &frame, Location location, Value *values)
+    -> Result<Value, Error> {
+    if (values[0].isNumber()) {
+        return Value(values[0].castFloat());
+    }
+    if (auto castable = values[0].as<NumberCastable>()) {
+        return castable->castFloat();
+    }
+    return Fail(Error(location, "can't convert this value to a number"));
+}
+
+static auto _T_as_a_string(CallFrame &frame, Location location, Value *values)
+    -> Result<Value, Error> {
+    return values[0].toString();
+}
+
+static void _types(ModuleMap &natives) {
+    natives[S("{} as a/an integer")] = N(_T_as_an_integer);
+    natives[S("{} as a/an number")] = N(_T_as_a_number);
+    natives[S("{} as a/an string")] = N(_T_as_a_string);
 }
 
 static void _dictionary(ModuleMap &natives) {
@@ -889,11 +970,20 @@ static void _math(ModuleMap &natives) {
                 return func(argument);
             });
     };
+    natives[S("(the) abs (of) {}")] = MakeStrong<Native>(
+        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+            if (!values[0].isNumber()) {
+                return Fail(Error(location, "expected a number"));
+            }
+            if (values[0].isFloat()) {
+                return fabs(values[0].asFloat());
+            }
+            return abs(values[0].asInteger());
+        });
     natives[S("(the) sin (of) {}")] = basicFunction(sin);
     natives[S("(the) cos (of) {}")] = basicFunction(cos);
     natives[S("(the) tan (of) {}")] = basicFunction(tan);
     natives[S("(the) atan (of) {}")] = basicFunction(atan);
-    natives[S("(the) abs (of) {}")] = basicFunction(fabs);
     natives[S("(the) exp (of) {}")] = basicFunction(exp);
     natives[S("(the) exp2 (of) {}")] = basicFunction(exp2);
     natives[S("(the) expm1 (of) {}")] = basicFunction(expm1);
@@ -983,6 +1073,7 @@ static void _math(ModuleMap &natives) {
 Core::Core(const CoreConfig &config) : _config(config) {
     _core(_natives, _config.out, _config.in, _config.err);
     _common(_natives);
+    _types(_natives);
     _dictionary(_natives);
     _list(_natives, _config.engine, _config.randomInteger);
     _string(_natives, _config.engine, _config.randomInteger);

@@ -17,10 +17,10 @@
 #include "runtime/Value.h"
 #include "runtime/Object.h"
 
-#include "Error.h"
 #include "runtime/objects/String.h"
 
 #include <iostream>
+#include <format>
 
 SIF_NAMESPACE_BEGIN
 
@@ -81,7 +81,7 @@ Integer Value::castInteger() const {
     } else if (auto v = std::get_if<Float>(&_value)) {
         return static_cast<Integer>(*v);
     }
-    throw std::runtime_error("expected number type");
+    throw std::runtime_error("can't convert value to number");
 }
 
 bool Value::isFloat() const {
@@ -104,7 +104,7 @@ Float Value::castFloat() const {
     } else if (auto v = std::get_if<Integer>(&_value)) {
         return static_cast<Float>(*v);
     }
-    throw std::runtime_error("expected number type");
+    throw std::runtime_error("can't convert value to number");
 }
 
 bool Value::isObject() const {
@@ -131,15 +131,12 @@ std::string Value::toString() const {
 }
 
 std::string Value::description() const {
-    if (isBool()) {
-        return asBool() ? "yes" : "no";
-    } else if (isObject()) {
-        return asObject()->description();
-    }
-
-    std::ostringstream ss;
-    std::visit([&ss](auto &&arg) { ss << arg; }, _value);
-    return ss.str();
+    return std::visit(Overload{
+        [](auto &&arg) -> std::string { return std::format("{}", arg); },
+        [](bool boolValue) -> std::string { return boolValue ? "yes" : "no"; },
+        [](std::monostate mono) -> std::string { return "empty"; },
+        [](Strong<Object> object) -> std::string { return object->description(); }
+    }, _value);
 }
 
 std::string Value::debugDescription() const {

@@ -108,10 +108,11 @@ void Compiler::assign(const Location &location, const std::string &name) {
     bytecode().add(location, opcode, index);
 }
 
-void Compiler::assign(const Variable &variable, const Location &location, const std::string &name) {
+void Compiler::assign(const Location &location, const Variable &variable) {
     uint16_t index;
     Opcode opcode;
 
+    auto name = lowercase(variable.token.text);
     if (_scopeDepth > 0) {
         switch (variable.scope) {
         case Variable::Scope::Local:
@@ -383,7 +384,7 @@ void Compiler::visit(const Assignment &assignment) {
         if (name == "it") {
             bytecode().add(assignment.location, Opcode::SetIt);
         } else {
-            assign(*assignment.variable, assignment.location, name);
+            assign(assignment.location, *assignment.variable);
         }
     }
 }
@@ -447,7 +448,7 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto jumpExitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
     auto jumpIfAtEnd = _nextRepeat = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
     bytecode().add(foreach.location, Opcode::Enumerate);
-    assign(*foreach.variable, foreach.location, foreach.variable->token.text);
+    assign(foreach.location, *foreach.variable);
 
     foreach.statement->accept(*this);
     bytecode().addRepeat(foreach.location, _nextRepeat);

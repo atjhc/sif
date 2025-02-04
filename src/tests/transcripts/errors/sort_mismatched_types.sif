@@ -1,0 +1,4 @@
+sort {1, 2, "three"}
+(-- error
+can't compare string three and integer 2
+--)

@@ -1,0 +1,25 @@
+set lines to the list of lines in the contents of file "input.txt"
+set list1 to {}
+set list2 to {}
+repeat for line in lines
+  set words to the list of words in line
+  get item 0 in words
+  insert (it as an integer) at the end of list1
+  get item 1 in words
+  insert (it as an integer) at the end of list2
+end repeat
+
+sort list1
+sort list2
+
+set total to 0
+repeat for i in 0 ..< number of items in list1
+  set leftItem to list1[i]
+  set rightItem to list2[i]
+  set difference to abs(leftItem - rightItem)
+  set total to total + difference
+end repeat
+print total
+(-- expect
+1579939
+--)

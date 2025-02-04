@@ -100,6 +100,16 @@ std::string Signature::description() const {
 
 bool Signature::endsWithArgument() const { return std::holds_alternative<Argument>(terms.back()); }
 
+std::vector<Signature::Argument> Signature::arguments() const {
+    std::vector<Argument> result;
+    for (auto &&term : terms) {
+        if (std::holds_alternative<Argument>(term)) {
+            result.push_back(std::get<Argument>(term));
+        }
+    }
+    return result;
+}
+
 bool Signature::operator<(const Signature &signature) const {
     int i = 0;
     while (i < terms.size() || i < signature.terms.size()) {

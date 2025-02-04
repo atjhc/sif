@@ -1,0 +1,14 @@
+print sort {1, 2, 3}
+(-- expect
+1 2 3
+--)
+
+print sort {3, 2, 1}
+(-- expect
+1 2 3
+--)
+
+print sort {2.1, 5, 100.2343}
+(-- expect
+2.1 5 100.2343
+--)

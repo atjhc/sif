@@ -65,7 +65,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     int addCapture(Frame &frame, int index, bool isLocal);
 
     void assign(const Location &location, const std::string &name);
-    void assign(const Variable &variable, const Location &location, const std::string &name);
+    void assign(const Location &location, const Variable &variable);
 
     void resolve(const Call &call, const std::string &name);
     void resolve(const Variable &variable, const std::string &name);

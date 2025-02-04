@@ -125,20 +125,3 @@ print join {1, 2, 3} using ", "
 (-- expect
 1, 2, 3
 --)
-
--- set x to {1, 2, 3, 4, 5}
--- shuffle x
--- print x
-(--! expect
-5 2 1 4 3
---)
-
--- print shuffled {1, 2, 3, 4, 5}
-(--! expect
-2 4 3 1 5
---)
-
-(-- TODO:
-sort {}
-sorted {}
---)

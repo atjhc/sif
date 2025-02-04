@@ -447,6 +447,17 @@ Owned<Statement> Parser::parseFunction() {
     }
 
     beginScope();
+    if (signature) {
+        for (auto &&argument : signature->arguments()) {
+            auto token = argument.token;
+            if (token) {
+                auto name = lowercase(token->text);
+                _scopes.back().variables.insert(name);
+                _variables.insert(name);
+            }
+        }
+    }
+
     auto statement = parseBlock({Token::Type::End});
     _parsingDepth--;
     if (!consumeEnd(Token::Type::Function)) {
@@ -760,6 +771,9 @@ Owned<Statement> Parser::parseRepeatFor() {
                 synchronize();
             }
         }
+        auto name = lowercase(variable->token.text);
+        _scopes.back().variables.insert(name);
+        _variables.insert(name);
     }
     auto statement = parseBlock({Token::Type::End});
     if (!statement) {

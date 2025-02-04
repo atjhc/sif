@@ -155,6 +155,26 @@ Result<Value, Error> String::setSubscript(Location location, const Value &key, V
     return Fail(Error(location, "expected integer or range"));
 }
 
+#pragma mark - NumberCastable
+
+Result<Value, Error> String::castInteger() const {
+    std::stringstream ss(_string);
+    Integer number;
+    if (ss >> number) {
+        return Value(number);
+    }
+    return Fail(Error("can't convert value to number"));
+}
+
+Result<Value, Error> String::castFloat() const {
+    std::stringstream ss(_string);
+    Float number;
+    if (ss >> number) {
+        return Value(number);
+    }
+    return Fail(Error("can't convert value to number"));
+}
+
 #pragma mark - StringEnumerator
 
 StringEnumerator::StringEnumerator(Strong<String> string) : _string(string), _index(0) {}

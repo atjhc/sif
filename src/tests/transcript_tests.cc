@@ -19,6 +19,7 @@
 #include "compiler/Scanner.h"
 #include "runtime/VirtualMachine.h"
 #include "runtime/modules/Core.h"
+#include "runtime/modules/System.h"
 #include "runtime/objects/List.h"
 #include "runtime/ModuleLoader.h"
 #include "tests/TestSuite.h"
@@ -48,6 +49,7 @@ static std::string gather(const std::string &source, const std::string &context)
 }
 
 TEST_CASE(TranscriptTests, All) {
+    auto currentPath = std::filesystem::current_path();
     for (auto pstr : suite.all_files_in("transcripts")) {
         auto path = std::filesystem::path(pstr);
         if (path.extension() != ".sif") {
@@ -71,20 +73,26 @@ TEST_CASE(TranscriptTests, All) {
         auto loader = ModuleLoader();
         auto reporter = IOReporter(err);
 
-        loader.config.searchPaths.push_back((suite.config.resourcesPath / path).parent_path());
+        auto directoryPath = (suite.config.resourcesPath / path).parent_path();
+        std::filesystem::current_path(currentPath / directoryPath);
+        loader.config.searchPaths.push_back(std::filesystem::path("./"));
         ParserConfig config{scanner, reader, loader, reporter};
         Parser parser(config);
-
-        for (const auto &signature : Core().signatures()) {
-            parser.declare(signature);
-        }
-        auto statement = parser.statement();
 
         CoreConfig coreConfig{out, in, err, std::mt19937_64()};
         coreConfig.randomInteger = [&coreConfig](Integer max) {
             return coreConfig.engine() % max;
         };
         Core core(coreConfig);
+        System system;
+
+        for (const auto &signature : Core().signatures()) {
+            parser.declare(signature);
+        }
+        for (const auto &signature : System().signatures()) {
+            parser.declare(signature);
+        }
+        auto statement = parser.statement();
 
         if (statement) {
             Compiler compiler(CompilerConfig{loader, reporter});
@@ -94,7 +102,13 @@ TEST_CASE(TranscriptTests, All) {
                 for (const auto &function : core.values()) {
                     vm.addGlobal(function.first, function.second);
                 }
+                for (const auto &function : system.values()) {
+                    vm.addGlobal(function.first, function.second);
+                }
                 auto result = vm.execute(bytecode);
+                if (!result) {
+                    err << result.error().what() << std::endl;
+                }
             }
         }
 
@@ -108,5 +122,6 @@ TEST_CASE(TranscriptTests, All) {
                                             << expectedErrors << std::endl
                                             << "Got: " << std::endl
                                             << err.str();
+        std::filesystem::current_path(currentPath);
     }
 }

@@ -1,0 +1,25 @@
+set lines to the list of lines in the contents of file "input.txt"
+
+set leftList to {}
+set rightMapping to {:}
+
+repeat for line in lines
+	set numbers to the list of words in line
+	set leftNumber to (item 0 in numbers) as an integer
+	set rightNumber to (item 1 in numbers) as an integer
+	insert leftNumber at the end of leftList
+	if rightNumber is in rightMapping then
+		set rightMapping[rightNumber] to rightMapping[rightNumber] + 1
+	else set rightMapping[rightNumber] to 1
+end repeat
+
+set total to 0
+repeat for leftNumber in leftList
+	if leftNumber is in rightMapping then
+		set total to total + leftNumber * rightMapping[leftNumber]
+	end if
+end repeat
+print total
+(-- expect
+20351745
+--)

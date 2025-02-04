@@ -21,6 +21,7 @@
 #include "runtime/Value.h"
 #include "runtime/objects/Range.h"
 
+#include "runtime/protocols/Castable.h"
 #include "runtime/protocols/Copyable.h"
 #include "runtime/protocols/Enumerable.h"
 #include "runtime/protocols/Subscriptable.h"
@@ -29,7 +30,11 @@
 
 SIF_NAMESPACE_BEGIN
 
-class String : public Object, public Enumerable, public Subscriptable, public Copyable {
+class String : public Object,
+               public Enumerable,
+               public Subscriptable,
+               public Copyable,
+               public NumberCastable {
   public:
     String(const std::string &string);
 
@@ -70,6 +75,10 @@ class String : public Object, public Enumerable, public Subscriptable, public Co
 
     // Copyable
     Strong<Object> copy() const override;
+
+    // Castable
+    Result<Value, Error> castInteger() const override;
+    Result<Value, Error> castFloat() const override;
 
   private:
     std::string _string;

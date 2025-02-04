@@ -27,6 +27,7 @@ bool Token::isWord() const {
     switch (type) {
     case Type::An:
     case Type::And:
+    case Type::As:
     case Type::Empty:
     case Type::End:
     case Type::Exit:
