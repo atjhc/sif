@@ -19,8 +19,8 @@
 
 #include "runtime/objects/String.h"
 
-#include <iostream>
 #include <format>
+#include <iostream>
 
 SIF_NAMESPACE_BEGIN
 
@@ -131,12 +131,12 @@ std::string Value::toString() const {
 }
 
 std::string Value::description() const {
-    return std::visit(Overload{
-        [](auto &&arg) -> std::string { return std::format("{}", arg); },
-        [](bool boolValue) -> std::string { return boolValue ? "yes" : "no"; },
-        [](std::monostate mono) -> std::string { return "empty"; },
-        [](Strong<Object> object) -> std::string { return object->description(); }
-    }, _value);
+    return std::visit(
+        Overload{[](auto &&arg) -> std::string { return std::format("{}", arg); },
+                 [](bool boolValue) -> std::string { return boolValue ? "yes" : "no"; },
+                 [](std::monostate mono) -> std::string { return "empty"; },
+                 [](Strong<Object> object) -> std::string { return object->description(); }},
+        _value);
 }
 
 std::string Value::debugDescription() const {

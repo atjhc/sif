@@ -432,6 +432,7 @@ void Compiler::visit(const RepeatCondition &statement) {
     bytecode().patchRelativeJump(jumpIfCondition);
     bytecode().add(statement.location, Opcode::Pop);
     bytecode().patchRelativeJump(_exitRepeat);
+
     _nextRepeat = nextRepeat;
     _exitRepeat = exitRepeat;
 }
@@ -446,16 +447,16 @@ void Compiler::visit(const RepeatFor &foreach) {
     bytecode().add(foreach.location, Opcode::Jump, 4);
     _exitRepeat = bytecode().add(foreach.location, Opcode::Pop);
     auto jumpExitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
-    auto jumpIfAtEnd = _nextRepeat = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
+    _nextRepeat = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
     bytecode().add(foreach.location, Opcode::Enumerate);
     assign(foreach.location, *foreach.variable);
 
     foreach.statement->accept(*this);
-    bytecode().addRepeat(foreach.location, _nextRepeat);
 
-    bytecode().patchRelativeJump(jumpIfAtEnd);
-    bytecode().patchRelativeJump(jumpExitRepeat);
+    bytecode().addRepeat(foreach.location, _nextRepeat);
+    bytecode().patchRelativeJump(_nextRepeat);
     bytecode().add(foreach.location, Opcode::Pop);
+    bytecode().patchRelativeJump(jumpExitRepeat);
 
     _nextRepeat = nextRepeat;
     _exitRepeat = exitRepeat;

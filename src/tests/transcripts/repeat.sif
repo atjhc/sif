@@ -71,3 +71,16 @@ end repeat
 empty
 3
 --)
+
+repeat for x in {0}
+  repeat for y in {0}
+    exit repeat
+  end repeat
+end repeat
+
+repeat
+  repeat
+    exit repeat
+  end repeat
+  exit repeat
+end repeat
