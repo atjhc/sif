@@ -1,0 +1,40 @@
+set lines to the list of lines in the contents of file "input.txt"
+
+set safeCount to 0
+repeat for line in lines
+  set words to the list of words in line
+  set previousNumber to empty
+  set previousDirection to empty
+  set isGood to true
+  repeat for word in words
+    set number to word as an integer
+    if previousNumber = empty then
+      set previousNumber to number
+      next repeat
+    end if
+    set difference to number - previousNumber
+    if difference = 0 then
+      set isGood to false
+      exit repeat
+    end if
+    if difference < 0 then set direction to -1 else set direction to 1
+    if previousDirection = empty then
+      set previousDirection to direction
+    else
+      if previousDirection != direction then
+        set isGood to false
+        exit repeat
+      end if
+    end if
+    if abs(difference) > 3 then
+      set isGood to false
+      exit repeat
+    end if
+    set previousNumber to number
+  end repeat
+  if isGood = true then set safeCount to safeCount + 1
+end repeat
+print safeCount
+(-- expect
+479
+--)
