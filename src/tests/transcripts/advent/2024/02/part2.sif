@@ -1,3 +1,7 @@
+(--
+Solution to part 2 of https://adventofcode.com/2024/day/2
+--)
+
 function {words} is safe
   set previousNumber to empty
   set previousDirection to empty

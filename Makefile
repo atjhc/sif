@@ -40,6 +40,9 @@ EXAMPLES := $(shell find examples -name '*.sif')
 
 all: dstroot $(DSTROOT)/$(LIBNAME) $(DSTROOT)/$(TOOLNAME)
 
+release: CPPFLAGS += -O3
+release: all
+
 debug: CPPFLAGS += -g -DYYDEBUG=1 -DDEBUG=1
 debug: all
 

@@ -1,3 +1,7 @@
+(--
+Solution to part 2 of https://adventofcode.com/2024/day/1
+--)
+
 set lines to the list of lines in the contents of file "input.txt"
 
 set leftList to {}
