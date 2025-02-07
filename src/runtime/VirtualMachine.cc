@@ -23,6 +23,7 @@
 #include "runtime/objects/String.h"
 
 #include <cmath>
+#include <ranges>
 
 SIF_NAMESPACE_BEGIN
 
@@ -271,6 +272,25 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             Push(_stack, MakeStrong<List>(values));
             break;
         }
+        case Opcode::UnpackList: {
+            auto count = ReadConstant(frame().ip);
+            auto value = Pop(_stack);
+            auto list = value.as<List>();
+            if (!list) {
+                error = Error(frame().bytecode->location(frame().ip - 1),
+                              "expected a list but got {}", value.typeName());
+                break;
+            }
+            if (list->size() != count) {
+                error = Error(frame().bytecode->location(frame().ip - 1),
+                              "expected {} values but got {}", count, list->size());
+                break;
+            }
+            for (auto &&value : std::views::reverse(list->values())) {
+                Push(_stack, value);
+            }
+            break;
+        }
         case Opcode::Dictionary: {
             const auto count = ReadConstant(frame().ip);
             ValueMap values(count);
@@ -417,9 +437,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             break;
         }
         case Opcode::SetSubscript: {
-            auto value = Pop(_stack);
             auto subscript = Pop(_stack);
             auto target = Pop(_stack);
+            auto value = Pop(_stack);
             if (auto subscriptable = target.as<Subscriptable>()) {
                 auto result = subscriptable->setSubscript(
                     frame().bytecode->location(frame().ip - 1), subscript, value);

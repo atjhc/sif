@@ -130,6 +130,12 @@ Bytecode::Iterator Bytecode::disassembleList(std::ostream &out, Iterator positio
     return position + 3;
 }
 
+Bytecode::Iterator Bytecode::disassembleUnpackList(std::ostream &out, Iterator position) const {
+    size_t count = ReadUInt16(position + 1);
+    out << "UnpackList " << count;
+    return position + 3;
+}
+
 Bytecode::Iterator Bytecode::disassembleDictionary(std::ostream &out, Iterator position) const {
     size_t count = ReadUInt16(position + 1);
     out << "Dictionary " << count;
@@ -206,6 +212,8 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
         return position + 1;
     case Opcode::List:
         return disassembleList(out, position);
+    case Opcode::UnpackList:
+        return disassembleUnpackList(out, position);
     case Opcode::Dictionary:
         return disassembleDictionary(out, position);
     case Opcode::GetGlobal:

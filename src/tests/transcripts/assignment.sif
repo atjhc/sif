@@ -38,3 +38,24 @@ print a
 (-- expect
 four 5 six
 --)
+
+set point to {4, 2}
+set x, y to point
+print x, y
+(-- expect
+4 2
+--)
+
+set a to {"one": 1}
+set x, a["one"] to {1, "one"}
+print x, a["one"]
+(-- expect
+1 one
+--)
+
+set point to {1, 2}
+set point[0], point[1] to {2, 3}
+print point
+(-- expect
+2 3
+--)

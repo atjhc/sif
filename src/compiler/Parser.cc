@@ -771,7 +771,7 @@ Owned<Statement> Parser::parseRepeatFor() {
                 synchronize();
             }
         }
-        auto name = lowercase(variable->token.text);
+        auto name = lowercase(variable->name.text);
         _scopes.back().variables.insert(name);
         _variables.insert(name);
     }
@@ -807,54 +807,64 @@ Result<Owned<Statement>, Error> Parser::parseSimpleStatement() {
 
 Result<Owned<Statement>, Error> Parser::parseAssignment() {
     auto location = previous().location;
-    Variable::Scope scope = Variable::Scope::Unspecified;
-    if (match({Token::Type::Global})) {
-        scope = Variable::Scope::Global;
-    } else if (match({Token::Type::Local})) {
-        scope = Variable::Scope::Local;
-    }
-    auto token = consumeWord();
-    if (!token) {
-        return Fail(Error(peek().location, "expected a variable name"));
-    }
-    Optional<Token> typeName;
-    std::vector<Owned<Expression>> subscripts;
-    if (match({Token::Type::Colon})) {
-        if (auto word = consumeWord()) {
-            typeName = word.value();
+    std::vector<Owned<AssignmentTarget>> variableDecls;
+    do {
+        Optional<Variable::Scope> scope = None;
+        Optional<Token> typeName = None;
+        std::vector<Owned<Expression>> subscripts;
+
+        if (match({Token::Type::Global})) {
+            scope = Variable::Scope::Global;
+        } else if (match({Token::Type::Local})) {
+            scope = Variable::Scope::Local;
+        }
+
+        auto token = consumeWord();
+        if (!token) {
+            return Fail(Error(peek().location, "expected a variable name"));
+        }
+        if (match({Token::Type::Colon})) {
+            if (auto word = consumeWord()) {
+                typeName = word.value();
+            } else {
+                emitError(Error(peek().location, "expected a type name"));
+                synchronize();
+                return nullptr;
+            }
         } else {
-            emitError(Error(peek().location, "expected a type name"));
-            synchronize();
-            return nullptr;
-        }
-    } else {
-        while (match({Token::Type::LeftBracket})) {
-            auto subscript = parseExpression();
-            if (!subscript) {
-                return Fail(subscript.error());
-            }
-            subscripts.push_back(std::move(subscript.value()));
-            if (!consume(Token::Type::RightBracket)) {
-                return Fail(Error(peek().location, Concat("expected ", Quoted("]"))));
+            while (match({Token::Type::LeftBracket})) {
+                auto subscript = parseExpression();
+                if (!subscript) {
+                    return Fail(subscript.error());
+                }
+                subscripts.push_back(std::move(subscript.value()));
+                if (!consume(Token::Type::RightBracket)) {
+                    return Fail(Error(peek().location, Concat("expected ", Quoted("]"))));
+                }
             }
         }
-    }
+        if (subscripts.size() == 0) {
+            auto name = lowercase(token.value().text);
+            _scopes.back().variables.insert(name);
+            _variables.insert(name);
+        }
+        auto variable = MakeOwned<Variable>(token.value(), scope);
+        variable->location = token.value().location;
+        variableDecls.emplace_back(
+            MakeOwned<AssignmentTarget>(std::move(variable), typeName, std::move(subscripts)));
+    } while (match({Token::Type::Comma}));
+
     if (!consume(Token::Type::To)) {
         return Fail(Error(peek().location, Concat("expected ", Quoted("to"))));
     }
-    if (subscripts.size() == 0) {
-        auto name = lowercase(token.value().text);
-        _scopes.back().variables.insert(name);
-        _variables.insert(name);
-    }
+
     auto expression = parseExpression();
     if (!expression) {
         return Fail(expression.error());
     }
-    auto variable = MakeOwned<Variable>(token.value(), typeName, scope);
-    variable->location = token.value().location;
-    auto assignment = MakeOwned<Assignment>(std::move(variable), std::move(subscripts),
-                                            std::move(expression.value()));
+
+    auto assignment =
+        MakeOwned<Assignment>(std::move(variableDecls), std::move(expression.value()));
     assignment->location = location;
     return assignment;
 }
@@ -1326,7 +1336,7 @@ Result<Owned<Expression>, Error> Parser::parsePrimary() {
 }
 
 Result<Owned<Expression>, Error> Parser::parseVariable() {
-    auto scope = Variable::Scope::Unspecified;
+    Optional<Variable::Scope> scope = None;
     if (peek().type == Token::Type::Global || peek().type == Token::Type::Local) {
         scope =
             (peek().type == Token::Type::Global ? Variable::Scope::Global : Variable::Scope::Local);
@@ -1336,7 +1346,7 @@ Result<Owned<Expression>, Error> Parser::parseVariable() {
     if (!token) {
         return Fail(Error(peek().location, "expected a variable name"));
     }
-    auto variable = MakeOwned<Variable>(token.value(), None, scope);
+    auto variable = MakeOwned<Variable>(token.value(), scope);
     variable->location = token.value().location;
     return variable;
 }

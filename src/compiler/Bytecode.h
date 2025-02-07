@@ -34,6 +34,7 @@ enum class Opcode : uint8_t {
     OpenRange,
     ClosedRange,
     List,
+    UnpackList,
     Dictionary,
     Short,
     Negate,
@@ -106,6 +107,7 @@ class Bytecode {
     Iterator disassembleConstant(std::ostream &, const std::string &, Iterator) const;
     Iterator disassembleDictionary(std::ostream &out, Iterator position) const;
     Iterator disassembleList(std::ostream &, Iterator) const;
+    Iterator disassembleUnpackList(std::ostream &, Iterator) const;
     Iterator disassembleJump(std::ostream &, const std::string &name, Iterator) const;
     Iterator disassembleRepeat(std::ostream &, const std::string &name, Iterator) const;
     Iterator disassembleShort(std::ostream &out, Iterator position) const;

@@ -112,11 +112,12 @@ void Compiler::assign(const Location &location, const Variable &variable) {
     uint16_t index;
     Opcode opcode;
 
-    auto name = lowercase(variable.token.text);
+    auto name = lowercase(variable.name.text);
     if (_scopeDepth > 0) {
-        switch (variable.scope) {
-        case Variable::Scope::Local:
-        case Variable::Scope::Unspecified:
+        if (variable.scope && variable.scope.value() == Variable::Scope::Global) {
+            index = bytecode().addConstant(MakeStrong<String>(name));
+            opcode = Opcode::SetGlobal;
+        } else {
             if (int i = findLocal(_frames.back(), name); i > -1) {
                 index = i;
                 opcode = Opcode::SetLocal;
@@ -128,14 +129,9 @@ void Compiler::assign(const Location &location, const Variable &variable) {
                 index = locals().size() - 1;
                 opcode = Opcode::SetLocal;
             }
-            break;
-        case Variable::Scope::Global:
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::SetGlobal;
         }
     } else {
-        switch (variable.scope) {
-        case Variable::Scope::Local:
+        if (variable.scope && variable.scope.value() == Variable::Scope::Local) {
             if (int i = findLocal(_frames.back(), name); i > -1) {
                 index = i;
                 opcode = Opcode::SetLocal;
@@ -144,9 +140,7 @@ void Compiler::assign(const Location &location, const Variable &variable) {
                 index = locals().size() - 1;
                 opcode = Opcode::SetLocal;
             }
-            break;
-        case Variable::Scope::Unspecified:
-        case Variable::Scope::Global:
+        } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::SetGlobal;
         }
@@ -182,8 +176,27 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
     Opcode opcode;
 
     if (_scopeDepth > 0) {
-        switch (variable.scope) {
-        case Variable::Scope::Unspecified:
+        if (variable.scope) {
+            switch (variable.scope.value()) {
+            case Variable::Scope::Local:
+                if (int i = findLocal(_frames.back(), name); i > -1) {
+                    index = i;
+                    opcode = Opcode::GetLocal;
+                } else if (int i = findCapture(name); i > -1) {
+                    index = i;
+                    opcode = Opcode::GetCapture;
+                } else {
+                    error(variable,
+                          Concat("unused local variable ", Quoted(name), " will always be empty"));
+                    return;
+                }
+                break;
+            case Variable::Scope::Global:
+                index = bytecode().addConstant(MakeStrong<String>(name));
+                opcode = Opcode::GetGlobal;
+                _globals.insert(name);
+            }
+        } else {
             if (int i = findLocal(_frames.back(), name); i > -1) {
                 index = i;
                 opcode = Opcode::GetLocal;
@@ -195,28 +208,9 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
                 opcode = Opcode::GetGlobal;
                 _globals.insert(name);
             }
-            break;
-        case Variable::Scope::Local:
-            if (int i = findLocal(_frames.back(), name); i > -1) {
-                index = i;
-                opcode = Opcode::GetLocal;
-            } else if (int i = findCapture(name); i > -1) {
-                index = i;
-                opcode = Opcode::GetCapture;
-            } else {
-                error(variable,
-                      Concat("unused local variable ", Quoted(name), " will always be empty"));
-                return;
-            }
-            break;
-        case Variable::Scope::Global:
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::GetGlobal;
-            _globals.insert(name);
         }
     } else {
-        switch (variable.scope) {
-        case Variable::Scope::Local:
+        if (variable.scope && variable.scope.value() == Variable::Scope::Local) {
             if (int i = findLocal(_frames.back(), name); i > -1) {
                 index = i;
                 opcode = Opcode::GetLocal;
@@ -228,9 +222,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
                       Concat("unused local variable ", Quoted(name), " will always be empty"));
                 return;
             }
-            break;
-        case Variable::Scope::Unspecified:
-        case Variable::Scope::Global:
+        } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
             opcode = Opcode::GetGlobal;
             _globals.insert(name);
@@ -369,22 +361,33 @@ void Compiler::visit(const Return &statement) {
 }
 
 void Compiler::visit(const Assignment &assignment) {
-    if (assignment.subscripts.size() > 0) {
-        assignment.variable->accept(*this);
-        for (int i = 0; i < assignment.subscripts.size() - 1; i++) {
-            assignment.subscripts[i]->accept(*this);
-            bytecode().add(assignment.subscripts[i]->location, Opcode::Subscript);
+    assignment.expression->accept(*this);
+    if (assignment.targets.size() > 1) {
+        uint16_t count;
+        if (assignment.targets.size() > UINT16_MAX) {
+            error(*assignment.expression, "too many assignment targets");
+            return;
         }
-        assignment.subscripts.back()->accept(*this);
-        assignment.expression->accept(*this);
-        bytecode().add(assignment.location, Opcode::SetSubscript);
-    } else {
-        assignment.expression->accept(*this);
-        auto name = lowercase(assignment.variable->token.text);
-        if (name == "it") {
-            bytecode().add(assignment.location, Opcode::SetIt);
+        count = assignment.targets.size();
+        bytecode().add(assignment.expression->location, Opcode::UnpackList, count);
+    }
+
+    for (auto &&variable : assignment.targets) {
+        if (variable->subscripts.size() > 0) {
+            variable->variable->accept(*this);
+            for (int i = 0; i < variable->subscripts.size() - 1; i++) {
+                variable->subscripts[i]->accept(*this);
+                bytecode().add(variable->subscripts[i]->location, Opcode::Subscript);
+            }
+            variable->subscripts.back()->accept(*this);
+            bytecode().add(assignment.location, Opcode::SetSubscript);
         } else {
-            assign(assignment.location, *assignment.variable);
+            auto name = lowercase(variable->variable->name.text);
+            if (name == "it") {
+                bytecode().add(assignment.location, Opcode::SetIt);
+            } else {
+                assign(assignment.location, *variable->variable);
+            }
         }
     }
 }
@@ -477,7 +480,7 @@ void Compiler::visit(const Call &call) {
 void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*this); }
 
 void Compiler::visit(const Variable &variable) {
-    auto name = lowercase(variable.token.text);
+    auto name = lowercase(variable.name.text);
     if (name == "it") {
         bytecode().add(variable.location, Opcode::GetIt);
     } else {

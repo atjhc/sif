@@ -81,13 +81,20 @@ struct FunctionDecl : Statement {
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
-struct Assignment : Statement {
+struct AssignmentTarget : Node {
     Owned<Variable> variable;
+    Optional<Token> typeName;
     std::vector<Owned<Expression>> subscripts;
+
+    AssignmentTarget(Owned<Variable> variable, Optional<Token> typeName = None,
+                     std::vector<Owned<Expression>> subscripts = {});
+};
+
+struct Assignment : Statement {
+    std::vector<Owned<AssignmentTarget>> targets;
     Owned<Expression> expression;
 
-    Assignment(Owned<Variable> variable, std::vector<Owned<Expression>> subscripts,
-               Owned<Expression> expression);
+    Assignment(std::vector<Owned<AssignmentTarget>> targets, Owned<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
