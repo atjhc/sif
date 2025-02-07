@@ -92,7 +92,23 @@ void PrettyPrinter::visit(const Return &statement) {
 
 void PrettyPrinter::visit(const Assignment &set) {
     out << "set ";
-    set.variable->accept(*this);
+    auto it = set.targets.begin();
+    while (it != set.targets.end()) {
+        (*it)->variable->accept(*this);
+        if (auto typeName = (*it)->typeName) {
+            out << ": " << typeName.value().text;
+        }
+        for (auto &&subscript : (*it)->subscripts) {
+            out << "[";
+            subscript->accept(*this);
+            out << "]";
+        }
+        it++;
+        if (it != set.targets.end()) {
+            out << ", ";
+        }
+    }
+
     out << " to ";
     set.expression->accept(*this);
 }
@@ -106,14 +122,6 @@ void PrettyPrinter::visit(const Repeat &repeat) {
     printBlock(*repeat.statement);
     out << indentString() << "end repeat";
 }
-
-// void PrettyPrinter::visit(const RepeatCount &r) {
-//     out << "repeat ";
-//     r.countExpression->accept(*this);
-//     out << std::endl;
-//     print(*r.statements);
-//     out << indentString() << "end repeat";
-// }
 
 void PrettyPrinter::visit(const RepeatCondition &repeat) {
     out << "repeat";
@@ -182,15 +190,14 @@ void PrettyPrinter::visit(const Grouping &grouping) {
 }
 
 void PrettyPrinter::visit(const Variable &variable) {
-    if (variable.scope == Variable::Scope::Global) {
-        out << "global ";
-    } else if (variable.scope == Variable::Scope::Local) {
-        out << "local ";
+    if (variable.scope) {
+        if (variable.scope.value() == Variable::Scope::Global) {
+            out << "global ";
+        } else if (variable.scope.value() == Variable::Scope::Local) {
+            out << "local ";
+        }
     }
-    out << variable.token.text;
-    if (variable.typeName.has_value()) {
-        out << ": " << variable.typeName.value().text;
-    }
+    out << variable.name.text;
 }
 
 void PrettyPrinter::visit(const Binary &binary) {
