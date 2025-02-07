@@ -6,12 +6,17 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: make
-      run: make
-    - name: make test
-      run: make test
+      - uses: actions/checkout@v3
+
+      # Build the Docker image from your Dockerfile
+      - name: Build Docker Image
+        run: docker build -t clang-image:latest .
+
+      # Run the tests inside the Docker container
+      - name: Run Tests in Docker
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/mnt/build -w /mnt/build clang-image:latest bash -c "
+          make && make test"

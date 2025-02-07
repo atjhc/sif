@@ -34,7 +34,7 @@ OBJ := $(patsubst $(DSTROOT)/%.cc,$(DSTROOT)/%.o,$(OBJ))
 # create a build rule that matches target sub directories.
 VPATH := $(SRCROOT)
 
-CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror -std=c++20
+CPPFLAGS := -I$(DSTROOT) -I$(SRCROOT) -Wall -Werror -std=c++20 -stdlib=libc++
 
 EXAMPLES := $(shell find examples -name '*.sif')
 
