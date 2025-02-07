@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     apt-get install -y \
     libc++-18-dev \
     libc++abi-18-dev \
+    lldb-18 \
     && apt-get clean
 
 # Set Clang-18 as default
@@ -20,5 +21,5 @@ RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100 && 
     update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
 
 # Set up a non-root user (optional for security)
-RUN useradd -ms /bin/bash developer
-USER developer
+# RUN useradd -ms /bin/bash developer
+# USER developer

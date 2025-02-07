@@ -20,4 +20,4 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/mnt/build \
             -w /mnt/build -u $(id -u):$(id -g) clang-image:latest \
-            bash -c "make && make test"
+            bash -c "make release && make test"
