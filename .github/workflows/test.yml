@@ -18,5 +18,6 @@ jobs:
       # Run the tests inside the Docker container
       - name: Run Tests in Docker
         run: |
-          docker run --rm -v ${{ github.workspace }}:/mnt/build -w /mnt/build clang-image:latest bash -c "
-          make && make test"
+          docker run --rm -v ${{ github.workspace }}:/mnt/build \
+            -w /mnt/build -u $(id -u):$(id -g) my-clang-image:latest \
+            bash -c "make && make test"
