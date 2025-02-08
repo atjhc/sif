@@ -26,8 +26,11 @@ SIF_NAMESPACE_BEGIN
 
 struct Signature {
     struct Argument {
-        Optional<Token> token;
-        Optional<Token> typeName;
+        struct Target {
+            Optional<Token> name;
+            Optional<Token> typeName;
+        };
+        std::vector<Target> targets;
     };
     struct Choice {
         std::vector<Token> tokens;

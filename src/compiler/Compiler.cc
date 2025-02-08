@@ -20,6 +20,7 @@
 #include "utilities/strings.h"
 
 #include <climits>
+#include <ranges>
 
 SIF_NAMESPACE_BEGIN
 
@@ -268,11 +269,13 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     // Add function name and arguments to locals list.
     addLocal(functionDecl.signature.name());
     for (const auto &term : functionDecl.signature.terms) {
-        if (auto arg = std::get_if<Signature::Argument>(&term); arg) {
-            if (arg->token.has_value()) {
-                addLocal(arg->token.value().text);
-            } else {
-                addLocal();
+        if (auto &&arg = std::get_if<Signature::Argument>(&term); arg) {
+            for (auto &&target : arg->targets) {
+                if (target.name.has_value()) {
+                    addLocal(target.name.value().text);
+                } else {
+                    addLocal();
+                }
             }
         }
     }
@@ -372,7 +375,7 @@ void Compiler::visit(const Assignment &assignment) {
         bytecode().add(assignment.expression->location, Opcode::UnpackList, count);
     }
 
-    for (auto &&variable : assignment.targets) {
+    for (auto &&variable : std::views::reverse(assignment.targets)) {
         if (variable->subscripts.size() > 0) {
             variable->variable->accept(*this);
             for (int i = 0; i < variable->subscripts.size() - 1; i++) {
@@ -471,10 +474,17 @@ void Compiler::visit(const NextRepeat &next) { bytecode().addRepeat(next.locatio
 
 void Compiler::visit(const Call &call) {
     resolve(call, call.signature.name());
-    for (const auto &argument : call.arguments) {
+    uint16_t totalCount = 0;
+    for (uint16_t i = 0; i < call.arguments.size(); i++) {
+        auto &&argument = call.arguments[i];
         argument->accept(*this);
+        uint16_t count = call.signature.arguments()[i].targets.size();
+        if (count > 1) {
+            bytecode().add(argument->location, Opcode::UnpackList, count);
+        }
+        totalCount += count;
     }
-    bytecode().add(call.location, Opcode::Call, call.arguments.size());
+    bytecode().add(call.location, Opcode::Call, totalCount);
 }
 
 void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*this); }

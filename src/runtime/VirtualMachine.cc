@@ -23,7 +23,6 @@
 #include "runtime/objects/String.h"
 
 #include <cmath>
-#include <ranges>
 
 SIF_NAMESPACE_BEGIN
 
@@ -286,7 +285,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                               "expected {} values but got {}", count, list->size());
                 break;
             }
-            for (auto &&value : std::views::reverse(list->values())) {
+            for (auto &&value : list->values()) {
                 Push(_stack, value);
             }
             break;

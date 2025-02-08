@@ -1,0 +1,68 @@
+(--
+Solution to part 1 of https://adventofcode.com/2024/day/4
+--)
+
+set board to {}
+repeat for line in the list of lines in the contents of file "input.txt"
+  insert (the list of characters in line) at the end of board
+end repeat
+set height to the size of board
+set width to the size of board[0]
+
+set text to "XMAS"
+set textLength to the size of text
+
+function checkMatch {x, y, dx, dy}
+  set ex to x + dx * (textLength - 1)
+  if ex < 0 or ex >= width then return false
+  set ey to y + dy * (textLength - 1)
+  if ey < 0 or ey >= height then return false
+  repeat for i in 0 ..< textLength
+    if board[y][x] != text[i] then return false
+    set x to x + dx
+    set y to y + dy
+  end repeat
+  return true
+end function
+
+set matches to 0
+repeat for y in 0 ..< height
+  repeat for x in 0 ..< width
+    if checkMatch(x, y,  0,  1) then set matches to matches + 1
+    if checkMatch(x, y,  1,  1) then set matches to matches + 1
+    if checkMatch(x, y,  1,  0) then set matches to matches + 1
+    if checkMatch(x, y,  1, -1) then set matches to matches + 1
+    if checkMatch(x, y,  0, -1) then set matches to matches + 1
+    if checkMatch(x, y, -1, -1) then set matches to matches + 1
+    if checkMatch(x, y, -1,  0) then set matches to matches + 1
+    if checkMatch(x, y, -1,  1) then set matches to matches + 1
+  end repeat
+end repeat
+print matches
+(-- expect
+2406
+--)
+
+(--
+text = "XMAS"
+textLength = len(text)
+with open("input.txt", "r") as file:
+    board = [list(line.strip()) for line in file]
+height = len(board)
+width = len(board[0])
+
+def checkMatch(x, y, dx, dy):
+    ex = x + dx * (textLength - 1)
+    if ex < 0 or ex >= width:
+        return False
+    ey = y + dy * (textLength - 1)
+    if ey < 0 or ey >= height:
+        return False
+    for i in range(0, textLength):
+        if board[y][x] != text[i]:
+            return False
+        x += dx
+        y += dy
+    return True
+
+--)

@@ -46,13 +46,23 @@ static inline std::string Name(const Signature::Argument &argument) { return "{}
 
 static inline std::ostream &operator<<(std::ostream &out, const Signature::Argument &argument) {
     out << "{";
-    if (argument.token.has_value()) {
-        out << argument.token.value();
+
+    auto it = argument.targets.begin();
+    while (it != argument.targets.end()) {
+        if (it->name.has_value()) {
+            out << it->name.value();
+        }
+        out << ":";
+        if (it->typeName.has_value()) {
+            out << " " << it->typeName.value();
+        }
+
+        it++;
+        if (it != argument.targets.end()) {
+            out << ", ";
+        }
     }
-    out << ":";
-    if (argument.typeName.has_value()) {
-        out << " " << argument.typeName.value();
-    }
+
     out << "}";
     return out;
 }

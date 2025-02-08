@@ -325,32 +325,36 @@ Optional<Signature> Parser::parseSignature() {
                 return emitError(Error(peek().location, "expected a word"));
             }
         } else {
-            Optional<Token> word;
-            Optional<Token> typeName;
-            if ((word = consumeWord())) {
-                if (argumentNames.find(word.value().text) != argumentNames.end()) {
-                    return emitError(Error(word.value().location,
-                                           "duplicate argument names in function declaration"));
-                }
-                argumentNames.insert(word.value().text);
-                if (match({Token::Type::Colon})) {
+            std::vector<Signature::Argument::Target> targets;
+            do {
+                Optional<Token> name;
+                Optional<Token> typeName;
+                if ((name = consumeWord())) {
+                    if (argumentNames.find(name.value().text) != argumentNames.end()) {
+                        return emitError(Error(name.value().location,
+                                               "duplicate argument names in function declaration"));
+                    }
+                    argumentNames.insert(name.value().text);
+                    if (match({Token::Type::Colon})) {
+                        if (auto result = consumeWord()) {
+                            typeName = result.value();
+                        } else {
+                            return emitError(Error(peek().location, "expected a type name"));
+                        }
+                    }
+                } else if (match({Token::Type::Colon})) {
                     if (auto result = consumeWord()) {
                         typeName = result.value();
                     } else {
                         return emitError(Error(peek().location, "expected a type name"));
                     }
                 }
-            } else if (match({Token::Type::Colon})) {
-                if (auto result = consumeWord()) {
-                    typeName = result.value();
-                } else {
-                    return emitError(Error(peek().location, "expected a type name"));
-                }
-            }
+                targets.push_back(Signature::Argument::Target{name, typeName});
+            } while (match({Token::Type::Comma}));
             if (!consume(Token::Type::RightBrace)) {
                 return emitError(Error(peek().location, Concat("expected ", Quoted("}"))));
             }
-            signature.terms.push_back(Signature::Argument{word, typeName});
+            signature.terms.push_back(Signature::Argument{targets});
         }
     }
     if (signature.terms.size() == 0) {
@@ -449,11 +453,13 @@ Owned<Statement> Parser::parseFunction() {
     beginScope();
     if (signature) {
         for (auto &&argument : signature->arguments()) {
-            auto token = argument.token;
-            if (token) {
-                auto name = lowercase(token->text);
-                _scopes.back().variables.insert(name);
-                _variables.insert(name);
+            for (auto &&target : argument.targets) {
+                auto token = target.name;
+                if (token) {
+                    auto name = lowercase(token->text);
+                    _scopes.back().variables.insert(name);
+                    _variables.insert(name);
+                }
             }
         }
     }

@@ -65,3 +65,19 @@ print the H
 H
 H
 --)
+
+function unpack {a, b, c}
+  print a, b, c
+end function
+unpack(1, 2, 3)
+(-- expect
+1 2 3
+--)
+
+function scale {x, y} {scale}
+  return {x * scale, y * scale}
+end function
+print scale (1, 2) 10
+(-- expect
+10 20
+--)

@@ -1,0 +1,29 @@
+try set x, y to "Hello"
+print error (the error)
+(-- error
+expected a list but got string
+--)
+
+try set x, y to {1, 2, 3}
+print error (the error)
+(-- error
+expected 2 values but got 3
+--)
+
+function say {a, b, c}
+	print a, b, c
+end function
+try say "Hello"
+print error (the error)
+(-- error
+expected a list but got string
+--)
+
+function point {x, y}
+	return {x, y}
+end function
+try point {1, 2, 3}
+print error (the error)
+(-- error
+expected 2 values but got 3
+--)
