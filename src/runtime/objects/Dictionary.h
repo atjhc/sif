@@ -21,13 +21,14 @@
 #include "runtime/Value.h"
 
 #include "runtime/protocols/Copyable.h"
+#include "runtime/protocols/Enumerable.h"
 #include "runtime/protocols/Subscriptable.h"
 
 #include <string>
 
 SIF_NAMESPACE_BEGIN
 
-class Dictionary : public Object, public Copyable, public Subscriptable {
+class Dictionary : public Object, public Copyable, public Enumerable, public Subscriptable {
   public:
     Dictionary();
     Dictionary(const ValueMap &values);
@@ -44,12 +45,30 @@ class Dictionary : public Object, public Copyable, public Subscriptable {
     // Copyable
     Strong<Object> copy() const override;
 
+    // Enumerable
+    Value enumerator(Value self) const override;
+
     // Subscriptable
     Result<Value, Error> subscript(Location, const Value &) const override;
     Result<Value, Error> setSubscript(Location, const Value &, Value) override;
 
   private:
     ValueMap _values;
+};
+
+class DictionaryEnumerator : public Enumerator {
+  public:
+    DictionaryEnumerator(Strong<Dictionary> dictionary);
+
+    Value enumerate() override;
+    bool isAtEnd() override;
+
+    std::string typeName() const override;
+    std::string description() const override;
+
+  private:
+    Strong<Dictionary> _dictionary;
+    ValueMap::iterator _it;
 };
 
 SIF_NAMESPACE_END

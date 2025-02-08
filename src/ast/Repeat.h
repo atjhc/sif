@@ -43,10 +43,11 @@ struct RepeatCondition : Repeat {
 };
 
 struct RepeatFor : Repeat {
-    Owned<Variable> variable;
+    std::vector<Owned<Variable>> variables;
     Owned<Expression> expression;
 
-    RepeatFor(Owned<Statement> statement, Owned<Variable> variable, Owned<Expression> expression);
+    RepeatFor(Owned<Statement> statement, std::vector<Owned<Variable>> variables,
+              Owned<Expression> expression);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
 };

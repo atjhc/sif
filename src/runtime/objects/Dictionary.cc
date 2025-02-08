@@ -12,6 +12,7 @@
 //
 
 #include "runtime/objects/Dictionary.h"
+#include "runtime/objects/List.h"
 #include "utilities/hasher.h"
 
 SIF_NAMESPACE_BEGIN
@@ -62,6 +63,10 @@ bool Dictionary::contains(const Value &value) const { return _values.find(value)
 
 Strong<Object> Dictionary::copy() const { return MakeOwned<Dictionary>(_values); }
 
+Value Dictionary::enumerator(Value self) const {
+    return MakeStrong<DictionaryEnumerator>(self.as<Dictionary>());
+}
+
 Result<Value, Error> Dictionary::subscript(Location location, const Value &value) const {
     auto it = _values.find(value);
     if (it == _values.end()) {
@@ -74,6 +79,25 @@ Result<Value, Error> Dictionary::subscript(Location location, const Value &value
 Result<Value, Error> Dictionary::setSubscript(Location, const Value &key, Value value) {
     _values[key] = value;
     return Value();
+}
+
+#pragma mark - DictionaryEnumerator
+
+DictionaryEnumerator::DictionaryEnumerator(Strong<Dictionary> dictionary)
+    : _dictionary(dictionary), _it(dictionary->values().begin()) {}
+
+Value DictionaryEnumerator::enumerate() {
+    auto &&pair = *_it;
+    _it++;
+    return MakeStrong<List>(std::vector{pair.first, pair.second});
+}
+
+bool DictionaryEnumerator::isAtEnd() { return _it == _dictionary->values().end(); }
+
+std::string DictionaryEnumerator::typeName() const { return "DictionaryEnumerator"; }
+
+std::string DictionaryEnumerator::description() const {
+    return Concat("E(", _dictionary->description(), ")");
 }
 
 SIF_NAMESPACE_END

@@ -751,21 +751,30 @@ Owned<Statement> Parser::parseRepeatConditional() {
 }
 
 Owned<Statement> Parser::parseRepeatFor() {
-    Owned<Variable> variable;
+    std::vector<Owned<Variable>> variables;
     Owned<Expression> expression;
-    auto token = consumeWord();
-    if (!token) {
-        emitError(Error(peek().location, "expected a word"));
-        synchronize();
-    } else {
-        variable = MakeOwned<Variable>(token.value());
-        variable->location = token.value().location;
+
+    do {
+        auto token = consumeWord();
+        if (!token) {
+            emitError(Error(peek().location, "expected a word"));
+            synchronize();
+        } else {
+            auto variable = MakeOwned<Variable>(token.value());
+            variable->location = token.value().location;
+            auto name = lowercase(variable->name.text);
+            _scopes.back().variables.insert(name);
+            _variables.insert(name);
+            variables.push_back(std::move(variable));
+        }
+    } while (match({Token::Type::Comma}));
+
+    if (!variables.empty()) {
         if (!consume(Token::Type::In)) {
             emitError(Error(peek().location, Concat("expected ", Quoted("in"))));
             synchronize();
         }
-    }
-    if (variable) {
+
         auto list = parseList();
         if (!list) {
             emitError(list.error());
@@ -777,9 +786,6 @@ Owned<Statement> Parser::parseRepeatFor() {
                 synchronize();
             }
         }
-        auto name = lowercase(variable->name.text);
-        _scopes.back().variables.insert(name);
-        _variables.insert(name);
     }
     auto statement = parseBlock({Token::Type::End});
     if (!statement) {
@@ -791,7 +797,7 @@ Owned<Statement> Parser::parseRepeatFor() {
     }
     _parsingDepth--;
     auto repeat =
-        MakeOwned<RepeatFor>(std::move(statement), std::move(variable), std::move(expression));
+        MakeOwned<RepeatFor>(std::move(statement), std::move(variables), std::move(expression));
     return repeat;
 }
 

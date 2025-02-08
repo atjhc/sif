@@ -455,7 +455,12 @@ void Compiler::visit(const RepeatFor &foreach) {
     auto jumpExitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
     _nextRepeat = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
     bytecode().add(foreach.location, Opcode::Enumerate);
-    assign(foreach.location, *foreach.variable);
+    if (foreach.variables.size() > 1) {
+        bytecode().add(foreach.location, Opcode::UnpackList, foreach.variables.size());
+    }
+    for (auto &&variable : std::views::reverse(foreach.variables)) {
+        assign(foreach.location, *variable);
+    }
 
     foreach.statement->accept(*this);
 
