@@ -316,14 +316,18 @@ Optional<Signature> Parser::parseSignature() {
                 signature.terms.push_back(Signature::Term{token});
             }
         } else if (token.type == Token::Type::LeftParen) {
-            if (auto word = consumeWord()) {
-                signature.terms.push_back(Signature::Option{word.value()});
-                if (!consume(Token::Type::RightParen)) {
-                    return emitError(Error(peek().location, Concat("expected ", Quoted(")"))));
+            Signature::Choice choice;
+            do {
+                if (auto word = consumeWord()) {
+                    choice.tokens.push_back(word.value());
+                } else {
+                    return emitError(Error(peek().location, "expected a word"));
                 }
-            } else {
-                return emitError(Error(peek().location, "expected a word"));
+            } while (match({Token::Type::Slash}));
+            if (!consume(Token::Type::RightParen)) {
+                return emitError(Error(peek().location, Concat("expected ", Quoted(")"))));
             }
+            signature.terms.push_back(Signature::Option{choice});
         } else {
             std::vector<Signature::Argument::Target> targets;
             do {
@@ -1210,16 +1214,17 @@ bool Parser::Grammar::insert(const Signature &signature,
         argument = MakeOwned<Grammar>();
         argument->insert(signature, std::next(term));
     };
+    auto insertChoice = [&](Signature::Choice choice) {
+        for (auto &token : choice.tokens) {
+            insertToken(token);
+        }
+    };
     std::visit(Overload{
                    insertToken,
                    insertArgument,
-                   [&](Signature::Choice choice) {
-                       for (auto &token : choice.tokens) {
-                           insertToken(token);
-                       }
-                   },
-                   [&](Signature::Option argument) {
-                       insertToken(argument.token);
+                   insertChoice,
+                   [&](Signature::Option option) {
+                        insertChoice(option.choice);
                        if (!insert(signature, std::next(term))) {
                            result = false;
                        }

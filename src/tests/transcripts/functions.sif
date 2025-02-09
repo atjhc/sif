@@ -66,6 +66,20 @@ H
 H
 --)
 
+function (a/an/the) P
+    return "P"
+end function
+print P
+print a P
+print an P
+print the P
+(-- expect
+P
+P
+P
+P
+--)
+
 function unpack {a, b, c}
   print a, b, c
 end function

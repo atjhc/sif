@@ -487,7 +487,7 @@ static void _dictionary(ModuleMap &natives) {
 
 static void _list(ModuleMap &natives, std::mt19937_64 &engine,
                   std::function<Integer(Integer)> randomInteger) {
-    natives[S("items {} to {} of {}")] = MakeStrong<Native>(
+    natives[S("items {} to {} (in/of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             auto list = values[2].as<List>();
             if (!list) {
@@ -504,7 +504,7 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine,
             return MakeStrong<List>(list->values().begin() + index1,
                                     list->values().begin() + index2 + 1);
         });
-    natives[S("(the) mid/middle item of {}")] = MakeStrong<Native>(
+    natives[S("(the) mid/middle item (in/of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             auto list = values[0].as<List>();
             if (!list) {
@@ -512,7 +512,7 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine,
             }
             return list->values().at(list->values().size() / 2);
         });
-    natives[S("(the) last item of {}")] = MakeStrong<Native>(
+    natives[S("(the) last item (in/of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             auto list = values[0].as<List>();
             if (!list) {
@@ -520,7 +520,7 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine,
             }
             return list->values().back();
         });
-    natives[S("(the) number of items in {}")] = MakeStrong<Native>(
+    natives[S("(the) number of items (in/of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             auto list = values[0].as<List>();
             if (!list) {
@@ -528,7 +528,7 @@ static void _list(ModuleMap &natives, std::mt19937_64 &engine,
             }
             return Integer(list->values().size());
         });
-    natives[S("any item of {}")] =
+    natives[S("any item (in/of) {}")] =
         MakeStrong<Native>([randomInteger](CallFrame &frame, Location location,
                                            Value *values) -> Result<Value, Error> {
             auto list = values[0].as<List>();
@@ -807,9 +807,9 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
             return MakeStrong<List>(result);
         });
     };
-    natives[S("(the) list of chars/characters in {}")] = listOf(chunk::character);
-    natives[S("(the) list of words in {}")] = listOf(chunk::word);
-    natives[S("(the) list of lines in {}")] = listOf(chunk::line);
+    natives[S("(the) list of chars/characters (in/of) {}")] = listOf(chunk::character);
+    natives[S("(the) list of words (in/of) {}")] = listOf(chunk::word);
+    natives[S("(the) list of lines (in/of) {}")] = listOf(chunk::line);
 
     auto chunkAt = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
@@ -825,9 +825,9 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
             return index_chunk(chunkType, index, text->string()).get();
         });
     };
-    natives[S("char/character {} of {}")] = chunkAt(chunk::character);
-    natives[S("word {} of {}")] = chunkAt(chunk::word);
-    natives[S("line {} of {}")] = chunkAt(chunk::line);
+    natives[S("char/character {} in/of {}")] = chunkAt(chunk::character);
+    natives[S("word {} in/of {}")] = chunkAt(chunk::word);
+    natives[S("line {} in/of {}")] = chunkAt(chunk::line);
 
     auto chunksAt = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
@@ -844,9 +844,9 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
             return range_chunk(chunkType, start, end, text->string()).get();
         });
     };
-    natives[S("chars/characters {} to {} of {}")] = chunksAt(chunk::character);
-    natives[S("words {} to {} of {}")] = chunksAt(chunk::word);
-    natives[S("lines {} to {} of {}")] = chunksAt(chunk::line);
+    natives[S("chars/characters {} to {} in/of {}")] = chunksAt(chunk::character);
+    natives[S("words {} to {} in/of {}")] = chunksAt(chunk::word);
+    natives[S("lines {} to {} in/of {}")] = chunksAt(chunk::line);
 
     auto anyChunk = [randomInteger](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>(
@@ -859,9 +859,9 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
                 return random_chunk(chunkType, randomInteger, text->string()).get();
             });
     };
-    natives[S("any char/character of {}")] = anyChunk(chunk::character);
-    natives[S("any word of {}")] = anyChunk(chunk::word);
-    natives[S("any line of {}")] = anyChunk(chunk::line);
+    natives[S("any char/character in/of {}")] = anyChunk(chunk::character);
+    natives[S("any word in/of {}")] = anyChunk(chunk::word);
+    natives[S("any line in/of {}")] = anyChunk(chunk::line);
 
     auto middleChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
@@ -873,9 +873,9 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
             return middle_chunk(chunkType, text->string()).get();
         });
     };
-    natives[S("(the) mid/middle char/character of {}")] = middleChunk(chunk::character);
-    natives[S("(the) mid/middle word of {}")] = middleChunk(chunk::word);
-    natives[S("(the) mid/middle line of {}")] = middleChunk(chunk::line);
+    natives[S("(the) mid/middle char/character in/of {}")] = middleChunk(chunk::character);
+    natives[S("(the) mid/middle word in/of {}")] = middleChunk(chunk::word);
+    natives[S("(the) mid/middle line in/of {}")] = middleChunk(chunk::line);
 
     auto lastChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
@@ -887,9 +887,9 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
             return last_chunk(chunkType, text->string()).get();
         });
     };
-    natives[S("(the) last char/character of {}")] = lastChunk(chunk::character);
-    natives[S("(the) last word of {}")] = lastChunk(chunk::word);
-    natives[S("(the) last line of {}")] = lastChunk(chunk::line);
+    natives[S("(the) last char/character in/of {}")] = lastChunk(chunk::character);
+    natives[S("(the) last word in/of {}")] = lastChunk(chunk::word);
+    natives[S("(the) last line in/of {}")] = lastChunk(chunk::line);
 
     auto numberOfChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, Location location,
@@ -901,9 +901,9 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
             return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
         });
     };
-    natives[S("(the) number of chars/characters in {}")] = numberOfChunk(chunk::character);
-    natives[S("(the) number of words in {}")] = numberOfChunk(chunk::word);
-    natives[S("(the) number of lines in {}")] = numberOfChunk(chunk::line);
+    natives[S("(the) number of chars/characters (in/of) {}")] = numberOfChunk(chunk::character);
+    natives[S("(the) number of words (in/of) {}")] = numberOfChunk(chunk::word);
+    natives[S("(the) number of lines (in/of) {}")] = numberOfChunk(chunk::line);
 }
 
 static void _range(ModuleMap &natives, std::mt19937_64 &engine,
@@ -915,14 +915,14 @@ static void _range(ModuleMap &natives, std::mt19937_64 &engine,
             }
             return MakeStrong<Range>(values[0].asInteger(), values[1].asInteger(), true);
         });
-    natives[S("(the) lower bound of {}")] = MakeStrong<Native>(
+    natives[S("(the) lower bound (in/of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             if (auto range = values[0].as<Range>()) {
                 return range->start();
             }
             return Fail(Error(location, "expected a range"));
         });
-    natives[S("(the) upper bound of {}")] = MakeStrong<Native>(
+    natives[S("(the) upper bound (in/of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             if (auto range = values[0].as<Range>()) {
                 return range->end();
@@ -948,7 +948,7 @@ static void _range(ModuleMap &natives, std::mt19937_64 &engine,
             }
             return range1->overlaps(*range2);
         });
-    natives[S("(a) random number (in) {}")] =
+    natives[S("(a) random number (in/of) {}")] =
         MakeStrong<Native>([randomInteger](CallFrame &frame, Location location,
                                            Value *values) -> Result<Value, Error> {
             if (auto range = values[0].as<Range>()) {
@@ -996,7 +996,7 @@ static void _math(ModuleMap &natives) {
     natives[S("round {}")] = basicFunction(round);
     natives[S("trunc/truncate {}")] = basicFunction(trunc);
 
-    natives[S("(the) max/maximum (of) {}")] = MakeStrong<Native>(
+    natives[S("(the) max/maximum (value) (of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             auto list = values[0].as<List>();
             if (!list) {
@@ -1021,7 +1021,7 @@ static void _math(ModuleMap &natives) {
             }
             return max;
         });
-    natives[S("(the) min/minimum (of) {}")] = MakeStrong<Native>(
+    natives[S("(the) min/minimum (value) (of) {}")] = MakeStrong<Native>(
         [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
             auto list = values[0].as<List>();
             if (!list) {

@@ -36,7 +36,7 @@ struct Signature {
         std::vector<Token> tokens;
     };
     struct Option {
-        Token token;
+        Choice choice;
     };
     using Term = std::variant<Token, Choice, Argument, Option>;
 

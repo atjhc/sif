@@ -22,27 +22,37 @@
 
 SIF_NAMESPACE_BEGIN
 
+// The purpose of Name() is to return a normalized version of the Signature that
+// may be compared for equality or used as a key.
 static inline std::string Name(const Token &token) { return lowercase(token.text); }
 
+static inline std::string Name(const Signature::Choice &choice) {
+    std::vector<Token> tokens = choice.tokens;
+    std::sort(tokens.begin(), tokens.end(), [](const Token &a, const Token &b) {
+        return a.text < b.text;
+    });
+    return Join(tokens, "/");
+}
+
+static inline std::string Name(const Signature::Option &option) {
+    return Concat("(", Name(option.choice), ")");
+}
+
+static inline std::string Name(const Signature::Argument &argument) { return "{}"; }
+
+// The operator<< overloads are intended only for debugging purposes, and are meant to
+// replicate how the Signature was originally parsed. No normalization is done.
 static inline std::ostream &operator<<(std::ostream &out, const Token &token) {
     return out << Name(token);
 }
-
-static inline std::string Name(const Signature::Choice &choice) { return Join(choice.tokens, "/"); }
-
 static inline std::ostream &operator<<(std::ostream &out, const Signature::Choice &choice) {
     return out << Name(choice);
 }
 
-static inline std::string Name(const Signature::Option &option) {
-    return Concat("(", lowercase(option.token.text), ")");
-}
-
 static inline std::ostream &operator<<(std::ostream &out, const Signature::Option &option) {
-    return out << Name(option);
+    return out << "(" << option.choice << ")";
 }
 
-static inline std::string Name(const Signature::Argument &argument) { return "{}"; }
 
 static inline std::ostream &operator<<(std::ostream &out, const Signature::Argument &argument) {
     out << "{";
