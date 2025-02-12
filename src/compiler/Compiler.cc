@@ -384,26 +384,22 @@ void Compiler::visit(const ExpressionStatement &statement) {
 
 void Compiler::visit(const Repeat &statement) {
     auto nextRepeat = _nextRepeat;
-    auto exitRepeat = _exitRepeat;
+    _exitPatches.push({});
     _nextRepeat = bytecode().code().size();
-    bytecode().add(statement.location, Opcode::Jump, 3);
-    _exitRepeat = bytecode().add(statement.location, Opcode::Jump, 0);
-    auto repeat = bytecode().code().size();
     statement.statement->accept(*this);
-    bytecode().addRepeat(statement.location, repeat);
-    bytecode().patchRelativeJump(_exitRepeat);
+    bytecode().addRepeat(statement.location, _nextRepeat);
+    for (auto location : _exitPatches.top()) {
+        bytecode().patchRelativeJump(location);
+    }
     _nextRepeat = nextRepeat;
-    _exitRepeat = exitRepeat;
+    _exitPatches.pop();
 }
 
 void Compiler::visit(const RepeatCondition &statement) {
     auto nextRepeat = _nextRepeat;
-    auto exitRepeat = _exitRepeat;
+    _exitPatches.push({});
 
-    bytecode().add(statement.location, Opcode::Jump, 3);
-    _exitRepeat = bytecode().add(statement.location, Opcode::Jump, 0);
     _nextRepeat = bytecode().code().size();
-
     statement.condition->accept(*this);
 
     size_t jumpIfCondition = bytecode().code().size();
@@ -419,22 +415,20 @@ void Compiler::visit(const RepeatCondition &statement) {
 
     bytecode().patchRelativeJump(jumpIfCondition);
     bytecode().add(statement.location, Opcode::Pop);
-    bytecode().patchRelativeJump(_exitRepeat);
+    for (auto location : _exitPatches.top()) {
+        bytecode().patchRelativeJump(location);
+    }
 
     _nextRepeat = nextRepeat;
-    _exitRepeat = exitRepeat;
+    _exitPatches.pop();
 }
 
 void Compiler::visit(const RepeatFor &foreach) {
     auto nextRepeat = _nextRepeat;
-    auto exitRepeat = _exitRepeat;
+    _exitPatches.push({});
 
     foreach.expression->accept(*this);
     bytecode().add(foreach.location, Opcode::GetEnumerator);
-
-    bytecode().add(foreach.location, Opcode::Jump, 4);
-    _exitRepeat = bytecode().add(foreach.location, Opcode::Pop);
-    auto jumpExitRepeat = bytecode().add(foreach.location, Opcode::Jump, 0);
     _nextRepeat = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
     bytecode().add(foreach.location, Opcode::Enumerate);
     if (foreach.variables.size() > 1) {
@@ -448,14 +442,18 @@ void Compiler::visit(const RepeatFor &foreach) {
 
     bytecode().addRepeat(foreach.location, _nextRepeat);
     bytecode().patchRelativeJump(_nextRepeat);
+    for (auto location : _exitPatches.top()) {
+        bytecode().patchRelativeJump(location);
+    }
     bytecode().add(foreach.location, Opcode::Pop);
-    bytecode().patchRelativeJump(jumpExitRepeat);
 
     _nextRepeat = nextRepeat;
-    _exitRepeat = exitRepeat;
+    _exitPatches.pop();
 }
 
-void Compiler::visit(const ExitRepeat &exit) { bytecode().addRepeat(exit.location, _exitRepeat); }
+void Compiler::visit(const ExitRepeat &exit) {
+    _exitPatches.top().push_back(bytecode().add(exit.location, Opcode::Jump, 0));
+}
 
 void Compiler::visit(const NextRepeat &next) { bytecode().addRepeat(next.location, _nextRepeat); }
 

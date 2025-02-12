@@ -115,7 +115,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     std::vector<Frame> _frames;
     Set<std::string> _globals;
     uint16_t _nextRepeat;
-    uint16_t _exitRepeat;
+    std::stack<std::vector<uint16_t>> _exitPatches;
     bool _failed = false;
 };
 
