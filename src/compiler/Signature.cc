@@ -28,9 +28,8 @@ static inline std::string Name(const Token &token) { return lowercase(token.text
 
 static inline std::string Name(const Signature::Choice &choice) {
     std::vector<Token> tokens = choice.tokens;
-    std::sort(tokens.begin(), tokens.end(), [](const Token &a, const Token &b) {
-        return a.text < b.text;
-    });
+    std::sort(tokens.begin(), tokens.end(),
+              [](const Token &a, const Token &b) { return a.text < b.text; });
     return Join(tokens, "/");
 }
 
@@ -52,7 +51,6 @@ static inline std::ostream &operator<<(std::ostream &out, const Signature::Choic
 static inline std::ostream &operator<<(std::ostream &out, const Signature::Option &option) {
     return out << "(" << option.choice << ")";
 }
-
 
 static inline std::ostream &operator<<(std::ostream &out, const Signature::Argument &argument) {
     out << "{";

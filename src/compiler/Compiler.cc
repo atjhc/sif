@@ -86,74 +86,56 @@ int Compiler::addCapture(Frame &frame, int index, bool isLocal) {
     return frame.captures.size() - 1;
 }
 
-void Compiler::assign(const Location &location, const std::string &name) {
+void Compiler::assignLocal(const Location &location, const std::string &name) {
     uint16_t index;
     Opcode opcode;
-
-    if (_scopeDepth > 0) {
-        if (int i = findLocal(_frames.back(), name); i > -1) {
-            index = i;
-            opcode = Opcode::SetLocal;
-        } else if (int i = findCapture(name); i > -1) {
-            index = i;
-            opcode = Opcode::SetCapture;
-        } else {
-            addLocal(name);
-            index = locals().size() - 1;
-            opcode = Opcode::SetLocal;
-        }
+    if (int i = findLocal(_frames.back(), name); i > -1) {
+        index = i;
+        opcode = Opcode::SetLocal;
+    } else if (int i = findCapture(name); i > -1) {
+        index = i;
+        opcode = Opcode::SetCapture;
     } else {
-        index = bytecode().addConstant(MakeStrong<String>(name));
-        opcode = Opcode::SetGlobal;
+        addLocal(name);
+        index = locals().size() - 1;
+        opcode = Opcode::SetLocal;
     }
     bytecode().add(location, opcode, index);
 }
 
-void Compiler::assign(const Location &location, const Variable &variable) {
-    uint16_t index;
-    Opcode opcode;
+void Compiler::assignGlobal(const Location &location, const std::string &name) {
+    auto index = bytecode().addConstant(MakeStrong<String>(name));
+    bytecode().add(location, Opcode::SetGlobal, index);
+}
 
-    auto name = lowercase(variable.name.text);
-    if (_scopeDepth > 0) {
-        if (variable.scope && variable.scope.value() == Variable::Scope::Global) {
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::SetGlobal;
-        } else {
-            if (int i = findLocal(_frames.back(), name); i > -1) {
-                index = i;
-                opcode = Opcode::SetLocal;
-            } else if (int i = findCapture(name); i > -1) {
-                index = i;
-                opcode = Opcode::SetCapture;
-            } else {
-                addLocal(name);
-                index = locals().size() - 1;
-                opcode = Opcode::SetLocal;
-            }
-        }
+void Compiler::assignVariable(const Location &location, const std::string &name,
+                              Optional<Variable::Scope> scope) {
+    if (scope == Variable::Scope::Local) {
+        assignLocal(location, name);
+    } else if (scope == Variable::Scope::Global) {
+        assignGlobal(location, name);
+    } else if (_scopeDepth > 0) {
+        assignLocal(location, name);
+    } else if (_config.interactive) {
+        assignGlobal(location, name);
     } else {
-        if (variable.scope && variable.scope.value() == Variable::Scope::Local) {
-            if (int i = findLocal(_frames.back(), name); i > -1) {
-                index = i;
-                opcode = Opcode::SetLocal;
-            } else {
-                addLocal(name);
-                index = locals().size() - 1;
-                opcode = Opcode::SetLocal;
-            }
-        } else {
-            index = bytecode().addConstant(MakeStrong<String>(name));
-            opcode = Opcode::SetGlobal;
-        }
+        assignLocal(location, name);
     }
-    bytecode().add(location, opcode, index);
+}
+
+void Compiler::assignFunction(const Location &location, const std::string &name) {
+    if (_scopeDepth > 0) {
+        assignLocal(location, name);
+    } else {
+        assignGlobal(location, name);
+    }
 }
 
 void Compiler::resolve(const Call &call, const std::string &name) {
     uint16_t index = 0;
     Opcode opcode;
 
-    if (_scopeDepth > 0) {
+    if (!_config.interactive || _scopeDepth > 0) {
         if (int i = findLocal(_frames.back(), name); i > -1) {
             index = i;
             opcode = Opcode::GetLocal;
@@ -176,7 +158,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
     uint16_t index = 0;
     Opcode opcode;
 
-    if (_scopeDepth > 0) {
+    if (!_config.interactive || _scopeDepth > 0) {
         if (variable.scope) {
             switch (variable.scope.value()) {
             case Variable::Scope::Local:
@@ -296,7 +278,7 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     auto constant = bytecode().addConstant(function);
     auto name = functionDecl.signature.name();
     bytecode().add(functionDecl.location, Opcode::Constant, constant);
-    assign(functionDecl.location, name);
+    assignFunction(functionDecl.location, name);
 }
 
 void Compiler::visit(const If &ifStatement) {
@@ -332,7 +314,7 @@ void Compiler::visit(const Use &useStatement) {
         const auto &value = pair.second;
         auto constant = bytecode().addConstant(value);
         bytecode().add(useStatement.location, Opcode::Constant, constant);
-        assign(useStatement.location, name);
+        assignVariable(useStatement.location, name, Variable::Scope::Local);
     }
 }
 
@@ -348,7 +330,7 @@ void Compiler::visit(const Using &usingStatement) {
         const auto &value = pair.second;
         auto constant = bytecode().addConstant(value);
         bytecode().add(usingStatement.location, Opcode::Constant, constant);
-        assign(usingStatement.location, name);
+        assignVariable(usingStatement.location, name, Variable::Scope::Local);
     }
     usingStatement.statement->accept(*this);
     endScope(usingStatement.location);
@@ -389,7 +371,7 @@ void Compiler::visit(const Assignment &assignment) {
             if (name == "it") {
                 bytecode().add(assignment.location, Opcode::SetIt);
             } else {
-                assign(assignment.location, *variable->variable);
+                assignVariable(assignment.location, name, variable->variable->scope);
             }
         }
     }
@@ -459,7 +441,7 @@ void Compiler::visit(const RepeatFor &foreach) {
         bytecode().add(foreach.location, Opcode::UnpackList, foreach.variables.size());
     }
     for (auto &&variable : std::views::reverse(foreach.variables)) {
-        assign(foreach.location, *variable);
+        assignVariable(foreach.location, lowercase(variable->name.text), variable->scope);
     }
 
     foreach.statement->accept(*this);
@@ -610,9 +592,8 @@ void Compiler::visit(const DictionaryLiteral &dictionary) {
 
 static inline Value valueOf(const Token &token) {
     switch (token.type) {
-    case Token::Type::StringLiteral: {
+    case Token::Type::StringLiteral:
         return token.encodedString();
-    }
     case Token::Type::IntLiteral:
         return std::stol(token.text);
     case Token::Type::FloatLiteral:

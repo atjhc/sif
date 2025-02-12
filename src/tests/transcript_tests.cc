@@ -95,7 +95,7 @@ TEST_CASE(TranscriptTests, All) {
         auto statement = parser.statement();
 
         if (statement) {
-            Compiler compiler(CompilerConfig{loader, reporter});
+            Compiler compiler(CompilerConfig{loader, reporter, false});
             auto bytecode = compiler.compile(*statement);
             if (bytecode) {
                 VirtualMachine vm;

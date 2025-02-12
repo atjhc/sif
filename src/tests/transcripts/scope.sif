@@ -1,35 +1,48 @@
--- Global scope
-set foo to "outer"
+-- Scope specifiers, default local in non-interactive
+set local x to 10
+set global x to 20
+print x
+print global x
+print local x
+(-- expect
+10
+20
+10
+--)
+
+-- Defaults to local scope in non-interactive mode
+set x to 10
 function A
-  set foo to "inner"
-  print foo
+  set x to 20
 end function
 A
+print x
 (-- expect
-inner
+20
 --)
 
-print foo
+-- Global scope specifiers in functions
+function B
+  set global x to 20
+end function
+B
+print x
 (-- expect
-outer
+20
 --)
 
--- Local scope
-function A
-  set bar to "inner"
-  if yes then
-    print bar
-    set bar to "inner2"
-  end if
+-- Local scope not changing in if-blocks
+set bar to "local"
+if yes then
   print bar
-end function
-A
+  set bar to "local2"
+end if
+print bar
 (-- expect
-inner
-inner2
+local
+local2
 --)
 
--- Block scope
 function A
   if yes then
     set inner to 1
@@ -41,7 +54,7 @@ A
 1
 --)
 
--- Local functions
+-- Local function shadowing
 function A
   print "outer"
 end function
@@ -90,3 +103,4 @@ A
 (-- expect
 bar
 --)
+

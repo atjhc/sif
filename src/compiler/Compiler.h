@@ -31,6 +31,7 @@ SIF_NAMESPACE_BEGIN
 struct CompilerConfig {
     ModuleProvider &moduleProvider;
     Reporter &errorReporter;
+    bool interactive;
 };
 
 class Compiler : public Statement::Visitor, public Expression::Visitor {
@@ -64,8 +65,11 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     int findCapture(const std::string &name);
     int addCapture(Frame &frame, int index, bool isLocal);
 
-    void assign(const Location &location, const std::string &name);
-    void assign(const Location &location, const Variable &variable);
+    void assignLocal(const Location &location, const std::string &name);
+    void assignGlobal(const Location &location, const std::string &name);
+    void assignVariable(const Location &location, const std::string &name,
+                        Optional<Variable::Scope> scope);
+    void assignFunction(const Location &location, const std::string &name);
 
     void resolve(const Call &call, const std::string &name);
     void resolve(const Variable &variable, const std::string &name);

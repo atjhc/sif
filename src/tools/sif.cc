@@ -65,6 +65,7 @@ static int traceRuntime = 0;
 static bool prettyPrint = false;
 static bool printBytecode = false;
 static const char *codeString = nullptr;
+static bool interactive = false;
 
 ModuleLoader loader;
 VirtualMachine vm;
@@ -127,7 +128,7 @@ int evaluate(const std::string &name, Reader &reader) {
         return Success;
     }
 
-    CompilerConfig compilerConfig{loader, reporter};
+    CompilerConfig compilerConfig{loader, reporter, interactive};
     Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {
@@ -154,6 +155,7 @@ int evaluate(const std::string &name, Reader &reader) {
 }
 
 static int repl(const std::vector<std::string> &arguments) {
+    interactive = true;
     while (!std::cin.eof()) {
         auto reader = REPLReader();
         evaluate("<stdin>", reader);

@@ -82,7 +82,7 @@ Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
     }
 
     // Compile the bytecode for the new module.
-    CompilerConfig compilerConfig{*this, reporter};
+    CompilerConfig compilerConfig{*this, reporter, false};
     Compiler compiler(compilerConfig);
     auto bytecode = compiler.compile(*statement);
     if (!bytecode) {

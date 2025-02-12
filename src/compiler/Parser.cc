@@ -1219,18 +1219,19 @@ bool Parser::Grammar::insert(const Signature &signature,
             insertToken(token);
         }
     };
-    std::visit(Overload{
-                   insertToken,
-                   insertArgument,
-                   insertChoice,
-                   [&](Signature::Option option) {
-                        insertChoice(option.choice);
-                       if (!insert(signature, std::next(term))) {
-                           result = false;
-                       }
-                   },
-               },
-               *term);
+    std::visit(
+        Overload{
+            insertToken,
+            insertArgument,
+            insertChoice,
+            [&](Signature::Option option) {
+                insertChoice(option.choice);
+                if (!insert(signature, std::next(term))) {
+                    result = false;
+                }
+            },
+        },
+        *term);
     return result;
 }
 
