@@ -99,7 +99,7 @@ struct TestSuite {
 
     std::vector<std::string> files_in(const std::string &path) const;
     std::vector<std::string> all_files_in(const std::string &path) const;
-    std::string file_contents(const std::string &path) const;
+    std::optional<std::string> file_contents(const std::string &path) const;
     std::string basename(const std::string &path) const;
     std::string dirname(const std::string &path) const;
 

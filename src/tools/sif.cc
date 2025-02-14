@@ -72,6 +72,8 @@ VirtualMachine vm;
 Core coreModule;
 System systemModule;
 
+Mapping<std::string, Value> globals;
+
 class REPLReader : public Reader {
   public:
     bool readable() const override { return !std::cin.eof(); }
@@ -116,6 +118,11 @@ int evaluate(const std::string &name, Reader &reader) {
 
     parser.declare(Signature::Make("clear").value());
 
+    for (auto &&global : globals) {
+        parser.declare(global.first);
+        vm.addGlobal(global.first, global.second);
+    }
+
     auto statement = parser.statement();
     if (!statement) {
         return ParseFailure;
@@ -145,12 +152,12 @@ int evaluate(const std::string &name, Reader &reader) {
         reporter.report(result.error());
         return RuntimeFailure;
     }
+    globals = vm.exports();
 
     return Success;
 }
 
 static int repl(const std::vector<std::string> &arguments) {
-    interactive = true;
     while (!std::cin.eof()) {
         auto reader = REPLReader();
         evaluate("<stdin>", reader);
@@ -188,6 +195,8 @@ int usage(int argc, char *argv[]) {
               << " -e " << ANSI_UNDERLINE("code") << ", --execute=" << ANSI_UNDERLINE("code")
               << std::endl
               << "\t Execute " << ANSI_UNDERLINE("code") << " and exit." << std::endl
+              << " -i, --interactive" << std::endl
+              << "\t Run in interactive (REPL) mode." << std::endl
               << " -p, --pretty-print" << std::endl
               << "\t Pretty print the generated abstract syntax tree." << std::endl
               << " -b, --print-bytecode" << std::endl
@@ -205,6 +214,7 @@ int main(int argc, char *argv[]) {
         {"trace-runtime", no_argument, &traceRuntime, 1},
 #endif
         {"execute", required_argument, NULL, 'e'},
+        {"interactive", no_argument, NULL, 'i'},
         {"pretty-print", no_argument, NULL, 'p'},
         {"print-bytecode", no_argument, NULL, 'b'},
         {"help", no_argument, NULL, 'h'},
@@ -212,7 +222,7 @@ int main(int argc, char *argv[]) {
     };
 
     int c, opt_index = 0;
-    while ((c = getopt_long(argc, argv, "pbhe:", long_options, &opt_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "pbhie:", long_options, &opt_index)) != -1) {
         switch (c) {
         case 'p':
             prettyPrint = true;
@@ -222,6 +232,9 @@ int main(int argc, char *argv[]) {
             break;
         case 'e':
             codeString = optarg;
+            break;
+        case 'i':
+            interactive = true;
             break;
         case 'h':
             return usage(argc, argv);
@@ -276,7 +289,8 @@ int main(int argc, char *argv[]) {
         return run_source(codeString, arguments);
     }
     if (fileName.empty()) {
-        if (isatty(STDIN_FILENO)) {
+        if (isatty(STDIN_FILENO) || interactive) {
+            interactive = true;
             return repl(arguments);
         } else {
             return run(arguments);

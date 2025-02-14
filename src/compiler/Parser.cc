@@ -87,6 +87,11 @@ void Parser::declare(const Signature &signature) {
     _grammar.insert(signature);
 }
 
+void Parser::declare(const std::string &variable) {
+    _scopes.back().variables.insert(variable);
+    _variables.insert(variable);
+}
+
 const std::vector<Signature> &Parser::declarations() const { return _exportedDeclarations; }
 
 #pragma mark - Utilities
@@ -390,7 +395,7 @@ Owned<Statement> Parser::parseBlock(const Parser::TokenTypes &endTypes) {
         }
     }
     auto block = MakeOwned<Block>(std::move(statements));
-    block->range = SourceRange{start, previous().end()};
+    block->range = SourceRange{start, peek().end()};
     return block;
 }
 
@@ -464,8 +469,7 @@ Owned<Statement> Parser::parseFunction() {
                 auto token = target.name;
                 if (token) {
                     auto name = lowercase(token->text);
-                    _scopes.back().variables.insert(name);
-                    _variables.insert(name);
+                    declare(name);
                 }
             }
         }
@@ -770,8 +774,7 @@ Owned<Statement> Parser::parseRepeatFor() {
             auto variable = MakeOwned<Variable>(token.value());
             variable->range = SourceRange{token.value().location, token.value().end()};
             auto name = lowercase(variable->name.text);
-            _scopes.back().variables.insert(name);
-            _variables.insert(name);
+            declare(name);
             variables.push_back(std::move(variable));
         }
     } while (match({Token::Type::Comma}));
@@ -864,8 +867,7 @@ Result<Owned<Statement>, Error> Parser::parseAssignment() {
         }
         if (subscripts.size() == 0) {
             auto name = lowercase(token.value().text);
-            _scopes.back().variables.insert(name);
-            _variables.insert(name);
+            declare(name);
         }
         auto variable = MakeOwned<Variable>(token.value(), scope);
         variable->range = SourceRange{token.value().location, token.value().end()};

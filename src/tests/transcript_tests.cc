@@ -58,8 +58,12 @@ TEST_CASE(TranscriptTests, All) {
 
         std::cout << "Executing " << path << std::endl;
 
-        auto source = suite.file_contents(path);
-        ASSERT_NEQ(source, "");
+        auto sourceOpt = suite.file_contents(path);
+        ASSERT_TRUE(sourceOpt.has_value());
+        if (!sourceOpt) {
+            continue;
+        }
+        auto source = sourceOpt.value();
 
         auto expectedOutput = gather(source, "expect");
         auto expectedErrors = gather(source, "error");

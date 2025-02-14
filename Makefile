@@ -49,6 +49,7 @@ debug: all
 test: CPPFLAGS += -g -DDEBUG=1
 test: $(DSTROOT)/test $(TEST_OBJ) examples
 	$(DSTROOT)/test $(SRCROOT)/tests
+	$(SRCROOT)/tests/repl_tests.sh
 
 .PHONY: examples $(EXAMPLES)
 

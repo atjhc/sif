@@ -50,6 +50,7 @@ class Parser {
     Optional<Signature> signature();
 
     void declare(const Signature &signature);
+    void declare(const std::string &variable);
 
     const std::vector<Signature> &declarations() const;
 

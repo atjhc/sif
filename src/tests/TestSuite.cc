@@ -226,7 +226,7 @@ std::vector<std::string> TestSuite::all_files_in(const std::string &path) const 
     return paths;
 }
 
-std::string TestSuite::file_contents(const std::string &path) const {
+std::optional<std::string> TestSuite::file_contents(const std::string &path) const {
     auto fullPath = std::filesystem::path(config.resourcesPath) / path;
 
     std::ifstream file(fullPath);
@@ -234,7 +234,7 @@ std::string TestSuite::file_contents(const std::string &path) const {
 
     if (!file) {
         config.out << "Could not open file at path: " << fullPath << std::endl;
-        return contents;
+        return std::nullopt;
     }
 
     std::ostringstream ss;
