@@ -23,13 +23,13 @@
 
 SIF_NAMESPACE_BEGIN
 
-size_t Bytecode::add(Location location, Opcode opcode) {
+size_t Bytecode::add(SourceLocation location, Opcode opcode) {
     _code.push_back(opcode);
     _locations.push_back(location);
     return _code.size() - 1;
 }
 
-size_t Bytecode::add(Location location, Opcode opcode, uint16_t argument) {
+size_t Bytecode::add(SourceLocation location, Opcode opcode, uint16_t argument) {
     _code.push_back(opcode);
     _code.push_back(static_cast<Opcode>(argument >> 8));
     _code.push_back(static_cast<Opcode>(argument & 0xff));
@@ -39,7 +39,7 @@ size_t Bytecode::add(Location location, Opcode opcode, uint16_t argument) {
     return _code.size() - 3;
 }
 
-void Bytecode::addRepeat(Location location, uint16_t argument) {
+void Bytecode::addRepeat(SourceLocation location, uint16_t argument) {
     auto offset = _code.size() - argument + 3;
     if (offset > USHRT_MAX) {
         throw std::out_of_range(Concat("jump too far (", SHRT_MAX, ")"));
@@ -102,7 +102,7 @@ const std::vector<std::string> &Bytecode::locals() const { return _locals; }
 
 const std::vector<Value> &Bytecode::constants() const { return _constants; }
 
-Location Bytecode::location(Iterator it) const { return _locations[it - _code.begin()]; }
+SourceLocation Bytecode::location(Iterator it) const { return _locations[it - _code.begin()]; }
 
 static inline uint16_t ReadUInt16(Bytecode::Iterator position) {
     return RawValue(position[0]) << 8 | RawValue(position[1]);
@@ -328,7 +328,7 @@ struct BytecodePrinter {
         }
 
         auto position = bytecode.code().begin();
-        Optional<Location> previousLocation;
+        Optional<SourceLocation> previousLocation;
         while (position < bytecode.code().end()) {
             out << indent << bytecode.decodePosition(position);
 

@@ -377,6 +377,7 @@ Optional<Signature> Parser::parseSignature() {
 
 Owned<Statement> Parser::parseBlock(const Parser::TokenTypes &endTypes) {
     std::vector<Owned<Statement>> statements;
+    auto start = peek().location;
     while (!isAtEnd()) {
         if (match({Token::Type::NewLine})) {
             continue;
@@ -388,7 +389,9 @@ Owned<Statement> Parser::parseBlock(const Parser::TokenTypes &endTypes) {
             statements.push_back(std::move(statement));
         }
     }
-    return MakeOwned<Block>(std::move(statements));
+    auto block = MakeOwned<Block>(std::move(statements));
+    block->range = SourceRange{start, previous().end()};
+    return block;
 }
 
 Owned<Statement> Parser::parseStatement() {
@@ -434,7 +437,7 @@ Owned<Statement> Parser::parseStatement() {
 }
 
 Owned<Statement> Parser::parseFunction() {
-    auto location = previous().location;
+    auto start = previous().location;
 
     _parsingDepth++;
     auto signature = parseSignature();
@@ -478,14 +481,14 @@ Owned<Statement> Parser::parseFunction() {
 
     if (signature) {
         auto decl = MakeOwned<FunctionDecl>(signature.value(), std::move(statement));
-        decl->location = location;
+        decl->range = SourceRange{start, previous().end()};
         return decl;
     }
     return nullptr;
 }
 
 Owned<Statement> Parser::parseIf() {
-    auto location = previous().location;
+    auto start = previous().location;
     auto condition = parseExpression();
 
     _parsingDepth++;
@@ -577,15 +580,15 @@ Owned<Statement> Parser::parseIf() {
 
     auto ifStatement =
         MakeOwned<If>(std::move(condition.value()), std::move(ifClause), std::move(elseClause));
-    ifStatement->location = location;
+    ifStatement->range = SourceRange{start, previous().end()};
     return ifStatement;
 }
 
 Owned<Statement> Parser::parseUse() {
-    auto location = previous().location;
+    auto start = previous().location;
     Optional<Token> token = match({Token::Type::StringLiteral, Token::Type::Word});
     if (!token) {
-        emitError(Error(peek().location, "expected a string literal or word"));
+        emitError(Error(peek().range(), "expected a string literal or word"));
         synchronize();
         return nullptr;
     }
@@ -600,19 +603,19 @@ Owned<Statement> Parser::parseUse() {
             _grammar.insert(signature);
         }
     } else if (!module) {
-        emitError(Error(location, module.error().what()));
+        emitError(Error(start, module.error().what()));
     }
 
     auto useStatement = MakeOwned<Use>(token.value());
-    useStatement->location = location;
+    useStatement->range = SourceRange{start, previous().end()};
     return useStatement;
 }
 
 Owned<Statement> Parser::parseUsing() {
-    auto location = previous().location;
+    auto start = previous().location;
     Optional<Token> token = match({Token::Type::StringLiteral, Token::Type::Word});
     if (!token) {
-        emitError(Error(peek().location, "expected a string literal"));
+        emitError(Error(peek().range(), "expected a string literal"));
         synchronize();
         return nullptr;
     }
@@ -623,14 +626,14 @@ Owned<Statement> Parser::parseUsing() {
     if (module && module.value()) {
         beginScope(Scope{module.value()->signatures()});
     } else if (!module) {
-        emitError(Error(location, module.error().what()));
+        emitError(Error(start, module.error().what()));
     }
 
     Owned<Statement> statement;
     if (consumeNewLine()) {
         statement = parseBlock({Token::Type::End});
         if (!consumeEnd(Token::Type::Using)) {
-            emitError(Error(peek().location, Concat("expected ", Quoted("end"))));
+            emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
             return nullptr;
         }
     } else {
@@ -650,18 +653,18 @@ Owned<Statement> Parser::parseUsing() {
     }
 
     auto usingStatement = MakeOwned<Using>(token.value(), std::move(statement));
-    usingStatement->location = location;
+    usingStatement->range = SourceRange{start, previous().end()};
     return usingStatement;
 }
 
 Owned<Statement> Parser::parseTry() {
-    auto location = previous().location;
+    auto start = previous().location;
 
     Owned<Statement> statement;
     if (consumeNewLine()) {
         statement = parseBlock({Token::Type::End});
         if (!consumeEnd(Token::Type::Try)) {
-            emitError(Error(peek().location, Concat("expected ", Quoted("end"))));
+            emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
             return nullptr;
         }
     } else {
@@ -677,44 +680,44 @@ Owned<Statement> Parser::parseTry() {
     }
 
     auto tryStatement = MakeOwned<Try>(std::move(statement));
-    tryStatement->location = location;
+    tryStatement->range = SourceRange{start, previous().end()};
     return tryStatement;
 }
 
 Owned<Statement> Parser::parseRepeat() {
-    auto location = previous().location;
+    auto start = previous().location;
 
     _parsingDepth++;
     Optional<Token> token;
     if (consumeNewLine() || (token = match({Token::Type::Forever}))) {
         if (token.has_value() && !consumeNewLine()) {
-            emitError(Error(peek().location, "expected a new line"));
+            emitError(Error(peek().range(), "expected a new line"));
             synchronize();
         }
         auto statement = parseRepeatForever();
         if (statement) {
-            statement->location = location;
+            statement->range = SourceRange{start, previous().end()};
         }
         return statement;
     }
     if ((token = match({Token::Type::While, Token::Type::Until}))) {
         auto statement = parseRepeatConditional();
         if (statement) {
-            statement->location = location;
+            statement->range = SourceRange{start, previous().end()};
         }
         return statement;
     }
     if (match({Token::Type::For})) {
         auto statement = parseRepeatFor();
         if (statement) {
-            statement->location = location;
+            statement->range = SourceRange{start, previous().end()};
         }
         return statement;
     }
 
     emitError(
-        Error(peek().location, Concat("expected ", Quoted("forever"), ", ", Quoted("while"), ", ",
-                                      Quoted("until"), ", ", Quoted("for"), ", or a new line")));
+        Error(peek().range(), Concat("expected ", Quoted("forever"), ", ", Quoted("while"), ", ",
+                                     Quoted("until"), ", ", Quoted("for"), ", or a new line")));
     synchronize();
     return parseRepeatForever();
 }
@@ -722,7 +725,7 @@ Owned<Statement> Parser::parseRepeat() {
 Owned<Statement> Parser::parseRepeatForever() {
     auto statement = parseBlock({Token::Type::End});
     if (!consumeEnd(Token::Type::Repeat)) {
-        emitError(Error(peek().location, Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
         return nullptr;
     }
     _parsingDepth--;
@@ -737,12 +740,12 @@ Owned<Statement> Parser::parseRepeatConditional() {
         emitError(condition.error());
         synchronize();
     } else if (!consumeNewLine()) {
-        emitError(Error(peek().location, "expected a new line"));
+        emitError(Error(peek().range(), "expected a new line"));
         synchronize();
     }
     auto statement = parseBlock({Token::Type::End});
     if (!consumeEnd(Token::Type::Repeat)) {
-        emitError(Error(peek().location, Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
         return nullptr;
     }
     _parsingDepth--;
@@ -761,11 +764,11 @@ Owned<Statement> Parser::parseRepeatFor() {
     do {
         auto token = consumeWord();
         if (!token) {
-            emitError(Error(peek().location, "expected a word"));
+            emitError(Error(peek().range(), "expected a word"));
             synchronize();
         } else {
             auto variable = MakeOwned<Variable>(token.value());
-            variable->location = token.value().location;
+            variable->range = SourceRange{token.value().location, token.value().end()};
             auto name = lowercase(variable->name.text);
             _scopes.back().variables.insert(name);
             _variables.insert(name);
@@ -775,7 +778,7 @@ Owned<Statement> Parser::parseRepeatFor() {
 
     if (!variables.empty()) {
         if (!consume(Token::Type::In)) {
-            emitError(Error(peek().location, Concat("expected ", Quoted("in"))));
+            emitError(Error(peek().range(), Concat("expected ", Quoted("in"))));
             synchronize();
         }
 
@@ -786,7 +789,7 @@ Owned<Statement> Parser::parseRepeatFor() {
         } else {
             expression = std::move(list.value());
             if (!consumeNewLine()) {
-                emitError(Error(peek().location, "expected a new line"));
+                emitError(Error(peek().range(), "expected a new line"));
                 synchronize();
             }
         }
@@ -796,7 +799,7 @@ Owned<Statement> Parser::parseRepeatFor() {
         return statement;
     }
     if (!consumeEnd(Token::Type::Repeat)) {
-        emitError(Error(peek().location, Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
         return nullptr;
     }
     _parsingDepth--;
@@ -822,7 +825,7 @@ Result<Owned<Statement>, Error> Parser::parseSimpleStatement() {
 }
 
 Result<Owned<Statement>, Error> Parser::parseAssignment() {
-    auto location = previous().location;
+    auto start = previous().location;
     std::vector<Owned<AssignmentTarget>> variableDecls;
     do {
         Optional<Variable::Scope> scope = None;
@@ -837,13 +840,13 @@ Result<Owned<Statement>, Error> Parser::parseAssignment() {
 
         auto token = consumeWord();
         if (!token) {
-            return Fail(Error(peek().location, "expected a variable name"));
+            return Fail(Error(peek().range(), "expected a variable name"));
         }
         if (match({Token::Type::Colon})) {
             if (auto word = consumeWord()) {
                 typeName = word.value();
             } else {
-                emitError(Error(peek().location, "expected a type name"));
+                emitError(Error(peek().range(), "expected a type name"));
                 synchronize();
                 return nullptr;
             }
@@ -855,7 +858,7 @@ Result<Owned<Statement>, Error> Parser::parseAssignment() {
                 }
                 subscripts.push_back(std::move(subscript.value()));
                 if (!consume(Token::Type::RightBracket)) {
-                    return Fail(Error(peek().location, Concat("expected ", Quoted("]"))));
+                    return Fail(Error(peek().range(), Concat("expected ", Quoted("]"))));
                 }
             }
         }
@@ -865,13 +868,16 @@ Result<Owned<Statement>, Error> Parser::parseAssignment() {
             _variables.insert(name);
         }
         auto variable = MakeOwned<Variable>(token.value(), scope);
-        variable->location = token.value().location;
-        variableDecls.emplace_back(
-            MakeOwned<AssignmentTarget>(std::move(variable), typeName, std::move(subscripts)));
+        variable->range = SourceRange{token.value().location, token.value().end()};
+        auto assignmentTarget =
+            MakeOwned<AssignmentTarget>(std::move(variable), typeName, std::move(subscripts));
+        assignmentTarget->range =
+            SourceRange{assignmentTarget->variable->range.start, previous().end()};
+        variableDecls.push_back(std::move(assignmentTarget));
     } while (match({Token::Type::Comma}));
 
     if (!consume(Token::Type::To)) {
-        return Fail(Error(peek().location, Concat("expected ", Quoted("to"))));
+        return Fail(Error(peek().range(), Concat("expected ", Quoted("to"))));
     }
 
     auto expression = parseExpression();
@@ -881,40 +887,40 @@ Result<Owned<Statement>, Error> Parser::parseAssignment() {
 
     auto assignment =
         MakeOwned<Assignment>(std::move(variableDecls), std::move(expression.value()));
-    assignment->location = location;
+    assignment->range = SourceRange{start, previous().end()};
     return assignment;
 }
 
 Result<Owned<Statement>, Error> Parser::parseExit() {
-    auto location = previous().location;
+    auto start = previous().location;
     if (!_parsingRepeat) {
-        return Fail(Error(previous().location,
-                          Concat("unexpected ", Quoted("exit"), " outside repeat block")));
+        return Fail(
+            Error(peek().range(), Concat("unexpected ", Quoted("exit"), " outside repeat block")));
     }
     if (!consume(Token::Type::Repeat)) {
-        return Fail(Error(peek().location, Concat("expected ", Quoted("repeat"))));
+        return Fail(Error(peek().range(), Concat("expected ", Quoted("repeat"))));
     }
     auto exitRepeat = MakeOwned<ExitRepeat>();
-    exitRepeat->location = location;
+    exitRepeat->range = SourceRange{start, previous().end()};
     return exitRepeat;
 }
 
 Result<Owned<Statement>, Error> Parser::parseNext() {
-    auto location = previous().location;
+    auto start = previous().location;
     if (!_parsingRepeat) {
-        return Fail(Error(previous().location,
-                          Concat("unexpected ", Quoted("next"), " outside repeat block")));
+        return Fail(
+            Error(peek().range(), Concat("unexpected ", Quoted("next"), " outside repeat block")));
     }
     if (!consume(Token::Type::Repeat)) {
         return Fail(Error(peek().location, Concat("expected ", Quoted("repeat"))));
     }
     auto nextRepeat = MakeOwned<NextRepeat>();
-    nextRepeat->location = location;
+    nextRepeat->range = SourceRange{start, previous().end()};
     return nextRepeat;
 }
 
 Result<Owned<Statement>, Error> Parser::parseReturn() {
-    auto location = previous().location;
+    auto start = previous().location;
     Owned<Expression> expression;
     if (!isAtEnd() && !check({Token::Type::NewLine})) {
         if (auto returnExpression = parseExpression()) {
@@ -924,7 +930,7 @@ Result<Owned<Statement>, Error> Parser::parseReturn() {
         }
     }
     auto returnStatement = MakeOwned<Return>(std::move(expression));
-    returnStatement->location = location;
+    returnStatement->range = SourceRange{start, previous().end()};
     return returnStatement;
 }
 
@@ -934,7 +940,7 @@ Result<Owned<Statement>, Error> Parser::parseExpressionStatement() {
         return Fail(expression.error());
     }
     auto statement = MakeOwned<ExpressionStatement>(std::move(expression.value()));
-    statement->location = statement->expression->location;
+    statement->range = statement->expression->range;
     return statement;
 }
 
@@ -989,7 +995,7 @@ Unary::Operator unaryOp(Token::Type tokenType) {
 Result<Owned<Expression>, Error> Parser::parseExpression() {
     auto token = peek();
     if (token.isEndOfStatement()) {
-        return Fail(Error(peek().location, "expected expression"));
+        return Fail(Error(peek().range(), "expected expression"));
     }
     return parseClause();
 }
@@ -999,16 +1005,17 @@ Result<Owned<Expression>, Error> Parser::parseClause() {
     if (!expression) {
         return expression;
     }
-    auto location = expression.value()->location;
+    auto start = expression.value()->range.start;
     while (auto operatorToken = match({Token::Type::And, Token::Type::Or})) {
         auto equality = parseEquality();
         if (!equality) {
             return equality;
         }
+        auto end = equality.value()->range.end;
         expression =
             MakeOwned<Binary>(std::move(expression.value()), binaryOp(operatorToken.value().type),
                               std::move(equality.value()));
-        expression.value()->location = location;
+        expression.value()->range = SourceRange{start, end};
     }
     return expression;
 }
@@ -1018,7 +1025,8 @@ Result<Owned<Expression>, Error> Parser::parseEquality() {
     if (!expression) {
         return expression;
     }
-    auto location = expression.value()->location;
+    auto start = expression.value()->range.start;
+    SourceLocation end;
     while (auto operatorToken =
                match({Token::Type::Equal, Token::Type::NotEqual, Token::Type::Is})) {
         if (operatorToken.value().type == Token::Type::Is && match({Token::Type::Not})) {
@@ -1026,6 +1034,7 @@ Result<Owned<Expression>, Error> Parser::parseEquality() {
             if (!comparison) {
                 return comparison;
             }
+            end = comparison.value()->range.end;
             expression =
                 MakeOwned<Binary>(std::move(expression.value()), Binary::Operator::NotEqual,
                                   std::move(comparison.value()));
@@ -1034,11 +1043,12 @@ Result<Owned<Expression>, Error> Parser::parseEquality() {
             if (!comparison) {
                 return comparison;
             }
+            end = comparison.value()->range.end;
             expression = MakeOwned<Binary>(std::move(expression.value()),
                                            binaryOp(operatorToken.value().type),
                                            std::move(comparison.value()));
         }
-        expression.value()->location = location;
+        expression.value()->range = SourceRange{start, end};
     }
     return expression;
 }
@@ -1048,7 +1058,7 @@ Result<Owned<Expression>, Error> Parser::parseComparison() {
     if (!expression) {
         return expression;
     }
-    auto location = expression.value()->location;
+    auto start = expression.value()->range.start;
     while (auto operatorToken =
                match({Token::Type::LessThan, Token::Type::GreaterThan, Token::Type::LessThanOrEqual,
                       Token::Type::GreaterThanOrEqual})) {
@@ -1056,10 +1066,11 @@ Result<Owned<Expression>, Error> Parser::parseComparison() {
         if (!list) {
             return list;
         }
+        auto end = list.value()->range.end;
         expression =
             MakeOwned<Binary>(std::move(expression.value()), binaryOp(operatorToken.value().type),
                               std::move(list.value()));
-        expression.value()->location = location;
+        expression.value()->range = SourceRange{start, end};
     }
     return expression;
 }
@@ -1070,7 +1081,7 @@ Result<Owned<Expression>, Error> Parser::parseList() {
         return expression;
     }
     if (check({Token::Type::Comma})) {
-        auto location = expression.value()->location;
+        auto start = expression.value()->range.start;
 
         std::vector<Owned<Expression>> expressions;
         expressions.push_back(std::move(expression.value()));
@@ -1083,7 +1094,7 @@ Result<Owned<Expression>, Error> Parser::parseList() {
         }
 
         expression = MakeOwned<ListLiteral>(std::move(expressions));
-        expression.value()->location = location;
+        expression.value()->range = SourceRange{start, previous().end()};
     }
 
     return expression;
@@ -1094,16 +1105,17 @@ Result<Owned<Expression>, Error> Parser::parseRange() {
     if (!expression) {
         return expression;
     }
-    auto location = expression.value()->location;
+    auto start = expression.value()->range.start;
     while (auto rangeOperator = match({Token::Type::ThreeDots, Token::Type::ClosedRange})) {
         bool closed = rangeOperator.value().type == Token::Type::ThreeDots ? true : false;
         auto term = parseTerm();
         if (!term) {
             return term;
         }
+        auto end = term.value()->range.end;
         expression =
             MakeOwned<RangeLiteral>(std::move(expression.value()), std::move(term.value()), closed);
-        expression.value()->location = location;
+        expression.value()->range = SourceRange{start, end};
     }
     return expression;
 }
@@ -1113,16 +1125,17 @@ Result<Owned<Expression>, Error> Parser::parseTerm() {
     if (!expression) {
         return expression;
     }
-    auto location = expression.value()->location;
+    auto start = expression.value()->range.start;
     while (auto operatorToken = match({Token::Type::Plus, Token::Type::Minus})) {
         auto factor = parseFactor();
         if (!factor) {
             return factor;
         }
+        auto end = factor.value()->range.end;
         expression =
             MakeOwned<Binary>(std::move(expression.value()), binaryOp(operatorToken.value().type),
                               std::move(factor.value()));
-        expression.value()->location = location;
+        expression.value()->range = SourceRange{start, end};
     }
     return expression;
 }
@@ -1132,17 +1145,18 @@ Result<Owned<Expression>, Error> Parser::parseFactor() {
     if (!expression) {
         return expression;
     }
-    auto location = expression.value()->location;
+    auto start = expression.value()->range.start;
     while (auto operatorToken =
                match({Token::Type::Star, Token::Type::Slash, Token::Type::Percent})) {
         auto exponent = parseExponent();
         if (!exponent) {
             return exponent;
         }
+        auto end = exponent.value()->range.end;
         expression =
             MakeOwned<Binary>(std::move(expression.value()), binaryOp(operatorToken.value().type),
                               std::move(exponent.value()));
-        expression.value()->location = location;
+        expression.value()->range = SourceRange{start, end};
     }
     return expression;
 }
@@ -1152,16 +1166,17 @@ Result<Owned<Expression>, Error> Parser::parseExponent() {
     if (!expression) {
         return expression;
     }
-    auto location = expression.value()->location;
+    auto start = expression.value()->range.start;
     while (auto operatorToken = match({Token::Type::Carrot})) {
         auto unary = parseUnary();
         if (!unary) {
             return unary;
         }
+        auto end = unary.value()->range.end;
         expression =
             MakeOwned<Binary>(std::move(expression.value()), binaryOp(operatorToken.value().type),
                               std::move(unary.value()));
-        expression.value()->location = location;
+        expression.value()->range = SourceRange{start, end};
     }
     return expression;
 }
@@ -1172,9 +1187,10 @@ Result<Owned<Expression>, Error> Parser::parseUnary() {
         if (!unary) {
             return unary;
         }
+        auto end = unary.value()->range.end;
         auto expression =
             MakeOwned<Unary>(unaryOp(operatorToken.value().type), std::move(unary.value()));
-        expression->location = operatorToken.value().location;
+        expression->range = SourceRange{operatorToken.value().location, end};
         return expression;
     }
     return parseCall();
@@ -1241,7 +1257,7 @@ Result<Owned<Expression>, Error> Parser::parseCall() {
 
     auto grammar = &_grammar;
     auto token = peek();
-    auto location = token.location;
+    auto start = token.location;
 
     while (token.isPrimary()) {
         if (token.isWord()) {
@@ -1292,14 +1308,13 @@ Result<Owned<Expression>, Error> Parser::parseCall() {
     auto signature = grammar->signature;
     if (!signature) {
         if (matchingSignature.terms.size() == 0) {
-            return Fail(Error(location, Concat("unexpected ", token.description())));
+            return Fail(Error(start, Concat("unexpected ", token.description())));
         }
-        return Fail(
-            Error(location, Concat("no matching function ", matchingSignature.description())));
+        return Fail(Error(start, Concat("no matching function ", matchingSignature.description())));
     }
     auto call =
         MakeOwned<Call>(signature.value(), std::vector<Optional<Token>>(), std::move(arguments));
-    call->location = location;
+    call->range = SourceRange{start, previous().end()};
     return call;
 }
 
@@ -1308,18 +1323,18 @@ Result<Owned<Expression>, Error> Parser::parseSubscript() {
     if (!expression) {
         return expression;
     }
-    auto location = expression.value()->location;
+    auto start = expression.value()->range.start;
     while (auto operatorToken = match({Token::Type::LeftBracket})) {
         auto subscript = parseExpression();
         if (!subscript) {
             return subscript;
         }
+        if (!consume(Token::Type::RightBracket)) {
+            return Fail(Error(peek().range(), Concat("expected ", Quoted("]"))));
+        }
         expression = MakeOwned<Binary>(std::move(expression.value()), Binary::Subscript,
                                        std::move(subscript.value()));
-        expression.value()->location = location;
-        if (!consume(Token::Type::RightBracket)) {
-            return Fail(Error(peek().location, Concat("expected ", Quoted("]"))));
-        }
+        expression.value()->range = SourceRange{start, previous().end()};
     }
     return expression;
 }
@@ -1333,7 +1348,7 @@ Result<Owned<Expression>, Error> Parser::parsePrimary() {
             Token::Type::Empty,
         })) {
         auto literal = MakeOwned<Literal>(token.value());
-        literal->location = token.value().location;
+        literal->range = SourceRange{token.value().location, token.value().end()};
         return literal;
     }
 
@@ -1350,47 +1365,58 @@ Result<Owned<Expression>, Error> Parser::parsePrimary() {
         return parseVariable();
     }
 
-    return Fail(Error(peek().location, Concat("unexpected ", peek().description())));
+    return Fail(Error(peek().range(), Concat("unexpected ", peek().description())));
 }
 
 Result<Owned<Expression>, Error> Parser::parseVariable() {
     Optional<Variable::Scope> scope = None;
+    SourceLocation start;
     if (peek().type == Token::Type::Global || peek().type == Token::Type::Local) {
+        start = peek().location;
         scope =
             (peek().type == Token::Type::Global ? Variable::Scope::Global : Variable::Scope::Local);
         advance();
     }
     auto token = consumeWord();
     if (!token) {
-        return Fail(Error(peek().location, "expected a variable name"));
+        return Fail(Error(peek().range(), "expected a variable name"));
+    }
+    if (!scope) {
+        start = token.value().location;
     }
     auto variable = MakeOwned<Variable>(token.value(), scope);
-    variable->location = token.value().location;
+    variable->range = SourceRange{start, token.value().end()};
     return variable;
 }
 
 Result<Owned<Expression>, Error> Parser::parseGrouping() {
+    auto start = previous().location;
     auto expression = parseExpression();
     if (!expression) {
         return expression;
     }
     if (!consume(Token::Type::RightParen)) {
-        return Fail(Error(peek().location, Concat("expected ", Quoted(")"))));
+        return Fail(Error(peek().range(), Concat("expected ", Quoted(")"))));
     }
     auto grouping = MakeOwned<Grouping>(std::move(expression.value()));
-    grouping->location = grouping->expression->location;
+    grouping->range = SourceRange{start, previous().end()};
     return grouping;
 }
 
 Result<Owned<Expression>, Error> Parser::parseContainerLiteral() {
+    auto start = previous().location;
     if (match({Token::Type::RightBrace})) {
-        return MakeOwned<ListLiteral>();
+        auto container = MakeOwned<ListLiteral>();
+        container->range = SourceRange{start, previous().end()};
+        return container;
     }
     if (match({Token::Type::Colon})) {
         if (!consume(Token::Type::RightBrace)) {
-            return Fail(Error(peek().location, Concat("expected ", Quoted("}"))));
+            return Fail(Error(peek().range(), Concat("expected ", Quoted("}"))));
         }
-        return MakeOwned<DictionaryLiteral>();
+        auto container = MakeOwned<DictionaryLiteral>();
+        container->range = SourceRange{start, previous().end()};
+        return container;
     }
 
     Owned<Expression> containerExpression;
@@ -1413,7 +1439,7 @@ Result<Owned<Expression>, Error> Parser::parseContainerLiteral() {
                     return keyExpression;
                 }
                 if (!consume(Token::Type::Colon)) {
-                    return Fail(Error(peek().location, Concat("expected ", Quoted(":"))));
+                    return Fail(Error(peek().range(), Concat("expected ", Quoted(":"))));
                 }
                 auto valueExpression = parseTerm();
                 if (!valueExpression) {
@@ -1440,12 +1466,13 @@ Result<Owned<Expression>, Error> Parser::parseContainerLiteral() {
         values.push_back(std::move(expression.value()));
         containerExpression = MakeOwned<ListLiteral>(std::move(values));
     } else {
-        return Fail(Error(peek().location, Concat("expected ", Quoted(":"), " or ", Quoted(","))));
+        return Fail(Error(peek().range(), Concat("expected ", Quoted(":"), " or ", Quoted(","))));
     }
 
     if (!consume(Token::Type::RightBrace)) {
-        return Fail(Error(peek().location, Concat("expected ", Quoted("}"))));
+        return Fail(Error(peek().range(), Concat("expected ", Quoted("}"))));
     }
+    containerExpression->range = SourceRange{start, previous().end()};
     return containerExpression;
 }
 

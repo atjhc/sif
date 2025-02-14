@@ -80,9 +80,9 @@ class Bytecode {
 
     Bytecode() = default;
 
-    size_t add(Location location, Opcode opcode);
-    size_t add(Location location, Opcode opcode, uint16_t argument);
-    void addRepeat(Location location, uint16_t argument);
+    size_t add(SourceLocation location, Opcode opcode);
+    size_t add(SourceLocation location, Opcode opcode, uint16_t argument);
+    void addRepeat(SourceLocation location, uint16_t argument);
     uint16_t addLocal(std::string local);
     uint16_t addConstant(Value constant);
 
@@ -94,7 +94,7 @@ class Bytecode {
     const std::vector<std::string> &locals() const;
     const std::vector<Value> &constants() const;
 
-    Location location(Iterator it) const;
+    SourceLocation location(Iterator it) const;
 
     friend std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode);
 
@@ -119,7 +119,7 @@ class Bytecode {
     std::vector<Opcode> _code;
     std::vector<Value> _constants;
     std::vector<std::string> _locals;
-    std::vector<Location> _locations;
+    std::vector<SourceLocation> _locations;
 };
 
 SIF_NAMESPACE_END

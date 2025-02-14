@@ -162,19 +162,31 @@ std::vector<ValueType<Iterable>> Filter(Iterable &container, Functor f) {
     return result;
 }
 
-struct Location {
+struct SourceLocation {
     unsigned int position = 0;
     unsigned int lineNumber = 0;
 
-    bool operator==(const Location &location) const {
+    bool operator==(const SourceLocation &location) const {
         return lineNumber == location.lineNumber && position == location.position;
     }
-    bool operator!=(const Location &location) const {
+    bool operator!=(const SourceLocation &location) const {
         return lineNumber != location.lineNumber || position != location.position;
     }
 };
 
-static inline std::ostream &operator<<(std::ostream &out, const Location &location) {
+struct SourceRange {
+    SourceLocation start;
+    SourceLocation end;
+
+    bool operator==(const SourceRange &range) const {
+        return start == range.start && end == range.end;
+    }
+    bool operator!=(const SourceRange &range) const {
+        return start != range.start || end != range.end;
+    }
+};
+
+static inline std::ostream &operator<<(std::ostream &out, const SourceLocation &location) {
     return out << Concat(location.lineNumber, ":", location.position);
 }
 

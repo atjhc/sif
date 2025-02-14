@@ -21,7 +21,7 @@
 SIF_NAMESPACE_BEGIN
 
 struct Node {
-    Location location;
+    SourceRange range;
 
     virtual ~Node() = default;
 };

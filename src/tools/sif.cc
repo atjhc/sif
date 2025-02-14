@@ -88,7 +88,7 @@ class REPLReader : public Reader {
     std::string _contents;
 };
 
-void report(const std::string &name, Location location, const std::string &source,
+void report(const std::string &name, SourceLocation location, const std::string &source,
             const std::string &message) {
     std::cerr << name << ":" << location << ": " << message << std::endl;
     if (location.position > 0) {
@@ -142,12 +142,7 @@ int evaluate(const std::string &name, Reader &reader) {
 
     auto result = vm.execute(bytecode);
     if (!result) {
-        std::cerr << name << ":" << result.error().location().lineNumber << ": "
-                  << Concat("runtime error, ", result.error().what()) << std::endl;
-        std::cerr << index_chunk(chunk::line, result.error().location().lineNumber - 1,
-                                 reader.contents())
-                         .get()
-                  << std::endl;
+        reporter.report(result.error());
         return RuntimeFailure;
     }
 
@@ -271,7 +266,7 @@ int main(int argc, char *argv[]) {
         vm.addGlobal(pair.first, pair.second);
     }
 
-    vm.addGlobal("clear", MakeStrong<Native>([](CallFrame &frame, Location location,
+    vm.addGlobal("clear", MakeStrong<Native>([](CallFrame &frame, SourceLocation location,
                                                 Value *values) -> Result<Value, Error> {
                      std::cout << ANSI_CLEAR_SCREEN << ANSI_RESET_CURSOR;
                      return Value();

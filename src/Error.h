@@ -33,20 +33,26 @@ class Error {
     Error(std::format_string<Args...> fmt, Args &&...args)
         : Error(std::format(fmt, std::forward<Args>(args)...)) {}
 
-    Error(const Location &location, const Value &value) : _location(location), _value(value) {}
-    Error(const Location &location, const char *str) : Error(location, Value(std::string(str))) {}
+    Error(const SourceRange &range, const Value &value) : _range(range), _value(value) {}
+    Error(const SourceLocation &location, const Value &value)
+        : _range(location, location), _value(value) {}
+
+    Error(const SourceLocation &location, const char *str)
+        : Error(location, Value(std::string(str))) {}
+    Error(const SourceRange &range, const char *str) : Error(range, Value(std::string(str))) {}
 
     template <class... Args>
-    Error(const Location &location, std::format_string<Args...> fmt, Args &&...args)
+    Error(const SourceLocation &location, std::format_string<Args...> fmt, Args &&...args)
         : Error(location, std::format(fmt, std::forward<Args>(args)...)) {}
 
-    const Location &location() const { return _location; }
+    const SourceLocation &location() const { return _range.start; }
+    const SourceRange &range() const { return _range; }
     const Value &value() const { return _value; }
 
     std::string what() const { return _value.toString(); }
 
   private:
-    Location _location;
+    SourceRange _range;
     Value _value;
 };
 

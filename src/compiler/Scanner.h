@@ -53,7 +53,7 @@ class Scanner {
     Token::Type checkKeyword(int offset, int length, const char *name, Token::Type type);
 
     std::string::const_iterator _start, _end, _current;
-    Location _startLocation, _currentLocation;
+    SourceLocation _startLocation, _currentLocation;
     int _skipNewlines;
     Strong<Reader> _reader;
 };

@@ -67,7 +67,7 @@ Value Dictionary::enumerator(Value self) const {
     return MakeStrong<DictionaryEnumerator>(self.as<Dictionary>());
 }
 
-Result<Value, Error> Dictionary::subscript(Location location, const Value &value) const {
+Result<Value, Error> Dictionary::subscript(SourceLocation location, const Value &value) const {
     auto it = _values.find(value);
     if (it == _values.end()) {
         return Value();
@@ -76,7 +76,7 @@ Result<Value, Error> Dictionary::subscript(Location location, const Value &value
     }
 }
 
-Result<Value, Error> Dictionary::setSubscript(Location, const Value &key, Value value) {
+Result<Value, Error> Dictionary::setSubscript(SourceLocation, const Value &key, Value value) {
     _values[key] = value;
     return Value();
 }

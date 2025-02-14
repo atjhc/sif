@@ -29,7 +29,12 @@ void BasicReporter::report(const Error &error) {
     if (error.location().position > 0) {
         std::cerr << index_chunk(chunk::line, error.location().lineNumber - 1, _source).get()
                   << std::endl;
-        std::cerr << std::string(error.location().position - 1, ' ') << "^" << std::endl;
+        std::cerr << std::string(error.location().position - 1, ' ') << "^";
+        int rangeLength = error.range().end.position - error.range().start.position;
+        if (rangeLength > 1 && error.range().start.lineNumber == error.range().end.lineNumber) {
+            std::cerr << std::string(rangeLength - 1, '~');
+        }
+        std::cerr << std::endl;
     }
 }
 

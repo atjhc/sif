@@ -21,7 +21,7 @@
 SIF_NAMESPACE_BEGIN
 
 Token::Token() : type(Type::EndOfFile) {}
-Token::Token(Type type, Location location) : type(type), location(location) {}
+Token::Token(Type type, SourceLocation location) : type(type), location(location) {}
 
 bool Token::isWord() const {
     switch (type) {
@@ -80,6 +80,15 @@ bool Token::isPrimary() const {
 }
 
 bool Token::isEndOfStatement() const { return type == Type::NewLine || type == Type::EndOfFile; }
+
+SourceLocation Token::start() const { return location; }
+
+SourceLocation Token::end() const {
+    return SourceLocation{location.position + static_cast<unsigned int>(text.length()),
+                          location.lineNumber};
+}
+
+SourceRange Token::range() const { return SourceRange{location, end()}; }
 
 std::string Token::encodedString() const {
     assert(type == Type::StringLiteral);

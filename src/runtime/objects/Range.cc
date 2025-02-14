@@ -70,7 +70,7 @@ Integer Range::size() const { return (_closed ? 1 : 0) + _end - _start; }
 
 Value Range::enumerator(Value self) const { return MakeStrong<RangeEnumerator>(self.as<Range>()); }
 
-Result<Value, Error> Range::subscript(Location location, const Value &value) const {
+Result<Value, Error> Range::subscript(SourceLocation location, const Value &value) const {
     if (!value.isInteger()) {
         return Fail(Error(location, "expected an integer"));
         return true;
@@ -82,7 +82,7 @@ Result<Value, Error> Range::subscript(Location location, const Value &value) con
     return Value(start() + index);
 }
 
-Result<Value, Error> Range::setSubscript(Location location, const Value &key, Value value) {
+Result<Value, Error> Range::setSubscript(SourceLocation location, const Value &key, Value value) {
     return Fail(Error(location, "ranges may not be modified"));
 }
 

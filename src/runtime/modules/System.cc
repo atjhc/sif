@@ -35,7 +35,7 @@ static Signature S(const char *signature) { return Signature::Make(signature).va
 
 void System::_files(ModuleMap &natives) {
     natives[S("(the) contents of file {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             auto path = values[0].as<String>();
             if (!path) {
                 return Fail(Error(location, "expected a string"));
@@ -49,7 +49,7 @@ void System::_files(ModuleMap &natives) {
             return Value(sstr.str());
         });
     natives[S("(the) contents of directory {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             auto path = values[0].as<String>();
             if (!path) {
                 return Fail(Error(location, "expected a string"));
@@ -67,7 +67,7 @@ void System::_files(ModuleMap &natives) {
             return results;
         });
     natives[S("remove file {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             auto pathString = values[0].as<String>();
             if (!pathString) {
                 return Fail(Error(location, "expected a string"));
@@ -83,7 +83,7 @@ void System::_files(ModuleMap &natives) {
             return Value();
         });
     natives[S("remove directory {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             auto pathValue = values[0].as<String>();
             if (!pathValue) {
                 return Fail(Error(location, "expected a string"));
@@ -99,7 +99,7 @@ void System::_files(ModuleMap &natives) {
             return Value();
         });
     natives[S("move file/directory {} to {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             auto fromValue = values[0].as<String>();
             if (!fromValue) {
                 return Fail(Error(location, "expected a string"));
@@ -120,7 +120,7 @@ void System::_files(ModuleMap &natives) {
             return Value();
         });
     natives[S("copy file/directory {} to {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             auto fromValue = values[0].as<String>();
             if (!fromValue) {
                 return Fail(Error(location, "expected a string"));
@@ -144,11 +144,11 @@ void System::_files(ModuleMap &natives) {
 
 System::System() {
     _natives[S("the arguments")] = MakeStrong<Native>(
-        [this](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [this](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             return MakeStrong<List>(_arguments.begin(), _arguments.end());
         });
     _natives[S("the environment")] = MakeStrong<Native>(
-        [this](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [this](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             auto dictionary = MakeStrong<Dictionary>();
             for (auto pair : _environment) {
                 dictionary->values()[Value(pair.first)] = Value(pair.second);
@@ -156,13 +156,13 @@ System::System() {
             return dictionary;
         });
     _natives[S("the clock")] =
-        MakeStrong<Native>([](CallFrame &frame, Location location,
+        MakeStrong<Native>([](CallFrame &frame, SourceLocation location,
                               Value *values) -> Result<Value, Error> { return Integer(clock()); });
     _natives[S("the system name")] =
-        MakeStrong<Native>([this](CallFrame &frame, Location location,
+        MakeStrong<Native>([this](CallFrame &frame, SourceLocation location,
                                   Value *values) -> Result<Value, Error> { return _systemName; });
     _natives[S("the system version")] = MakeStrong<Native>(
-        [this](CallFrame &frame, Location location, Value *values) -> Result<Value, Error> {
+        [this](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             return _systemVersion;
         });
     _files(_natives);

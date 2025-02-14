@@ -65,11 +65,11 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     int findCapture(const std::string &name);
     int addCapture(Frame &frame, int index, bool isLocal);
 
-    void assignLocal(const Location &location, const std::string &name);
-    void assignGlobal(const Location &location, const std::string &name);
-    void assignVariable(const Location &location, const std::string &name,
+    void assignLocal(const SourceLocation &location, const std::string &name);
+    void assignGlobal(const SourceLocation &location, const std::string &name);
+    void assignVariable(const SourceLocation &location, const std::string &name,
                         Optional<Variable::Scope> scope);
-    void assignFunction(const Location &location, const std::string &name);
+    void assignFunction(const SourceLocation &location, const std::string &name);
 
     void resolve(const Call &call, const std::string &name);
     void resolve(const Variable &variable, const std::string &name);
@@ -78,7 +78,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     void addLocal(const std::string &name = "");
 
     void beginScope();
-    void endScope(const Location &location);
+    void endScope(const SourceLocation &location);
 
 #pragma mark - Statement::Visitor
 

@@ -87,15 +87,20 @@ struct Token {
     };
 
     Type type;
-    Location location;
+    SourceLocation location;
     std::string text;
 
     Token();
-    Token(Type type, Location location);
+    Token(Type type, SourceLocation location);
 
     bool isWord() const;
     bool isPrimary() const;
     bool isEndOfStatement() const;
+
+    SourceLocation start() const;
+    SourceLocation end() const;
+
+    SourceRange range() const;
 
     std::string encodedString() const;
     std::string encodedStringOrWord() const;

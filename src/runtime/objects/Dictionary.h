@@ -49,8 +49,8 @@ class Dictionary : public Object, public Copyable, public Enumerable, public Sub
     Value enumerator(Value self) const override;
 
     // Subscriptable
-    Result<Value, Error> subscript(Location, const Value &) const override;
-    Result<Value, Error> setSubscript(Location, const Value &, Value) override;
+    Result<Value, Error> subscript(SourceLocation, const Value &) const override;
+    Result<Value, Error> setSubscript(SourceLocation, const Value &, Value) override;
 
   private:
     ValueMap _values;

@@ -123,7 +123,7 @@ Strong<Object> List::copy() const { return MakeOwned<List>(values()); }
 
 Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
 
-Result<Value, Error> List::subscript(Location location, const Value &value) const {
+Result<Value, Error> List::subscript(SourceLocation location, const Value &value) const {
     if (auto range = value.as<Range>()) {
         return Value(this->operator[](*range));
     }
@@ -138,7 +138,7 @@ Result<Value, Error> List::subscript(Location location, const Value &value) cons
     return Fail(Error(location, "expected an integer or range"));
 }
 
-Result<Value, Error> List::setSubscript(Location location, const Value &key, Value value) {
+Result<Value, Error> List::setSubscript(SourceLocation location, const Value &key, Value value) {
     if (auto range = key.as<Range>()) {
         _values.erase(_values.begin() + range->start(),
                       _values.begin() + range->end() + (range->closed() ? 1 : 0));

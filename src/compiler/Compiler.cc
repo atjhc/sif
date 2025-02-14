@@ -43,7 +43,7 @@ std::vector<Compiler::Local> &Compiler::locals() { return _frames.back().locals;
 std::vector<Function::Capture> &Compiler::captures() { return _frames.back().captures; }
 
 void Compiler::error(const Node &node, const std::string &message) {
-    _config.errorReporter.report(Error(node.location, message));
+    _config.errorReporter.report(Error(node.range, message));
     _failed = true;
 }
 
@@ -86,7 +86,7 @@ int Compiler::addCapture(Frame &frame, int index, bool isLocal) {
     return frame.captures.size() - 1;
 }
 
-void Compiler::assignLocal(const Location &location, const std::string &name) {
+void Compiler::assignLocal(const SourceLocation &location, const std::string &name) {
     uint16_t index;
     Opcode opcode;
     if (int i = findLocal(_frames.back(), name); i > -1) {
@@ -103,12 +103,12 @@ void Compiler::assignLocal(const Location &location, const std::string &name) {
     bytecode().add(location, opcode, index);
 }
 
-void Compiler::assignGlobal(const Location &location, const std::string &name) {
+void Compiler::assignGlobal(const SourceLocation &location, const std::string &name) {
     auto index = bytecode().addConstant(MakeStrong<String>(name));
     bytecode().add(location, Opcode::SetGlobal, index);
 }
 
-void Compiler::assignVariable(const Location &location, const std::string &name,
+void Compiler::assignVariable(const SourceLocation &location, const std::string &name,
                               Optional<Variable::Scope> scope) {
     if (scope == Variable::Scope::Local) {
         assignLocal(location, name);
@@ -123,7 +123,7 @@ void Compiler::assignVariable(const Location &location, const std::string &name,
     }
 }
 
-void Compiler::assignFunction(const Location &location, const std::string &name) {
+void Compiler::assignFunction(const SourceLocation &location, const std::string &name) {
     if (_scopeDepth > 0) {
         assignLocal(location, name);
     } else {
@@ -151,7 +151,7 @@ void Compiler::resolve(const Call &call, const std::string &name) {
         opcode = Opcode::GetGlobal;
         _globals.insert(name);
     }
-    bytecode().add(call.location, opcode, index);
+    bytecode().add(call.range.start, opcode, index);
 }
 
 void Compiler::resolve(const Variable &variable, const std::string &name) {
@@ -211,13 +211,13 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
             _globals.insert(name);
         }
     }
-    bytecode().add(variable.location, opcode, index);
+    bytecode().add(variable.range.start, opcode, index);
 }
 
 void Compiler::addReturn() {
     if (bytecode().code().size() == 0 || bytecode().code().back() != Opcode::Return) {
-        bytecode().add(Location{0, 0}, Opcode::Empty);
-        bytecode().add(Location{0, 0}, Opcode::Return);
+        bytecode().add(SourceLocation{0, 0}, Opcode::Empty);
+        bytecode().add(SourceLocation{0, 0}, Opcode::Return);
     }
 }
 
@@ -228,7 +228,7 @@ void Compiler::addLocal(const std::string &name) {
 
 void Compiler::beginScope() { _scopeDepth++; }
 
-void Compiler::endScope(const Location &location) {
+void Compiler::endScope(const SourceLocation &location) {
     _scopeDepth--;
     while (locals().size() > 0 && locals().back().scopeDepth > _scopeDepth) {
         locals().pop_back();
@@ -270,26 +270,26 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
 
     auto functionCaptures = captures();
     _frames.pop_back();
-    endScope(functionDecl.location);
+    endScope(functionDecl.range.start);
 
     // Add the function constant to the bytecode, assign it to the given signature name.
     auto function =
         MakeStrong<Function>(functionDecl.signature, functionBytecode, functionCaptures);
     auto constant = bytecode().addConstant(function);
     auto name = functionDecl.signature.name();
-    bytecode().add(functionDecl.location, Opcode::Constant, constant);
-    assignFunction(functionDecl.location, name);
+    bytecode().add(functionDecl.range.start, Opcode::Constant, constant);
+    assignFunction(functionDecl.range.start, name);
 }
 
 void Compiler::visit(const If &ifStatement) {
     ifStatement.condition->accept(*this);
-    auto ifJump = bytecode().add(ifStatement.location, Opcode::JumpIfFalse, 0);
-    bytecode().add(ifStatement.location, Opcode::Pop);
+    auto ifJump = bytecode().add(ifStatement.range.start, Opcode::JumpIfFalse, 0);
+    bytecode().add(ifStatement.range.start, Opcode::Pop);
     ifStatement.ifStatement->accept(*this);
 
-    auto elseJump = bytecode().add(ifStatement.location, Opcode::Jump, 0);
+    auto elseJump = bytecode().add(ifStatement.range.start, Opcode::Jump, 0);
     bytecode().patchRelativeJump(ifJump);
-    bytecode().add(ifStatement.location, Opcode::Pop);
+    bytecode().add(ifStatement.range.start, Opcode::Pop);
     if (ifStatement.elseStatement) {
         ifStatement.elseStatement->accept(*this);
     }
@@ -297,9 +297,9 @@ void Compiler::visit(const If &ifStatement) {
 }
 
 void Compiler::visit(const Try &tryStatement) {
-    auto tryJump = bytecode().add(tryStatement.location, Opcode::PushJump, 0);
+    auto tryJump = bytecode().add(tryStatement.range.start, Opcode::PushJump, 0);
     tryStatement.statement->accept(*this);
-    bytecode().add(tryStatement.location, Opcode::PopJump);
+    bytecode().add(tryStatement.range.start, Opcode::PopJump);
     bytecode().patchAbsoluteJump(tryJump);
 }
 
@@ -313,8 +313,8 @@ void Compiler::visit(const Use &useStatement) {
         const auto &name = pair.first;
         const auto &value = pair.second;
         auto constant = bytecode().addConstant(value);
-        bytecode().add(useStatement.location, Opcode::Constant, constant);
-        assignVariable(useStatement.location, name, Variable::Scope::Local);
+        bytecode().add(useStatement.range.start, Opcode::Constant, constant);
+        assignVariable(useStatement.range.start, name, Variable::Scope::Local);
     }
 }
 
@@ -329,20 +329,20 @@ void Compiler::visit(const Using &usingStatement) {
         const auto &name = pair.first;
         const auto &value = pair.second;
         auto constant = bytecode().addConstant(value);
-        bytecode().add(usingStatement.location, Opcode::Constant, constant);
-        assignVariable(usingStatement.location, name, Variable::Scope::Local);
+        bytecode().add(usingStatement.range.start, Opcode::Constant, constant);
+        assignVariable(usingStatement.range.start, name, Variable::Scope::Local);
     }
     usingStatement.statement->accept(*this);
-    endScope(usingStatement.location);
+    endScope(usingStatement.range.start);
 }
 
 void Compiler::visit(const Return &statement) {
     if (statement.expression) {
         statement.expression->accept(*this);
     } else {
-        bytecode().add(statement.location, Opcode::Empty);
+        bytecode().add(statement.range.start, Opcode::Empty);
     }
-    bytecode().add(statement.location, Opcode::Return);
+    bytecode().add(statement.range.start, Opcode::Return);
 }
 
 void Compiler::visit(const Assignment &assignment) {
@@ -354,7 +354,7 @@ void Compiler::visit(const Assignment &assignment) {
             return;
         }
         count = assignment.targets.size();
-        bytecode().add(assignment.expression->location, Opcode::UnpackList, count);
+        bytecode().add(assignment.expression->range.start, Opcode::UnpackList, count);
     }
 
     for (auto &&variable : std::views::reverse(assignment.targets)) {
@@ -362,16 +362,16 @@ void Compiler::visit(const Assignment &assignment) {
             variable->variable->accept(*this);
             for (int i = 0; i < variable->subscripts.size() - 1; i++) {
                 variable->subscripts[i]->accept(*this);
-                bytecode().add(variable->subscripts[i]->location, Opcode::Subscript);
+                bytecode().add(variable->subscripts[i]->range.start, Opcode::Subscript);
             }
             variable->subscripts.back()->accept(*this);
-            bytecode().add(assignment.location, Opcode::SetSubscript);
+            bytecode().add(assignment.range.start, Opcode::SetSubscript);
         } else {
             auto name = lowercase(variable->variable->name.text);
             if (name == "it") {
-                bytecode().add(assignment.location, Opcode::SetIt);
+                bytecode().add(assignment.range.start, Opcode::SetIt);
             } else {
-                assignVariable(assignment.location, name, variable->variable->scope);
+                assignVariable(assignment.range.start, name, variable->variable->scope);
             }
         }
     }
@@ -379,7 +379,7 @@ void Compiler::visit(const Assignment &assignment) {
 
 void Compiler::visit(const ExpressionStatement &statement) {
     statement.expression->accept(*this);
-    bytecode().add(statement.location, Opcode::SetIt);
+    bytecode().add(statement.range.start, Opcode::SetIt);
 }
 
 void Compiler::visit(const Repeat &statement) {
@@ -387,7 +387,7 @@ void Compiler::visit(const Repeat &statement) {
     _exitPatches.push({});
     _nextRepeat = bytecode().code().size();
     statement.statement->accept(*this);
-    bytecode().addRepeat(statement.location, _nextRepeat);
+    bytecode().addRepeat(statement.range.start, _nextRepeat);
     for (auto location : _exitPatches.top()) {
         bytecode().patchRelativeJump(location);
     }
@@ -404,17 +404,17 @@ void Compiler::visit(const RepeatCondition &statement) {
 
     size_t jumpIfCondition = bytecode().code().size();
     if (statement.conditionValue) {
-        bytecode().add(statement.location, Opcode::JumpIfFalse, 0);
+        bytecode().add(statement.range.start, Opcode::JumpIfFalse, 0);
     } else {
-        bytecode().add(statement.location, Opcode::JumpIfTrue, 0);
+        bytecode().add(statement.range.start, Opcode::JumpIfTrue, 0);
     }
 
-    bytecode().add(statement.location, Opcode::Pop);
+    bytecode().add(statement.range.start, Opcode::Pop);
     statement.statement->accept(*this);
-    bytecode().addRepeat(statement.location, _nextRepeat);
+    bytecode().addRepeat(statement.range.start, _nextRepeat);
 
     bytecode().patchRelativeJump(jumpIfCondition);
-    bytecode().add(statement.location, Opcode::Pop);
+    bytecode().add(statement.range.start, Opcode::Pop);
     for (auto location : _exitPatches.top()) {
         bytecode().patchRelativeJump(location);
     }
@@ -428,34 +428,38 @@ void Compiler::visit(const RepeatFor &foreach) {
     _exitPatches.push({});
 
     foreach.expression->accept(*this);
-    bytecode().add(foreach.location, Opcode::GetEnumerator);
-    _nextRepeat = bytecode().add(foreach.location, Opcode::JumpIfAtEnd, 0);
-    bytecode().add(foreach.location, Opcode::Enumerate);
+    bytecode().add(foreach.expression->range.start, Opcode::GetEnumerator);
+    _nextRepeat = bytecode().add(foreach.expression->range.start, Opcode::JumpIfAtEnd, 0);
+    bytecode().add(foreach.expression->range.start, Opcode::Enumerate);
     if (foreach.variables.size() > 1) {
-        bytecode().add(foreach.location, Opcode::UnpackList, foreach.variables.size());
+        bytecode().add(foreach.expression->range.start, Opcode::UnpackList,
+                       foreach.variables.size());
     }
     for (auto &&variable : std::views::reverse(foreach.variables)) {
-        assignVariable(foreach.location, lowercase(variable->name.text), variable->scope);
+        assignVariable(foreach.expression->range.start, lowercase(variable->name.text),
+                       variable->scope);
     }
 
     foreach.statement->accept(*this);
 
-    bytecode().addRepeat(foreach.location, _nextRepeat);
+    bytecode().addRepeat(foreach.range.start, _nextRepeat);
     bytecode().patchRelativeJump(_nextRepeat);
     for (auto location : _exitPatches.top()) {
         bytecode().patchRelativeJump(location);
     }
-    bytecode().add(foreach.location, Opcode::Pop);
+    bytecode().add(foreach.range.start, Opcode::Pop);
 
     _nextRepeat = nextRepeat;
     _exitPatches.pop();
 }
 
 void Compiler::visit(const ExitRepeat &exit) {
-    _exitPatches.top().push_back(bytecode().add(exit.location, Opcode::Jump, 0));
+    _exitPatches.top().push_back(bytecode().add(exit.range.start, Opcode::Jump, 0));
 }
 
-void Compiler::visit(const NextRepeat &next) { bytecode().addRepeat(next.location, _nextRepeat); }
+void Compiler::visit(const NextRepeat &next) {
+    bytecode().addRepeat(next.range.start, _nextRepeat);
+}
 
 void Compiler::visit(const Call &call) {
     resolve(call, call.signature.name());
@@ -465,11 +469,11 @@ void Compiler::visit(const Call &call) {
         argument->accept(*this);
         uint16_t count = call.signature.arguments()[i].targets.size();
         if (count > 1) {
-            bytecode().add(argument->location, Opcode::UnpackList, count);
+            bytecode().add(argument->range.start, Opcode::UnpackList, count);
         }
         totalCount += count;
     }
-    bytecode().add(call.location, Opcode::Call, totalCount);
+    bytecode().add(call.range.start, Opcode::Call, totalCount);
 }
 
 void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*this); }
@@ -477,7 +481,7 @@ void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*th
 void Compiler::visit(const Variable &variable) {
     auto name = lowercase(variable.name.text);
     if (name == "it") {
-        bytecode().add(variable.location, Opcode::GetIt);
+        bytecode().add(variable.range.start, Opcode::GetIt);
     } else {
         resolve(variable, name);
     }
@@ -486,8 +490,8 @@ void Compiler::visit(const Variable &variable) {
 void Compiler::visit(const Binary &binary) {
     if (binary.binaryOperator == Binary::Operator::And) {
         binary.leftExpression->accept(*this);
-        auto jump = bytecode().add(binary.location, Opcode::JumpIfFalse, 0);
-        bytecode().add(binary.location, Opcode::Pop);
+        auto jump = bytecode().add(binary.range.start, Opcode::JumpIfFalse, 0);
+        bytecode().add(binary.range.start, Opcode::Pop);
         binary.rightExpression->accept(*this);
         bytecode().patchRelativeJump(jump);
         return;
@@ -495,8 +499,8 @@ void Compiler::visit(const Binary &binary) {
 
     if (binary.binaryOperator == Binary::Operator::Or) {
         binary.leftExpression->accept(*this);
-        auto jump = bytecode().add(binary.location, Opcode::JumpIfTrue, 0);
-        bytecode().add(binary.location, Opcode::Pop);
+        auto jump = bytecode().add(binary.range.start, Opcode::JumpIfTrue, 0);
+        bytecode().add(binary.range.start, Opcode::Pop);
         binary.rightExpression->accept(*this);
         bytecode().patchRelativeJump(jump);
         return;
@@ -506,43 +510,43 @@ void Compiler::visit(const Binary &binary) {
     binary.rightExpression->accept(*this);
     switch (binary.binaryOperator) {
     case Binary::Operator::Plus:
-        bytecode().add(binary.location, Opcode::Add);
+        bytecode().add(binary.range.start, Opcode::Add);
         break;
     case Binary::Operator::Minus:
-        bytecode().add(binary.location, Opcode::Subtract);
+        bytecode().add(binary.range.start, Opcode::Subtract);
         break;
     case Binary::Operator::Multiply:
-        bytecode().add(binary.location, Opcode::Multiply);
+        bytecode().add(binary.range.start, Opcode::Multiply);
         break;
     case Binary::Operator::Divide:
-        bytecode().add(binary.location, Opcode::Divide);
+        bytecode().add(binary.range.start, Opcode::Divide);
         break;
     case Binary::Operator::Modulo:
-        bytecode().add(binary.location, Opcode::Modulo);
+        bytecode().add(binary.range.start, Opcode::Modulo);
         break;
     case Binary::Operator::Exponent:
-        bytecode().add(binary.location, Opcode::Exponent);
+        bytecode().add(binary.range.start, Opcode::Exponent);
         break;
     case Binary::Operator::Equal:
-        bytecode().add(binary.location, Opcode::Equal);
+        bytecode().add(binary.range.start, Opcode::Equal);
         break;
     case Binary::Operator::NotEqual:
-        bytecode().add(binary.location, Opcode::NotEqual);
+        bytecode().add(binary.range.start, Opcode::NotEqual);
         break;
     case Binary::Operator::LessThan:
-        bytecode().add(binary.location, Opcode::LessThan);
+        bytecode().add(binary.range.start, Opcode::LessThan);
         break;
     case Binary::Operator::GreaterThan:
-        bytecode().add(binary.location, Opcode::GreaterThan);
+        bytecode().add(binary.range.start, Opcode::GreaterThan);
         break;
     case Binary::Operator::LessThanOrEqual:
-        bytecode().add(binary.location, Opcode::LessThanOrEqual);
+        bytecode().add(binary.range.start, Opcode::LessThanOrEqual);
         break;
     case Binary::Operator::GreaterThanOrEqual:
-        bytecode().add(binary.location, Opcode::GreaterThanOrEqual);
+        bytecode().add(binary.range.start, Opcode::GreaterThanOrEqual);
         break;
     case Binary::Operator::Subscript:
-        bytecode().add(binary.location, Opcode::Subscript);
+        bytecode().add(binary.range.start, Opcode::Subscript);
         break;
     default:
         Abort("unexpected binary operator (", binary.binaryOperator, ")");
@@ -553,10 +557,10 @@ void Compiler::visit(const Unary &unary) {
     unary.expression->accept(*this);
     switch (unary.unaryOperator) {
     case Unary::Operator::Minus:
-        bytecode().add(unary.location, Opcode::Negate);
+        bytecode().add(unary.range.start, Opcode::Negate);
         break;
     case Unary::Operator::Not:
-        bytecode().add(unary.location, Opcode::Not);
+        bytecode().add(unary.range.start, Opcode::Not);
         break;
     default:
         break;
@@ -570,14 +574,14 @@ void Compiler::visit(const RangeLiteral &range) {
     if (range.end) {
         range.end->accept(*this);
     }
-    bytecode().add(range.location, (range.closed ? Opcode::ClosedRange : Opcode::OpenRange));
+    bytecode().add(range.range.start, (range.closed ? Opcode::ClosedRange : Opcode::OpenRange));
 }
 
 void Compiler::visit(const ListLiteral &list) {
     for (const auto &expression : list.expressions) {
         expression->accept(*this);
     }
-    bytecode().add(list.location, Opcode::List, list.expressions.size());
+    bytecode().add(list.range.start, Opcode::List, list.expressions.size());
 }
 
 void Compiler::visit(const DictionaryLiteral &dictionary) {
@@ -585,7 +589,7 @@ void Compiler::visit(const DictionaryLiteral &dictionary) {
         pair.first->accept(*this);
         pair.second->accept(*this);
     }
-    bytecode().add(dictionary.location, Opcode::Dictionary, dictionary.values.size());
+    bytecode().add(dictionary.range.start, Opcode::Dictionary, dictionary.values.size());
 }
 
 static inline Value valueOf(const Token &token) {
@@ -607,7 +611,7 @@ void Compiler::visit(const Literal &literal) {
             (lowercase(literal.token.text) == "true" || lowercase(literal.token.text) == "yes")
                 ? Opcode::True
                 : Opcode::False;
-        bytecode().add(literal.location, opcode);
+        bytecode().add(literal.range.start, opcode);
         return;
     }
 
@@ -615,19 +619,19 @@ void Compiler::visit(const Literal &literal) {
     if (literal.token.type == Token::Type::IntLiteral) {
         auto value = std::stol(literal.token.text);
         if (value <= USHRT_MAX) {
-            bytecode().add(literal.location, Opcode::Short, value);
+            bytecode().add(literal.range.start, Opcode::Short, value);
             return;
         }
     }
 
     if (literal.token.type == Token::Type::Empty) {
-        bytecode().add(literal.location, Opcode::Empty);
+        bytecode().add(literal.range.start, Opcode::Empty);
         return;
     }
 
     try {
         auto index = bytecode().addConstant(valueOf(literal.token));
-        bytecode().add(literal.location, Opcode::Constant, index);
+        bytecode().add(literal.range.start, Opcode::Constant, index);
     } catch (const std::out_of_range &) {
         error(literal, "value is too large or too small");
     }
