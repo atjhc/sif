@@ -104,7 +104,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             frame().bytecode->disassemble(std::cout, frame().ip);
         }
 #endif
-        switch (Opcode instruction = Read(frame().ip)) {
+        switch (Read(frame().ip)) {
         case Opcode::Return: {
             auto value = Pop(_stack);
             while (_stack.size() > frame().sp) {

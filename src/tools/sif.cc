@@ -206,6 +206,7 @@ int usage(int argc, char *argv[]) {
     return -1;
 }
 
+#if !defined(FUZZER)
 int main(int argc, char *argv[]) {
 
     static struct option long_options[] = {
@@ -297,4 +298,11 @@ int main(int argc, char *argv[]) {
         }
     }
     return run_file(fileName, arguments);
+}
+#endif // !defined(FUZZER)
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+    std::string source(reinterpret_cast<const char*>(data), size);
+    run_source(source.c_str(), {});
+    return 0;
 }

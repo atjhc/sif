@@ -6,6 +6,7 @@ INSTALL_DIR := /usr/local/bin
 
 DSTROOT := build
 SRCROOT := src
+FUZZROOT := fuzzer
 
 TOOLS := $(SRCROOT)/tools/sif.cc $(SRCROOT)/tools/tests.cc
 
@@ -51,6 +52,12 @@ test: $(DSTROOT)/test $(TEST_OBJ) examples
 	$(DSTROOT)/test $(SRCROOT)/tests
 	$(SRCROOT)/tests/repl_tests.sh
 
+fuzz: CPPFLAGS += -g -fsanitize=fuzzer,address -DFUZZER -Wno-unused-function -Wno-unused-variable
+fuzz: $(DSTROOT)/fuzz_test
+	mkdir -p $(FUZZROOT)
+	cp -r $(SRCROOT)/tests/transcripts $(FUZZROOT)/corpus
+	ASAN_OPTIONS=detect_container_overflow=0 LLVMFuzzer_DATA_PATH=$(FUZZROOT) build/fuzz_test -artifact_prefix=$(FUZZROOT)/ $(FUZZROOT)/corpus
+
 .PHONY: examples $(EXAMPLES)
 
 examples: $(EXAMPLES)
@@ -72,6 +79,9 @@ dstroot:
 $(DSTROOT)/test: $(DSTROOT)/$(LIBNAME) $(TEST_OBJ) $(SRCROOT)/tools/tests.cc
 	$(CC) $(CPPFLAGS) -o $(DSTROOT)/test $(SRCROOT)/tools/tests.cc $(TEST_OBJ) $(DSTROOT)/$(LIBNAME)
 
+$(DSTROOT)/fuzz_test: $(DSTROOT)/$(LIBNAME) $(SRCROOT)/tools/sif.cc
+	$(CC) $(CPPFLAGS) -o $(DSTROOT)/fuzz_test $(SRCROOT)/tools/sif.cc $(DSTROOT)/$(LIBNAME)
+
 $(DSTROOT)/$(TOOLNAME): $(DSTROOT)/$(LIBNAME) $(SRCROOT)/tools/sif.cc
 	$(CC) $(CPPFLAGS) -o $(DSTROOT)/$(TOOLNAME) $(SRCROOT)/tools/sif.cc $(DSTROOT)/$(LIBNAME)
 
@@ -89,5 +99,6 @@ $(DSTROOT)/%.o: %.cc %.h $(COMMON_HEADERS)
 
 clean:
 	rm -rf $(DSTROOT)
+	rm -rf $(FUZZROOT)
 
 .PHONY: all format test clean dstroot install install-support
