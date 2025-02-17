@@ -30,116 +30,130 @@
 
 SIF_NAMESPACE_BEGIN
 
+#define N(X) MakeStrong<Native>(X)
+
 using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
 
+static auto _the_contents_of_file_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto path = values[0].as<String>();
+    if (!path) {
+        return Fail(Error(location, "expected a string"));
+    }
+    std::ifstream file(path->string());
+    if (!file.is_open()) {
+        return Fail(Error(location, "unable to open file"));
+    }
+    std::ostringstream sstr;
+    sstr << file.rdbuf();
+    return Value(sstr.str());
+}
+
+static auto _the_contents_of_directory_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto path = values[0].as<String>();
+    if (!path) {
+        return Fail(Error(location, "expected a string"));
+    }
+    std::error_code error;
+    auto it = std::filesystem::directory_iterator(path->string(), error);
+    if (error) {
+        return Fail(Error(location, Value(error.message())));
+    }
+    Strong<List> results = MakeStrong<List>();
+    for (auto it : std::filesystem::directory_iterator(path->string())) {
+        auto itemPath = it.path();
+        results->values().push_back(itemPath.string());
+    }
+    return results;
+}
+
+static auto _remove_file_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto pathString = values[0].as<String>();
+    if (!pathString) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto path = std::filesystem::path(pathString->string());
+
+    std::error_code error;
+    std::filesystem::remove(path, error);
+    if (error) {
+        return Fail(Error(location, Value(error.message())));
+    }
+
+    return Value();
+}
+
+static auto _remove_directory_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto pathValue = values[0].as<String>();
+    if (!pathValue) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto path = std::filesystem::path(pathValue->string());
+
+    std::error_code error;
+    std::filesystem::remove_all(path, error);
+    if (error) {
+        return Fail(Error(location, Value(error.message())));
+    }
+
+    return Value();
+}
+
+static auto _move_T_to_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto fromValue = values[0].as<String>();
+    if (!fromValue) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto toValue = values[1].as<String>();
+    if (!toValue) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto from = std::filesystem::path(fromValue->string());
+    auto to = std::filesystem::path(toValue->string());
+
+    std::error_code error;
+    std::filesystem::rename(from, to, error);
+    if (error) {
+        return Fail(Error(location, Value(error.message())));
+    }
+
+    return Value();
+}
+
+static auto _copy_T_to_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto fromValue = values[0].as<String>();
+    if (!fromValue) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto toValue = values[0].as<String>();
+    if (!toValue) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto from = std::filesystem::path(fromValue->string());
+    auto to = std::filesystem::path(toValue->string());
+
+    std::error_code error;
+    std::filesystem::copy(from, to, error);
+    if (error) {
+        return Fail(Error(location, Value(error.message())));
+    }
+
+    return Value();
+}
+
 void System::_files(ModuleMap &natives) {
-    natives[S("(the) contents of file {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto path = values[0].as<String>();
-            if (!path) {
-                return Fail(Error(location, "expected a string"));
-            }
-            std::ifstream file(path->string());
-            if (!file.is_open()) {
-                return Fail(Error(location, "unable to open file"));
-            }
-            std::ostringstream sstr;
-            sstr << file.rdbuf();
-            return Value(sstr.str());
-        });
-    natives[S("(the) contents of directory {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto path = values[0].as<String>();
-            if (!path) {
-                return Fail(Error(location, "expected a string"));
-            }
-            std::error_code error;
-            auto it = std::filesystem::directory_iterator(path->string(), error);
-            if (error) {
-                return Fail(Error(location, Value(error.message())));
-            }
-            Strong<List> results = MakeStrong<List>();
-            for (auto it : std::filesystem::directory_iterator(path->string())) {
-                auto itemPath = it.path();
-                results->values().push_back(itemPath.string());
-            }
-            return results;
-        });
-    natives[S("remove file {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto pathString = values[0].as<String>();
-            if (!pathString) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto path = std::filesystem::path(pathString->string());
-
-            std::error_code error;
-            std::filesystem::remove(path, error);
-            if (error) {
-                return Fail(Error(location, Value(error.message())));
-            }
-
-            return Value();
-        });
-    natives[S("remove directory {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto pathValue = values[0].as<String>();
-            if (!pathValue) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto path = std::filesystem::path(pathValue->string());
-
-            std::error_code error;
-            std::filesystem::remove_all(path, error);
-            if (error) {
-                return Fail(Error(location, Value(error.message())));
-            }
-
-            return Value();
-        });
-    natives[S("move file/directory {} to {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto fromValue = values[0].as<String>();
-            if (!fromValue) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto toValue = values[1].as<String>();
-            if (!toValue) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto from = std::filesystem::path(fromValue->string());
-            auto to = std::filesystem::path(toValue->string());
-
-            std::error_code error;
-            std::filesystem::rename(from, to, error);
-            if (error) {
-                return Fail(Error(location, Value(error.message())));
-            }
-
-            return Value();
-        });
-    natives[S("copy file/directory {} to {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto fromValue = values[0].as<String>();
-            if (!fromValue) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto toValue = values[0].as<String>();
-            if (!toValue) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto from = std::filesystem::path(fromValue->string());
-            auto to = std::filesystem::path(toValue->string());
-
-            std::error_code error;
-            std::filesystem::copy(from, to, error);
-            if (error) {
-                return Fail(Error(location, Value(error.message())));
-            }
-
-            return Value();
-        });
+    natives[S("(the) contents of file {}")] = N(_the_contents_of_file_T);
+    natives[S("(the) contents of directory {}")] = N(_the_contents_of_directory_T);
+    natives[S("remove file {}")] = N(_remove_file_T);
+    natives[S("remove directory {}")] = N(_remove_directory_T);
+    natives[S("move file/directory {} to {}")] = N(_move_T_to_T);
+    natives[S("copy file/directory {} to {}")] = N(_copy_T_to_T);
 }
 
 System::System() {

@@ -38,131 +38,201 @@ SIF_NAMESPACE_BEGIN
 using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
 
-static void _core(ModuleMap &natives, std::ostream &out, std::istream &in, std::ostream &err) {
-    natives[S("the language version")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return Value(std::string(Version));
-        });
-    natives[S("the language major version")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return Value(MajorVersion);
-        });
-    natives[S("the language minor version")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return Value(MinorVersion);
-        });
-    natives[S("the language patch version")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return Value(PatchVersion);
-        });
-    natives[S("the error")] =
-        MakeStrong<Native>([](CallFrame &frame, SourceLocation location,
-                              Value *values) -> Result<Value, Error> { return frame.error; });
-    natives[S("error with {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return Fail(Error(location, values[0]));
-        });
-    natives[S("quit")] = MakeStrong<Native>([](CallFrame &frame, SourceLocation location,
-                                               Value *values) -> Result<Value, Error> { exit(0); });
-    natives[S("quit with {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (!values[0].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            exit(values[0].asInteger());
-        });
+static auto _the_language_version(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Value(std::string(Version));
+}
+
+static auto _the_language_major_version(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Value(MajorVersion);
+}
+
+static auto _the_language_minor_version(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Value(MinorVersion);
+}
+
+static auto _the_language_patch_version(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Value(PatchVersion);
+}
+
+static auto _the_error(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return frame.error;
+}
+
+static auto _error_with_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Fail(Error(location, values[0]));
+}
+
+static auto _quit(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    exit(0);
+}
+
+static auto _quit_with_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (!values[0].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    exit(values[0].asInteger());
+}
+
+static auto _write_T(CallFrame &frame, SourceLocation location, Value *values, std::ostream &out)
+    -> Result<Value, Error> {
+    if (const auto &list = values[0].as<List>()) {
+        out << Join(list->values(), " ");
+    } else {
+        out << values[0];
+    }
+    return Value();
+}
+
+static auto _write_error_T(CallFrame &frame, SourceLocation location, Value *values,
+                           std::ostream &err) -> Result<Value, Error> {
+    if (const auto &list = values[0].as<List>()) {
+        err << Join(list->values(), " ");
+    } else {
+        err << values[0];
+    }
+    return Value();
+}
+
+static auto _print_T(CallFrame &frame, SourceLocation location, Value *values, std::ostream &out)
+    -> Result<Value, Error> {
+    if (const auto &list = values[0].as<List>()) {
+        out << Join(list->values(), " ");
+    } else {
+        out << values[0];
+    }
+    out << std::endl;
+    return Value();
+}
+
+static auto _print_error_T(CallFrame &frame, SourceLocation location, Value *values,
+                           std::ostream &err) -> Result<Value, Error> {
+    if (const auto &list = values[0].as<List>()) {
+        for (const auto &item : list->values()) {
+            err << item;
+        }
+    } else {
+        err << values[0];
+    }
+    err << std::endl;
+    return Value();
+}
+
+static auto _get_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return values[0];
+}
+
+static auto _read_a_word(CallFrame &frame, SourceLocation location, Value *values, std::istream &in)
+    -> Result<Value, Error> {
+    std::string input;
+    in >> input;
+    return input;
+}
+
+static auto _read_a_line(CallFrame &frame, SourceLocation location, Value *values, std::istream &in)
+    -> Result<Value, Error> {
+    std::string input;
+    std::getline(in, input);
+    return input;
+}
+
+static auto _read_a_character(CallFrame &frame, SourceLocation location, Value *values,
+                              std::istream &in) -> Result<Value, Error> {
+    std::istreambuf_iterator<char> it(in.rdbuf());
+    std::istreambuf_iterator<char> eos;
+    std::string result;
+    try {
+        char32_t input = utf8::next(it, eos);
+        result = utf8::utf32to8(std::u32string_view(&input, 1));
+    } catch (const utf8::exception &exception) {
+        return Fail(Error(location, exception.what()));
+    }
+    return result;
+}
+
+static auto _the_description_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    std::ostringstream ss;
+    ss << values[0];
+    return ss.str();
+}
+
+static auto _the_debug_description_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return values[0].debugDescription();
+}
+
+static auto _the_hash_value_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Integer(Value::Hash()(values[0]));
+}
+
+static auto _the_type_name_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return lowercase(values[0].typeName());
+}
+
+static auto _a_copy_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto copyable = values[0].as<Copyable>()) {
+        return copyable->copy();
+    }
+    return values[0];
+}
+
+static void _core(ModuleMap &natives) {
+    natives[S("the language version")] = N(_the_language_version);
+    natives[S("the language major version")] = N(_the_language_major_version);
+    natives[S("the language minor version")] = N(_the_language_minor_version);
+    natives[S("the language patch version")] = N(_the_language_patch_version);
+    natives[S("the error")] = N(_the_error);
+    natives[S("error with {}")] = N(_error_with_T);
+    natives[S("quit")] = N(_quit);
+    natives[S("quit with {}")] = N(_quit_with_T);
+    natives[S("get {}")] = N(_get_T);
+    natives[S("(the) description of {}")] = N(_the_description_of_T);
+    natives[S("(the) debug description of {}")] = N(_the_debug_description_of_T);
+    natives[S("(the) hash value of {}")] = N(_the_hash_value_of_T);
+    natives[S("(the) type name of {}")] = N(_the_type_name_of_T);
+    natives[S("(a) copy of {}")] = N(_a_copy_of_T);
+}
+
+static void _io(ModuleMap &natives, std::ostream &out, std::istream &in, std::ostream &err) {
     natives[S("write {}")] = MakeStrong<Native>(
         [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                out << Join(list->values(), " ");
-            } else {
-                out << values[0];
-            }
-            return Value();
+            return _write_T(frame, location, values, out);
         });
     natives[S("write error {}")] = MakeStrong<Native>(
         [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                err << Join(list->values(), " ");
-            } else {
-                err << values[0];
-            }
-            return Value();
+            return _write_error_T(frame, location, values, err);
         });
     natives[S("print {}")] = MakeStrong<Native>(
         [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                out << Join(list->values(), " ");
-            } else {
-                out << values[0];
-            }
-            out << std::endl;
-            return Value();
+            return _print_T(frame, location, values, out);
         });
     natives[S("print error {}")] = MakeStrong<Native>(
         [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                for (const auto &item : list->values()) {
-                    err << item;
-                }
-            } else {
-                err << values[0];
-            }
-            err << std::endl;
-            return Value();
+            return _print_error_T(frame, location, values, err);
         });
-    natives[S("get {}")] =
-        MakeStrong<Native>([](CallFrame &frame, SourceLocation location,
-                              Value *values) -> Result<Value, Error> { return values[0]; });
     natives[S("read (a) word")] = MakeStrong<Native>(
         [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            std::string input;
-            in >> input;
-            return input;
+            return _read_a_word(frame, location, values, in);
         });
     natives[S("read (a) line")] = MakeStrong<Native>(
         [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            std::string input;
-            std::getline(in, input);
-            return input;
+            return _read_a_line(frame, location, values, in);
         });
     natives[S("read (a) character")] = MakeStrong<Native>(
         [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            std::istreambuf_iterator<char> it(in.rdbuf());
-            std::istreambuf_iterator<char> eos;
-            std::string result;
-            try {
-                char32_t input = utf8::next(it, eos);
-                result = utf8::utf32to8(std::u32string_view(&input, 1));
-            } catch (const utf8::exception &exception) {
-                return Fail(Error(location, exception.what()));
-            }
-            return result;
-        });
-    natives[S("(the) debug description of {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return values[0].debugDescription();
-        });
-    natives[S("(the) description of {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            std::ostringstream ss;
-            ss << values[0];
-            return ss.str();
-        });
-    natives[S("(the) hash value of {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return Integer(Value::Hash()(values[0]));
-        });
-    natives[S("(the) type name of {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return lowercase(values[0].typeName());
-        });
-    natives[S("(a) copy of {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto copyable = values[0].as<Copyable>()) {
-                return copyable->copy();
-            }
-            return values[0];
+            return _read_a_character(frame, location, values, in);
         });
 }
 
@@ -210,212 +280,236 @@ static auto _sort_T(CallFrame &frame, SourceLocation location, Value *values)
     return values[0];
 }
 
-static void _common(ModuleMap &natives) {
-    natives[S("(the) size of {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            size_t size = 0;
-            if (auto list = values[0].as<List>()) {
-                size = list->values().size();
-            } else if (auto dictionary = values[0].as<Dictionary>()) {
-                size = dictionary->values().size();
-            } else if (auto string = values[0].as<String>()) {
-                size = string->string().size();
-            } else if (auto range = values[0].as<Range>()) {
-                size = range->size();
-            } else {
-                return Fail(Error(location, "expected a string, list, dictionary, or range"));
-            }
-            return static_cast<long>(size);
-        });
-    auto contains = [](SourceLocation location, Value object, Value value) -> Result<Value, Error> {
-        if (auto list = object.as<List>()) {
-            return list->contains(value);
-        } else if (auto dictionary = object.as<Dictionary>()) {
-            return dictionary->contains(value);
-        } else if (auto string = object.as<String>()) {
-            if (auto lookup = value.as<String>()) {
-                return string->string().find(lookup->string()) != std::string::npos;
-            }
-            return Fail(Error(location, "expected a string argument"));
-        } else if (auto range = object.as<Range>()) {
-            if (auto queryRange = value.as<Range>()) {
-                return range->contains(*queryRange);
-            }
-            if (!value.isInteger()) {
-                return Fail(Error(location, "expected an integer or range"));
-            }
-            return range->contains(value.asInteger());
-        }
+static auto _the_size_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    size_t size = 0;
+    if (auto list = values[0].as<List>()) {
+        size = list->values().size();
+    } else if (auto dictionary = values[0].as<Dictionary>()) {
+        size = dictionary->values().size();
+    } else if (auto string = values[0].as<String>()) {
+        size = string->string().size();
+    } else if (auto range = values[0].as<Range>()) {
+        size = range->size();
+    } else {
         return Fail(Error(location, "expected a string, list, dictionary, or range"));
-    };
-    natives[S("{} contains {}")] =
-        MakeStrong<Native>([contains](CallFrame &frame, SourceLocation location,
-                                      Value *values) -> Result<Value, Error> {
-            return contains(location, values[0], values[1]);
-        });
-    natives[S("{} is in {}")] =
-        MakeStrong<Native>([contains](CallFrame &frame, SourceLocation location,
-                                      Value *values) -> Result<Value, Error> {
-            return contains(location, values[1], values[0]);
-        });
+    }
+    return static_cast<long>(size);
+}
 
-    natives[S("{} starts with {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto string = values[0].as<String>()) {
-                auto searchString = values[1].as<String>();
-                if (!searchString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                return string->startsWith(*searchString);
-            } else if (auto list = values[0].as<List>()) {
-                return list->startsWith(values[1]);
-            }
-            return Fail(Error(location, "expected a string or list"));
-        });
-    natives[S("{} ends with {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto string = values[0].as<String>()) {
-                auto searchString = values[1].as<String>();
-                if (!searchString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                return string->endsWith(*searchString);
-            } else if (auto list = values[0].as<List>()) {
-                return list->endsWith(values[1]);
-            }
-            return Fail(Error(location, "expected a string or list"));
-        });
-    natives[S("item {} in {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto list = values[1].as<List>()) {
-                return list->subscript(location, values[0]);
-            } else if (auto dictionary = values[1].as<Dictionary>()) {
-                return dictionary->subscript(location, values[0]);
-            }
-            return Fail(Error(location, "expected a list or dictionary"));
-        });
-    natives[S("insert {} at (the) end of {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto list = values[1].as<List>()) {
-                list->values().push_back(values[0]);
-            } else if (auto string = values[1].as<String>()) {
-                auto insertText = values[0].as<String>();
-                if (!insertText) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                string->string().append(insertText->string());
-            } else {
-                return Fail(Error(location,
-                                  Concat("expected a list or string, got ", values[1].typeName())));
-            }
-            return values[1];
-        });
-    natives[S("remove item {} from {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto dictionary = values[1].as<Dictionary>()) {
-                dictionary->values().erase(values[0]);
-                return dictionary;
-            } else if (auto list = values[1].as<List>()) {
-                if (!values[0].isInteger()) {
-                    return Fail(Error(location, "expected an integer index"));
-                }
-                auto index = values[0].asInteger();
-                list->values().erase(list->values().begin() + index);
-                return list;
-            }
-            return Fail(Error(location, "expected a dictionary"));
-        });
-    natives[S("(the) (first) offset of {} in {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto text = values[1].as<String>()) {
-                auto searchString = values[0].as<String>();
-                if (!searchString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                auto result = text->findFirst(*searchString);
-                return result == std::string::npos ? Value() : Integer(result);
-            } else if (auto list = values[1].as<List>()) {
-                if (auto result = list->findFirst(values[0])) {
-                    return result.value();
-                }
-                return Value();
-            }
+static auto _contains(SourceLocation location, Value object, Value value) -> Result<Value, Error> {
+    if (auto list = object.as<List>()) {
+        return list->contains(value);
+    } else if (auto dictionary = object.as<Dictionary>()) {
+        return dictionary->contains(value);
+    } else if (auto string = object.as<String>()) {
+        if (auto lookup = value.as<String>()) {
+            return string->string().find(lookup->string()) != std::string::npos;
+        }
+        return Fail(Error(location, "expected a string argument"));
+    } else if (auto range = object.as<Range>()) {
+        if (auto queryRange = value.as<Range>()) {
+            return range->contains(*queryRange);
+        }
+        if (!value.isInteger()) {
+            return Fail(Error(location, "expected an integer or range"));
+        }
+        return range->contains(value.asInteger());
+    }
+    return Fail(Error(location, "expected a string, list, dictionary, or range"));
+}
+
+static auto _T_contains_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return _contains(location, values[0], values[1]);
+}
+
+static auto _T_is_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return _contains(location, values[1], values[0]);
+}
+
+static auto _T_starts_with_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto string = values[0].as<String>()) {
+        auto searchString = values[1].as<String>();
+        if (!searchString) {
             return Fail(Error(location, "expected a string"));
-        });
-    natives[S("(the) last offset of {} in {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto text = values[1].as<String>()) {
-                auto searchString = values[0].as<String>();
-                if (!searchString) {
-                    return Fail(Error(location, "expected a string or list"));
-                }
-                auto result = text->findLast(*searchString);
-                return result == std::string::npos ? Value() : Integer(result);
-            } else if (auto list = values[1].as<List>()) {
-                if (auto result = list->findLast(values[0])) {
-                    return result.value();
-                }
-                return Value();
-            }
+        }
+        return string->startsWith(*searchString);
+    } else if (auto list = values[0].as<List>()) {
+        return list->startsWith(values[1]);
+    }
+    return Fail(Error(location, "expected a string or list"));
+}
+
+static auto _T_ends_with_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto string = values[0].as<String>()) {
+        auto searchString = values[1].as<String>();
+        if (!searchString) {
+            return Fail(Error(location, "expected a string"));
+        }
+        return string->endsWith(*searchString);
+    } else if (auto list = values[0].as<List>()) {
+        return list->endsWith(values[1]);
+    }
+    return Fail(Error(location, "expected a string or list"));
+}
+
+static auto _item_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto list = values[1].as<List>()) {
+        return list->subscript(location, values[0]);
+    } else if (auto dictionary = values[1].as<Dictionary>()) {
+        return dictionary->subscript(location, values[0]);
+    }
+    return Fail(Error(location, "expected a list or dictionary"));
+}
+
+static auto _insert_T_at_the_end_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto list = values[1].as<List>()) {
+        list->values().push_back(values[0]);
+    } else if (auto string = values[1].as<String>()) {
+        auto insertText = values[0].as<String>();
+        if (!insertText) {
+            return Fail(Error(location, "expected a string"));
+        }
+        string->string().append(insertText->string());
+    } else {
+        return Fail(
+            Error(location, Concat("expected a list or string, got ", values[1].typeName())));
+    }
+    return values[1];
+}
+
+static auto _remove_item_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto dictionary = values[1].as<Dictionary>()) {
+        dictionary->values().erase(values[0]);
+        return dictionary;
+    } else if (auto list = values[1].as<List>()) {
+        if (!values[0].isInteger()) {
+            return Fail(Error(location, "expected an integer index"));
+        }
+        auto index = values[0].asInteger();
+        list->values().erase(list->values().begin() + index);
+        return list;
+    }
+    return Fail(Error(location, "expected a dictionary"));
+}
+
+static auto _the_first_offset_of_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto text = values[1].as<String>()) {
+        auto searchString = values[0].as<String>();
+        if (!searchString) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto result = text->findFirst(*searchString);
+        return result == std::string::npos ? Value() : Integer(result);
+    } else if (auto list = values[1].as<List>()) {
+        if (auto result = list->findFirst(values[0])) {
+            return result.value();
+        }
+        return Value();
+    }
+    return Fail(Error(location, "expected a string"));
+}
+
+static auto _the_last_offset_of_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto text = values[1].as<String>()) {
+        auto searchString = values[0].as<String>();
+        if (!searchString) {
             return Fail(Error(location, "expected a string or list"));
-        });
-    natives[S("replace all {} with {} in {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto text = values[2].as<String>()) {
-                auto searchString = values[0].as<String>();
-                if (!searchString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                auto replacementString = values[1].as<String>();
-                if (!replacementString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                text->replaceAll(*searchString, *replacementString);
-                return text;
-            } else if (auto list = values[2].as<List>()) {
-                list->replaceAll(values[0], values[1]);
-                return list;
-            }
-            return Fail(Error(location, "expected a string or list"));
-        });
-    natives[S("replace first {} with {} in {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto text = values[2].as<String>()) {
-                auto searchString = values[0].as<String>();
-                if (!searchString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                auto replacementString = values[1].as<String>();
-                if (!replacementString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                text->replaceFirst(*searchString, *replacementString);
-                return text;
-            } else if (auto list = values[2].as<List>()) {
-                list->replaceFirst(values[0], values[1]);
-                return list;
-            }
-            return Fail(Error(location, "expected a string or list"));
-        });
-    natives[S("replace last {} with {} in {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto text = values[2].as<String>()) {
-                auto searchString = values[0].as<String>();
-                if (!searchString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                auto replacementString = values[1].as<String>();
-                if (!replacementString) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                text->replaceLast(*searchString, *replacementString);
-                return text;
-            } else if (auto list = values[2].as<List>()) {
-                list->replaceLast(values[0], values[1]);
-                return list;
-            }
-            return Fail(Error(location, "expected a string or list"));
-        });
+        }
+        auto result = text->findLast(*searchString);
+        return result == std::string::npos ? Value() : Integer(result);
+    } else if (auto list = values[1].as<List>()) {
+        if (auto result = list->findLast(values[0])) {
+            return result.value();
+        }
+        return Value();
+    }
+    return Fail(Error(location, "expected a string or list"));
+}
+
+static auto _replace_all_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto text = values[2].as<String>()) {
+        auto searchString = values[0].as<String>();
+        if (!searchString) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto replacementString = values[1].as<String>();
+        if (!replacementString) {
+            return Fail(Error(location, "expected a string"));
+        }
+        text->replaceAll(*searchString, *replacementString);
+        return text;
+    } else if (auto list = values[2].as<List>()) {
+        list->replaceAll(values[0], values[1]);
+        return list;
+    }
+    return Fail(Error(location, "expected a string or list"));
+}
+
+static auto _replace_first_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto text = values[2].as<String>()) {
+        auto searchString = values[0].as<String>();
+        if (!searchString) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto replacementString = values[1].as<String>();
+        if (!replacementString) {
+            return Fail(Error(location, "expected a string"));
+        }
+        text->replaceFirst(*searchString, *replacementString);
+        return text;
+    } else if (auto list = values[2].as<List>()) {
+        list->replaceFirst(values[0], values[1]);
+        return list;
+    }
+    return Fail(Error(location, "expected a string or list"));
+}
+
+static auto _replace_last_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto text = values[2].as<String>()) {
+        auto searchString = values[0].as<String>();
+        if (!searchString) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto replacementString = values[1].as<String>();
+        if (!replacementString) {
+            return Fail(Error(location, "expected a string"));
+        }
+        text->replaceLast(*searchString, *replacementString);
+        return text;
+    } else if (auto list = values[2].as<List>()) {
+        list->replaceLast(values[0], values[1]);
+        return list;
+    }
+    return Fail(Error(location, "expected a string or list"));
+}
+
+static void _common(ModuleMap &natives) {
+    natives[S("(the) size of {}")] = N(_the_size_of_T);
+    natives[S("{} contains {}")] = N(_T_contains_T);
+    natives[S("{} is in {}")] = N(_T_is_in_T);
+    natives[S("{} starts with {}")] = N(_T_starts_with_T);
+    natives[S("{} ends with {}")] = N(_T_ends_with_T);
+    natives[S("item {} in {}")] = N(_item_T_in_T);
+    natives[S("insert {} at (the) end of {}")] = N(_insert_T_at_the_end_of_T);
+    natives[S("remove item {} from {}")] = N(_remove_item_T_from_T);
+    natives[S("(the) (first) offset of {} in {}")] = N(_the_first_offset_of_T_in_T);
+    natives[S("(the) last offset of {} in {}")] = N(_the_last_offset_of_T_in_T);
+    natives[S("replace all {} with {} in {}")] = N(_replace_all_T_with_T_in_T);
+    natives[S("replace first {} with {} in {}")] = N(_replace_first_T_with_T_in_T);
+    natives[S("replace last {} with {} in {}")] = N(_replace_last_T_with_T_in_T);
     natives[S("sort {}")] = N(_sort_T);
 }
 
@@ -447,544 +541,755 @@ static auto _T_as_a_string(CallFrame &frame, SourceLocation location, Value *val
 }
 
 static void _types(ModuleMap &natives) {
-    natives[S("{} as a/an integer")] = N(_T_as_an_integer);
-    natives[S("{} as a/an number")] = N(_T_as_a_number);
-    natives[S("{} as a/an string")] = N(_T_as_a_string);
+    natives[S("{} as (a/an) integer")] = N(_T_as_an_integer);
+    natives[S("{} as (a/an) number")] = N(_T_as_a_number);
+    natives[S("{} as (a/an) string")] = N(_T_as_a_string);
+}
+
+static auto _the_keys_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto dictionary = values[0].as<Dictionary>();
+    if (!dictionary) {
+        return Fail(Error(location, "expected a dictionary"));
+    }
+    auto keys = MakeStrong<List>();
+    for (const auto &pair : dictionary->values()) {
+        keys->values().push_back(pair.first);
+    }
+    return keys;
+}
+
+static auto _the_values_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto dictionary = values[0].as<Dictionary>();
+    if (!dictionary) {
+        return Fail(Error(location, "expected a dictionary"));
+    }
+    auto valuesList = MakeStrong<List>();
+    for (const auto &pair : dictionary->values()) {
+        valuesList->values().push_back(pair.second);
+    }
+    return valuesList;
+}
+
+static auto _insert_item_T_with_key_T_into_T(CallFrame &frame, SourceLocation location,
+                                             Value *values) -> Result<Value, Error> {
+    auto dictionary = values[2].as<Dictionary>();
+    if (!dictionary) {
+        return Fail(Error(location, "expected a dictionary"));
+    }
+    dictionary->values()[values[1]] = values[0];
+    return dictionary;
 }
 
 static void _dictionary(ModuleMap &natives) {
-    natives[S("(the) keys (of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto dictionary = values[0].as<Dictionary>();
-            if (!dictionary) {
-                return Fail(Error(location, "expected a dictionary"));
-            }
-            auto keys = MakeStrong<List>();
-            for (const auto &pair : dictionary->values()) {
-                keys->values().push_back(pair.first);
-            }
-            return keys;
-        });
-    natives[S("(the) values (of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto dictionary = values[0].as<Dictionary>();
-            if (!dictionary) {
-                return Fail(Error(location, "expected a dictionary"));
-            }
-            auto valuesList = MakeStrong<List>();
-            for (const auto &pair : dictionary->values()) {
-                valuesList->values().push_back(pair.second);
-            }
-            return valuesList;
-        });
-    natives[S("insert item {} with key {} into {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto dictionary = values[2].as<Dictionary>();
-            if (!dictionary) {
-                return Fail(Error(location, "expected a dictionary"));
-            }
-            dictionary->values()[values[1]] = values[0];
-            return dictionary;
-        });
+    natives[S("(the) keys (of) {}")] = N(_the_keys_of_T);
+    natives[S("(the) values (of) {}")] = N(_the_values_of_T);
+    natives[S("insert item {} with key {} into {}")] = N(_insert_item_T_with_key_T_into_T);
+}
+
+static auto _items_T_to_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[2].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    if (!values[0].isInteger()) {
+        return Fail(Error(location, "expected an integer index"));
+    }
+    if (!values[1].isInteger()) {
+        return Fail(Error(location, "expected an integer index"));
+    }
+    auto index1 = values[0].asInteger();
+    auto index2 = values[1].asInteger();
+    return MakeStrong<List>(list->values().begin() + index1, list->values().begin() + index2 + 1);
+}
+
+static auto _the_middle_item_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    return list->values().at(list->values().size() / 2);
+}
+
+static auto _the_last_item_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    return list->values().back();
+}
+
+static auto _the_number_of_items_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    return Integer(list->values().size());
+}
+
+static auto _any_item_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                           std::function<Integer(Integer)> randomInteger) -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    return list->values().at(randomInteger(list->values().size()));
+}
+
+static auto _remove_items_T_to_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[2].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    if (!values[0].isInteger()) {
+        return Fail(Error(location, "expected an integer index"));
+    }
+    if (!values[1].isInteger()) {
+        return Fail(Error(location, "expected an integer index"));
+    }
+    auto index1 = values[0].asInteger();
+    auto index2 = values[1].asInteger();
+    list->values().erase(list->values().begin() + index1, list->values().begin() + index2 + 1);
+    return list;
+}
+
+static auto _insert_T_at_index_T_into_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[2].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    if (!values[1].isInteger()) {
+        return Fail(Error(location, "expected an integer index"));
+    }
+    auto index = values[1].asInteger();
+    list->values().insert(list->values().begin() + index, values[0]);
+    return list;
+}
+
+static auto _reverse_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    std::reverse(list->values().begin(), list->values().end());
+    return list;
+}
+
+static auto _reversed_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    return MakeStrong<List>(list->values().rbegin(), list->values().rend());
+}
+
+static auto _shuffle_T(CallFrame &frame, SourceLocation location, Value *values,
+                       std::mt19937_64 &engine) -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    std::shuffle(list->values().begin(), list->values().end(), engine);
+    return list;
+}
+
+static auto _shuffled_T(CallFrame &frame, SourceLocation location, Value *values,
+                        std::mt19937_64 &engine) -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    auto result = MakeStrong<List>(list->values());
+    std::shuffle(result->values().begin(), result->values().end(), engine);
+    return result;
+}
+
+static auto _join_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    std::ostringstream str;
+    for (auto it = list->values().begin(); it < list->values().end(); it++) {
+        str << it->toString();
+    }
+    return str.str();
+}
+
+static auto _join_T_using_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    auto joinString = values[1].as<String>();
+    if (!joinString) {
+        return Fail(Error(location, "expected a string"));
+    }
+    std::ostringstream str;
+    for (auto it = list->values().begin(); it < list->values().end(); it++) {
+        str << it->toString();
+        if (it + 1 < list->values().end()) {
+            str << joinString->string();
+        }
+    }
+    return str.str();
 }
 
 static void _list(ModuleMap &natives, std::mt19937_64 &engine,
                   std::function<Integer(Integer)> randomInteger) {
-    natives[S("items {} to {} (in/of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[2].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            if (!values[0].isInteger()) {
-                return Fail(Error(location, "expected an integer index"));
-            }
-            if (!values[1].isInteger()) {
-                return Fail(Error(location, "expected an integer index"));
-            }
-            auto index1 = values[0].asInteger();
-            auto index2 = values[1].asInteger();
-            return MakeStrong<List>(list->values().begin() + index1,
-                                    list->values().begin() + index2 + 1);
-        });
-    natives[S("(the) mid/middle item (in/of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            return list->values().at(list->values().size() / 2);
-        });
-    natives[S("(the) last item (in/of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            return list->values().back();
-        });
-    natives[S("(the) number of items (in/of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            return Integer(list->values().size());
-        });
+    natives[S("items {} to {} (in/of) {}")] = N(_items_T_to_T_in_T);
+    natives[S("(the) mid/middle item (in/of) {}")] = N(_the_middle_item_in_T);
+    natives[S("(the) last item (in/of) {}")] = N(_the_last_item_in_T);
+    natives[S("(the) number of items (in/of) {}")] = N(_the_number_of_items_in_T);
+    natives[S("remove items {} to {} from {}")] = N(_remove_items_T_to_T_from_T);
+    natives[S("insert {} at index {} into {}")] = N(_insert_T_at_index_T_into_T);
+    natives[S("reverse {}")] = N(_reverse_T);
+    natives[S("reversed {}")] = N(_reversed_T);
+    natives[S("join {}")] = N(_join_T);
+    natives[S("join {} using {}")] = N(_join_T_using_T);
     natives[S("any item (in/of) {}")] =
         MakeStrong<Native>([randomInteger](CallFrame &frame, SourceLocation location,
                                            Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            return list->values().at(randomInteger(list->values().size()));
-        });
-    natives[S("remove items {} to {} from {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[2].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            if (!values[0].isInteger()) {
-                return Fail(Error(location, "expected an integer index"));
-            }
-            if (!values[1].isInteger()) {
-                return Fail(Error(location, "expected an integer index"));
-            }
-            auto index1 = values[0].asInteger();
-            auto index2 = values[1].asInteger();
-            list->values().erase(list->values().begin() + index1,
-                                 list->values().begin() + index2 + 1);
-            return list;
-        });
-    natives[S("insert {} at index {} into {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[2].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            if (!values[1].isInteger()) {
-                return Fail(Error(location, "expected an integer index"));
-            }
-            auto index = values[1].asInteger();
-            list->values().insert(list->values().begin() + index, values[0]);
-            return list;
-        });
-    natives[S("reverse {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            std::reverse(list->values().begin(), list->values().end());
-            return list;
-        });
-    natives[S("reversed {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            return MakeStrong<List>(list->values().rbegin(), list->values().rend());
+            return _any_item_in_T(frame, location, values, randomInteger);
         });
     natives[S("shuffle {}")] =
         MakeStrong<Native>([&engine](CallFrame &frame, SourceLocation location,
                                      Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            std::shuffle(list->values().begin(), list->values().end(), engine);
-            return list;
+            return _shuffle_T(frame, location, values, engine);
         });
     natives[S("shuffled {}")] =
         MakeStrong<Native>([&engine](CallFrame &frame, SourceLocation location,
                                      Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            auto result = MakeStrong<List>(list->values());
-            std::shuffle(result->values().begin(), result->values().end(), engine);
-            return result;
+            return _shuffled_T(frame, location, values, engine);
         });
-    natives[S("join {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            std::ostringstream str;
-            for (auto it = list->values().begin(); it < list->values().end(); it++) {
-                str << it->toString();
-            }
-            return str.str();
-        });
-    natives[S("join {} using {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            auto joinString = values[1].as<String>();
-            if (!joinString) {
-                return Fail(Error(location, "expected a string"));
-            }
-            std::ostringstream str;
-            for (auto it = list->values().begin(); it < list->values().end(); it++) {
-                str << it->toString();
-                if (it + 1 < list->values().end()) {
-                    str << joinString->string();
-                }
-            }
-            return str.str();
-        });
+}
+
+static auto _insert_T_at_character_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto insertText = values[0].as<String>();
+    if (!insertText) {
+        return Fail(Error(location, "expected a string"));
+    }
+    if (!values[1].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    auto text = values[2].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto chunk = index_chunk(chunk::type::character, values[1].asInteger(), text->string());
+    text->string().insert(chunk.begin(), insertText->string().begin(), insertText->string().end());
+    return text;
+}
+
+static auto _remove_all_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto removeText = values[0].as<String>();
+    if (!removeText) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto text = values[1].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    text->replaceAll(*removeText, String(""));
+    return text;
+}
+
+static auto _remove_first_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto removeText = values[0].as<String>();
+    if (!removeText) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto text = values[1].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    text->replaceFirst(*removeText, String(""));
+    return text;
+}
+
+static auto _remove_last_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto removeText = values[0].as<String>();
+    if (!removeText) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto text = values[1].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    text->replaceLast(*removeText, String(""));
+    return text;
+}
+
+static auto _replace_chunk_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                                         chunk::type chunkType) -> Result<Value, Error> {
+    if (!values[0].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    auto index = values[0].asInteger();
+    auto replacement = values[1].as<String>();
+    if (!replacement) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto text = values[2].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+
+    auto chunk = index_chunk(chunkType, index, text->string());
+    text->string().replace(chunk.begin(), chunk.end(), replacement->string());
+    return text;
+}
+
+static auto _replace_chunks_T_to_T_with_T_in_T(CallFrame &frame, SourceLocation location,
+                                               Value *values, chunk::type chunkType)
+    -> Result<Value, Error> {
+    if (!values[0].isInteger() || !values[1].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    auto start = values[0].asInteger();
+    auto end = values[1].asInteger();
+    auto replacement = values[2].as<String>();
+    if (!replacement) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto text = values[3].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto chunk = range_chunk(chunkType, start, end, text->string());
+    text->string().replace(chunk.begin(), chunk.end(), replacement->string());
+    return text;
+}
+
+static auto _remove_chunk_T_from_T(CallFrame &frame, SourceLocation location, Value *values,
+                                   chunk::type chunkType) -> Result<Value, Error> {
+    if (!values[0].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    auto index = values[0].asInteger();
+    auto text = values[1].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto chunk = index_chunk(chunkType, index, text->string());
+    text->string().erase(chunk.begin(), chunk.end());
+    return text;
+}
+
+static auto _remove_chunks_T_to_T_from_T(CallFrame &frame, SourceLocation location, Value *values,
+                                         chunk::type chunkType) -> Result<Value, Error> {
+    if (!values[0].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    if (!values[1].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    auto start = values[0].asInteger();
+    auto end = values[1].asInteger();
+    auto text = values[2].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto chunk = range_chunk(chunkType, start, end, text->string());
+    text->string().erase(chunk.begin(), chunk.end());
+    return text;
+}
+
+static auto _list_of_chunks_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                                 chunk::type chunkType) -> Result<Value, Error> {
+    auto text = values[0].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    std::vector<Value> result;
+    size_t index = 0;
+    auto chunk = index_chunk(chunkType, index++, text->string());
+    while (chunk.begin() < text->string().end()) {
+        result.push_back(Value(chunk.get()));
+        chunk = index_chunk(chunkType, index++, text->string());
+    }
+    return MakeStrong<List>(result);
+}
+
+static auto _chunk_T_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                          chunk::type chunkType) -> Result<Value, Error> {
+    if (!values[0].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    auto index = values[0].asInteger();
+    auto text = values[1].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    return index_chunk(chunkType, index, text->string()).get();
+}
+
+static auto _chunks_T_to_T_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                                chunk::type chunkType) -> Result<Value, Error> {
+    if (!values[0].isInteger() || !values[1].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    auto start = values[0].asInteger();
+    auto end = values[1].asInteger();
+    auto text = values[2].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    return range_chunk(chunkType, start, end, text->string()).get();
+}
+
+static auto _any_chunk_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                            chunk::type chunkType, std::function<Integer(Integer)> randomInteger)
+    -> Result<Value, Error> {
+    auto text = values[0].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    return random_chunk(chunkType, randomInteger, text->string()).get();
+}
+
+static auto _the_middle_chunk_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                                   chunk::type chunkType) -> Result<Value, Error> {
+    auto text = values[0].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    return middle_chunk(chunkType, text->string()).get();
+}
+
+static auto _the_last_chunk_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                                 chunk::type chunkType) -> Result<Value, Error> {
+    auto text = values[0].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    return last_chunk(chunkType, text->string()).get();
+}
+
+static auto _the_number_of_chunks_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                                       chunk::type chunkType) -> Result<Value, Error> {
+    auto text = values[0].as<String>();
+    if (!text) {
+        return Fail(Error(location, "expected a string"));
+    }
+    return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
 }
 
 static void _string(ModuleMap &natives, std::mt19937_64 &engine,
                     std::function<Integer(Integer)> randomInteger) {
-    natives[S("insert {} at char/character {} in {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto insertText = values[0].as<String>();
-            if (!insertText) {
-                return Fail(Error(location, "expected a string"));
-            }
-            if (!values[1].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            auto text = values[2].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto chunk = index_chunk(chunk::type::character, values[1].asInteger(), text->string());
-            text->string().insert(chunk.begin(), insertText->string().begin(),
-                                  insertText->string().end());
-            return text;
-        });
-    natives[S("remove all {} from {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto removeText = values[0].as<String>();
-            if (!removeText) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto text = values[1].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            text->replaceAll(*removeText, String(""));
-            return text;
-        });
-    natives[S("remove first {} from {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto removeText = values[0].as<String>();
-            if (!removeText) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto text = values[1].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            text->replaceFirst(*removeText, String(""));
-            return text;
-        });
-    natives[S("remove last {} from {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto removeText = values[0].as<String>();
-            if (!removeText) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto text = values[1].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            text->replaceLast(*removeText, String(""));
-            return text;
-        });
     auto replaceChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            if (!values[0].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            auto index = values[0].asInteger();
-            auto replacement = values[1].as<String>();
-            if (!replacement) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto text = values[2].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-
-            auto chunk = index_chunk(chunkType, index, text->string());
-            text->string().replace(chunk.begin(), chunk.end(), replacement->string());
-            return text;
+            return _replace_chunk_T_with_T_in_T(frame, location, values, chunkType);
         });
     };
-    natives[S("replace char/character {} with {} in {}")] = replaceChunk(chunk::character);
-    natives[S("replace word {} with {} in {}")] = replaceChunk(chunk::word);
-    natives[S("replace line {} with {} in {}")] = replaceChunk(chunk::line);
-
     auto replaceChunks = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            if (!values[0].isInteger() || !values[1].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            auto start = values[0].asInteger();
-            auto end = values[1].asInteger();
-            auto replacement = values[2].as<String>();
-            if (!replacement) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto text = values[3].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto chunk = range_chunk(chunkType, start, end, text->string());
-            text->string().replace(chunk.begin(), chunk.end(), replacement->string());
-            return text;
+            return _replace_chunks_T_to_T_with_T_in_T(frame, location, values, chunkType);
         });
     };
-    natives[S("replace chars/characters {} to {} with {} in {}")] = replaceChunks(chunk::character);
-    natives[S("replace words {} to {} with {} in {}")] = replaceChunks(chunk::word);
-    natives[S("replace lines {} to {} with {} in {}")] = replaceChunks(chunk::line);
-
     auto removeChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            if (!values[0].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            auto index = values[0].asInteger();
-            auto text = values[1].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto chunk = index_chunk(chunkType, index, text->string());
-            text->string().erase(chunk.begin(), chunk.end());
-            return text;
+            return _remove_chunk_T_from_T(frame, location, values, chunkType);
         });
     };
-    natives[S("remove char/character {} from {}")] = removeChunk(chunk::character);
-    natives[S("remove word {} from {}")] = removeChunk(chunk::word);
-    natives[S("remove line {} from {}")] = removeChunk(chunk::line);
 
     auto removeChunks = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            if (!values[0].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            if (!values[1].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            auto start = values[0].asInteger();
-            auto end = values[1].asInteger();
-            auto text = values[2].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            auto chunk = range_chunk(chunkType, start, end, text->string());
-            text->string().erase(chunk.begin(), chunk.end());
-            return text;
+            return _remove_chunks_T_to_T_from_T(frame, location, values, chunkType);
         });
     };
-    natives[S("remove chars/characters {} to {} from {}")] = removeChunks(chunk::character);
-    natives[S("remove words {} to {} from {}")] = removeChunks(chunk::word);
-    natives[S("remove lines {} to {} from {}")] = removeChunks(chunk::line);
 
     auto listOf = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            auto text = values[0].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            std::vector<Value> result;
-            size_t index = 0;
-            auto chunk = index_chunk(chunkType, index++, text->string());
-            while (chunk.begin() < text->string().end()) {
-                result.push_back(Value(chunk.get()));
-                chunk = index_chunk(chunkType, index++, text->string());
-            }
-            return MakeStrong<List>(result);
+            return _list_of_chunks_in_T(frame, location, values, chunkType);
         });
     };
-    natives[S("(the) list of chars/characters (in/of) {}")] = listOf(chunk::character);
-    natives[S("(the) list of words (in/of) {}")] = listOf(chunk::word);
-    natives[S("(the) list of lines (in/of) {}")] = listOf(chunk::line);
 
     auto chunkAt = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            if (!values[0].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            auto index = values[0].asInteger();
-            auto text = values[1].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            return index_chunk(chunkType, index, text->string()).get();
+            return _chunk_T_in_T(frame, location, values, chunkType);
         });
     };
-    natives[S("char/character {} in/of {}")] = chunkAt(chunk::character);
-    natives[S("word {} in/of {}")] = chunkAt(chunk::word);
-    natives[S("line {} in/of {}")] = chunkAt(chunk::line);
 
     auto chunksAt = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            if (!values[0].isInteger() || !values[1].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            auto start = values[0].asInteger();
-            auto end = values[1].asInteger();
-            auto text = values[2].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            return range_chunk(chunkType, start, end, text->string()).get();
+            return _chunks_T_to_T_in_T(frame, location, values, chunkType);
         });
     };
-    natives[S("chars/characters {} to {} in/of {}")] = chunksAt(chunk::character);
-    natives[S("words {} to {} in/of {}")] = chunksAt(chunk::word);
-    natives[S("lines {} to {} in/of {}")] = chunksAt(chunk::line);
 
     auto anyChunk = [randomInteger](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>(
             [randomInteger, chunkType](CallFrame &frame, SourceLocation location,
                                        Value *values) -> Result<Value, Error> {
-                auto text = values[0].as<String>();
-                if (!text) {
-                    return Fail(Error(location, "expected a string"));
-                }
-                return random_chunk(chunkType, randomInteger, text->string()).get();
+                return _any_chunk_in_T(frame, location, values, chunkType, randomInteger);
             });
     };
-    natives[S("any char/character in/of {}")] = anyChunk(chunk::character);
-    natives[S("any word in/of {}")] = anyChunk(chunk::word);
-    natives[S("any line in/of {}")] = anyChunk(chunk::line);
 
     auto middleChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            auto text = values[0].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            return middle_chunk(chunkType, text->string()).get();
+            return _the_middle_chunk_in_T(frame, location, values, chunkType);
         });
     };
-    natives[S("(the) mid/middle char/character in/of {}")] = middleChunk(chunk::character);
-    natives[S("(the) mid/middle word in/of {}")] = middleChunk(chunk::word);
-    natives[S("(the) mid/middle line in/of {}")] = middleChunk(chunk::line);
 
     auto lastChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            auto text = values[0].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            return last_chunk(chunkType, text->string()).get();
+            return _the_last_chunk_in_T(frame, location, values, chunkType);
         });
     };
-    natives[S("(the) last char/character in/of {}")] = lastChunk(chunk::character);
-    natives[S("(the) last word in/of {}")] = lastChunk(chunk::word);
-    natives[S("(the) last line in/of {}")] = lastChunk(chunk::line);
 
     auto numberOfChunk = [](chunk::type chunkType) -> Strong<Native> {
         return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
                                               Value *values) -> Result<Value, Error> {
-            auto text = values[0].as<String>();
-            if (!text) {
-                return Fail(Error(location, "expected a string"));
-            }
-            return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
+            return _the_number_of_chunks_in_T(frame, location, values, chunkType);
         });
     };
+
+    natives[S("insert {} at char/character {} in {}")] = N(_insert_T_at_character_T_in_T);
+    natives[S("remove all {} from {}")] = N(_remove_all_T_from_T);
+    natives[S("remove first {} from {}")] = N(_remove_first_T_from_T);
+    natives[S("remove last {} from {}")] = N(_remove_last_T_from_T);
+
+    natives[S("replace char/character {} with {} in {}")] = replaceChunk(chunk::character);
+    natives[S("replace word {} with {} in {}")] = replaceChunk(chunk::word);
+    natives[S("replace line {} with {} in {}")] = replaceChunk(chunk::line);
+
+    natives[S("replace chars/characters {} to {} with {} in {}")] = replaceChunks(chunk::character);
+    natives[S("replace words {} to {} with {} in {}")] = replaceChunks(chunk::word);
+    natives[S("replace lines {} to {} with {} in {}")] = replaceChunks(chunk::line);
+
+    natives[S("remove char/character {} from {}")] = removeChunk(chunk::character);
+    natives[S("remove word {} from {}")] = removeChunk(chunk::word);
+    natives[S("remove line {} from {}")] = removeChunk(chunk::line);
+
+    natives[S("remove chars/characters {} to {} from {}")] = removeChunks(chunk::character);
+    natives[S("remove words {} to {} from {}")] = removeChunks(chunk::word);
+    natives[S("remove lines {} to {} from {}")] = removeChunks(chunk::line);
+
+    natives[S("(the) list of chars/characters (in/of) {}")] = listOf(chunk::character);
+    natives[S("(the) list of words (in/of) {}")] = listOf(chunk::word);
+    natives[S("(the) list of lines (in/of) {}")] = listOf(chunk::line);
+
+    natives[S("char/character {} in/of {}")] = chunkAt(chunk::character);
+    natives[S("word {} in/of {}")] = chunkAt(chunk::word);
+    natives[S("line {} in/of {}")] = chunkAt(chunk::line);
+
+    natives[S("chars/characters {} to {} in/of {}")] = chunksAt(chunk::character);
+    natives[S("words {} to {} in/of {}")] = chunksAt(chunk::word);
+    natives[S("lines {} to {} in/of {}")] = chunksAt(chunk::line);
+
+    natives[S("any char/character in/of {}")] = anyChunk(chunk::character);
+    natives[S("any word in/of {}")] = anyChunk(chunk::word);
+    natives[S("any line in/of {}")] = anyChunk(chunk::line);
+
+    natives[S("(the) mid/middle char/character in/of {}")] = middleChunk(chunk::character);
+    natives[S("(the) mid/middle word in/of {}")] = middleChunk(chunk::word);
+    natives[S("(the) mid/middle line in/of {}")] = middleChunk(chunk::line);
+
+    natives[S("(the) last char/character in/of {}")] = lastChunk(chunk::character);
+    natives[S("(the) last word in/of {}")] = lastChunk(chunk::word);
+    natives[S("(the) last line in/of {}")] = lastChunk(chunk::line);
+
     natives[S("(the) number of chars/characters (in/of) {}")] = numberOfChunk(chunk::character);
     natives[S("(the) number of words (in/of) {}")] = numberOfChunk(chunk::word);
     natives[S("(the) number of lines (in/of) {}")] = numberOfChunk(chunk::line);
 }
 
+static auto _T_up_to_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (!values[0].isInteger() || !values[1].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    return MakeStrong<Range>(values[0].asInteger(), values[1].asInteger(), true);
+}
+
+static auto _the_lower_bound_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto range = values[0].as<Range>()) {
+        return range->start();
+    }
+    return Fail(Error(location, "expected a range"));
+}
+
+static auto _the_upper_bound_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto range = values[0].as<Range>()) {
+        return range->end();
+    }
+    return Fail(Error(location, "expected a range"));
+}
+
+static auto _T_is_closed(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto range = values[0].as<Range>()) {
+        return range->closed();
+    }
+    return Fail(Error(location, "expected a range"));
+}
+
+static auto _T_overlaps_with_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto range1 = values[0].as<Range>();
+    auto range2 = values[1].as<Range>();
+    if (!range1) {
+        return Fail(Error(location, "expected a range"));
+    }
+    if (!range2) {
+        return Fail(Error(location, "expected a range"));
+    }
+    return range1->overlaps(*range2);
+}
+
+static auto _a_random_number_in_T(CallFrame &frame, SourceLocation location, Value *values,
+                                  std::function<Integer(Integer)> randomInteger)
+    -> Result<Value, Error> {
+    if (auto range = values[0].as<Range>()) {
+        return range->start() +
+               randomInteger(range->end() - range->start() + (range->closed() ? 1 : 0));
+    }
+    return Fail(Error(location, "expected a range"));
+}
+
 static void _range(ModuleMap &natives, std::mt19937_64 &engine,
                    std::function<Integer(Integer)> randomInteger) {
-    natives[S("{} up to {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (!values[0].isInteger() || !values[1].isInteger()) {
-                return Fail(Error(location, "expected an integer"));
-            }
-            return MakeStrong<Range>(values[0].asInteger(), values[1].asInteger(), true);
-        });
-    natives[S("(the) lower bound (in/of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto range = values[0].as<Range>()) {
-                return range->start();
-            }
-            return Fail(Error(location, "expected a range"));
-        });
-    natives[S("(the) upper bound (in/of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto range = values[0].as<Range>()) {
-                return range->end();
-            }
-            return Fail(Error(location, "expected a range"));
-        });
-    natives[S("{} is closed")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (auto range = values[0].as<Range>()) {
-                return range->closed();
-            }
-            return Fail(Error(location, "expected a range"));
-        });
-    natives[S("{} overlaps (with) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto range1 = values[0].as<Range>();
-            auto range2 = values[1].as<Range>();
-            if (!range1) {
-                return Fail(Error(location, "expected a range"));
-            }
-            if (!range2) {
-                return Fail(Error(location, "expected a range"));
-            }
-            return range1->overlaps(*range2);
-        });
+    natives[S("{} up to {}")] = N(_T_up_to_T);
+    natives[S("(the) lower bound (in/of) {}")] = N(_the_lower_bound_of_T);
+    natives[S("(the) upper bound (in/of) {}")] = N(_the_upper_bound_of_T);
+    natives[S("{} is closed")] = N(_T_is_closed);
+    natives[S("{} overlaps (with) {}")] = N(_T_overlaps_with_T);
     natives[S("(a) random number (in/of) {}")] =
         MakeStrong<Native>([randomInteger](CallFrame &frame, SourceLocation location,
                                            Value *values) -> Result<Value, Error> {
-            if (auto range = values[0].as<Range>()) {
-                return range->start() +
-                       randomInteger(range->end() - range->start() + (range->closed() ? 1 : 0));
-            }
-            return Fail(Error(location, "expected a range"));
+            return _a_random_number_in_T(frame, location, values, randomInteger);
         });
+}
+
+static auto _the_func_of_T(CallFrame &frame, SourceLocation location, Value *values,
+                           double (*func)(double)) -> Result<Value, Error> {
+    if (!values[0].isNumber()) {
+        return Fail(Error(location, "expected a number"));
+    }
+    auto argument = values[0].castFloat();
+    return func(argument);
+}
+
+static auto _the_abs_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (!values[0].isNumber()) {
+        return Fail(Error(location, "expected a number"));
+    }
+    if (values[0].isFloat()) {
+        return std::fabs(values[0].asFloat());
+    }
+    return std::abs(values[0].asInteger());
+}
+
+static auto _the_maximum_value_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    if (list->values().size() == 0) {
+        return Fail(Error(location, "list is empty"));
+    }
+    auto first = list->values().front();
+    if (!first.isNumber()) {
+        return Fail(Error(location, "expected a number"));
+    }
+    auto max = first.castFloat();
+    for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
+        if (!it->isNumber()) {
+            return Fail(Error(location, "expected a number"));
+        }
+        auto value = it->castFloat();
+        if (value > max) {
+            max = value;
+        }
+    }
+    return max;
+}
+
+static auto _the_minimum_value_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    if (list->values().size() == 0) {
+        return Fail(Error(location, "list is empty"));
+    }
+    auto first = list->values().front();
+    if (!first.isNumber()) {
+        return Fail(Error(location, "expected a number"));
+    }
+    auto min = first.castFloat();
+    for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
+        if (!it->isNumber()) {
+            return Fail(Error(location, "expected a number"));
+        }
+        auto value = it->castFloat();
+        if (value < min) {
+            min = value;
+        }
+    }
+    return min;
+}
+
+static auto _the_average_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, "expected a list"));
+    }
+    if (list->values().size() == 0) {
+        return Fail(Error(location, "list is empty"));
+    }
+    auto first = list->values().front();
+    if (!first.isNumber()) {
+        return Fail(Error(location, "expected a number"));
+    }
+    auto sum = first.castFloat();
+    for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
+        if (!it->isNumber()) {
+            return Fail(Error(location, "expected a number"));
+        }
+        sum = sum + it->castFloat();
+    }
+    return sum / list->values().size();
 }
 
 static void _math(ModuleMap &natives) {
     auto basicFunction = [](double (*func)(double)) -> Strong<Native> {
         return MakeStrong<Native>([func](CallFrame &frame, SourceLocation location,
                                          Value *values) -> Result<Value, Error> {
-            if (!values[0].isNumber()) {
-                return Fail(Error(location, "expected a number"));
-            }
-            auto argument = values[0].castFloat();
-            return func(argument);
+            return _the_func_of_T(frame, location, values, func);
         });
     };
-    natives[S("(the) abs (of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (!values[0].isNumber()) {
-                return Fail(Error(location, "expected a number"));
-            }
-            if (values[0].isFloat()) {
-                return std::fabs(values[0].asFloat());
-            }
-            return std::abs(values[0].asInteger());
-        });
+    natives[S("(the) abs (of) {}")] = N(_the_abs_of_T);
     natives[S("(the) sin (of) {}")] = basicFunction(sin);
     natives[S("(the) cos (of) {}")] = basicFunction(cos);
     natives[S("(the) tan (of) {}")] = basicFunction(tan);
@@ -1001,82 +1306,14 @@ static void _math(ModuleMap &natives) {
     natives[S("round {}")] = basicFunction(round);
     natives[S("trunc/truncate {}")] = basicFunction(trunc);
 
-    natives[S("(the) max/maximum (value) (of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            if (list->values().size() == 0) {
-                return Fail(Error(location, "list is empty"));
-            }
-            auto first = list->values().front();
-            if (!first.isNumber()) {
-                return Fail(Error(location, "expected a number"));
-            }
-            auto max = first.castFloat();
-            for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
-                if (!it->isNumber()) {
-                    return Fail(Error(location, "expected a number"));
-                }
-                auto value = it->castFloat();
-                if (value > max) {
-                    max = value;
-                }
-            }
-            return max;
-        });
-    natives[S("(the) min/minimum (value) (of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            if (list->values().size() == 0) {
-                return Fail(Error(location, "list is empty"));
-            }
-            auto first = list->values().front();
-            if (!first.isNumber()) {
-                return Fail(Error(location, "expected a number"));
-            }
-            auto min = first.castFloat();
-            for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
-                if (!it->isNumber()) {
-                    return Fail(Error(location, "expected a number"));
-                }
-                auto value = it->castFloat();
-                if (value < min) {
-                    min = value;
-                }
-            }
-            return min;
-        });
-    natives[S("(the) average/avg (of) {}")] = MakeStrong<Native>(
-        [](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto list = values[0].as<List>();
-            if (!list) {
-                return Fail(Error(location, "expected a list"));
-            }
-            if (list->values().size() == 0) {
-                return Fail(Error(location, "list is empty"));
-            }
-            auto first = list->values().front();
-            if (!first.isNumber()) {
-                return Fail(Error(location, "expected a number"));
-            }
-            auto sum = first.castFloat();
-            for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
-                if (!it->isNumber()) {
-                    return Fail(Error(location, "expected a number"));
-                }
-                sum = sum + it->castFloat();
-            }
-            return sum / list->values().size();
-        });
+    natives[S("(the) max/maximum (value) (of) {}")] = N(_the_maximum_value_of_T);
+    natives[S("(the) min/minimum (value) (of) {}")] = N(_the_minimum_value_of_T);
+    natives[S("(the) avg/average (value) (of) {}")] = N(_the_average_of_T);
 }
 
 Core::Core(const CoreConfig &config) : _config(config) {
-    _core(_natives, _config.out, _config.in, _config.err);
+    _core(_natives);
+    _io(_natives, _config.out, _config.in, _config.err);
     _common(_natives);
     _types(_natives);
     _dictionary(_natives);
