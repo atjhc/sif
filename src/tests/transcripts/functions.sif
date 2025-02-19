@@ -95,3 +95,11 @@ print scale (1, 2) 10
 (-- expect
 10 20
 --)
+
+function casing {theVariable}
+  print thevariable
+end function
+casing "correct"
+(-- expect
+correct
+--)

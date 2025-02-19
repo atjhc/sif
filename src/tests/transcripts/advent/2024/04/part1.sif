@@ -42,27 +42,3 @@ print matches
 (-- expect
 2406
 --)
-
-(--
-text = "XMAS"
-textLength = len(text)
-with open("input.txt", "r") as file:
-    board = [list(line.strip()) for line in file]
-height = len(board)
-width = len(board[0])
-
-def checkMatch(x, y, dx, dy):
-    ex = x + dx * (textLength - 1)
-    if ex < 0 or ex >= width:
-        return False
-    ey = y + dy * (textLength - 1)
-    if ey < 0 or ey >= height:
-        return False
-    for i in range(0, textLength):
-        if board[y][x] != text[i]:
-            return False
-        x += dx
-        y += dy
-    return True
-
---)

@@ -254,7 +254,7 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
         if (auto &&arg = std::get_if<Signature::Argument>(&term); arg) {
             for (auto &&target : arg->targets) {
                 if (target.name.has_value()) {
-                    addLocal(target.name.value().text);
+                    addLocal(lowercase(target.name.value().text));
                 } else {
                     addLocal();
                 }
