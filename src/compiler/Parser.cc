@@ -1198,59 +1198,17 @@ Result<Owned<Expression>, Error> Parser::parseUnary() {
     return parseCall();
 }
 
-bool Parser::Grammar::insert(const Signature &signature,
-                             std::vector<Signature::Term>::const_iterator term) {
-    if (term == signature.terms.end()) {
-        if (this->signature) {
-            return false;
-        }
-        this->signature = signature;
-        return true;
+static std::string computeErrorString(const Signature &matchingSignature,
+                                      const std::vector<Signature> &signatures) {
+    auto errorString = Concat("no matching function ", Quoted(matchingSignature.name()));
+    if (signatures.size() == 1) {
+        errorString = Concat(errorString, ". Did you mean ", Quoted(signatures[0].name()), "?");
+    } else if (signatures.size() <= 5) {
+        auto signaturesMatches =
+            Join(signatures, "\n  ", [](Signature signature) { return signature.name(); });
+        errorString = Concat(errorString, "\nPossible matches:\n  ", signaturesMatches, "\n");
     }
-
-    bool result = true;
-    auto insertToken = [&](Token token) {
-        auto word = lowercase(token.text);
-        auto it = terms.find(word);
-        if (it == terms.end()) {
-            auto grammar = MakeOwned<Grammar>();
-            grammar->insert(signature, std::next(term));
-            terms[word] = std::move(grammar);
-            return;
-        }
-        if (!it->second->insert(signature, std::next(term))) {
-            result = false;
-        }
-    };
-    auto insertArgument = [&](Signature::Argument) {
-        if (argument) {
-            if (!argument->insert(signature, std::next(term))) {
-                result = false;
-            }
-            return;
-        }
-        argument = MakeOwned<Grammar>();
-        argument->insert(signature, std::next(term));
-    };
-    auto insertChoice = [&](Signature::Choice choice) {
-        for (auto &token : choice.tokens) {
-            insertToken(token);
-        }
-    };
-    std::visit(
-        Overload{
-            insertToken,
-            insertArgument,
-            insertChoice,
-            [&](Signature::Option option) {
-                insertChoice(option.choice);
-                if (!insert(signature, std::next(term))) {
-                    result = false;
-                }
-            },
-        },
-        *term);
-    return result;
+    return errorString;
 }
 
 Result<Owned<Expression>, Error> Parser::parseCall() {
@@ -1312,7 +1270,9 @@ Result<Owned<Expression>, Error> Parser::parseCall() {
         if (matchingSignature.terms.size() == 0) {
             return Fail(Error(start, Concat("unexpected ", token.description())));
         }
-        return Fail(Error(start, Concat("no matching function ", matchingSignature.description())));
+
+        auto errorString = computeErrorString(matchingSignature, grammar->allSignatures());
+        return Fail(Error(SourceRange{start, previous().end()}, errorString));
     }
     auto call =
         MakeOwned<Call>(signature.value(), std::vector<Optional<Token>>(), std::move(arguments));

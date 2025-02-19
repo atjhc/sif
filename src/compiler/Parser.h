@@ -20,6 +20,7 @@
 #include "Error.h"
 #include "ast/Expression.h"
 #include "ast/Statement.h"
+#include "compiler/Grammar.h"
 #include "compiler/Module.h"
 #include "compiler/Reporter.h"
 #include "compiler/Scanner.h"
@@ -60,19 +61,6 @@ class Parser {
     struct Scope {
         std::vector<Signature> signatures;
         Set<std::string> variables;
-    };
-
-    struct Grammar {
-        Owned<Grammar> argument;
-        Mapping<std::string, Owned<Grammar>> terms;
-        Optional<Signature> signature;
-
-        bool insert(const Signature &signature, std::vector<Signature::Term>::const_iterator term);
-        bool insert(const Signature &signature) {
-            return insert(signature, signature.terms.cbegin());
-        }
-
-        bool isLeaf() const { return argument == nullptr && terms.size() == 0; }
     };
 
     bool isAtEnd();

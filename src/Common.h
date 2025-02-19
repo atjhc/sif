@@ -190,7 +190,9 @@ static inline std::ostream &operator<<(std::ostream &out, const SourceLocation &
     return out << Concat(location.lineNumber, ":", location.position);
 }
 
-template <class... Ts> struct Overload : Ts... { using Ts::operator()...; };
+template <class... Ts> struct Overload : Ts... {
+    using Ts::operator()...;
+};
 template <class... Ts> Overload(Ts...) -> Overload<Ts...>;
 
 SIF_NAMESPACE_END

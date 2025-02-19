@@ -1,0 +1,15 @@
+insert
+(-- error
+no matching function "insert"
+Possible matches:
+  insert {} at index {} into {}
+  insert {} at (the) end of {}
+  insert {} at char/character {} in {}
+  insert item {} with key {} into {}
+
+--)
+
+the language major
+(-- error
+no matching function "the language major". Did you mean "the language major version"?
+--)
