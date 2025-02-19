@@ -81,81 +81,99 @@ static auto _quit_with_T(CallFrame &frame, SourceLocation location, Value *value
     exit(values[0].asInteger());
 }
 
-static auto _write_T(CallFrame &frame, SourceLocation location, Value *values, std::ostream &out)
-    -> Result<Value, Error> {
-    if (const auto &list = values[0].as<List>()) {
-        out << Join(list->values(), " ");
-    } else {
-        out << values[0];
-    }
-    return Value();
-}
-
-static auto _write_error_T(CallFrame &frame, SourceLocation location, Value *values,
-                           std::ostream &err) -> Result<Value, Error> {
-    if (const auto &list = values[0].as<List>()) {
-        err << Join(list->values(), " ");
-    } else {
-        err << values[0];
-    }
-    return Value();
-}
-
-static auto _print_T(CallFrame &frame, SourceLocation location, Value *values, std::ostream &out)
-    -> Result<Value, Error> {
-    if (const auto &list = values[0].as<List>()) {
-        out << Join(list->values(), " ");
-    } else {
-        out << values[0];
-    }
-    out << std::endl;
-    return Value();
-}
-
-static auto _print_error_T(CallFrame &frame, SourceLocation location, Value *values,
-                           std::ostream &err) -> Result<Value, Error> {
-    if (const auto &list = values[0].as<List>()) {
-        for (const auto &item : list->values()) {
-            err << item;
-        }
-    } else {
-        err << values[0];
-    }
-    err << std::endl;
-    return Value();
-}
-
 static auto _get_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0];
 }
 
-static auto _read_a_word(CallFrame &frame, SourceLocation location, Value *values, std::istream &in)
-    -> Result<Value, Error> {
-    std::string input;
-    in >> input;
-    return input;
+static auto _write_T(std::ostream &out)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (const auto &list = values[0].as<List>()) {
+                out << Join(list->values(), " ");
+            } else {
+                out << values[0];
+            }
+            return Value();
+        };
 }
 
-static auto _read_a_line(CallFrame &frame, SourceLocation location, Value *values, std::istream &in)
-    -> Result<Value, Error> {
-    std::string input;
-    std::getline(in, input);
-    return input;
+static auto _write_error_T(std::ostream &err)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (const auto &list = values[0].as<List>()) {
+                err << Join(list->values(), " ");
+            } else {
+                err << values[0];
+            }
+            return Value();
+        };
 }
 
-static auto _read_a_character(CallFrame &frame, SourceLocation location, Value *values,
-                              std::istream &in) -> Result<Value, Error> {
-    std::istreambuf_iterator<char> it(in.rdbuf());
-    std::istreambuf_iterator<char> eos;
-    std::string result;
-    try {
-        char32_t input = utf8::next(it, eos);
-        result = utf8::utf32to8(std::u32string_view(&input, 1));
-    } catch (const utf8::exception &exception) {
-        return Fail(Error(location, exception.what()));
-    }
-    return result;
+static auto _print_T(std::ostream &out)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (const auto &list = values[0].as<List>()) {
+                out << Join(list->values(), " ");
+            } else {
+                out << values[0];
+            }
+            out << std::endl;
+            return Value();
+        };
+}
+
+static auto _print_error_T(std::ostream &err)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (const auto &list = values[0].as<List>()) {
+                for (const auto &item : list->values()) {
+                    err << item;
+                }
+            } else {
+                err << values[0];
+            }
+            err << std::endl;
+            return Value();
+        };
+}
+
+static auto _read_a_word(std::istream &in)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        std::string input;
+        in >> input;
+        return input;
+    };
+}
+
+static auto _read_a_line(std::istream &in)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        std::string input;
+        std::getline(in, input);
+        return input;
+    };
+}
+
+static auto _read_a_character(std::istream &in)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        std::istreambuf_iterator<char> it(in.rdbuf());
+        std::istreambuf_iterator<char> eos;
+        std::string result;
+        try {
+            char32_t input = utf8::next(it, eos);
+            result = utf8::utf32to8(std::u32string_view(&input, 1));
+        } catch (const utf8::exception &exception) {
+            return Fail(Error(location, exception.what()));
+        }
+        return result;
+    };
 }
 
 static auto _the_description_of_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -186,54 +204,6 @@ static auto _a_copy_of_T(CallFrame &frame, SourceLocation location, Value *value
         return copyable->copy();
     }
     return values[0];
-}
-
-static void _core(ModuleMap &natives) {
-    natives[S("the language version")] = N(_the_language_version);
-    natives[S("the language major version")] = N(_the_language_major_version);
-    natives[S("the language minor version")] = N(_the_language_minor_version);
-    natives[S("the language patch version")] = N(_the_language_patch_version);
-    natives[S("the error")] = N(_the_error);
-    natives[S("error with {}")] = N(_error_with_T);
-    natives[S("quit")] = N(_quit);
-    natives[S("quit with {}")] = N(_quit_with_T);
-    natives[S("get {}")] = N(_get_T);
-    natives[S("(the) description of {}")] = N(_the_description_of_T);
-    natives[S("(the) debug description of {}")] = N(_the_debug_description_of_T);
-    natives[S("(the) hash value of {}")] = N(_the_hash_value_of_T);
-    natives[S("(the) type name of {}")] = N(_the_type_name_of_T);
-    natives[S("(a) copy of {}")] = N(_a_copy_of_T);
-}
-
-static void _io(ModuleMap &natives, std::ostream &out, std::istream &in, std::ostream &err) {
-    natives[S("write {}")] = MakeStrong<Native>(
-        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return _write_T(frame, location, values, out);
-        });
-    natives[S("write error {}")] = MakeStrong<Native>(
-        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return _write_error_T(frame, location, values, err);
-        });
-    natives[S("print {}")] = MakeStrong<Native>(
-        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return _print_T(frame, location, values, out);
-        });
-    natives[S("print error {}")] = MakeStrong<Native>(
-        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return _print_error_T(frame, location, values, err);
-        });
-    natives[S("read (a) word")] = MakeStrong<Native>(
-        [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return _read_a_word(frame, location, values, in);
-        });
-    natives[S("read (a) line")] = MakeStrong<Native>(
-        [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return _read_a_line(frame, location, values, in);
-        });
-    natives[S("read (a) character")] = MakeStrong<Native>(
-        [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return _read_a_character(frame, location, values, in);
-        });
 }
 
 static auto _sort_list(CallFrame &frame, SourceLocation location, Strong<List> list)
@@ -496,23 +466,6 @@ static auto _replace_last_T_with_T_in_T(CallFrame &frame, SourceLocation locatio
     return Fail(Error(location, "expected a string or list"));
 }
 
-static void _common(ModuleMap &natives) {
-    natives[S("(the) size of {}")] = N(_the_size_of_T);
-    natives[S("{} contains {}")] = N(_T_contains_T);
-    natives[S("{} is in {}")] = N(_T_is_in_T);
-    natives[S("{} starts with {}")] = N(_T_starts_with_T);
-    natives[S("{} ends with {}")] = N(_T_ends_with_T);
-    natives[S("item {} in {}")] = N(_item_T_in_T);
-    natives[S("insert {} at (the) end of {}")] = N(_insert_T_at_the_end_of_T);
-    natives[S("remove item {} from {}")] = N(_remove_item_T_from_T);
-    natives[S("(the) (first) offset of {} in {}")] = N(_the_first_offset_of_T_in_T);
-    natives[S("(the) last offset of {} in {}")] = N(_the_last_offset_of_T_in_T);
-    natives[S("replace all {} with {} in {}")] = N(_replace_all_T_with_T_in_T);
-    natives[S("replace first {} with {} in {}")] = N(_replace_first_T_with_T_in_T);
-    natives[S("replace last {} with {} in {}")] = N(_replace_last_T_with_T_in_T);
-    natives[S("sort {}")] = N(_sort_T);
-}
-
 static auto _T_as_an_integer(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (values[0].isNumber()) {
@@ -538,12 +491,6 @@ static auto _T_as_a_number(CallFrame &frame, SourceLocation location, Value *val
 static auto _T_as_a_string(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0].toString();
-}
-
-static void _types(ModuleMap &natives) {
-    natives[S("{} as (a/an) integer")] = N(_T_as_an_integer);
-    natives[S("{} as (a/an) number")] = N(_T_as_a_number);
-    natives[S("{} as (a/an) string")] = N(_T_as_a_string);
 }
 
 static auto _the_keys_of_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -580,12 +527,6 @@ static auto _insert_item_T_with_key_T_into_T(CallFrame &frame, SourceLocation lo
     }
     dictionary->values()[values[1]] = values[0];
     return dictionary;
-}
-
-static void _dictionary(ModuleMap &natives) {
-    natives[S("(the) keys (of) {}")] = N(_the_keys_of_T);
-    natives[S("(the) values (of) {}")] = N(_the_values_of_T);
-    natives[S("insert item {} with key {} into {}")] = N(_insert_item_T_with_key_T_into_T);
 }
 
 static auto _items_T_to_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -632,13 +573,16 @@ static auto _the_number_of_items_in_T(CallFrame &frame, SourceLocation location,
     return Integer(list->values().size());
 }
 
-static auto _any_item_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                           std::function<Integer(Integer)> randomInteger) -> Result<Value, Error> {
-    auto list = values[0].as<List>();
-    if (!list) {
-        return Fail(Error(location, "expected a list"));
-    }
-    return list->values().at(randomInteger(list->values().size()));
+static auto _any_item_in_T(std::function<Integer(Integer)> randomInteger)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [randomInteger](CallFrame &frame, SourceLocation location,
+                           Value *values) -> Result<Value, Error> {
+        auto list = values[0].as<List>();
+        if (!list) {
+            return Fail(Error(location, "expected a list"));
+        }
+        return list->values().at(randomInteger(list->values().size()));
+    };
 }
 
 static auto _remove_items_T_to_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -692,25 +636,31 @@ static auto _reversed_T(CallFrame &frame, SourceLocation location, Value *values
     return MakeStrong<List>(list->values().rbegin(), list->values().rend());
 }
 
-static auto _shuffle_T(CallFrame &frame, SourceLocation location, Value *values,
-                       std::mt19937_64 &engine) -> Result<Value, Error> {
-    auto list = values[0].as<List>();
-    if (!list) {
-        return Fail(Error(location, "expected a list"));
-    }
-    std::shuffle(list->values().begin(), list->values().end(), engine);
-    return list;
+static auto _shuffle_T(std::mt19937_64 &engine)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [&engine](CallFrame &frame, SourceLocation location,
+                     Value *values) -> Result<Value, Error> {
+        auto list = values[0].as<List>();
+        if (!list) {
+            return Fail(Error(location, "expected a list"));
+        }
+        std::shuffle(list->values().begin(), list->values().end(), engine);
+        return list;
+    };
 }
 
-static auto _shuffled_T(CallFrame &frame, SourceLocation location, Value *values,
-                        std::mt19937_64 &engine) -> Result<Value, Error> {
-    auto list = values[0].as<List>();
-    if (!list) {
-        return Fail(Error(location, "expected a list"));
-    }
-    auto result = MakeStrong<List>(list->values());
-    std::shuffle(result->values().begin(), result->values().end(), engine);
-    return result;
+static auto _shuffled_T(std::mt19937_64 &engine)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [&engine](CallFrame &frame, SourceLocation location,
+                     Value *values) -> Result<Value, Error> {
+        auto list = values[0].as<List>();
+        if (!list) {
+            return Fail(Error(location, "expected a list"));
+        }
+        auto result = MakeStrong<List>(list->values());
+        std::shuffle(result->values().begin(), result->values().end(), engine);
+        return result;
+    };
 }
 
 static auto _join_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -744,35 +694,6 @@ static auto _join_T_using_T(CallFrame &frame, SourceLocation location, Value *va
         }
     }
     return str.str();
-}
-
-static void _list(ModuleMap &natives, std::mt19937_64 &engine,
-                  std::function<Integer(Integer)> randomInteger) {
-    natives[S("items {} to {} (in/of) {}")] = N(_items_T_to_T_in_T);
-    natives[S("(the) mid/middle item (in/of) {}")] = N(_the_middle_item_in_T);
-    natives[S("(the) last item (in/of) {}")] = N(_the_last_item_in_T);
-    natives[S("(the) number of items (in/of) {}")] = N(_the_number_of_items_in_T);
-    natives[S("remove items {} to {} from {}")] = N(_remove_items_T_to_T_from_T);
-    natives[S("insert {} at index {} into {}")] = N(_insert_T_at_index_T_into_T);
-    natives[S("reverse {}")] = N(_reverse_T);
-    natives[S("reversed {}")] = N(_reversed_T);
-    natives[S("join {}")] = N(_join_T);
-    natives[S("join {} using {}")] = N(_join_T_using_T);
-    natives[S("any item (in/of) {}")] =
-        MakeStrong<Native>([randomInteger](CallFrame &frame, SourceLocation location,
-                                           Value *values) -> Result<Value, Error> {
-            return _any_item_in_T(frame, location, values, randomInteger);
-        });
-    natives[S("shuffle {}")] =
-        MakeStrong<Native>([&engine](CallFrame &frame, SourceLocation location,
-                                     Value *values) -> Result<Value, Error> {
-            return _shuffle_T(frame, location, values, engine);
-        });
-    natives[S("shuffled {}")] =
-        MakeStrong<Native>([&engine](CallFrame &frame, SourceLocation location,
-                                     Value *values) -> Result<Value, Error> {
-            return _shuffled_T(frame, location, values, engine);
-        });
 }
 
 static auto _insert_T_at_character_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -835,287 +756,190 @@ static auto _remove_last_T_from_T(CallFrame &frame, SourceLocation location, Val
     return text;
 }
 
-static auto _replace_chunk_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                                         chunk::type chunkType) -> Result<Value, Error> {
-    if (!values[0].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
-    }
-    auto index = values[0].asInteger();
-    auto replacement = values[1].as<String>();
-    if (!replacement) {
-        return Fail(Error(location, "expected a string"));
-    }
-    auto text = values[2].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
+static auto _replace_chunk_T_with_T_in_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        if (!values[0].isInteger()) {
+            return Fail(Error(location, "expected an integer"));
+        }
+        auto index = values[0].asInteger();
+        auto replacement = values[1].as<String>();
+        if (!replacement) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto text = values[2].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
 
-    auto chunk = index_chunk(chunkType, index, text->string());
-    text->string().replace(chunk.begin(), chunk.end(), replacement->string());
-    return text;
+        auto chunk = index_chunk(chunkType, index, text->string());
+        text->string().replace(chunk.begin(), chunk.end(), replacement->string());
+        return text;
+    };
 }
 
-static auto _replace_chunks_T_to_T_with_T_in_T(CallFrame &frame, SourceLocation location,
-                                               Value *values, chunk::type chunkType)
-    -> Result<Value, Error> {
-    if (!values[0].isInteger() || !values[1].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
-    }
-    auto start = values[0].asInteger();
-    auto end = values[1].asInteger();
-    auto replacement = values[2].as<String>();
-    if (!replacement) {
-        return Fail(Error(location, "expected a string"));
-    }
-    auto text = values[3].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    auto chunk = range_chunk(chunkType, start, end, text->string());
-    text->string().replace(chunk.begin(), chunk.end(), replacement->string());
-    return text;
+static auto _replace_chunks_T_to_T_with_T_in_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        if (!values[0].isInteger() || !values[1].isInteger()) {
+            return Fail(Error(location, "expected an integer"));
+        }
+        auto start = values[0].asInteger();
+        auto end = values[1].asInteger();
+        auto replacement = values[2].as<String>();
+        if (!replacement) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto text = values[3].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto chunk = range_chunk(chunkType, start, end, text->string());
+        text->string().replace(chunk.begin(), chunk.end(), replacement->string());
+        return text;
+    };
 }
 
-static auto _remove_chunk_T_from_T(CallFrame &frame, SourceLocation location, Value *values,
-                                   chunk::type chunkType) -> Result<Value, Error> {
-    if (!values[0].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
-    }
-    auto index = values[0].asInteger();
-    auto text = values[1].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    auto chunk = index_chunk(chunkType, index, text->string());
-    text->string().erase(chunk.begin(), chunk.end());
-    return text;
+static auto _remove_chunk_T_from_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        if (!values[0].isInteger()) {
+            return Fail(Error(location, "expected an integer"));
+        }
+        auto index = values[0].asInteger();
+        auto text = values[1].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto chunk = index_chunk(chunkType, index, text->string());
+        text->string().erase(chunk.begin(), chunk.end());
+        return text;
+    };
 }
 
-static auto _remove_chunks_T_to_T_from_T(CallFrame &frame, SourceLocation location, Value *values,
-                                         chunk::type chunkType) -> Result<Value, Error> {
-    if (!values[0].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
-    }
-    if (!values[1].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
-    }
-    auto start = values[0].asInteger();
-    auto end = values[1].asInteger();
-    auto text = values[2].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    auto chunk = range_chunk(chunkType, start, end, text->string());
-    text->string().erase(chunk.begin(), chunk.end());
-    return text;
+static auto _remove_chunks_T_to_T_from_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        if (!values[0].isInteger()) {
+            return Fail(Error(location, "expected an integer"));
+        }
+        if (!values[1].isInteger()) {
+            return Fail(Error(location, "expected an integer"));
+        }
+        auto start = values[0].asInteger();
+        auto end = values[1].asInteger();
+        auto text = values[2].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        auto chunk = range_chunk(chunkType, start, end, text->string());
+        text->string().erase(chunk.begin(), chunk.end());
+        return text;
+    };
 }
 
-static auto _list_of_chunks_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                                 chunk::type chunkType) -> Result<Value, Error> {
-    auto text = values[0].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    std::vector<Value> result;
-    size_t index = 0;
-    auto chunk = index_chunk(chunkType, index++, text->string());
-    while (chunk.begin() < text->string().end()) {
-        result.push_back(Value(chunk.get()));
-        chunk = index_chunk(chunkType, index++, text->string());
-    }
-    return MakeStrong<List>(result);
+static auto _the_list_of_chunks_in_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        auto text = values[0].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        std::vector<Value> result;
+        size_t index = 0;
+        auto chunk = index_chunk(chunkType, index++, text->string());
+        while (chunk.begin() < text->string().end()) {
+            result.push_back(Value(chunk.get()));
+            chunk = index_chunk(chunkType, index++, text->string());
+        }
+        return MakeStrong<List>(result);
+    };
 }
 
-static auto _chunk_T_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                          chunk::type chunkType) -> Result<Value, Error> {
-    if (!values[0].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
-    }
-    auto index = values[0].asInteger();
-    auto text = values[1].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    return index_chunk(chunkType, index, text->string()).get();
+static auto _chunk_T_in_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        if (!values[0].isInteger()) {
+            return Fail(Error(location, "expected an integer"));
+        }
+        auto index = values[0].asInteger();
+        auto text = values[1].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        return index_chunk(chunkType, index, text->string()).get();
+    };
 }
 
-static auto _chunks_T_to_T_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                                chunk::type chunkType) -> Result<Value, Error> {
-    if (!values[0].isInteger() || !values[1].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
-    }
-    auto start = values[0].asInteger();
-    auto end = values[1].asInteger();
-    auto text = values[2].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    return range_chunk(chunkType, start, end, text->string()).get();
+static auto _chunks_T_to_T_in_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        if (!values[0].isInteger() || !values[1].isInteger()) {
+            return Fail(Error(location, "expected an integer"));
+        }
+        auto start = values[0].asInteger();
+        auto end = values[1].asInteger();
+        auto text = values[2].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        return range_chunk(chunkType, start, end, text->string()).get();
+    };
 }
 
-static auto _any_chunk_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                            chunk::type chunkType, std::function<Integer(Integer)> randomInteger)
-    -> Result<Value, Error> {
-    auto text = values[0].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    return random_chunk(chunkType, randomInteger, text->string()).get();
+static auto _any_chunk_in_T(chunk::type chunkType, std::function<Integer(Integer)> randomInteger)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType, randomInteger](CallFrame &frame, SourceLocation location,
+                                      Value *values) -> Result<Value, Error> {
+        auto text = values[0].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        return random_chunk(chunkType, randomInteger, text->string()).get();
+    };
 }
 
-static auto _the_middle_chunk_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                                   chunk::type chunkType) -> Result<Value, Error> {
-    auto text = values[0].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    return middle_chunk(chunkType, text->string()).get();
+static auto _the_middle_chunk_in_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        auto text = values[0].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        return middle_chunk(chunkType, text->string()).get();
+    };
 }
 
-static auto _the_last_chunk_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                                 chunk::type chunkType) -> Result<Value, Error> {
-    auto text = values[0].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    return last_chunk(chunkType, text->string()).get();
+static auto _the_last_chunk_in_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        auto text = values[0].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        return last_chunk(chunkType, text->string()).get();
+    };
 }
 
-static auto _the_number_of_chunks_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                                       chunk::type chunkType) -> Result<Value, Error> {
-    auto text = values[0].as<String>();
-    if (!text) {
-        return Fail(Error(location, "expected a string"));
-    }
-    return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
-}
-
-static void _string(ModuleMap &natives, std::mt19937_64 &engine,
-                    std::function<Integer(Integer)> randomInteger) {
-    auto replaceChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _replace_chunk_T_with_T_in_T(frame, location, values, chunkType);
-        });
+static auto _the_number_of_chunks_in_T(chunk::type chunkType)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [chunkType](CallFrame &frame, SourceLocation location,
+                       Value *values) -> Result<Value, Error> {
+        auto text = values[0].as<String>();
+        if (!text) {
+            return Fail(Error(location, "expected a string"));
+        }
+        return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
     };
-    auto replaceChunks = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _replace_chunks_T_to_T_with_T_in_T(frame, location, values, chunkType);
-        });
-    };
-    auto removeChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _remove_chunk_T_from_T(frame, location, values, chunkType);
-        });
-    };
-
-    auto removeChunks = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _remove_chunks_T_to_T_from_T(frame, location, values, chunkType);
-        });
-    };
-
-    auto listOf = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _list_of_chunks_in_T(frame, location, values, chunkType);
-        });
-    };
-
-    auto chunkAt = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _chunk_T_in_T(frame, location, values, chunkType);
-        });
-    };
-
-    auto chunksAt = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _chunks_T_to_T_in_T(frame, location, values, chunkType);
-        });
-    };
-
-    auto anyChunk = [randomInteger](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>(
-            [randomInteger, chunkType](CallFrame &frame, SourceLocation location,
-                                       Value *values) -> Result<Value, Error> {
-                return _any_chunk_in_T(frame, location, values, chunkType, randomInteger);
-            });
-    };
-
-    auto middleChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _the_middle_chunk_in_T(frame, location, values, chunkType);
-        });
-    };
-
-    auto lastChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _the_last_chunk_in_T(frame, location, values, chunkType);
-        });
-    };
-
-    auto numberOfChunk = [](chunk::type chunkType) -> Strong<Native> {
-        return MakeStrong<Native>([chunkType](CallFrame &frame, SourceLocation location,
-                                              Value *values) -> Result<Value, Error> {
-            return _the_number_of_chunks_in_T(frame, location, values, chunkType);
-        });
-    };
-
-    natives[S("insert {} at char/character {} in {}")] = N(_insert_T_at_character_T_in_T);
-    natives[S("remove all {} from {}")] = N(_remove_all_T_from_T);
-    natives[S("remove first {} from {}")] = N(_remove_first_T_from_T);
-    natives[S("remove last {} from {}")] = N(_remove_last_T_from_T);
-
-    natives[S("replace char/character {} with {} in {}")] = replaceChunk(chunk::character);
-    natives[S("replace word {} with {} in {}")] = replaceChunk(chunk::word);
-    natives[S("replace line {} with {} in {}")] = replaceChunk(chunk::line);
-
-    natives[S("replace chars/characters {} to {} with {} in {}")] = replaceChunks(chunk::character);
-    natives[S("replace words {} to {} with {} in {}")] = replaceChunks(chunk::word);
-    natives[S("replace lines {} to {} with {} in {}")] = replaceChunks(chunk::line);
-
-    natives[S("remove char/character {} from {}")] = removeChunk(chunk::character);
-    natives[S("remove word {} from {}")] = removeChunk(chunk::word);
-    natives[S("remove line {} from {}")] = removeChunk(chunk::line);
-
-    natives[S("remove chars/characters {} to {} from {}")] = removeChunks(chunk::character);
-    natives[S("remove words {} to {} from {}")] = removeChunks(chunk::word);
-    natives[S("remove lines {} to {} from {}")] = removeChunks(chunk::line);
-
-    natives[S("(the) list of chars/characters (in/of) {}")] = listOf(chunk::character);
-    natives[S("(the) list of words (in/of) {}")] = listOf(chunk::word);
-    natives[S("(the) list of lines (in/of) {}")] = listOf(chunk::line);
-
-    natives[S("char/character {} in/of {}")] = chunkAt(chunk::character);
-    natives[S("word {} in/of {}")] = chunkAt(chunk::word);
-    natives[S("line {} in/of {}")] = chunkAt(chunk::line);
-
-    natives[S("chars/characters {} to {} in/of {}")] = chunksAt(chunk::character);
-    natives[S("words {} to {} in/of {}")] = chunksAt(chunk::word);
-    natives[S("lines {} to {} in/of {}")] = chunksAt(chunk::line);
-
-    natives[S("any char/character in/of {}")] = anyChunk(chunk::character);
-    natives[S("any word in/of {}")] = anyChunk(chunk::word);
-    natives[S("any line in/of {}")] = anyChunk(chunk::line);
-
-    natives[S("(the) mid/middle char/character in/of {}")] = middleChunk(chunk::character);
-    natives[S("(the) mid/middle word in/of {}")] = middleChunk(chunk::word);
-    natives[S("(the) mid/middle line in/of {}")] = middleChunk(chunk::line);
-
-    natives[S("(the) last char/character in/of {}")] = lastChunk(chunk::character);
-    natives[S("(the) last word in/of {}")] = lastChunk(chunk::word);
-    natives[S("(the) last line in/of {}")] = lastChunk(chunk::line);
-
-    natives[S("(the) number of chars/characters (in/of) {}")] = numberOfChunk(chunk::character);
-    natives[S("(the) number of words (in/of) {}")] = numberOfChunk(chunk::word);
-    natives[S("(the) number of lines (in/of) {}")] = numberOfChunk(chunk::line);
 }
 
 static auto _T_up_to_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -1163,37 +987,28 @@ static auto _T_overlaps_with_T(CallFrame &frame, SourceLocation location, Value 
     return range1->overlaps(*range2);
 }
 
-static auto _a_random_number_in_T(CallFrame &frame, SourceLocation location, Value *values,
-                                  std::function<Integer(Integer)> randomInteger)
-    -> Result<Value, Error> {
-    if (auto range = values[0].as<Range>()) {
-        return range->start() +
-               randomInteger(range->end() - range->start() + (range->closed() ? 1 : 0));
-    }
-    return Fail(Error(location, "expected a range"));
+static auto _a_random_number_in_T(std::function<Integer(Integer)> randomInteger)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [randomInteger](CallFrame &frame, SourceLocation location,
+                           Value *values) -> Result<Value, Error> {
+        if (auto range = values[0].as<Range>()) {
+            return range->start() +
+                   randomInteger(range->end() - range->start() + (range->closed() ? 1 : 0));
+        }
+        return Fail(Error(location, "expected a range"));
+    };
 }
 
-static void _range(ModuleMap &natives, std::mt19937_64 &engine,
-                   std::function<Integer(Integer)> randomInteger) {
-    natives[S("{} up to {}")] = N(_T_up_to_T);
-    natives[S("(the) lower bound (in/of) {}")] = N(_the_lower_bound_of_T);
-    natives[S("(the) upper bound (in/of) {}")] = N(_the_upper_bound_of_T);
-    natives[S("{} is closed")] = N(_T_is_closed);
-    natives[S("{} overlaps (with) {}")] = N(_T_overlaps_with_T);
-    natives[S("(a) random number (in/of) {}")] =
-        MakeStrong<Native>([randomInteger](CallFrame &frame, SourceLocation location,
-                                           Value *values) -> Result<Value, Error> {
-            return _a_random_number_in_T(frame, location, values, randomInteger);
-        });
-}
-
-static auto _the_func_of_T(CallFrame &frame, SourceLocation location, Value *values,
-                           double (*func)(double)) -> Result<Value, Error> {
-    if (!values[0].isNumber()) {
-        return Fail(Error(location, "expected a number"));
-    }
-    auto argument = values[0].castFloat();
-    return func(argument);
+static auto _the_func_of_T(double (*func)(double))
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [func](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (!values[0].isNumber()) {
+                return Fail(Error(location, "expected a number"));
+            }
+            auto argument = values[0].castFloat();
+            return func(argument);
+        };
 }
 
 static auto _the_abs_of_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -1282,29 +1097,166 @@ static auto _the_average_of_T(CallFrame &frame, SourceLocation location, Value *
     return sum / list->values().size();
 }
 
+static void _core(ModuleMap &natives) {
+    natives[S("the language version")] = N(_the_language_version);
+    natives[S("the language major version")] = N(_the_language_major_version);
+    natives[S("the language minor version")] = N(_the_language_minor_version);
+    natives[S("the language patch version")] = N(_the_language_patch_version);
+    natives[S("the error")] = N(_the_error);
+    natives[S("error with {}")] = N(_error_with_T);
+    natives[S("quit")] = N(_quit);
+    natives[S("quit with {}")] = N(_quit_with_T);
+    natives[S("get {}")] = N(_get_T);
+    natives[S("(the) description of {}")] = N(_the_description_of_T);
+    natives[S("(the) debug description of {}")] = N(_the_debug_description_of_T);
+    natives[S("(the) hash value of {}")] = N(_the_hash_value_of_T);
+    natives[S("(the) type name of {}")] = N(_the_type_name_of_T);
+    natives[S("(a) copy of {}")] = N(_a_copy_of_T);
+}
+
+static void _io(ModuleMap &natives, std::ostream &out, std::istream &in, std::ostream &err) {
+    natives[S("write {}")] = N(_write_T(out));
+    natives[S("write error {}")] = N(_write_error_T(err));
+    natives[S("print {}")] = N(_print_T(out));
+    natives[S("print error {}")] = N(_print_error_T(err));
+    natives[S("read (a) word")] = N(_read_a_word(in));
+    natives[S("read (a) line")] = N(_read_a_line(in));
+    natives[S("read (a) character")] = N(_read_a_character(in));
+}
+
+static void _common(ModuleMap &natives) {
+    natives[S("(the) size of {}")] = N(_the_size_of_T);
+    natives[S("{} contains {}")] = N(_T_contains_T);
+    natives[S("{} is in {}")] = N(_T_is_in_T);
+    natives[S("{} starts with {}")] = N(_T_starts_with_T);
+    natives[S("{} ends with {}")] = N(_T_ends_with_T);
+    natives[S("item {} in {}")] = N(_item_T_in_T);
+    natives[S("insert {} at (the) end of {}")] = N(_insert_T_at_the_end_of_T);
+    natives[S("remove item {} from {}")] = N(_remove_item_T_from_T);
+    natives[S("(the) (first) offset of {} in {}")] = N(_the_first_offset_of_T_in_T);
+    natives[S("(the) last offset of {} in {}")] = N(_the_last_offset_of_T_in_T);
+    natives[S("replace all {} with {} in {}")] = N(_replace_all_T_with_T_in_T);
+    natives[S("replace first {} with {} in {}")] = N(_replace_first_T_with_T_in_T);
+    natives[S("replace last {} with {} in {}")] = N(_replace_last_T_with_T_in_T);
+    natives[S("sort {}")] = N(_sort_T);
+}
+
+static void _types(ModuleMap &natives) {
+    natives[S("{} as (a/an) integer")] = N(_T_as_an_integer);
+    natives[S("{} as (a/an) number")] = N(_T_as_a_number);
+    natives[S("{} as (a/an) string")] = N(_T_as_a_string);
+}
+
+static void _dictionary(ModuleMap &natives) {
+    natives[S("(the) keys (of) {}")] = N(_the_keys_of_T);
+    natives[S("(the) values (of) {}")] = N(_the_values_of_T);
+    natives[S("insert item {} with key {} into {}")] = N(_insert_item_T_with_key_T_into_T);
+}
+
+static void _list(ModuleMap &natives, std::mt19937_64 &engine,
+                  std::function<Integer(Integer)> randomInteger) {
+    natives[S("items {} to {} (in/of) {}")] = N(_items_T_to_T_in_T);
+    natives[S("(the) mid/middle item (in/of) {}")] = N(_the_middle_item_in_T);
+    natives[S("(the) last item (in/of) {}")] = N(_the_last_item_in_T);
+    natives[S("(the) number of items (in/of) {}")] = N(_the_number_of_items_in_T);
+    natives[S("remove items {} to {} from {}")] = N(_remove_items_T_to_T_from_T);
+    natives[S("insert {} at index {} into {}")] = N(_insert_T_at_index_T_into_T);
+    natives[S("reverse {}")] = N(_reverse_T);
+    natives[S("reversed {}")] = N(_reversed_T);
+    natives[S("join {}")] = N(_join_T);
+    natives[S("join {} using {}")] = N(_join_T_using_T);
+    natives[S("any item (in/of) {}")] = N(_any_item_in_T(randomInteger));
+    natives[S("shuffle {}")] = N(_shuffle_T(engine));
+    natives[S("shuffled {}")] = N(_shuffled_T(engine));
+}
+
+static void _string(ModuleMap &natives, std::mt19937_64 &engine,
+                    std::function<Integer(Integer)> randomInteger) {
+    natives[S("insert {} at char/character {} in {}")] = N(_insert_T_at_character_T_in_T);
+    natives[S("remove all {} from {}")] = N(_remove_all_T_from_T);
+    natives[S("remove first {} from {}")] = N(_remove_first_T_from_T);
+    natives[S("remove last {} from {}")] = N(_remove_last_T_from_T);
+
+    natives[S("replace char/character {} with {} in {}")] =
+        N(_replace_chunk_T_with_T_in_T(chunk::character));
+    natives[S("replace word {} with {} in {}")] = N(_replace_chunk_T_with_T_in_T(chunk::word));
+    natives[S("replace line {} with {} in {}")] = N(_replace_chunk_T_with_T_in_T(chunk::line));
+
+    natives[S("replace chars/characters {} to {} with {} in {}")] =
+        N(_replace_chunks_T_to_T_with_T_in_T(chunk::character));
+    natives[S("replace words {} to {} with {} in {}")] =
+        N(_replace_chunks_T_to_T_with_T_in_T(chunk::word));
+    natives[S("replace lines {} to {} with {} in {}")] =
+        N(_replace_chunks_T_to_T_with_T_in_T(chunk::line));
+
+    natives[S("remove char/character {} from {}")] = N(_remove_chunk_T_from_T(chunk::character));
+    natives[S("remove word {} from {}")] = N(_remove_chunk_T_from_T(chunk::word));
+    natives[S("remove line {} from {}")] = N(_remove_chunk_T_from_T(chunk::line));
+
+    natives[S("remove chars/characters {} to {} from {}")] =
+        N(_remove_chunks_T_to_T_from_T(chunk::character));
+    natives[S("remove words {} to {} from {}")] = N(_remove_chunks_T_to_T_from_T(chunk::word));
+    natives[S("remove lines {} to {} from {}")] = N(_remove_chunks_T_to_T_from_T(chunk::line));
+
+    natives[S("(the) list of chars/characters (in/of) {}")] =
+        N(_the_list_of_chunks_in_T(chunk::character));
+    natives[S("(the) list of words (in/of) {}")] = N(_the_list_of_chunks_in_T(chunk::word));
+    natives[S("(the) list of lines (in/of) {}")] = N(_the_list_of_chunks_in_T(chunk::line));
+
+    natives[S("char/character {} in/of {}")] = N(_chunk_T_in_T(chunk::character));
+    natives[S("word {} in/of {}")] = N(_chunk_T_in_T(chunk::word));
+    natives[S("line {} in/of {}")] = N(_chunk_T_in_T(chunk::line));
+
+    natives[S("chars/characters {} to {} in/of {}")] = N(_chunks_T_to_T_in_T(chunk::character));
+    natives[S("words {} to {} in/of {}")] = N(_chunks_T_to_T_in_T(chunk::word));
+    natives[S("lines {} to {} in/of {}")] = N(_chunks_T_to_T_in_T(chunk::line));
+
+    natives[S("any char/character in/of {}")] = N(_any_chunk_in_T(chunk::character, randomInteger));
+    natives[S("any word in/of {}")] = N(_any_chunk_in_T(chunk::word, randomInteger));
+    natives[S("any line in/of {}")] = N(_any_chunk_in_T(chunk::line, randomInteger));
+
+    natives[S("(the) mid/middle char/character in/of {}")] =
+        N(_the_middle_chunk_in_T(chunk::character));
+    natives[S("(the) mid/middle word in/of {}")] = N(_the_middle_chunk_in_T(chunk::word));
+    natives[S("(the) mid/middle line in/of {}")] = N(_the_middle_chunk_in_T(chunk::line));
+
+    natives[S("(the) last char/character in/of {}")] = N(_the_last_chunk_in_T(chunk::character));
+    natives[S("(the) last word in/of {}")] = N(_the_last_chunk_in_T(chunk::word));
+    natives[S("(the) last line in/of {}")] = N(_the_last_chunk_in_T(chunk::line));
+
+    natives[S("(the) number of chars/characters (in/of) {}")] =
+        N(_the_number_of_chunks_in_T(chunk::character));
+    natives[S("(the) number of words (in/of) {}")] = N(_the_number_of_chunks_in_T(chunk::word));
+    natives[S("(the) number of lines (in/of) {}")] = N(_the_number_of_chunks_in_T(chunk::line));
+}
+
+static void _range(ModuleMap &natives, std::mt19937_64 &engine,
+                   std::function<Integer(Integer)> randomInteger) {
+    natives[S("{} up to {}")] = N(_T_up_to_T);
+    natives[S("(the) lower bound (in/of) {}")] = N(_the_lower_bound_of_T);
+    natives[S("(the) upper bound (in/of) {}")] = N(_the_upper_bound_of_T);
+    natives[S("{} is closed")] = N(_T_is_closed);
+    natives[S("{} overlaps (with) {}")] = N(_T_overlaps_with_T);
+    natives[S("(a) random number (in/of) {}")] = N(_a_random_number_in_T(randomInteger));
+}
+
 static void _math(ModuleMap &natives) {
-    auto basicFunction = [](double (*func)(double)) -> Strong<Native> {
-        return MakeStrong<Native>([func](CallFrame &frame, SourceLocation location,
-                                         Value *values) -> Result<Value, Error> {
-            return _the_func_of_T(frame, location, values, func);
-        });
-    };
     natives[S("(the) abs (of) {}")] = N(_the_abs_of_T);
-    natives[S("(the) sin (of) {}")] = basicFunction(sin);
-    natives[S("(the) cos (of) {}")] = basicFunction(cos);
-    natives[S("(the) tan (of) {}")] = basicFunction(tan);
-    natives[S("(the) atan (of) {}")] = basicFunction(atan);
-    natives[S("(the) exp (of) {}")] = basicFunction(exp);
-    natives[S("(the) exp2 (of) {}")] = basicFunction(exp2);
-    natives[S("(the) expm1 (of) {}")] = basicFunction(expm1);
-    natives[S("(the) log2 (of) {}")] = basicFunction(log2);
-    natives[S("(the) log10 (of) {}")] = basicFunction(log10);
-    natives[S("(the) log (of) {}")] = basicFunction(log);
-    natives[S("(the) sqrt (of) {}")] = basicFunction(sqrt);
-    natives[S("(the) ceil (of) {}")] = basicFunction(ceil);
-    natives[S("(the) floor (of) {}")] = basicFunction(floor);
-    natives[S("round {}")] = basicFunction(round);
-    natives[S("trunc/truncate {}")] = basicFunction(trunc);
+    natives[S("(the) sin (of) {}")] = N(_the_func_of_T(sin));
+    natives[S("(the) cos (of) {}")] = N(_the_func_of_T(cos));
+    natives[S("(the) tan (of) {}")] = N(_the_func_of_T(tan));
+    natives[S("(the) atan (of) {}")] = N(_the_func_of_T(atan));
+    natives[S("(the) exp (of) {}")] = N(_the_func_of_T(exp));
+    natives[S("(the) exp2 (of) {}")] = N(_the_func_of_T(exp2));
+    natives[S("(the) expm1 (of) {}")] = N(_the_func_of_T(expm1));
+    natives[S("(the) log2 (of) {}")] = N(_the_func_of_T(log2));
+    natives[S("(the) log10 (of) {}")] = N(_the_func_of_T(log10));
+    natives[S("(the) log (of) {}")] = N(_the_func_of_T(log));
+    natives[S("(the) sqrt (of) {}")] = N(_the_func_of_T(sqrt));
+    natives[S("(the) ceil (of) {}")] = N(_the_func_of_T(ceil));
+    natives[S("(the) floor (of) {}")] = N(_the_func_of_T(floor));
+    natives[S("round {}")] = N(_the_func_of_T(round));
+    natives[S("trunc/truncate {}")] = N(_the_func_of_T(trunc));
 
     natives[S("(the) max/maximum (value) (of) {}")] = N(_the_maximum_value_of_T);
     natives[S("(the) min/minimum (value) (of) {}")] = N(_the_minimum_value_of_T);
