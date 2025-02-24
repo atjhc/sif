@@ -24,7 +24,7 @@ For most POSIX systems, building should work pretty much out of the box:
 make
 ```
 
-This will produce artifacts in the `build` directory. To run tests:
+This will produce release artifacts in the `build` directory. To run tests:
 
 ```sh
 make test
@@ -33,7 +33,7 @@ make test
 To run a script:
 
 ```sh
-./build/sif <file> [ <args> ... ]
+./build/release/sif_tool <file> [ <args> ... ]
 ```
 
 ### Quick Tour

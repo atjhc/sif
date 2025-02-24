@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SIF_BINARY="build/sif -i"
+SIF_BINARY="$1 -i"
 TESTS_PASSED=0
 TESTS_FAILED=0
 

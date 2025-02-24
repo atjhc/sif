@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     libc++-18-dev \
     libc++abi-18-dev \
     lldb-18 \
-    && apt-get clean
+    && apt-get install -y cmake && apt-get clean
 
 # Set Clang-18 as default
 RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100 && \

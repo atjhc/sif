@@ -219,7 +219,8 @@ int main(int argc, char *argv[]) {
         {"pretty-print", no_argument, NULL, 'p'},
         {"print-bytecode", no_argument, NULL, 'b'},
         {"help", no_argument, NULL, 'h'},
-        {0, 0, 0, 0}};
+        {0, 0, 0, 0}
+    };
 
     int c, opt_index = 0;
     while ((c = getopt_long(argc, argv, "pbhie:", long_options, &opt_index)) != -1) {

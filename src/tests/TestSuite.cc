@@ -88,6 +88,13 @@ int RunAllTests(int argc, char *argv[]) {
         }
     }
 
+    argc -= optind;
+    argv += optind;
+
+    if (argc > 0) {
+        MainTestSuite().config.resourcesPath = argv[0];
+    }
+
     if (!testName.empty() && groupName.empty()) {
         std::cerr << "Requires group name" << std::endl;
         return usage(argc, argv);

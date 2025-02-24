@@ -24,8 +24,8 @@
 #include "runtime/objects/Native.h"
 #include "runtime/objects/String.h"
 
+#include "extern/utf8.h"
 #include "utilities/chunk.h"
-#include "vendor/utf8.h"
 
 #include <charconv>
 #include <format>

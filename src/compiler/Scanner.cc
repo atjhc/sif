@@ -16,7 +16,7 @@
 
 #include "Scanner.h"
 
-#include "vendor/utf8.h"
+#include "extern/utf8.h"
 
 #include <iostream>
 

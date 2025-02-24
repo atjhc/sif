@@ -14,8 +14,8 @@
 
 #include "runtime/objects/String.h"
 
+#include "extern/utf8.h"
 #include "utilities/strings.h"
-#include "vendor/utf8.h"
 
 SIF_NAMESPACE_BEGIN
 

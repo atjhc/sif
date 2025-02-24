@@ -35,7 +35,7 @@ class Error {
 
     Error(const SourceRange &range, const Value &value) : _range(range), _value(value) {}
     Error(const SourceLocation &location, const Value &value)
-        : _range(location, location), _value(value) {}
+        : _range{location, location}, _value(value) {}
 
     Error(const SourceLocation &location, const char *str)
         : Error(location, Value(std::string(str))) {}

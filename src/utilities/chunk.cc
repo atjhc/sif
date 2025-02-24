@@ -1,6 +1,6 @@
 #include "chunk.h"
 
-#include "vendor/utf8.h"
+#include "extern/utf8.h"
 
 SIF_NAMESPACE_BEGIN
 

@@ -35,7 +35,7 @@ struct ModuleLoaderConfig {
 
 class ModuleLoader : public ModuleProvider {
   public:
-    ModuleLoader(const ModuleLoaderConfig &config = ModuleLoaderConfig()) : config(config) {};
+    ModuleLoader(const ModuleLoaderConfig &config = ModuleLoaderConfig()) : config(config){};
 
     Result<Strong<Module>, Error> module(const std::string &name) override;
 
