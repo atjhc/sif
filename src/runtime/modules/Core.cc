@@ -78,7 +78,7 @@ static auto _quit_with_T(CallFrame &frame, SourceLocation location, Value *value
     if (!values[0].isInteger()) {
         return Fail(Error(location, "expected an integer"));
     }
-    exit(values[0].asInteger());
+    exit(static_cast<int>(values[0].asInteger()));
 }
 
 static auto _get_T(CallFrame &frame, SourceLocation location, Value *values)

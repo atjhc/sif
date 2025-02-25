@@ -44,7 +44,11 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     const std::vector<Error> &errors() const;
 
   private:
-    void error(const Node &node, const std::string &message);
+    void error(const SourceRange &range, const std::string &message);
+    void error(const SourceLocation &location, const std::string &message) {
+        error(SourceRange{location, location}, message);
+    }
+    void error(const Node &node, const std::string &message) { error(node.range, message); }
 
     struct Local {
         std::string name;

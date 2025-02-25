@@ -42,13 +42,13 @@ Bytecode &Compiler::bytecode() { return *_frames.back().bytecode; }
 std::vector<Compiler::Local> &Compiler::locals() { return _frames.back().locals; }
 std::vector<Function::Capture> &Compiler::captures() { return _frames.back().captures; }
 
-void Compiler::error(const Node &node, const std::string &message) {
-    _config.errorReporter.report(Error(node.range, message));
+void Compiler::error(const SourceRange &range, const std::string &message) {
+    _config.errorReporter.report(Error(range, message));
     _failed = true;
 }
 
 int Compiler::findLocal(const Frame &frame, const std::string &name) {
-    for (int i = frame.locals.size() - 1; i >= 0; i--) {
+    for (int i = static_cast<int>(frame.locals.size()) - 1; i >= 0; i--) {
         if (frame.locals[i].name == name) {
             return i;
         }
@@ -77,13 +77,13 @@ int Compiler::findCapture(const std::string &name) {
 }
 
 int Compiler::addCapture(Frame &frame, int index, bool isLocal) {
-    for (int i = 0; i < frame.captures.size(); i++) {
+    for (int i = 0; i < static_cast<int>(frame.captures.size()); i++) {
         if (frame.captures[i].index == index && frame.captures[i].isLocal == isLocal) {
             return i;
         }
     }
     frame.captures.push_back({index, isLocal});
-    return frame.captures.size() - 1;
+    return static_cast<int>(frame.captures.size()) - 1;
 }
 
 void Compiler::assignLocal(const SourceLocation &location, const std::string &name) {
@@ -97,7 +97,11 @@ void Compiler::assignLocal(const SourceLocation &location, const std::string &na
         opcode = Opcode::SetCapture;
     } else {
         addLocal(name);
-        index = locals().size() - 1;
+        if (i > UINT16_MAX) {
+            error(location, "too many local variables");
+            return;
+        }
+        index = static_cast<uint16_t>(locals().size()) - 1;
         opcode = Opcode::SetLocal;
     }
     bytecode().add(location, opcode, index);
@@ -137,10 +141,10 @@ void Compiler::resolve(const Call &call, const std::string &name) {
 
     if (!_config.interactive || _scopeDepth > 0) {
         if (int i = findLocal(_frames.back(), name); i > -1) {
-            index = i;
+            index = static_cast<uint16_t>(i);
             opcode = Opcode::GetLocal;
         } else if (int i = findCapture(name); i > -1) {
-            index = i;
+            index = static_cast<uint16_t>(i);
             opcode = Opcode::GetCapture;
         } else {
             index = bytecode().addConstant(MakeStrong<String>(name));
@@ -163,10 +167,10 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
             switch (variable.scope.value()) {
             case Variable::Scope::Local:
                 if (int i = findLocal(_frames.back(), name); i > -1) {
-                    index = i;
+                    index = static_cast<uint16_t>(i);
                     opcode = Opcode::GetLocal;
                 } else if (int i = findCapture(name); i > -1) {
-                    index = i;
+                    index = static_cast<uint16_t>(i);
                     opcode = Opcode::GetCapture;
                 } else {
                     error(variable,
@@ -181,10 +185,10 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
             }
         } else {
             if (int i = findLocal(_frames.back(), name); i > -1) {
-                index = i;
+                index = static_cast<uint16_t>(i);
                 opcode = Opcode::GetLocal;
             } else if (int i = findCapture(name); i > -1) {
-                index = i;
+                index = static_cast<uint16_t>(i);
                 opcode = Opcode::GetCapture;
             } else {
                 index = bytecode().addConstant(MakeStrong<String>(name));
@@ -195,10 +199,10 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
     } else {
         if (variable.scope && variable.scope.value() == Variable::Scope::Local) {
             if (int i = findLocal(_frames.back(), name); i > -1) {
-                index = i;
+                index = static_cast<uint16_t>(i);
                 opcode = Opcode::GetLocal;
             } else if (int i = findCapture(name); i > -1) {
-                index = i;
+                index = static_cast<uint16_t>(i);
                 opcode = Opcode::GetCapture;
             } else {
                 error(variable,

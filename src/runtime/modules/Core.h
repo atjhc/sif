@@ -30,7 +30,7 @@ struct CoreConfig {
     std::ostream &err = std::cerr;
     std::mt19937_64 engine = std::mt19937_64(std::random_device()());
     std::function<Integer(Integer)> randomInteger = [this](Integer max) {
-        std::uniform_int_distribution<int> dist(0, max - 1);
+        std::uniform_int_distribution<Integer> dist(0, max - 1);
         return dist(engine);
     };
 };
