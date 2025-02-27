@@ -26,28 +26,28 @@
 SIF_NAMESPACE_BEGIN
 
 struct Repeat : Statement {
-    Owned<Statement> statement;
+    Strong<Statement> statement;
 
-    Repeat(Owned<Statement> statement);
+    Repeat(Strong<Statement> statement);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 struct RepeatCondition : Repeat {
-    Owned<Expression> condition;
+    Strong<Expression> condition;
     bool conditionValue;
 
-    RepeatCondition(Owned<Statement> statement, Owned<Expression> condition, bool conditionValue);
+    RepeatCondition(Strong<Statement> statement, Strong<Expression> condition, bool conditionValue);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 struct RepeatFor : Repeat {
-    std::vector<Owned<Variable>> variables;
-    Owned<Expression> expression;
+    std::vector<Strong<Variable>> variables;
+    Strong<Expression> expression;
 
-    RepeatFor(Owned<Statement> statement, std::vector<Owned<Variable>> variables,
-              Owned<Expression> expression);
+    RepeatFor(Strong<Statement> statement, std::vector<Strong<Variable>> variables,
+              Strong<Expression> expression);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
 };

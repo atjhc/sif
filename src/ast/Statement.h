@@ -65,54 +65,54 @@ struct Statement : Node {
 };
 
 struct Block : Statement {
-    std::vector<Owned<Statement>> statements;
+    std::vector<Strong<Statement>> statements;
 
-    Block(std::vector<Owned<Statement>> statements);
+    Block(std::vector<Strong<Statement>> statements);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct FunctionDecl : Statement {
     Signature signature;
-    Owned<Statement> statement;
+    Strong<Statement> statement;
 
-    FunctionDecl(const Signature &signature, Owned<Statement> statement);
+    FunctionDecl(const Signature &signature, Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct AssignmentTarget : Node {
-    Owned<Variable> variable;
+    Strong<Variable> variable;
     Optional<Token> typeName;
-    std::vector<Owned<Expression>> subscripts;
+    std::vector<Strong<Expression>> subscripts;
 
-    AssignmentTarget(Owned<Variable> variable, Optional<Token> typeName = None,
-                     std::vector<Owned<Expression>> subscripts = {});
+    AssignmentTarget(Strong<Variable> variable, Optional<Token> typeName = None,
+                     std::vector<Strong<Expression>> subscripts = {});
 };
 
 struct Assignment : Statement {
-    std::vector<Owned<AssignmentTarget>> targets;
-    Owned<Expression> expression;
+    std::vector<Strong<AssignmentTarget>> targets;
+    Strong<Expression> expression;
 
-    Assignment(std::vector<Owned<AssignmentTarget>> targets, Owned<Expression> expression);
+    Assignment(std::vector<Strong<AssignmentTarget>> targets, Strong<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct If : Statement {
-    Owned<Expression> condition;
-    Owned<Statement> ifStatement;
-    Owned<Statement> elseStatement;
+    Strong<Expression> condition;
+    Strong<Statement> ifStatement;
+    Strong<Statement> elseStatement;
 
-    If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statement> elseStatement);
+    If(Strong<Expression> condition, Strong<Statement> ifStatement, Strong<Statement> elseStatement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Try : Statement {
-    Owned<Statement> statement;
+    Strong<Statement> statement;
 
-    Try(Owned<Statement> statement);
+    Try(Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
@@ -127,25 +127,25 @@ struct Use : Statement {
 
 struct Using : Statement {
     Token target;
-    Owned<Statement> statement;
+    Strong<Statement> statement;
 
-    Using(Token target, Owned<Statement> statement);
+    Using(Token target, Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Return : Statement {
-    Owned<Expression> expression;
+    Strong<Expression> expression;
 
-    Return(Owned<Expression> expression);
+    Return(Strong<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct ExpressionStatement : Statement {
-    Owned<Expression> expression;
+    Strong<Expression> expression;
 
-    ExpressionStatement(Owned<Expression> expression);
+    ExpressionStatement(Strong<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };

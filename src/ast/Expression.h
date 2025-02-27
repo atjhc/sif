@@ -58,10 +58,10 @@ struct Call : Expression {
     Signature signature;
 
     std::vector<Optional<Token>> tokens;
-    std::vector<Owned<Expression>> arguments;
+    std::vector<Strong<Expression>> arguments;
 
     Call(const Signature &signature, const std::vector<Optional<Token>> &tokens,
-         std::vector<Owned<Expression>> arguments);
+         std::vector<Strong<Expression>> arguments);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
@@ -85,12 +85,12 @@ struct Binary : Expression {
         Subscript
     };
 
-    Owned<Expression> leftExpression;
+    Strong<Expression> leftExpression;
     Operator binaryOperator;
-    Owned<Expression> rightExpression;
+    Strong<Expression> rightExpression;
 
-    Binary(Owned<Expression> leftExpression, Operator binaryOperator,
-           Owned<Expression> rightExpression);
+    Binary(Strong<Expression> leftExpression, Operator binaryOperator,
+           Strong<Expression> rightExpression);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
@@ -99,43 +99,43 @@ struct Unary : Expression {
     enum Operator { Minus, Not };
 
     Operator unaryOperator;
-    Owned<Expression> expression;
+    Strong<Expression> expression;
 
-    Unary(Operator unaryOperator, Owned<Expression> expression);
+    Unary(Operator unaryOperator, Strong<Expression> expression);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct Grouping : Expression {
-    Owned<Expression> expression;
+    Strong<Expression> expression;
 
-    Grouping(Owned<Expression> expression);
+    Grouping(Strong<Expression> expression);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct RangeLiteral : Expression {
-    Owned<Expression> start;
-    Owned<Expression> end;
+    Strong<Expression> start;
+    Strong<Expression> end;
     bool closed;
 
-    RangeLiteral(Owned<Expression> start, Owned<Expression> end, bool closed);
+    RangeLiteral(Strong<Expression> start, Strong<Expression> end, bool closed);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct ListLiteral : Expression {
-    std::vector<Owned<Expression>> expressions;
+    std::vector<Strong<Expression>> expressions;
 
-    ListLiteral(std::vector<Owned<Expression>> expressions = {});
+    ListLiteral(std::vector<Strong<Expression>> expressions = {});
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
 
 struct DictionaryLiteral : Expression {
-    Mapping<Owned<Expression>, Owned<Expression>> values;
+    Mapping<Strong<Expression>, Strong<Expression>> values;
 
-    DictionaryLiteral(Mapping<Owned<Expression>, Owned<Expression>> = {});
+    DictionaryLiteral(Mapping<Strong<Expression>, Strong<Expression>> = {});
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

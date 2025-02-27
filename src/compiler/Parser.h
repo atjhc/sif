@@ -47,7 +47,7 @@ class Parser {
     Parser(const ParserConfig &config);
     ~Parser();
 
-    Owned<Statement> statement();
+    Strong<Statement> statement();
     Optional<Signature> signature();
 
     void declare(const Signature &signature);
@@ -95,41 +95,41 @@ class Parser {
 
     Optional<Signature> parseSignature();
 
-    Owned<Statement> parseBlock(const TokenTypes &endTypes = {});
-    Owned<Statement> parseStatement();
-    Owned<Statement> parseFunction();
-    Owned<Statement> parseIf();
-    Owned<Statement> parseTry();
-    Owned<Statement> parseUse();
-    Owned<Statement> parseUsing();
-    Owned<Statement> parseRepeat();
-    Owned<Statement> parseRepeatForever();
-    Owned<Statement> parseRepeatConditional();
-    Owned<Statement> parseRepeatFor();
+    Strong<Statement> parseBlock(const TokenTypes &endTypes = {});
+    Strong<Statement> parseStatement();
+    Strong<Statement> parseFunction();
+    Strong<Statement> parseIf();
+    Strong<Statement> parseTry();
+    Strong<Statement> parseUse();
+    Strong<Statement> parseUsing();
+    Strong<Statement> parseRepeat();
+    Strong<Statement> parseRepeatForever();
+    Strong<Statement> parseRepeatConditional();
+    Strong<Statement> parseRepeatFor();
 
-    Result<Owned<Statement>, Error> parseSimpleStatement();
-    Result<Owned<Statement>, Error> parseAssignment();
-    Result<Owned<Statement>, Error> parseExit();
-    Result<Owned<Statement>, Error> parseNext();
-    Result<Owned<Statement>, Error> parseReturn();
-    Result<Owned<Statement>, Error> parseExpressionStatement();
+    Result<Strong<Statement>, Error> parseSimpleStatement();
+    Result<Strong<Statement>, Error> parseAssignment();
+    Result<Strong<Statement>, Error> parseExit();
+    Result<Strong<Statement>, Error> parseNext();
+    Result<Strong<Statement>, Error> parseReturn();
+    Result<Strong<Statement>, Error> parseExpressionStatement();
 
-    Result<Owned<Expression>, Error> parseExpression();
-    Result<Owned<Expression>, Error> parseClause();
-    Result<Owned<Expression>, Error> parseEquality();
-    Result<Owned<Expression>, Error> parseComparison();
-    Result<Owned<Expression>, Error> parseList();
-    Result<Owned<Expression>, Error> parseRange();
-    Result<Owned<Expression>, Error> parseTerm();
-    Result<Owned<Expression>, Error> parseFactor();
-    Result<Owned<Expression>, Error> parseExponent();
-    Result<Owned<Expression>, Error> parseUnary();
-    Result<Owned<Expression>, Error> parseCall();
-    Result<Owned<Expression>, Error> parseSubscript();
-    Result<Owned<Expression>, Error> parsePrimary();
-    Result<Owned<Expression>, Error> parseVariable();
-    Result<Owned<Expression>, Error> parseGrouping();
-    Result<Owned<Expression>, Error> parseContainerLiteral();
+    Result<Strong<Expression>, Error> parseExpression();
+    Result<Strong<Expression>, Error> parseClause();
+    Result<Strong<Expression>, Error> parseEquality();
+    Result<Strong<Expression>, Error> parseComparison();
+    Result<Strong<Expression>, Error> parseList();
+    Result<Strong<Expression>, Error> parseRange();
+    Result<Strong<Expression>, Error> parseTerm();
+    Result<Strong<Expression>, Error> parseFactor();
+    Result<Strong<Expression>, Error> parseExponent();
+    Result<Strong<Expression>, Error> parseUnary();
+    Result<Strong<Expression>, Error> parseCall();
+    Result<Strong<Expression>, Error> parseSubscript();
+    Result<Strong<Expression>, Error> parsePrimary();
+    Result<Strong<Expression>, Error> parseVariable();
+    Result<Strong<Expression>, Error> parseGrouping();
+    Result<Strong<Expression>, Error> parseContainerLiteral();
 
     ParserConfig _config;
 

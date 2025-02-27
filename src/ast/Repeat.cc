@@ -19,15 +19,15 @@
 
 SIF_NAMESPACE_BEGIN
 
-Repeat::Repeat(Owned<Statement> statement) : statement(std::move(statement)) {}
+Repeat::Repeat(Strong<Statement> statement) : statement(std::move(statement)) {}
 
-RepeatCondition::RepeatCondition(Owned<Statement> statement, Owned<Expression> condition,
+RepeatCondition::RepeatCondition(Strong<Statement> statement, Strong<Expression> condition,
                                  bool conditionValue)
     : Repeat(std::move(statement)), condition(std::move(condition)),
       conditionValue(conditionValue) {}
 
-RepeatFor::RepeatFor(Owned<Statement> statement, std::vector<Owned<Variable>> variables,
-                     Owned<Expression> expression)
+RepeatFor::RepeatFor(Strong<Statement> statement, std::vector<Strong<Variable>> variables,
+                     Strong<Expression> expression)
     : Repeat(std::move(statement)), variables(std::move(variables)),
       expression(std::move(expression)) {}
 

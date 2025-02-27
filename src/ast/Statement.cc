@@ -18,32 +18,32 @@
 
 SIF_NAMESPACE_BEGIN
 
-Block::Block(std::vector<Owned<Statement>> statements) : statements(std::move(statements)) {}
+Block::Block(std::vector<Strong<Statement>> statements) : statements(statements) {}
 
-FunctionDecl::FunctionDecl(const Signature &signature, Owned<Statement> statement)
-    : signature(signature), statement(std::move(statement)) {}
+FunctionDecl::FunctionDecl(const Signature &signature, Strong<Statement> statement)
+    : signature(signature), statement(statement) {}
 
-AssignmentTarget::AssignmentTarget(Owned<Variable> variable, Optional<Token> typeName,
-                                   std::vector<Owned<Expression>> subscripts)
-    : variable(std::move(variable)), typeName(typeName), subscripts(std::move(subscripts)) {}
+AssignmentTarget::AssignmentTarget(Strong<Variable> variable, Optional<Token> typeName,
+                                   std::vector<Strong<Expression>> subscripts)
+    : variable(variable), typeName(typeName), subscripts(subscripts) {}
 
-Assignment::Assignment(std::vector<Owned<AssignmentTarget>> targets, Owned<Expression> expression)
-    : targets(std::move(targets)), expression(std::move(expression)) {}
+Assignment::Assignment(std::vector<Strong<AssignmentTarget>> targets, Strong<Expression> expression)
+    : targets(targets), expression(expression) {}
 
-If::If(Owned<Expression> condition, Owned<Statement> ifStatement, Owned<Statement> elseStatement)
-    : condition(std::move(condition)), ifStatement(std::move(ifStatement)),
-      elseStatement(std::move(elseStatement)) {}
+If::If(Strong<Expression> condition, Strong<Statement> ifStatement, Strong<Statement> elseStatement)
+    : condition(condition), ifStatement(ifStatement),
+      elseStatement(elseStatement) {}
 
-Try::Try(Owned<Statement> statement) : statement(std::move(statement)) {}
+Try::Try(Strong<Statement> statement) : statement(statement) {}
 
 Use::Use(Token target) : target(target) {}
 
-Using::Using(Token target, Owned<Statement> statement)
-    : target(target), statement(std::move(statement)) {}
+Using::Using(Token target, Strong<Statement> statement)
+    : target(target), statement(statement) {}
 
-Return::Return(Owned<Expression> expression) : expression(std::move(expression)) {}
+Return::Return(Strong<Expression> expression) : expression(expression) {}
 
-ExpressionStatement::ExpressionStatement(Owned<Expression> expression)
-    : expression(std::move(expression)) {}
+ExpressionStatement::ExpressionStatement(Strong<Expression> expression)
+    : expression(expression) {}
 
 SIF_NAMESPACE_END
