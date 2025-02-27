@@ -469,7 +469,7 @@ void Compiler::visit(const Call &call) {
     resolve(call, call.signature.name());
     uint16_t totalCount = 0;
     for (uint16_t i = 0; i < call.arguments.size(); i++) {
-        auto &&argument = call.arguments[i];
+        const auto &argument = call.arguments[i];
         argument->accept(*this);
         uint16_t count = call.signature.arguments()[i].targets.size();
         if (count > 1) {
