@@ -56,12 +56,11 @@ struct Expression : Node {
 
 struct Call : Expression {
     Signature signature;
-
-    std::vector<Optional<Token>> tokens;
     std::vector<Strong<Expression>> arguments;
 
-    Call(const Signature &signature, const std::vector<Optional<Token>> &tokens,
-         std::vector<Strong<Expression>> arguments);
+    std::vector<Token> tokens;
+
+    Call(const Signature &signature, std::vector<Strong<Expression>> arguments, const std::vector<Token> &tokens);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

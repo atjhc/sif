@@ -1213,6 +1213,7 @@ static std::string computeErrorString(const Signature &matchingSignature,
 
 Result<Strong<Expression>, Error> Parser::parseCall() {
     std::vector<Strong<Expression>> arguments;
+    std::vector<Token> tokens;
     Signature matchingSignature;
 
     auto grammar = &_grammar;
@@ -1241,6 +1242,7 @@ Result<Strong<Expression>, Error> Parser::parseCall() {
                 matchingSignature.terms.emplace_back(token);
                 grammar = term->second.get();
                 advance();
+                tokens.push_back(token);
                 token = peek();
                 continue;
             }
@@ -1275,7 +1277,7 @@ Result<Strong<Expression>, Error> Parser::parseCall() {
         return Fail(Error(SourceRange{start, previous().end()}, errorString));
     }
     auto call =
-        MakeStrong<Call>(signature.value(), std::vector<Optional<Token>>(), arguments);
+        MakeStrong<Call>(signature.value(), arguments, tokens);
     call->range = SourceRange{start, previous().end()};
     return call;
 }

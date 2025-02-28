@@ -156,13 +156,11 @@ void PrettyPrinter::visit(const ExitRepeat &) { out << "exit repeat"; }
 void PrettyPrinter::visit(const NextRepeat &) { out << "next repeat"; }
 
 void PrettyPrinter::visit(const Call &call) {
-    auto tokensIt = call.tokens.begin();
     auto argsIt = call.arguments.begin();
 
     auto it = call.signature.terms.begin();
     while (it < call.signature.terms.end()) {
         const auto &term = *it;
-        bool skip = false;
         std::visit(Overload{
                        [&](Token token) { out << token.text; },
                        [&](Signature::Argument argument) {
@@ -170,21 +168,15 @@ void PrettyPrinter::visit(const Call &call) {
                            argsIt++;
                        },
                        [&](Signature::Choice choice) {
-                           out << tokensIt->value().text;
-                           tokensIt++;
+                           out << choice.tokens[0].text;
                        },
-                       [&](Signature::Option argument) {
-                           if (tokensIt->has_value()) {
-                               out << tokensIt->value().text;
-                           } else {
-                               skip = true;
-                           }
-                           tokensIt++;
+                       [&](Signature::Option option) {
+                           out << option.choice.tokens[0].text;
                        },
                    },
                    term);
         it++;
-        if (it != call.signature.terms.end() && !skip) {
+        if (it != call.signature.terms.end()) {
             out << " ";
         }
     }

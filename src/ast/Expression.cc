@@ -18,9 +18,9 @@
 
 SIF_NAMESPACE_BEGIN
 
-Call::Call(const Signature &signature, const std::vector<Optional<Token>> &tokens,
-           std::vector<Strong<Expression>> arguments)
-    : signature(signature), tokens(tokens), arguments(arguments) {}
+Call::Call(const Signature &signature,
+           std::vector<Strong<Expression>> arguments, const std::vector<Token> &tokens)
+    : signature(signature), arguments(arguments), tokens(tokens) {}
 
 Binary::Binary(Strong<Expression> leftExpression, Operator binaryOperator,
                Strong<Expression> rightExpression)
