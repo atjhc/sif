@@ -34,6 +34,7 @@ struct Token {
         ClosedRange,
         Colon,
         Comma,
+        Comment,
         Else,
         Empty,
         End,
@@ -87,20 +88,15 @@ struct Token {
     };
 
     Type type;
-    SourceLocation location;
+    SourceRange range;
     std::string text;
 
     Token();
-    Token(Type type, SourceLocation location);
+    Token(Type type, SourceRange range);
 
     bool isWord() const;
     bool isPrimary() const;
     bool isEndOfStatement() const;
-
-    SourceLocation start() const;
-    SourceLocation end() const;
-
-    SourceRange range() const;
 
     std::string encodedString() const;
     std::string encodedStringOrWord() const;

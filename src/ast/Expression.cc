@@ -18,9 +18,8 @@
 
 SIF_NAMESPACE_BEGIN
 
-Call::Call(const Signature &signature,
-           std::vector<Strong<Expression>> arguments, const std::vector<Token> &tokens)
-    : signature(signature), arguments(arguments), tokens(tokens) {}
+Call::Call(const Signature &signature, std::vector<Strong<Expression>> arguments)
+    : signature(signature), arguments(arguments) {}
 
 Binary::Binary(Strong<Expression> leftExpression, Operator binaryOperator,
                Strong<Expression> rightExpression)
@@ -37,8 +36,7 @@ Variable::Variable(const Token &name, Optional<Scope> scope) : name(name), scope
 RangeLiteral::RangeLiteral(Strong<Expression> start, Strong<Expression> end, bool closed)
     : start(start), end(end), closed(closed) {}
 
-ListLiteral::ListLiteral(std::vector<Strong<Expression>> expressions)
-    : expressions(expressions) {}
+ListLiteral::ListLiteral(std::vector<Strong<Expression>> expressions) : expressions(expressions) {}
 
 DictionaryLiteral::DictionaryLiteral(Mapping<Strong<Expression>, Strong<Expression>> values)
     : values(values) {}

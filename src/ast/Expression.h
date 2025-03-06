@@ -58,9 +58,9 @@ struct Call : Expression {
     Signature signature;
     std::vector<Strong<Expression>> arguments;
 
-    std::vector<Token> tokens;
+    std::vector<SourceRange> ranges;
 
-    Call(const Signature &signature, std::vector<Strong<Expression>> arguments, const std::vector<Token> &tokens);
+    Call(const Signature &signature, std::vector<Strong<Expression>> arguments);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };
@@ -88,6 +88,10 @@ struct Binary : Expression {
     Operator binaryOperator;
     Strong<Expression> rightExpression;
 
+    struct {
+        SourceRange operator_;
+    } ranges;
+
     Binary(Strong<Expression> leftExpression, Operator binaryOperator,
            Strong<Expression> rightExpression);
 
@@ -100,6 +104,10 @@ struct Unary : Expression {
     Operator unaryOperator;
     Strong<Expression> expression;
 
+    struct {
+        SourceRange operator_;
+    } ranges;
+
     Unary(Operator unaryOperator, Strong<Expression> expression);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
@@ -107,6 +115,11 @@ struct Unary : Expression {
 
 struct Grouping : Expression {
     Strong<Expression> expression;
+
+    struct {
+        SourceRange leftGrouping;
+        SourceRange rightGrouping;
+    } ranges;
 
     Grouping(Strong<Expression> expression);
 
@@ -118,6 +131,10 @@ struct RangeLiteral : Expression {
     Strong<Expression> end;
     bool closed;
 
+    struct {
+        SourceRange operator_;
+    } ranges;
+
     RangeLiteral(Strong<Expression> start, Strong<Expression> end, bool closed);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
@@ -126,6 +143,12 @@ struct RangeLiteral : Expression {
 struct ListLiteral : Expression {
     std::vector<Strong<Expression>> expressions;
 
+    struct {
+        Optional<SourceRange> leftGrouping;
+        Optional<SourceRange> rightGrouping;
+        std::vector<SourceRange> commas;
+    } ranges;
+
     ListLiteral(std::vector<Strong<Expression>> expressions = {});
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
@@ -133,6 +156,12 @@ struct ListLiteral : Expression {
 
 struct DictionaryLiteral : Expression {
     Mapping<Strong<Expression>, Strong<Expression>> values;
+
+    struct {
+        SourceRange leftBrace;
+        SourceRange rightBrace;
+        std::vector<SourceRange> commas;
+    } ranges;
 
     DictionaryLiteral(Mapping<Strong<Expression>, Strong<Expression>> = {});
 
@@ -144,6 +173,10 @@ struct Variable : Expression {
 
     Token name;
     Optional<Scope> scope;
+
+    struct {
+        Optional<SourceRange> scope;
+    } ranges;
 
     Variable(const Token &name, Optional<Scope> scope = None);
 

@@ -165,12 +165,15 @@ std::vector<ValueType<Iterable>> Filter(Iterable &container, Functor f) {
 struct SourceLocation {
     unsigned int position = 0;
     unsigned int lineNumber = 0;
+    unsigned int offset = 0;
 
     bool operator==(const SourceLocation &location) const {
-        return lineNumber == location.lineNumber && position == location.position;
+        return lineNumber == location.lineNumber && position == location.position &&
+               offset == location.offset;
     }
     bool operator!=(const SourceLocation &location) const {
-        return lineNumber != location.lineNumber || position != location.position;
+        return lineNumber != location.lineNumber || position != location.position ||
+               offset != location.offset;
     }
 };
 
@@ -185,6 +188,10 @@ struct SourceRange {
         return start != range.start || end != range.end;
     }
 };
+
+static inline std::ostream &operator<<(std::ostream &out, const SourceRange &range) {
+    return out << Concat(range.start, "-", range.end);
+}
 
 static inline std::ostream &operator<<(std::ostream &out, const SourceLocation &location) {
     return out << Concat(location.lineNumber, ":", location.position);

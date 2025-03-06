@@ -31,19 +31,16 @@ Assignment::Assignment(std::vector<Strong<AssignmentTarget>> targets, Strong<Exp
     : targets(targets), expression(expression) {}
 
 If::If(Strong<Expression> condition, Strong<Statement> ifStatement, Strong<Statement> elseStatement)
-    : condition(condition), ifStatement(ifStatement),
-      elseStatement(elseStatement) {}
+    : condition(condition), ifStatement(ifStatement), elseStatement(elseStatement) {}
 
 Try::Try(Strong<Statement> statement) : statement(statement) {}
 
 Use::Use(Token target) : target(target) {}
 
-Using::Using(Token target, Strong<Statement> statement)
-    : target(target), statement(statement) {}
+Using::Using(Token target, Strong<Statement> statement) : target(target), statement(statement) {}
 
 Return::Return(Strong<Expression> expression) : expression(expression) {}
 
-ExpressionStatement::ExpressionStatement(Strong<Expression> expression)
-    : expression(expression) {}
+ExpressionStatement::ExpressionStatement(Strong<Expression> expression) : expression(expression) {}
 
 SIF_NAMESPACE_END

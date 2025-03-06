@@ -9,7 +9,7 @@ debug: build/debug
 	cmake --build ${DSTROOT}/debug
 
 test: debug
-	cd ${DSTROOT}/debug && ctest --progress
+	cd ${DSTROOT}/debug && ctest --progress --output-on-failure
 
 format:
 	find src -type f -name '*.cc' -not -path 'src/tests/*' -not -path 'src/extern/*' -exec clang-format -i --style=file {} \;

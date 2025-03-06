@@ -54,6 +54,7 @@ class Parser {
     void declare(const std::string &variable);
 
     const std::vector<Signature> &declarations() const;
+    const std::vector<SourceRange> &commentRanges() const;
 
   private:
     using TokenTypes = std::initializer_list<Token::Type>;
@@ -103,9 +104,9 @@ class Parser {
     Strong<Statement> parseUse();
     Strong<Statement> parseUsing();
     Strong<Statement> parseRepeat();
-    Strong<Statement> parseRepeatForever();
-    Strong<Statement> parseRepeatConditional();
-    Strong<Statement> parseRepeatFor();
+    Strong<Repeat> parseRepeatForever();
+    Strong<RepeatCondition> parseRepeatCondition();
+    Strong<RepeatFor> parseRepeatFor();
 
     Result<Strong<Statement>, Error> parseSimpleStatement();
     Result<Strong<Statement>, Error> parseAssignment();
@@ -135,6 +136,7 @@ class Parser {
 
     std::vector<Scope> _scopes;
     std::vector<Signature> _exportedDeclarations;
+    std::vector<SourceRange> _commentRanges;
 
     Grammar _grammar;
     Set<std::string> _variables;

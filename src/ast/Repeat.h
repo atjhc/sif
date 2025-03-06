@@ -20,13 +20,19 @@
 #include "ast/Node.h"
 #include "ast/Statement.h"
 
-#include <ostream>
 #include <vector>
 
 SIF_NAMESPACE_BEGIN
 
 struct Repeat : Statement {
     Strong<Statement> statement;
+
+    struct {
+        SourceRange repeat;
+        Optional<SourceRange> forever;
+        SourceRange end;
+        Optional<SourceRange> endRepeat;
+    } ranges;
 
     Repeat(Strong<Statement> statement);
 
@@ -35,9 +41,14 @@ struct Repeat : Statement {
 
 struct RepeatCondition : Repeat {
     Strong<Expression> condition;
-    bool conditionValue;
+    enum Conjunction { While, Until } conjunction;
 
-    RepeatCondition(Strong<Statement> statement, Strong<Expression> condition, bool conditionValue);
+    struct {
+        SourceRange conjunction;
+    } ranges;
+
+    RepeatCondition(Strong<Statement> statement, Strong<Expression> condition,
+                    Conjunction conjunction);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
@@ -46,6 +57,11 @@ struct RepeatFor : Repeat {
     std::vector<Strong<Variable>> variables;
     Strong<Expression> expression;
 
+    struct {
+        SourceRange for_;
+        SourceRange in;
+    } ranges;
+
     RepeatFor(Strong<Statement> statement, std::vector<Strong<Variable>> variables,
               Strong<Expression> expression);
 
@@ -53,10 +69,20 @@ struct RepeatFor : Repeat {
 };
 
 struct ExitRepeat : Statement {
+    struct {
+        SourceRange exit;
+        SourceRange repeat;
+    } ranges;
+
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
 
 struct NextRepeat : Statement {
+    struct {
+        SourceRange next;
+        SourceRange repeat;
+    } ranges;
+
     void accept(Visitor &v) const override { return v.visit(*this); }
 };
 

@@ -27,7 +27,7 @@ Scanner::Scanner() : _currentLocation{1, 1}, _skipNewlines(0) {}
 void Scanner::reset(const std::string &contents) {
     _start = _current = contents.begin();
     _end = contents.end();
-    _currentLocation = {1, 1};
+    _currentLocation = {1, 1, 0};
 }
 
 Token Scanner::scan() {
@@ -315,6 +315,7 @@ bool Scanner::isCharacter(wchar_t c) {
 char Scanner::advance(int count) {
     _current += count;
     _currentLocation.position += count;
+    _currentLocation.offset += count;
     return _current[-1];
 }
 
@@ -322,6 +323,7 @@ wchar_t Scanner::advanceCharacter(int count) {
     auto character = utf8::peek_next(_current, _end);
     utf8::advance(_current, count, _end);
     _currentLocation.position += count;
+    _currentLocation.offset += count;
     return character;
 }
 
@@ -332,11 +334,12 @@ bool Scanner::match(const wchar_t c) {
         return false;
     _current++;
     _currentLocation.position++;
+    _currentLocation.offset++;
     return true;
 }
 
 Token Scanner::make(Token::Type type) {
-    auto token = Token(type, _startLocation);
+    auto token = Token(type, SourceRange{_startLocation, _currentLocation});
     token.text = std::string(_start, _current);
     return token;
 }

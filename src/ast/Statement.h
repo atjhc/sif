@@ -76,6 +76,12 @@ struct FunctionDecl : Statement {
     Signature signature;
     Strong<Statement> statement;
 
+    struct {
+        SourceRange function;
+        SourceRange end;
+        Optional<SourceRange> endFunction;
+    } ranges;
+
     FunctionDecl(const Signature &signature, Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -94,6 +100,11 @@ struct Assignment : Statement {
     std::vector<Strong<AssignmentTarget>> targets;
     Strong<Expression> expression;
 
+    struct {
+        SourceRange set;
+        SourceRange to;
+    } ranges;
+
     Assignment(std::vector<Strong<AssignmentTarget>> targets, Strong<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -104,13 +115,28 @@ struct If : Statement {
     Strong<Statement> ifStatement;
     Strong<Statement> elseStatement;
 
-    If(Strong<Expression> condition, Strong<Statement> ifStatement, Strong<Statement> elseStatement);
+    struct {
+        SourceRange if_;
+        SourceRange then;
+        Optional<SourceRange> else_;
+        Optional<SourceRange> end;
+        Optional<SourceRange> endIf;
+    } ranges;
+
+    If(Strong<Expression> condition, Strong<Statement> ifStatement,
+       Strong<Statement> elseStatement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Try : Statement {
     Strong<Statement> statement;
+
+    struct {
+        SourceRange try_;
+        Optional<SourceRange> end;
+        Optional<SourceRange> endTry;
+    } ranges;
 
     Try(Strong<Statement> statement);
 
@@ -119,6 +145,10 @@ struct Try : Statement {
 
 struct Use : Statement {
     Token target;
+
+    struct {
+        SourceRange use;
+    } ranges;
 
     Use(Token target);
 
@@ -129,6 +159,12 @@ struct Using : Statement {
     Token target;
     Strong<Statement> statement;
 
+    struct {
+        SourceRange using_;
+        Optional<SourceRange> end;
+        Optional<SourceRange> endUsing;
+    } ranges;
+
     Using(Token target, Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -136,6 +172,10 @@ struct Using : Statement {
 
 struct Return : Statement {
     Strong<Expression> expression;
+
+    struct {
+        SourceRange return_;
+    } ranges;
 
     Return(Strong<Expression> expression);
 

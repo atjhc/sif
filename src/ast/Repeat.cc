@@ -19,16 +19,14 @@
 
 SIF_NAMESPACE_BEGIN
 
-Repeat::Repeat(Strong<Statement> statement) : statement(std::move(statement)) {}
+Repeat::Repeat(Strong<Statement> statement) : statement(statement) {}
 
 RepeatCondition::RepeatCondition(Strong<Statement> statement, Strong<Expression> condition,
-                                 bool conditionValue)
-    : Repeat(std::move(statement)), condition(std::move(condition)),
-      conditionValue(conditionValue) {}
+                                 RepeatCondition::Conjunction conjunction)
+    : Repeat(std::move(statement)), condition(condition), conjunction(conjunction) {}
 
 RepeatFor::RepeatFor(Strong<Statement> statement, std::vector<Strong<Variable>> variables,
                      Strong<Expression> expression)
-    : Repeat(std::move(statement)), variables(std::move(variables)),
-      expression(std::move(expression)) {}
+    : Repeat(statement), variables(variables), expression(expression) {}
 
 SIF_NAMESPACE_END

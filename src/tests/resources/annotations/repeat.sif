@@ -1,0 +1,56 @@
+repeat
+end repeat
+(-- annotations
+1:1-1:7 control repeat
+2:1-2:4 control end
+2:5-2:11 control repeat
+--)
+
+repeat while true
+end repeat
+(-- annotations
+9:1-9:7 control repeat
+9:8-9:13 control while
+9:14-9:18 number true
+10:1-10:4 control end
+10:5-10:11 control repeat
+--)
+
+repeat until true
+end repeat
+(-- annotations
+19:1-19:7 control repeat
+19:8-19:13 control until
+19:14-19:18 number true
+20:1-20:4 control end
+20:5-20:11 control repeat
+--)
+
+repeat for i in (1, 2, 3)
+end repeat
+(-- annotations
+29:1-29:7 control repeat
+29:8-29:11 control for
+29:14-29:16 control in
+29:17-29:18 operator (
+29:18-29:19 number 1
+29:21-29:22 number 2
+29:24-29:25 number 3
+29:25-29:26 operator )
+30:1-30:4 control end
+30:5-30:11 control repeat
+--)
+
+repeat
+  next repeat
+  exit repeat
+end repeat
+(-- annotations
+44:1-44:7 control repeat
+45:3-45:7 control next
+45:8-45:14 control repeat
+46:3-46:7 control exit
+46:8-46:14 control repeat
+47:1-47:4 control end
+47:5-47:11 control repeat
+--)

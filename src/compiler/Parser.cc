@@ -94,6 +94,8 @@ void Parser::declare(const std::string &variable) {
 
 const std::vector<Signature> &Parser::declarations() const { return _exportedDeclarations; }
 
+const std::vector<SourceRange> &Parser::commentRanges() const { return _commentRanges; }
+
 #pragma mark - Utilities
 
 Optional<Token> Parser::match(const Parser::TokenTypes &types) {
@@ -164,6 +166,11 @@ bool Parser::isAtEnd() { return peek().type == Token::Type::EndOfFile; }
 
 Token Parser::scan() {
     auto token = _config.scanner.scan();
+    while (token.type == Token::Type::Comment) {
+        _commentRanges.push_back(token.range);
+        token = _config.scanner.scan();
+    }
+
     _tokens.push_back(token);
     trace(Concat("Scanned: ", Describe(token)));
 #if defined(DEBUG)
@@ -309,7 +316,7 @@ Optional<Signature> Parser::parseSignature() {
             while (match({Token::Type::Slash})) {
                 auto word = consumeWord();
                 if (!word) {
-                    return emitError(Error(peek().location, "expected a word"));
+                    return emitError(Error(peek().range.start, "expected a word"));
                 }
                 tokens.push_back(word.value());
             }
@@ -326,11 +333,11 @@ Optional<Signature> Parser::parseSignature() {
                 if (auto word = consumeWord()) {
                     choice.tokens.push_back(word.value());
                 } else {
-                    return emitError(Error(peek().location, "expected a word"));
+                    return emitError(Error(peek().range.start, "expected a word"));
                 }
             } while (match({Token::Type::Slash}));
             if (!consume(Token::Type::RightParen)) {
-                return emitError(Error(peek().location, Concat("expected ", Quoted(")"))));
+                return emitError(Error(peek().range.start, Concat("expected ", Quoted(")"))));
             }
             signature.terms.push_back(Signature::Option{choice});
         } else {
@@ -340,7 +347,7 @@ Optional<Signature> Parser::parseSignature() {
                 Optional<Token> typeName;
                 if ((name = consumeWord())) {
                     if (argumentNames.find(name.value().text) != argumentNames.end()) {
-                        return emitError(Error(name.value().location,
+                        return emitError(Error(name.value().range,
                                                "duplicate argument names in function declaration"));
                     }
                     argumentNames.insert(name.value().text);
@@ -348,33 +355,33 @@ Optional<Signature> Parser::parseSignature() {
                         if (auto result = consumeWord()) {
                             typeName = result.value();
                         } else {
-                            return emitError(Error(peek().location, "expected a type name"));
+                            return emitError(Error(peek().range.start, "expected a type name"));
                         }
                     }
                 } else if (match({Token::Type::Colon})) {
                     if (auto result = consumeWord()) {
                         typeName = result.value();
                     } else {
-                        return emitError(Error(peek().location, "expected a type name"));
+                        return emitError(Error(peek().range.start, "expected a type name"));
                     }
                 }
                 targets.push_back(Signature::Argument::Target{name, typeName});
             } while (match({Token::Type::Comma}));
             if (!consume(Token::Type::RightBrace)) {
-                return emitError(Error(peek().location, Concat("expected ", Quoted("}"))));
+                return emitError(Error(peek().range.start, Concat("expected ", Quoted("}"))));
             }
             signature.terms.push_back(Signature::Argument{targets});
         }
     }
     if (signature.terms.size() == 0) {
         return emitError(
-            Error(peek().location, Concat("expected a word, ", Quoted("("), ", or ", Quoted("{"))));
+            Error(peek().range.start, Concat("expected a word, ", Quoted("("), ", or ", Quoted("{"))));
     }
     if (match({Token::Type::Arrow})) {
         if (auto word = consumeWord()) {
             signature.typeName = word.value();
         } else {
-            return emitError(Error(peek().location, "expected a type name"));
+            return emitError(Error(peek().range.start, "expected a type name"));
         }
     }
     return signature;
@@ -382,7 +389,7 @@ Optional<Signature> Parser::parseSignature() {
 
 Strong<Statement> Parser::parseBlock(const Parser::TokenTypes &endTypes) {
     std::vector<Strong<Statement>> statements;
-    auto start = peek().location;
+    auto start = peek().range.start;
     while (!isAtEnd()) {
         if (match({Token::Type::NewLine})) {
             continue;
@@ -395,7 +402,7 @@ Strong<Statement> Parser::parseBlock(const Parser::TokenTypes &endTypes) {
         }
     }
     auto block = MakeStrong<Block>(statements);
-    block->range = SourceRange{start, peek().end()};
+    block->range = SourceRange{start, peek().range.end};
     return block;
 }
 
@@ -434,7 +441,7 @@ Strong<Statement> Parser::parseStatement() {
         return nullptr;
     }
     if (!consumeNewLine()) {
-        emitError(Error(peek().location, "expected a new line"));
+        emitError(Error(peek().range.start, "expected a new line"));
         synchronize();
         return nullptr;
     }
@@ -442,14 +449,14 @@ Strong<Statement> Parser::parseStatement() {
 }
 
 Strong<Statement> Parser::parseFunction() {
-    auto start = previous().location;
+    auto functionRange = previous().range;
 
     _parsingDepth++;
     auto signature = parseSignature();
     if (!signature) {
         synchronize();
     } else if (!consumeNewLine()) {
-        emitError(Error(peek().location, "expected a new line"));
+        emitError(Error(peek().range.start, "expected a new line"));
         synchronize();
     }
 
@@ -476,23 +483,31 @@ Strong<Statement> Parser::parseFunction() {
     }
 
     auto statement = parseBlock({Token::Type::End});
+    auto endRange = peek().range;
     _parsingDepth--;
     if (!consumeEnd(Token::Type::Function)) {
-        emitError(Error(peek().location, Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range.start, Concat("expected ", Quoted("end"))));
         return nullptr;
+    }
+    Optional<SourceRange> endFunctionRange;
+    if (previous().type == Token::Type::Function) {
+        endFunctionRange = previous().range;
     }
     endScope();
 
     if (signature) {
         auto decl = MakeStrong<FunctionDecl>(signature.value(), statement);
-        decl->range = SourceRange{start, previous().end()};
+        decl->range = SourceRange{functionRange.start, previous().range.end};
+        decl->ranges.function = functionRange;
+        decl->ranges.end = endRange;
+        decl->ranges.endFunction = endFunctionRange;
         return decl;
     }
     return nullptr;
 }
 
 Strong<Statement> Parser::parseIf() {
-    auto start = previous().location;
+    auto ifRange = previous().range;
     auto condition = parseExpression();
 
     _parsingDepth++;
@@ -500,20 +515,24 @@ Strong<Statement> Parser::parseIf() {
         emitError(condition.error());
         synchronize({Token::Type::Then, Token::Type::NewLine});
         return nullptr;
-    } else {
-        consumeNewLine();
-        if (!consume(Token::Type::Then)) {
-            emitError(Error(peek().location, Concat("expected ", Quoted("then"))));
-            auto token = synchronize({Token::Type::Then, Token::Type::NewLine});
-            if (token.isEndOfStatement()) {
-                return nullptr;
-            }
+    }
+
+    consumeNewLine();
+    if (!consume(Token::Type::Then)) {
+        emitError(Error(peek().range.start, Concat("expected ", Quoted("then"))));
+        auto token = synchronize({Token::Type::Then, Token::Type::NewLine});
+        if (token.isEndOfStatement()) {
+            return nullptr;
         }
     }
 
     Optional<Token> token;
     Strong<Statement> ifClause = nullptr;
     Strong<Statement> elseClause = nullptr;
+    auto thenRange = previous().range;
+    Optional<SourceRange> elseRange;
+    Optional<SourceRange> endRange;
+    Optional<SourceRange> endIfRange;
 
     if (consumeNewLine()) {
         if (auto statement = parseBlock({Token::Type::End, Token::Type::Else})) {
@@ -524,9 +543,12 @@ Strong<Statement> Parser::parseIf() {
         token = match({Token::Type::End, Token::Type::Else});
         if (!token) {
             emitError(
-                Error(peek().location, Concat("expected ", Quoted("end"), " or ", Quoted("else"))));
+                Error(peek().range.start, Concat("expected ", Quoted("end"), " or ", Quoted("else"))));
         } else if (token.value().type == Token::Type::End) {
-            match({Token::Type::If});
+            endRange = token.value().range;
+            if (match({Token::Type::If})) {
+                endIfRange = previous().range;
+            }
             _parsingDepth--;
             consumeNewLine();
         }
@@ -544,20 +566,31 @@ Strong<Statement> Parser::parseIf() {
 
     if ((token.has_value() && token.value().type == Token::Type::Else) ||
         (!token.has_value() && match({Token::Type::Else}))) {
+        if (previous().type == Token::Type::Else) {
+            elseRange = previous().range;
+        } else {
+            elseRange = token.value().range;
+        }
+
         if (consumeNewLine()) {
             if (auto statement = parseBlock({Token::Type::End})) {
+                endRange = peek().range;
                 elseClause = statement;
             } else {
                 return statement;
             }
 
             if (!consumeEnd(Token::Type::If)) {
-                emitError(Error(peek().location, Concat("expected ", Quoted("end"))));
+                emitError(Error(peek().range.start, Concat("expected ", Quoted("end"))));
                 return nullptr;
             }
+            if (previous().type == Token::Type::If) {
+                endIfRange = previous().range;
+            }
+
             _parsingDepth--;
             if (!consumeNewLine()) {
-                emitError(Error(peek().location, "expected new line or end of script"));
+                emitError(Error(peek().range.start, "expected new line or end of script"));
                 synchronize();
                 return nullptr;
             }
@@ -582,17 +615,21 @@ Strong<Statement> Parser::parseIf() {
         }
     }
 
-    auto ifStatement =
-        MakeStrong<If>(condition.value(), ifClause, elseClause);
-    ifStatement->range = SourceRange{start, previous().end()};
+    auto ifStatement = MakeStrong<If>(condition.value(), ifClause, elseClause);
+    ifStatement->range = SourceRange{ifRange.start, previous().range.end};
+    ifStatement->ranges.if_ = ifRange;
+    ifStatement->ranges.then = thenRange;
+    ifStatement->ranges.else_ = elseRange;
+    ifStatement->ranges.end = endRange;
+    ifStatement->ranges.endIf = endIfRange;
     return ifStatement;
 }
 
 Strong<Statement> Parser::parseUse() {
-    auto start = previous().location;
+    auto useRange = previous().range;
     Optional<Token> token = match({Token::Type::StringLiteral, Token::Type::Word});
     if (!token) {
-        emitError(Error(peek().range(), "expected a string literal or word"));
+        emitError(Error(peek().range, "expected a string literal or word"));
         synchronize();
         return nullptr;
     }
@@ -607,19 +644,20 @@ Strong<Statement> Parser::parseUse() {
             _grammar.insert(signature);
         }
     } else if (!module) {
-        emitError(Error(start, module.error().what()));
+        emitError(Error(useRange.start, module.error().what()));
     }
 
     auto useStatement = MakeStrong<Use>(token.value());
-    useStatement->range = SourceRange{start, previous().end()};
+    useStatement->range = SourceRange{useRange.start, previous().range.end};
+    useStatement->ranges.use = useRange;
     return useStatement;
 }
 
 Strong<Statement> Parser::parseUsing() {
-    auto start = previous().location;
+    auto usingRange = previous().range;
     Optional<Token> token = match({Token::Type::StringLiteral, Token::Type::Word});
     if (!token) {
-        emitError(Error(peek().range(), "expected a string literal"));
+        emitError(Error(peek().range, "expected a string literal"));
         synchronize();
         return nullptr;
     }
@@ -630,15 +668,21 @@ Strong<Statement> Parser::parseUsing() {
     if (module && module.value()) {
         beginScope(Scope{module.value()->signatures()});
     } else if (!module) {
-        emitError(Error(start, module.error().what()));
+        emitError(Error(usingRange.start, module.error().what()));
     }
+
+    Optional<SourceRange> endRange, endUsingRange;
 
     Strong<Statement> statement;
     if (consumeNewLine()) {
         statement = parseBlock({Token::Type::End});
+        endRange = peek().range;
         if (!consumeEnd(Token::Type::Using)) {
-            emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
+            emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
             return nullptr;
+        }
+        if (previous().type == Token::Type::Using) {
+            endUsingRange = previous().range;
         }
     } else {
         _parsingDepth--;
@@ -657,19 +701,27 @@ Strong<Statement> Parser::parseUsing() {
     }
 
     auto usingStatement = MakeStrong<Using>(token.value(), statement);
-    usingStatement->range = SourceRange{start, previous().end()};
+    usingStatement->range = SourceRange{usingRange.start, previous().range.end};
+    usingStatement->ranges.using_ = usingRange;
+    usingStatement->ranges.end = endRange;
+    usingStatement->ranges.endUsing = endUsingRange;
     return usingStatement;
 }
 
 Strong<Statement> Parser::parseTry() {
-    auto start = previous().location;
+    auto tryRange = previous().range;
+    Optional<SourceRange> endRange, endTryRange;
 
     Strong<Statement> statement;
     if (consumeNewLine()) {
         statement = parseBlock({Token::Type::End});
+        endRange = peek().range;
         if (!consumeEnd(Token::Type::Try)) {
-            emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
+            emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
             return nullptr;
+        }
+        if (previous().type == Token::Type::Try) {
+            endTryRange = previous().range;
         }
     } else {
         _parsingDepth--;
@@ -684,104 +736,143 @@ Strong<Statement> Parser::parseTry() {
     }
 
     auto tryStatement = MakeStrong<Try>(statement);
-    tryStatement->range = SourceRange{start, previous().end()};
+    tryStatement->range = SourceRange{tryRange.start, previous().range.end};
+    tryStatement->ranges.try_ = tryRange;
     return tryStatement;
 }
 
 Strong<Statement> Parser::parseRepeat() {
-    auto start = previous().location;
+    auto repeatRange = previous().range;
 
     _parsingDepth++;
     Optional<Token> token;
     if (consumeNewLine() || (token = match({Token::Type::Forever}))) {
+        Optional<SourceRange> foreverRange;
+        if (previous().type == Token::Type::Forever) {
+            foreverRange = previous().range;
+        }
         if (token.has_value() && !consumeNewLine()) {
-            emitError(Error(peek().range(), "expected a new line"));
+            emitError(Error(peek().range, "expected a new line"));
             synchronize();
         }
         auto statement = parseRepeatForever();
         if (statement) {
-            statement->range = SourceRange{start, previous().end()};
+            statement->range = SourceRange{repeatRange.start, previous().range.end};
+            statement->Repeat::ranges.repeat = repeatRange;
+            statement->Repeat::ranges.forever = foreverRange;
         }
         return statement;
     }
     if ((token = match({Token::Type::While, Token::Type::Until}))) {
-        auto statement = parseRepeatConditional();
+        auto statement = parseRepeatCondition();
         if (statement) {
-            statement->range = SourceRange{start, previous().end()};
+            statement->range = SourceRange{repeatRange.start, previous().range.end};
+            statement->Repeat::ranges.repeat = repeatRange;
         }
         return statement;
     }
     if (match({Token::Type::For})) {
         auto statement = parseRepeatFor();
         if (statement) {
-            statement->range = SourceRange{start, previous().end()};
+            statement->range = SourceRange{repeatRange.start, previous().range.end};
+            statement->Repeat::ranges.repeat = repeatRange;
         }
         return statement;
     }
 
     emitError(
-        Error(peek().range(), Concat("expected ", Quoted("forever"), ", ", Quoted("while"), ", ",
+        Error(peek().range, Concat("expected ", Quoted("forever"), ", ", Quoted("while"), ", ",
                                      Quoted("until"), ", ", Quoted("for"), ", or a new line")));
     synchronize();
     return parseRepeatForever();
 }
 
-Strong<Statement> Parser::parseRepeatForever() {
+Strong<Repeat> Parser::parseRepeatForever() {
+    SourceRange endRange;
+    Optional<SourceRange> endRepeatRange;
+
     auto statement = parseBlock({Token::Type::End});
+    if (statement) {
+        endRange = peek().range;
+    }
     if (!consumeEnd(Token::Type::Repeat)) {
-        emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
         return nullptr;
+    }
+    if (previous().type == Token::Type::Repeat) {
+        endRepeatRange = previous().range;
     }
     _parsingDepth--;
     auto repeat = MakeStrong<Repeat>(statement);
+    repeat->ranges.end = endRange;
+    repeat->ranges.endRepeat = endRepeatRange;
     return repeat;
 }
 
-Strong<Statement> Parser::parseRepeatConditional() {
-    bool conditionValue = (previous().type == Token::Type::While ? true : false);
+Strong<RepeatCondition> Parser::parseRepeatCondition() {
+    auto conjunctionRange = previous().range;
+    auto conjunction =
+        (previous().type == Token::Type::While ? RepeatCondition::Conjunction::While
+                                               : RepeatCondition::Conjunction::Until);
     auto condition = parseExpression();
     if (!condition) {
         emitError(condition.error());
         synchronize();
     } else if (!consumeNewLine()) {
-        emitError(Error(peek().range(), "expected a new line"));
+        emitError(Error(peek().range, "expected a new line"));
         synchronize();
     }
+
+    SourceRange endRange;
+    Optional<SourceRange> endRepeatRange;
+
     auto statement = parseBlock({Token::Type::End});
+    if (statement) {
+        endRange = peek().range;
+    }
     if (!consumeEnd(Token::Type::Repeat)) {
-        emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
         return nullptr;
     }
+    if (previous().type == Token::Type::Repeat) {
+        endRepeatRange = previous().range;
+    }
     _parsingDepth--;
-    if (condition) {
-        auto repeat = MakeStrong<RepeatCondition>(statement, condition.value(),
-                                                 conditionValue);
+    if (condition && statement) {
+        auto repeat = MakeStrong<RepeatCondition>(statement, condition.value(), conjunction);
+        repeat->ranges.conjunction = conjunctionRange;
+        repeat->Repeat::ranges.end = endRange;
+        repeat->Repeat::ranges.endRepeat = endRepeatRange;
         return repeat;
     }
     return nullptr;
 }
 
-Strong<Statement> Parser::parseRepeatFor() {
+Strong<RepeatFor> Parser::parseRepeatFor() {
+    auto forRange = previous().range;
     std::vector<Strong<Variable>> variables;
     Strong<Expression> expression;
 
     do {
         auto token = consumeWord();
         if (!token) {
-            emitError(Error(peek().range(), "expected a word"));
+            emitError(Error(peek().range, "expected a word"));
             synchronize();
         } else {
             auto variable = MakeStrong<Variable>(token.value());
-            variable->range = SourceRange{token.value().location, token.value().end()};
+            variable->range = SourceRange{token.value().range.start, token.value().range.end};
             auto name = lowercase(variable->name.text);
             declare(name);
             variables.push_back(variable);
         }
     } while (match({Token::Type::Comma}));
 
+    SourceRange inRange;
     if (!variables.empty()) {
-        if (!consume(Token::Type::In)) {
-            emitError(Error(peek().range(), Concat("expected ", Quoted("in"))));
+        if (auto token = consume(Token::Type::In)) {
+            inRange = token.value().range;
+        } else {
+            emitError(Error(peek().range, Concat("expected ", Quoted("in"))));
             synchronize();
         }
 
@@ -792,22 +883,34 @@ Strong<Statement> Parser::parseRepeatFor() {
         } else {
             expression = list.value();
             if (!consumeNewLine()) {
-                emitError(Error(peek().range(), "expected a new line"));
+                emitError(Error(peek().range, "expected a new line"));
                 synchronize();
             }
         }
     }
+
+    SourceRange endRange;
+    Optional<SourceRange> endRepeatRange;
     auto statement = parseBlock({Token::Type::End});
-    if (!statement) {
-        return statement;
+    if (statement) {
+        endRange = peek().range;
+    } else {
+        return nullptr;
     }
-    if (!consumeEnd(Token::Type::Repeat)) {
-        emitError(Error(peek().range(), Concat("expected ", Quoted("end"))));
+    if (consumeEnd(Token::Type::Repeat)) {
+        if (previous().type == Token::Type::Repeat) {
+            endRepeatRange = previous().range;
+        }
+    } else {
+        emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
         return nullptr;
     }
     _parsingDepth--;
-    auto repeat =
-        MakeStrong<RepeatFor>(statement, variables, expression);
+    auto repeat = MakeStrong<RepeatFor>(statement, variables, expression);
+    repeat->ranges.for_ = forRange;
+    repeat->ranges.in = inRange;
+    repeat->Repeat::ranges.end = endRange;
+    repeat->Repeat::ranges.endRepeat = endRepeatRange;
     return repeat;
 }
 
@@ -828,7 +931,7 @@ Result<Strong<Statement>, Error> Parser::parseSimpleStatement() {
 }
 
 Result<Strong<Statement>, Error> Parser::parseAssignment() {
-    auto start = previous().location;
+    auto setRange = previous().range;
     std::vector<Strong<AssignmentTarget>> variableDecls;
     do {
         Optional<Variable::Scope> scope = None;
@@ -843,13 +946,13 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
 
         auto token = consumeWord();
         if (!token) {
-            return Fail(Error(peek().range(), "expected a variable name"));
+            return Fail(Error(peek().range, "expected a variable name"));
         }
         if (match({Token::Type::Colon})) {
             if (auto word = consumeWord()) {
                 typeName = word.value();
             } else {
-                emitError(Error(peek().range(), "expected a type name"));
+                emitError(Error(peek().range, "expected a type name"));
                 synchronize();
                 return nullptr;
             }
@@ -861,7 +964,7 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
                 }
                 subscripts.push_back(subscript.value());
                 if (!consume(Token::Type::RightBracket)) {
-                    return Fail(Error(peek().range(), Concat("expected ", Quoted("]"))));
+                    return Fail(Error(peek().range, Concat("expected ", Quoted("]"))));
                 }
             }
         }
@@ -870,59 +973,64 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
             declare(name);
         }
         auto variable = MakeStrong<Variable>(token.value(), scope);
-        variable->range = SourceRange{token.value().location, token.value().end()};
-        auto assignmentTarget =
-            MakeStrong<AssignmentTarget>(variable, typeName, subscripts);
+        variable->range = SourceRange{token.value().range.start, token.value().range.end};
+        auto assignmentTarget = MakeStrong<AssignmentTarget>(variable, typeName, subscripts);
         assignmentTarget->range =
-            SourceRange{assignmentTarget->variable->range.start, previous().end()};
+            SourceRange{assignmentTarget->variable->range.start, previous().range.end};
         variableDecls.push_back(assignmentTarget);
     } while (match({Token::Type::Comma}));
 
     if (!consume(Token::Type::To)) {
-        return Fail(Error(peek().range(), Concat("expected ", Quoted("to"))));
+        return Fail(Error(peek().range, Concat("expected ", Quoted("to"))));
     }
+    auto toRange = previous().range;
 
     auto expression = parseExpression();
     if (!expression) {
         return Fail(expression.error());
     }
 
-    auto assignment =
-        MakeStrong<Assignment>(variableDecls, expression.value());
-    assignment->range = SourceRange{start, previous().end()};
+    auto assignment = MakeStrong<Assignment>(variableDecls, expression.value());
+    assignment->range = SourceRange{setRange.start, previous().range.end};
+    assignment->ranges.set = setRange;
+    assignment->ranges.to = toRange;
     return assignment;
 }
 
 Result<Strong<Statement>, Error> Parser::parseExit() {
-    auto start = previous().location;
+    auto exitRange = previous().range;
     if (!_parsingRepeat) {
         return Fail(
-            Error(peek().range(), Concat("unexpected ", Quoted("exit"), " outside repeat block")));
+            Error(peek().range, Concat("unexpected ", Quoted("exit"), " outside repeat block")));
     }
     if (!consume(Token::Type::Repeat)) {
-        return Fail(Error(peek().range(), Concat("expected ", Quoted("repeat"))));
+        return Fail(Error(peek().range, Concat("expected ", Quoted("repeat"))));
     }
     auto exitRepeat = MakeStrong<ExitRepeat>();
-    exitRepeat->range = SourceRange{start, previous().end()};
+    exitRepeat->range = SourceRange{exitRange.start, previous().range.end};
+    exitRepeat->ranges.exit = exitRange;
+    exitRepeat->ranges.repeat = previous().range;
     return exitRepeat;
 }
 
 Result<Strong<Statement>, Error> Parser::parseNext() {
-    auto start = previous().location;
+    auto nextRange = previous().range;
     if (!_parsingRepeat) {
         return Fail(
-            Error(peek().range(), Concat("unexpected ", Quoted("next"), " outside repeat block")));
+            Error(peek().range, Concat("unexpected ", Quoted("next"), " outside repeat block")));
     }
     if (!consume(Token::Type::Repeat)) {
-        return Fail(Error(peek().location, Concat("expected ", Quoted("repeat"))));
+        return Fail(Error(peek().range.start, Concat("expected ", Quoted("repeat"))));
     }
     auto nextRepeat = MakeStrong<NextRepeat>();
-    nextRepeat->range = SourceRange{start, previous().end()};
+    nextRepeat->range = SourceRange{nextRange.start, previous().range.end};
+    nextRepeat->ranges.next = nextRange;
+    nextRepeat->ranges.repeat = previous().range;
     return nextRepeat;
 }
 
 Result<Strong<Statement>, Error> Parser::parseReturn() {
-    auto start = previous().location;
+    auto returnRange = previous().range;
     Strong<Expression> expression;
     if (!isAtEnd() && !check({Token::Type::NewLine})) {
         if (auto returnExpression = parseExpression()) {
@@ -932,7 +1040,8 @@ Result<Strong<Statement>, Error> Parser::parseReturn() {
         }
     }
     auto returnStatement = MakeStrong<Return>(expression);
-    returnStatement->range = SourceRange{start, previous().end()};
+    returnStatement->range = SourceRange{returnRange.start, previous().range.end};
+    returnStatement->ranges.return_ = returnRange;
     return returnStatement;
 }
 
@@ -997,7 +1106,7 @@ Unary::Operator unaryOp(Token::Type tokenType) {
 Result<Strong<Expression>, Error> Parser::parseExpression() {
     auto token = peek();
     if (token.isEndOfStatement()) {
-        return Fail(Error(peek().range(), "expected expression"));
+        return Fail(Error(peek().range, "expected expression"));
     }
     return parseClause();
 }
@@ -1009,15 +1118,17 @@ Result<Strong<Expression>, Error> Parser::parseClause() {
     }
     auto start = expression.value()->range.start;
     while (auto operatorToken = match({Token::Type::And, Token::Type::Or})) {
+        auto opRange = previous().range;
         auto equality = parseEquality();
         if (!equality) {
             return equality;
         }
         auto end = equality.value()->range.end;
-        expression =
-            MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
-                              equality.value());
-        expression.value()->range = SourceRange{start, end};
+        auto binaryExpression = MakeStrong<Binary>(
+            expression.value(), binaryOp(operatorToken.value().type), equality.value());
+        binaryExpression->range = SourceRange{start, end};
+        binaryExpression->ranges.operator_ = opRange;
+        expression = binaryExpression;
     }
     return expression;
 }
@@ -1037,18 +1148,16 @@ Result<Strong<Expression>, Error> Parser::parseEquality() {
                 return comparison;
             }
             end = comparison.value()->range.end;
-            expression =
-                MakeStrong<Binary>(expression.value(), Binary::Operator::NotEqual,
-                                  comparison.value());
+            expression = MakeStrong<Binary>(expression.value(), Binary::Operator::NotEqual,
+                                            comparison.value());
         } else {
             auto comparison = parseComparison();
             if (!comparison) {
                 return comparison;
             }
             end = comparison.value()->range.end;
-            expression = MakeStrong<Binary>(expression.value(),
-                                           binaryOp(operatorToken.value().type),
-                                           comparison.value());
+            expression = MakeStrong<Binary>(
+                expression.value(), binaryOp(operatorToken.value().type), comparison.value());
         }
         expression.value()->range = SourceRange{start, end};
     }
@@ -1069,9 +1178,8 @@ Result<Strong<Expression>, Error> Parser::parseComparison() {
             return list;
         }
         auto end = list.value()->range.end;
-        expression =
-            MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
-                              list.value());
+        expression = MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
+                                        list.value());
         expression.value()->range = SourceRange{start, end};
     }
     return expression;
@@ -1096,7 +1204,7 @@ Result<Strong<Expression>, Error> Parser::parseList() {
         }
 
         expression = MakeStrong<ListLiteral>(expressions);
-        expression.value()->range = SourceRange{start, previous().end()};
+        expression.value()->range = SourceRange{start, previous().range.end};
     }
 
     return expression;
@@ -1115,8 +1223,7 @@ Result<Strong<Expression>, Error> Parser::parseRange() {
             return term;
         }
         auto end = term.value()->range.end;
-        expression =
-            MakeStrong<RangeLiteral>(expression.value(), term.value(), closed);
+        expression = MakeStrong<RangeLiteral>(expression.value(), term.value(), closed);
         expression.value()->range = SourceRange{start, end};
     }
     return expression;
@@ -1134,9 +1241,8 @@ Result<Strong<Expression>, Error> Parser::parseTerm() {
             return factor;
         }
         auto end = factor.value()->range.end;
-        expression =
-            MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
-                              factor.value());
+        expression = MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
+                                        factor.value());
         expression.value()->range = SourceRange{start, end};
     }
     return expression;
@@ -1155,9 +1261,8 @@ Result<Strong<Expression>, Error> Parser::parseFactor() {
             return exponent;
         }
         auto end = exponent.value()->range.end;
-        expression =
-            MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
-                              exponent.value());
+        expression = MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
+                                        exponent.value());
         expression.value()->range = SourceRange{start, end};
     }
     return expression;
@@ -1175,9 +1280,8 @@ Result<Strong<Expression>, Error> Parser::parseExponent() {
             return unary;
         }
         auto end = unary.value()->range.end;
-        expression =
-            MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
-                              unary.value());
+        expression = MakeStrong<Binary>(expression.value(), binaryOp(operatorToken.value().type),
+                                        unary.value());
         expression.value()->range = SourceRange{start, end};
     }
     return expression;
@@ -1190,9 +1294,8 @@ Result<Strong<Expression>, Error> Parser::parseUnary() {
             return unary;
         }
         auto end = unary.value()->range.end;
-        auto expression =
-            MakeStrong<Unary>(unaryOp(operatorToken.value().type), unary.value());
-        expression->range = SourceRange{operatorToken.value().location, end};
+        auto expression = MakeStrong<Unary>(unaryOp(operatorToken.value().type), unary.value());
+        expression->range = SourceRange{operatorToken.value().range.start, end};
         return expression;
     }
     return parseCall();
@@ -1213,12 +1316,12 @@ static std::string computeErrorString(const Signature &matchingSignature,
 
 Result<Strong<Expression>, Error> Parser::parseCall() {
     std::vector<Strong<Expression>> arguments;
-    std::vector<Token> tokens;
+    std::vector<SourceRange> ranges;
     Signature matchingSignature;
 
     auto grammar = &_grammar;
     auto token = peek();
-    auto start = token.location;
+    auto start = token.range.start;
 
     while (token.isPrimary()) {
         if (token.isWord()) {
@@ -1242,7 +1345,7 @@ Result<Strong<Expression>, Error> Parser::parseCall() {
                 matchingSignature.terms.emplace_back(token);
                 grammar = term->second.get();
                 advance();
-                tokens.push_back(token);
+                ranges.push_back(token.range);
                 token = peek();
                 continue;
             }
@@ -1274,11 +1377,11 @@ Result<Strong<Expression>, Error> Parser::parseCall() {
         }
 
         auto errorString = computeErrorString(matchingSignature, grammar->allSignatures());
-        return Fail(Error(SourceRange{start, previous().end()}, errorString));
+        return Fail(Error(SourceRange{start, previous().range.end}, errorString));
     }
-    auto call =
-        MakeStrong<Call>(signature.value(), arguments, tokens);
-    call->range = SourceRange{start, previous().end()};
+    auto call = MakeStrong<Call>(signature.value(), arguments);
+    call->range = SourceRange{start, previous().range.end};
+    call->ranges = ranges;
     return call;
 }
 
@@ -1294,11 +1397,10 @@ Result<Strong<Expression>, Error> Parser::parseSubscript() {
             return subscript;
         }
         if (!consume(Token::Type::RightBracket)) {
-            return Fail(Error(peek().range(), Concat("expected ", Quoted("]"))));
+            return Fail(Error(peek().range, Concat("expected ", Quoted("]"))));
         }
-        expression = MakeStrong<Binary>(expression.value(), Binary::Subscript,
-                                       subscript.value());
-        expression.value()->range = SourceRange{start, previous().end()};
+        expression = MakeStrong<Binary>(expression.value(), Binary::Subscript, subscript.value());
+        expression.value()->range = SourceRange{start, previous().range.end};
     }
     return expression;
 }
@@ -1312,7 +1414,7 @@ Result<Strong<Expression>, Error> Parser::parsePrimary() {
             Token::Type::Empty,
         })) {
         auto literal = MakeStrong<Literal>(token.value());
-        literal->range = SourceRange{token.value().location, token.value().end()};
+        literal->range = SourceRange{token.value().range.start, token.value().range.end};
         return literal;
     }
 
@@ -1329,57 +1431,64 @@ Result<Strong<Expression>, Error> Parser::parsePrimary() {
         return parseVariable();
     }
 
-    return Fail(Error(peek().range(), Concat("unexpected ", peek().description())));
+    return Fail(Error(peek().range, Concat("unexpected ", peek().description())));
 }
 
 Result<Strong<Expression>, Error> Parser::parseVariable() {
     Optional<Variable::Scope> scope = None;
     SourceLocation start;
+    Optional<SourceRange> scopeRange;
     if (peek().type == Token::Type::Global || peek().type == Token::Type::Local) {
-        start = peek().location;
+        start = peek().range.start;
+        scopeRange = peek().range;
         scope =
             (peek().type == Token::Type::Global ? Variable::Scope::Global : Variable::Scope::Local);
         advance();
     }
     auto token = consumeWord();
     if (!token) {
-        return Fail(Error(peek().range(), "expected a variable name"));
+        return Fail(Error(peek().range, "expected a variable name"));
     }
     if (!scope) {
-        start = token.value().location;
+        start = token.value().range.start;
     }
     auto variable = MakeStrong<Variable>(token.value(), scope);
-    variable->range = SourceRange{start, token.value().end()};
+    variable->range = SourceRange{start, token.value().range.end};
+    variable->ranges.scope = scopeRange;
     return variable;
 }
 
 Result<Strong<Expression>, Error> Parser::parseGrouping() {
-    auto start = previous().location;
+    auto leftGroupingRange = previous().range;
     auto expression = parseExpression();
     if (!expression) {
         return expression;
     }
     if (!consume(Token::Type::RightParen)) {
-        return Fail(Error(peek().range(), Concat("expected ", Quoted(")"))));
+        return Fail(Error(peek().range, Concat("expected ", Quoted(")"))));
     }
+    auto rightGroupingRange = previous().range;
+
     auto grouping = MakeStrong<Grouping>(expression.value());
-    grouping->range = SourceRange{start, previous().end()};
+    grouping->range = SourceRange{leftGroupingRange.start, previous().range.end};
+    grouping->ranges.leftGrouping = leftGroupingRange;
+    grouping->ranges.rightGrouping = rightGroupingRange;
     return grouping;
 }
 
 Result<Strong<Expression>, Error> Parser::parseContainerLiteral() {
-    auto start = previous().location;
+    auto start = previous().range.start;
     if (match({Token::Type::RightBrace})) {
         auto container = MakeStrong<ListLiteral>();
-        container->range = SourceRange{start, previous().end()};
+        container->range = SourceRange{start, previous().range.end};
         return container;
     }
     if (match({Token::Type::Colon})) {
         if (!consume(Token::Type::RightBrace)) {
-            return Fail(Error(peek().range(), Concat("expected ", Quoted("}"))));
+            return Fail(Error(peek().range, Concat("expected ", Quoted("}"))));
         }
         auto container = MakeStrong<DictionaryLiteral>();
-        container->range = SourceRange{start, previous().end()};
+        container->range = SourceRange{start, previous().range.end};
         return container;
     }
 
@@ -1403,7 +1512,7 @@ Result<Strong<Expression>, Error> Parser::parseContainerLiteral() {
                     return keyExpression;
                 }
                 if (!consume(Token::Type::Colon)) {
-                    return Fail(Error(peek().range(), Concat("expected ", Quoted(":"))));
+                    return Fail(Error(peek().range, Concat("expected ", Quoted(":"))));
                 }
                 auto valueExpression = parseTerm();
                 if (!valueExpression) {
@@ -1430,13 +1539,13 @@ Result<Strong<Expression>, Error> Parser::parseContainerLiteral() {
         values.push_back(expression.value());
         containerExpression = MakeStrong<ListLiteral>(values);
     } else {
-        return Fail(Error(peek().range(), Concat("expected ", Quoted(":"), " or ", Quoted(","))));
+        return Fail(Error(peek().range, Concat("expected ", Quoted(":"), " or ", Quoted(","))));
     }
 
     if (!consume(Token::Type::RightBrace)) {
-        return Fail(Error(peek().range(), Concat("expected ", Quoted("}"))));
+        return Fail(Error(peek().range, Concat("expected ", Quoted("}"))));
     }
-    containerExpression->range = SourceRange{start, previous().end()};
+    containerExpression->range = SourceRange{start, previous().range.end};
     return containerExpression;
 }
 

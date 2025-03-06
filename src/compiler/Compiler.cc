@@ -407,7 +407,7 @@ void Compiler::visit(const RepeatCondition &statement) {
     statement.condition->accept(*this);
 
     size_t jumpIfCondition = bytecode().code().size();
-    if (statement.conditionValue) {
+    if (statement.conjunction == RepeatCondition::Conjunction::While) {
         bytecode().add(statement.range.start, Opcode::JumpIfFalse, 0);
     } else {
         bytecode().add(statement.range.start, Opcode::JumpIfTrue, 0);

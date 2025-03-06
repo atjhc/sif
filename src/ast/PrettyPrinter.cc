@@ -125,7 +125,7 @@ void PrettyPrinter::visit(const Repeat &repeat) {
 
 void PrettyPrinter::visit(const RepeatCondition &repeat) {
     out << "repeat";
-    if (repeat.conditionValue) {
+    if (repeat.conjunction == RepeatCondition::Conjunction::While) {
         out << " while ";
     } else {
         out << " until ";
@@ -167,12 +167,8 @@ void PrettyPrinter::visit(const Call &call) {
                            (*argsIt)->accept(*this);
                            argsIt++;
                        },
-                       [&](Signature::Choice choice) {
-                           out << choice.tokens[0].text;
-                       },
-                       [&](Signature::Option option) {
-                           out << option.choice.tokens[0].text;
-                       },
+                       [&](Signature::Choice choice) { out << choice.tokens[0].text; },
+                       [&](Signature::Option option) { out << option.choice.tokens[0].text; },
                    },
                    term);
         it++;
