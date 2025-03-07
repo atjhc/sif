@@ -60,11 +60,7 @@ Strong<Statement> Parser::statement() {
     }
     _config.scanner.reset(_config.reader.contents());
 
-    auto block = parseBlock({});
-    if (_failed) {
-        return nullptr;
-    }
-    return block;
+    return parseBlock({});
 }
 
 Optional<Signature> Parser::signature() {
@@ -82,14 +78,30 @@ Optional<Signature> Parser::signature() {
     return signature;
 }
 
+bool Parser::failed() const {
+    return _failed;
+}
+
 void Parser::declare(const Signature &signature) {
     _scopes.back().signatures.push_back(signature);
     _grammar.insert(signature);
 }
 
+void Parser::declare(const std::vector<Signature> &signatures) {
+    for (const auto &signature : signatures) {
+        declare(signature);
+    }
+}
+
 void Parser::declare(const std::string &variable) {
     _scopes.back().variables.insert(variable);
     _variables.insert(variable);
+}
+
+void Parser::declare(const std::vector<std::string> &variables) {
+    for (const auto &variable : variables) {
+        declare(variable);
+    }
 }
 
 const std::vector<Signature> &Parser::declarations() const { return _exportedDeclarations; }

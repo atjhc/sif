@@ -70,14 +70,12 @@ Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
 
     // Import all signatures from builtin modules.
     for (auto ref : builtins) {
-        for (const auto &signature : ref.get().signatures()) {
-            parser.declare(signature);
-        }
+        parser.declare(ref.get().signatures());
     }
 
     // Parse the new module.
     auto statement = parser.statement();
-    if (!statement) {
+    if (parser.failed()) {
         return nullptr;
     }
 
