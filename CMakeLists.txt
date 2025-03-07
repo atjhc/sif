@@ -45,9 +45,9 @@ file(GLOB_RECURSE SIF_SOURCES "src/*.cc")
 file(GLOB_RECURSE SIF_HEADERS "src/*.h")
 
 # Exclude tools and tests from the library build
-list(FILTER SIF_SOURCES EXCLUDE REGEX ".*/tools/.*")
-list(FILTER SIF_SOURCES EXCLUDE REGEX ".*/tests/.*")
-list(FILTER SIF_SOURCES EXCLUDE REGEX ".*/extern/.*")
+list(FILTER SIF_SOURCES EXCLUDE REGEX "src/tools/.*")
+list(FILTER SIF_SOURCES EXCLUDE REGEX "src/tests/.*")
+list(FILTER SIF_SOURCES EXCLUDE REGEX "src/extern/.*")
 
 # Create a static library
 add_library(sif STATIC ${SIF_SOURCES} ${SIF_HEADERS})

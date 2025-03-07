@@ -21,14 +21,14 @@
 #include "ast/Repeat.h"
 #include "ast/Statement.h"
 
-#include <iostream>
+#include <vector>
 
 SIF_NAMESPACE_BEGIN
 
 class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
   public:
     struct Annotation {
-        enum Kind {
+        enum class Kind {
             Control,
             Comment,
             StringLiteral,
@@ -44,7 +44,7 @@ class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
 
     SourceAnnotator();
 
-    const std::vector<Annotation> &annotate(const Statement &);
+    std::vector<Annotation> annotate(const Statement &);
 
 #pragma mark - Statement::Visitor
 
