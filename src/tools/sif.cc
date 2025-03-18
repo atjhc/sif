@@ -109,13 +109,8 @@ int evaluate(const std::string &name, Reader &reader) {
 #endif
     Parser parser(parserConfig);
 
-    for (const auto &signature : coreModule.signatures()) {
-        parser.declare(signature);
-    }
-    for (const auto &signature : systemModule.signatures()) {
-        parser.declare(signature);
-    }
-
+    parser.declare(coreModule.signatures());
+    parser.declare(systemModule.signatures());
     parser.declare(Signature::Make("clear").value());
 
     for (auto &&global : globals) {
@@ -124,7 +119,7 @@ int evaluate(const std::string &name, Reader &reader) {
     }
 
     auto statement = parser.statement();
-    if (!statement) {
+    if (parser.failed()) {
         return ParseFailure;
     }
 

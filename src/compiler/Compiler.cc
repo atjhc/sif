@@ -253,8 +253,8 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     _frames.push_back({functionBytecode, {}, {}});
 
     // Add function name and arguments to locals list.
-    addLocal(functionDecl.signature.name());
-    for (const auto &term : functionDecl.signature.terms) {
+    addLocal(functionDecl.signature.value().name());
+    for (const auto &term : functionDecl.signature.value().terms) {
         if (auto &&arg = std::get_if<Signature::Argument>(&term); arg) {
             for (auto &&target : arg->targets) {
                 if (target.name.has_value()) {
@@ -278,9 +278,9 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
 
     // Add the function constant to the bytecode, assign it to the given signature name.
     auto function =
-        MakeStrong<Function>(functionDecl.signature, functionBytecode, functionCaptures);
+        MakeStrong<Function>(functionDecl.signature.value(), functionBytecode, functionCaptures);
     auto constant = bytecode().addConstant(function);
-    auto name = functionDecl.signature.name();
+    auto name = functionDecl.signature.value().name();
     bytecode().add(functionDecl.range.start, Opcode::Constant, constant);
     assignFunction(functionDecl.range.start, name);
 }

@@ -38,7 +38,8 @@ TEST_CASE(ScannerTests, All) {
         Token::Type::IntLiteral, Token::Type::Word,       Token::Type::Word,
         Token::Type::Plus,       Token::Type::Word,       Token::Type::Minus,
         Token::Type::If,         Token::Type::Else,       Token::Type::LeftParen,
-        Token::Type::Then,       Token::Type::RightParen, Token::Type::EndOfFile,
+        Token::Type::Then,       Token::Type::RightParen, Token::Type::Comment,
+        Token::Type::EndOfFile
     };
 
     unsigned int i = 0;

@@ -49,7 +49,10 @@ void PrettyPrinter::visit(const Block &block) {
 }
 
 void PrettyPrinter::visit(const FunctionDecl &functionDecl) {
-    out << "function " << functionDecl.signature.description();
+    out << "function";
+    if (functionDecl.signature.has_value()) {
+        out << " " << functionDecl.signature.value().description();
+    }
     printBlock(*functionDecl.statement);
     out << indentString() << "end function";
 }

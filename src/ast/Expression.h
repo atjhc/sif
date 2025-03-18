@@ -92,6 +92,7 @@ struct Binary : Expression {
         SourceRange operator_;
     } ranges;
 
+    Binary() {}
     Binary(Strong<Expression> leftExpression, Operator binaryOperator,
            Strong<Expression> rightExpression);
 
@@ -108,6 +109,7 @@ struct Unary : Expression {
         SourceRange operator_;
     } ranges;
 
+    Unary(Operator unaryOperator) : unaryOperator(unaryOperator) {}
     Unary(Operator unaryOperator, Strong<Expression> expression);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
@@ -118,9 +120,10 @@ struct Grouping : Expression {
 
     struct {
         SourceRange leftGrouping;
-        SourceRange rightGrouping;
+        Optional<SourceRange> rightGrouping;
     } ranges;
 
+    Grouping() {}
     Grouping(Strong<Expression> expression);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
@@ -135,6 +138,7 @@ struct RangeLiteral : Expression {
         SourceRange operator_;
     } ranges;
 
+    RangeLiteral() {}
     RangeLiteral(Strong<Expression> start, Strong<Expression> end, bool closed);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }

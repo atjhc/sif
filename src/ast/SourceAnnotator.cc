@@ -20,8 +20,7 @@ SIF_NAMESPACE_BEGIN
 
 SourceAnnotator::SourceAnnotator() {}
 
-std::vector<SourceAnnotator::Annotation>
-SourceAnnotator::annotate(const Statement &statement) {
+std::vector<SourceAnnotator::Annotation> SourceAnnotator::annotate(const Statement &statement) {
     _ranges.clear();
     statement.accept(*this);
     return _ranges;
@@ -34,8 +33,37 @@ void SourceAnnotator::visit(const Block &block) {
 }
 
 void SourceAnnotator::visit(const FunctionDecl &functionDecl) {
-    _ranges.emplace_back(functionDecl.ranges.function, Annotation:: Kind::Control);
-    _ranges.emplace_back(functionDecl.ranges.end, Annotation::Kind::Control);
+    _ranges.emplace_back(functionDecl.ranges.function, Annotation::Kind::Control);
+    if (functionDecl.signature) {
+        for (const auto &term : functionDecl.signature.value().terms) {
+            auto choice = [&](Signature::Choice choice) {
+                for (const auto &token : choice.tokens) {
+                    _ranges.emplace_back(token.range, Annotation::Kind::Call);
+                }
+            };
+            std::visit(
+                Overload{
+                    [&](Token token) { _ranges.emplace_back(token.range, Annotation::Kind::Call); },
+                    [&](Signature::Argument argument) {
+                        for (const auto &target : argument.targets) {
+                            if (target.name) {
+                                _ranges.emplace_back(target.name.value().range,
+                                                    Annotation::Kind::Variable);
+                            }
+                        }
+                    },
+                    choice,
+                    [&](Signature::Option option) { choice(option.choice); },
+                },
+                term);
+        }
+    }
+    if (functionDecl.statement) {
+        functionDecl.statement->accept(*this);
+    }
+    if (functionDecl.ranges.end) {
+        _ranges.emplace_back(functionDecl.ranges.end.value(), Annotation::Kind::Control);
+    }
     if (functionDecl.ranges.endFunction) {
         _ranges.emplace_back(functionDecl.ranges.endFunction.value(), Annotation::Kind::Control);
     }
@@ -43,11 +71,19 @@ void SourceAnnotator::visit(const FunctionDecl &functionDecl) {
 
 void SourceAnnotator::visit(const If &ifs) {
     _ranges.emplace_back(ifs.ranges.if_, Annotation::Kind::Control);
-    ifs.condition->accept(*this);
-    _ranges.emplace_back(ifs.ranges.then, Annotation::Kind::Control);
-    ifs.ifStatement->accept(*this);
-    if (ifs.elseStatement) {
+    if (ifs.condition) {
+        ifs.condition->accept(*this);
+    }
+    if (ifs.ranges.then) {
+        _ranges.emplace_back(ifs.ranges.then.value(), Annotation::Kind::Control);
+    }
+    if (ifs.ifStatement) {
+        ifs.ifStatement->accept(*this);
+    }
+    if (ifs.ranges.else_) {
         _ranges.emplace_back(ifs.ranges.else_.value(), Annotation::Kind::Control);
+    }
+    if (ifs.elseStatement) {
         ifs.elseStatement->accept(*this);
     }
     if (ifs.ranges.end) {
@@ -60,7 +96,9 @@ void SourceAnnotator::visit(const If &ifs) {
 
 void SourceAnnotator::visit(const Try &trys) {
     _ranges.emplace_back(trys.ranges.try_, Annotation::Kind::Control);
-    trys.statement->accept(*this);
+    if (trys.statement) {
+        trys.statement->accept(*this);
+    }
     if (trys.ranges.end) {
         _ranges.emplace_back(trys.ranges.end.value(), Annotation::Kind::Control);
     }
@@ -71,12 +109,15 @@ void SourceAnnotator::visit(const Try &trys) {
 
 void SourceAnnotator::visit(const Use &use) {
     _ranges.emplace_back(use.ranges.use, Annotation::Kind::Control);
-    _ranges.emplace_back(use.target.range, Annotation::Kind::Control);
+    _ranges.emplace_back(use.target.range, Annotation::Kind::Module);
 }
 
 void SourceAnnotator::visit(const Using &usings) {
     _ranges.emplace_back(usings.ranges.using_, Annotation::Kind::Control);
-    usings.statement->accept(*this);
+    _ranges.emplace_back(usings.target.range, Annotation::Kind::Module);
+    if (usings.statement) {
+        usings.statement->accept(*this);
+    }
     if (usings.ranges.end) {
         _ranges.emplace_back(usings.ranges.end.value(), Annotation::Kind::Control);
     }
@@ -94,8 +135,18 @@ void SourceAnnotator::visit(const Return &statement) {
 
 void SourceAnnotator::visit(const Assignment &set) {
     _ranges.emplace_back(set.ranges.set, Annotation::Kind::Control);
-    _ranges.emplace_back(set.ranges.to, Annotation::Kind::Control);
-    set.expression->accept(*this);
+    for (const auto &target : set.targets) {
+        _ranges.emplace_back(target->variable->range, Annotation::Kind::Variable);
+        for (const auto &subscript : target->subscripts) {
+            subscript->accept(*this);
+        }
+    }
+    if (set.ranges.to) {
+        _ranges.emplace_back(set.ranges.to.value(), Annotation::Kind::Control);
+    }
+    if (set.expression) {
+        set.expression->accept(*this);
+    }
 }
 
 void SourceAnnotator::visit(const ExpressionStatement &statement) {
@@ -104,8 +155,12 @@ void SourceAnnotator::visit(const ExpressionStatement &statement) {
 
 void SourceAnnotator::visit(const Repeat &repeat) {
     _ranges.emplace_back(repeat.ranges.repeat, Annotation::Kind::Control);
-    repeat.statement->accept(*this);
-    _ranges.emplace_back(repeat.ranges.end, Annotation::Kind::Control);
+    if (repeat.statement) {
+        repeat.statement->accept(*this);
+    }
+    if (repeat.ranges.end) {
+        _ranges.emplace_back(repeat.ranges.end.value(), Annotation::Kind::Control);
+    }
     if (repeat.ranges.endRepeat) {
         _ranges.emplace_back(repeat.ranges.endRepeat.value(), Annotation::Kind::Control);
     }
@@ -114,9 +169,15 @@ void SourceAnnotator::visit(const Repeat &repeat) {
 void SourceAnnotator::visit(const RepeatCondition &repeat) {
     _ranges.emplace_back(repeat.Repeat::ranges.repeat, Annotation::Kind::Control);
     _ranges.emplace_back(repeat.ranges.conjunction, Annotation::Kind::Control);
-    repeat.condition->accept(*this);
-    repeat.statement->accept(*this);
-    _ranges.emplace_back(repeat.Repeat::ranges.end, Annotation::Kind::Control);
+    if (repeat.condition) {
+        repeat.condition->accept(*this);
+    }
+    if (repeat.statement) {
+        repeat.statement->accept(*this);
+    }
+    if (repeat.Repeat::ranges.end) {
+        _ranges.emplace_back(repeat.Repeat::ranges.end.value(), Annotation::Kind::Control);
+    }
     if (repeat.Repeat::ranges.endRepeat) {
         _ranges.emplace_back(repeat.Repeat::ranges.endRepeat.value(), Annotation::Kind::Control);
     }
@@ -125,9 +186,21 @@ void SourceAnnotator::visit(const RepeatCondition &repeat) {
 void SourceAnnotator::visit(const RepeatFor &foreach) {
     _ranges.emplace_back(foreach.Repeat::ranges.repeat, Annotation::Kind::Control);
     _ranges.emplace_back(foreach.ranges.for_, Annotation::Kind::Control);
-    _ranges.emplace_back(foreach.ranges.in, Annotation::Kind::Control);
-    foreach.expression->accept(*this);
-    _ranges.emplace_back(foreach.Repeat::ranges.end, Annotation::Kind::Control);
+    for (const auto &variable : foreach.variables) {
+        variable->accept(*this);
+    }
+    if (foreach.ranges.in) {
+        _ranges.emplace_back(foreach.ranges.in.value(), Annotation::Kind::Control);
+    }
+    if (foreach.expression) {
+        foreach.expression->accept(*this);
+    }
+    if (foreach.statement) {
+        foreach.statement->accept(*this);
+    }
+    if (foreach.Repeat::ranges.end) {
+        _ranges.emplace_back(foreach.Repeat::ranges.end.value(), Annotation::Kind::Control);
+    }
     if (foreach.Repeat::ranges.endRepeat) {
         _ranges.emplace_back(foreach.Repeat::ranges.endRepeat.value(), Annotation::Kind::Control);
     }
@@ -135,12 +208,16 @@ void SourceAnnotator::visit(const RepeatFor &foreach) {
 
 void SourceAnnotator::visit(const ExitRepeat &exitRepeat) {
     _ranges.emplace_back(exitRepeat.ranges.exit, Annotation::Kind::Control);
-    _ranges.emplace_back(exitRepeat.ranges.repeat, Annotation::Kind::Control);
+    if (exitRepeat.ranges.repeat) {
+        _ranges.emplace_back(exitRepeat.ranges.repeat.value(), Annotation::Kind::Control);
+    }
 }
 
 void SourceAnnotator::visit(const NextRepeat &nextRepeat) {
     _ranges.emplace_back(nextRepeat.ranges.next, Annotation::Kind::Control);
-    _ranges.emplace_back(nextRepeat.ranges.repeat, Annotation::Kind::Control);
+    if (nextRepeat.ranges.repeat) {
+        _ranges.emplace_back(nextRepeat.ranges.repeat.value(), Annotation::Kind::Control);
+    }
 }
 
 void SourceAnnotator::visit(const Call &call) {
@@ -154,8 +231,12 @@ void SourceAnnotator::visit(const Call &call) {
 
 void SourceAnnotator::visit(const Grouping &grouping) {
     _ranges.emplace_back(grouping.ranges.leftGrouping, Annotation::Kind::Operator);
-    grouping.expression->accept(*this);
-    _ranges.emplace_back(grouping.ranges.rightGrouping, Annotation::Kind::Operator);
+    if (grouping.expression) {
+        grouping.expression->accept(*this);
+    }
+    if (grouping.ranges.rightGrouping) {
+        _ranges.emplace_back(grouping.ranges.rightGrouping.value(), Annotation::Kind::Operator);
+    }
 }
 
 void SourceAnnotator::visit(const Variable &variable) {
@@ -166,14 +247,20 @@ void SourceAnnotator::visit(const Variable &variable) {
 }
 
 void SourceAnnotator::visit(const Binary &binary) {
-    binary.leftExpression->accept(*this);
+    if (binary.leftExpression) {
+        binary.leftExpression->accept(*this);
+    }
     _ranges.emplace_back(binary.ranges.operator_, Annotation::Kind::Operator);
-    binary.rightExpression->accept(*this);
+    if (binary.rightExpression) {
+        binary.rightExpression->accept(*this);
+    }
 }
 
 void SourceAnnotator::visit(const Unary &unary) {
     _ranges.emplace_back(unary.ranges.operator_, Annotation::Kind::Operator);
-    unary.expression->accept(*this);
+    if (unary.expression) {
+        unary.expression->accept(*this);
+    }
 }
 
 void SourceAnnotator::visit(const RangeLiteral &range) {
@@ -204,6 +291,7 @@ void SourceAnnotator::visit(const Literal &literal) {
     case Token::Type::IntLiteral:
     case Token::Type::FloatLiteral:
     case Token::Type::BoolLiteral:
+    case Token::Type::Empty:
         _ranges.emplace_back(literal.range, Annotation::Kind::NumberLiteral);
         break;
     case Token::Type::StringLiteral:

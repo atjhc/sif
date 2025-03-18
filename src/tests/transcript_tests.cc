@@ -90,15 +90,11 @@ TEST_CASE(TranscriptTests, All) {
         Core core(coreConfig);
         System system;
 
-        for (const auto &signature : Core().signatures()) {
-            parser.declare(signature);
-        }
-        for (const auto &signature : System().signatures()) {
-            parser.declare(signature);
-        }
+        parser.declare(Core().signatures());
+        parser.declare(System().signatures());
         auto statement = parser.statement();
 
-        if (statement) {
+        if (!parser.failed()) {
             Compiler compiler(CompilerConfig{loader, reporter, false});
             auto bytecode = compiler.compile(*statement);
             if (bytecode) {

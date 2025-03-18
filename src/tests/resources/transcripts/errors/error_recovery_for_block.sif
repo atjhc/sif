@@ -42,7 +42,7 @@ else set a to
 (-- error
 expected "then"
 expected expression
-unexpected "else"
+expected expression
 --)
 
 repeat a
@@ -70,5 +70,6 @@ repeat for
  set a to 1
 end repeat
 (-- error
-expected a word
+expected a variable name
+expected "in"
 --)

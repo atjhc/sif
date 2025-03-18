@@ -50,8 +50,13 @@ class Parser {
     Strong<Statement> statement();
     Optional<Signature> signature();
 
+    bool failed() const;
+
     void declare(const Signature &signature);
+    void declare(const std::vector<Signature> &signatures);
+
     void declare(const std::string &variable);
+    void declare(const std::vector<std::string> &variables);
 
     const std::vector<Signature> &declarations() const;
     const std::vector<SourceRange> &commentRanges() const;

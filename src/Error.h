@@ -22,6 +22,8 @@
 #include "compiler/Token.h"
 #include "runtime/Value.h"
 
+#include <format>
+
 SIF_NAMESPACE_BEGIN
 
 class Error {

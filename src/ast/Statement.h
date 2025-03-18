@@ -73,15 +73,18 @@ struct Block : Statement {
 };
 
 struct FunctionDecl : Statement {
-    Signature signature;
+    Optional<Signature> signature;
     Strong<Statement> statement;
 
     struct {
         SourceRange function;
-        SourceRange end;
+        std::vector<SourceRange> words;
+        std::vector<SourceRange> variables;
+        Optional<SourceRange> end;
         Optional<SourceRange> endFunction;
     } ranges;
 
+    FunctionDecl() {}
     FunctionDecl(const Signature &signature, Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -102,9 +105,10 @@ struct Assignment : Statement {
 
     struct {
         SourceRange set;
-        SourceRange to;
+        Optional<SourceRange> to;
     } ranges;
 
+    Assignment() {}
     Assignment(std::vector<Strong<AssignmentTarget>> targets, Strong<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -117,12 +121,13 @@ struct If : Statement {
 
     struct {
         SourceRange if_;
-        SourceRange then;
+        Optional<SourceRange> then;
         Optional<SourceRange> else_;
         Optional<SourceRange> end;
         Optional<SourceRange> endIf;
     } ranges;
 
+    If() {}
     If(Strong<Expression> condition, Strong<Statement> ifStatement,
        Strong<Statement> elseStatement);
 
@@ -138,6 +143,7 @@ struct Try : Statement {
         Optional<SourceRange> endTry;
     } ranges;
 
+    Try() {}
     Try(Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -150,6 +156,7 @@ struct Use : Statement {
         SourceRange use;
     } ranges;
 
+    Use() {}
     Use(Token target);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -165,6 +172,7 @@ struct Using : Statement {
         Optional<SourceRange> endUsing;
     } ranges;
 
+    Using() {}
     Using(Token target, Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
@@ -177,6 +185,7 @@ struct Return : Statement {
         SourceRange return_;
     } ranges;
 
+    Return() {}
     Return(Strong<Expression> expression);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }

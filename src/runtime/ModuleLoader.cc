@@ -24,7 +24,6 @@
 SIF_NAMESPACE_BEGIN
 
 Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
-
     // Check if the module is already in the process of loading,
     // which implies a circular dependency.
     if (_loading.find(name) != _loading.end()) {
@@ -70,14 +69,12 @@ Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
 
     // Import all signatures from builtin modules.
     for (auto ref : builtins) {
-        for (const auto &signature : ref.get().signatures()) {
-            parser.declare(signature);
-        }
+        parser.declare(ref.get().signatures());
     }
 
     // Parse the new module.
     auto statement = parser.statement();
-    if (!statement) {
+    if (parser.failed()) {
         return nullptr;
     }
 

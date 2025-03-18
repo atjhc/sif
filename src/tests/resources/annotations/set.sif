@@ -1,8 +1,30 @@
+set
+(-- annotations
+control set
+--)
+
+set a
+(-- annotations
+control set
+variable a
+--)
+
+set a to
+(-- annotations
+control set
+variable a
+control to
+--)
+
 set a to 10
+(-- annotations
+control set
+variable a
+control to
+number 10
+--)
+
 a
 (-- annotations
-1:1-1:4 control set
-1:7-1:9 control to
-1:10-1:12 number 10
-2:1-2:2 variable a
+variable a
 --)

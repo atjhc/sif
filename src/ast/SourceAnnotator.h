@@ -36,6 +36,7 @@ class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
             Call,
             Operator,
             Variable,
+            Module,
         };
 
         SourceRange range;

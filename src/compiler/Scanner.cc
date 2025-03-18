@@ -32,13 +32,34 @@ void Scanner::reset(const std::string &contents) {
 
 Token Scanner::scan() {
     skipWhitespace();
-    skipComments();
 
     _start = _current;
     _startLocation = _currentLocation;
 
     if (isAtEnd()) {
         return make(Token::Type::EndOfFile);
+    }
+
+    int depth = 0;
+    do {
+        if (_current + 1 < _end && _current[0] == '(' && _current[1] == '-' && _current[2] == '-') {
+            advance(3);
+            depth++;
+        } else if (depth > 0) {
+            if (_current + 1 < _end && _current[0] == '-' && _current[1] == '-' &&
+                _current[2] == ')') {
+                advance(3);
+                depth--;
+            } else {
+                if (advance() == '\n') {
+                    _currentLocation.lineNumber++;
+                    _currentLocation.position = 1;
+                }
+            }
+        }
+    } while (depth > 0 && !isAtEnd());
+    if (_current > _start) {
+        return make(Token::Type::Comment);
     }
 
     auto c = advanceCharacter();
@@ -49,10 +70,14 @@ Token Scanner::scan() {
         return scanWord();
 
     switch (c) {
-    case '\n':
+    case '#':
+        skipLine();
+        return make(Token::Type::Comment);
+    case '\n': {
         _currentLocation.lineNumber++;
         _currentLocation.position = 1;
         return make(Token::Type::NewLine);
+    }
     case ';':
         return make(Token::Type::NewLine);
     case '(':
@@ -76,6 +101,10 @@ Token Scanner::scan() {
     case '+':
         return make(Token::Type::Plus);
     case '-':
+        if (_current < _end && match('-')) {
+            skipLine();
+            return make(Token::Type::Comment);
+        }
         return make(match('>') ? Token::Type::Arrow : Token::Type::Minus);
     case '*':
         return make(Token::Type::Star);
@@ -367,18 +396,10 @@ void Scanner::skipWhitespace() {
         case '\r':
             advance();
             break;
-        case '#':
-            skipLine();
-            break;
         case '\\':
             if (_current < _end && _current[1] == '\n') {
                 advance();
                 advance();
-            }
-            break;
-        case '-':
-            if (_current < _end && _current[1] == '-') {
-                skipLine();
             } else {
                 return;
             }
@@ -387,30 +408,6 @@ void Scanner::skipWhitespace() {
             return;
         }
     }
-}
-
-void Scanner::skipComments() {
-    if (isAtEnd())
-        return;
-
-    int depth = 0;
-    do {
-        if (_current + 1 < _end && _current[0] == '(' && _current[1] == '-' && _current[2] == '-') {
-            advance(3);
-            depth++;
-        } else if (depth > 0) {
-            if (_current + 1 < _end && _current[0] == '-' && _current[1] == '-' &&
-                _current[2] == ')') {
-                advance(3);
-                depth--;
-            } else {
-                if (advance() == '\n') {
-                    _currentLocation.lineNumber++;
-                    _currentLocation.position = 1;
-                }
-            }
-        }
-    } while (depth > 0 && !isAtEnd());
 }
 
 void Scanner::skipLine() {

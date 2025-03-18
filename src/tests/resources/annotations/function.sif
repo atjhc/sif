@@ -1,14 +1,39 @@
+function foo
+end
+(-- annotations
+control function
+call foo
+control end
+--)
+
 function foo bar baz
 end function
 (-- annotations
-1:1-1:9 control function
-2:1-2:4 control end
-2:5-2:13 control function
+control function
+call foo
+call bar
+call baz
+control end
+control function
 --)
 
 foo bar baz
 (-- annotations
-9:1-9:4 call foo
-9:5-9:8 call bar
-9:9-9:12 call baz
+call foo
+call bar
+call baz
+--)
+
+function foo {x}
+end
+(-- annotations
+control function
+call foo
+variable x
+control end
+--)
+
+function
+(-- annotations
+control function
 --)

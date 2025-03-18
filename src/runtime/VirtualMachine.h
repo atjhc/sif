@@ -56,6 +56,8 @@ class VirtualMachine {
 
     const Mapping<std::string, Value> exports() const;
 
+    const Value &it() const { return _it; }
+
   private:
     Optional<Error> call(Value, int count);
     Optional<Error> range(Value, Value, bool);

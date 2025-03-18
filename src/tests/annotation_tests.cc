@@ -34,6 +34,7 @@ static std::string stringForAnnotationKind(SourceAnnotator::Annotation::Kind kin
     case SourceAnnotator::Annotation::Kind::Call: return "call";
     case SourceAnnotator::Annotation::Kind::Operator: return "operator";
     case SourceAnnotator::Annotation::Kind::Variable: return "variable";
+    case SourceAnnotator::Annotation::Kind::Module: return "module";
     }
 }
 
@@ -73,7 +74,7 @@ TEST_CASE(Annotations, All) {
         auto scanner = Scanner();
         auto reader = StringReader(source);
         auto loader = ModuleLoader();
-        auto reporter = IOReporter(std::cout);
+        auto reporter = IOReporter(devnull);
 
         ParserConfig config{scanner, reader, loader, reporter};
         Parser parser(config);
@@ -84,8 +85,7 @@ TEST_CASE(Annotations, All) {
 
         std::ostringstream ss;
         for (auto &&annotation : annotations) {
-            ss << annotation.range << " "
-                << stringForAnnotationKind(annotation.kind) << " "
+            ss  << stringForAnnotationKind(annotation.kind) << " "
                 << range_chunk(chunk::type::character, annotation.range.start.offset, annotation.range.end.offset - 1, source).get()
                 << std::endl;
         }

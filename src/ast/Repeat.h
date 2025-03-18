@@ -30,10 +30,11 @@ struct Repeat : Statement {
     struct {
         SourceRange repeat;
         Optional<SourceRange> forever;
-        SourceRange end;
+        Optional<SourceRange> end;
         Optional<SourceRange> endRepeat;
     } ranges;
 
+    Repeat() {}
     Repeat(Strong<Statement> statement);
 
     void accept(Visitor &v) const override { return v.visit(*this); }
@@ -47,6 +48,7 @@ struct RepeatCondition : Repeat {
         SourceRange conjunction;
     } ranges;
 
+    RepeatCondition() {}
     RepeatCondition(Strong<Statement> statement, Strong<Expression> condition,
                     Conjunction conjunction);
 
@@ -59,9 +61,10 @@ struct RepeatFor : Repeat {
 
     struct {
         SourceRange for_;
-        SourceRange in;
+        Optional<SourceRange> in;
     } ranges;
 
+    RepeatFor() {}
     RepeatFor(Strong<Statement> statement, std::vector<Strong<Variable>> variables,
               Strong<Expression> expression);
 
@@ -71,7 +74,7 @@ struct RepeatFor : Repeat {
 struct ExitRepeat : Statement {
     struct {
         SourceRange exit;
-        SourceRange repeat;
+        Optional<SourceRange> repeat;
     } ranges;
 
     void accept(Visitor &v) const override { return v.visit(*this); }
@@ -80,7 +83,7 @@ struct ExitRepeat : Statement {
 struct NextRepeat : Statement {
     struct {
         SourceRange next;
-        SourceRange repeat;
+        Optional<SourceRange> repeat;
     } ranges;
 
     void accept(Visitor &v) const override { return v.visit(*this); }
