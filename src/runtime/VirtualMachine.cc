@@ -514,7 +514,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (frame().jumps.size() == 0) {
                 return Fail(error.value());
             }
-            frame().error = error.value().value();
+            frame().error = error.value().value;
             frame().ip = Pop(frame().jumps);
         }
         if (returnValue.has_value()) {
