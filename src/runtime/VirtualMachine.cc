@@ -81,6 +81,7 @@ std::ostream &operator<<(std::ostream &out, const CallFrame &f) { return out << 
 
 Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     _frames.push_back(CallFrame(bytecode, {}, 0));
+    frame().it = _it;
     Push(_stack, Value());
     auto localsCount = frame().bytecode->locals().size();
     for (auto i = 0; i < localsCount; i++) {
@@ -477,11 +478,11 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             break;
         }
         case Opcode::SetIt: {
-            _it = Pop(_stack);
+            frame().it = Pop(_stack);
             break;
         }
         case Opcode::GetIt: {
-            Push(_stack, _it);
+            Push(_stack, frame().it);
             break;
         }
         case Opcode::Show: {

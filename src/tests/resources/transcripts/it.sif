@@ -1,0 +1,24 @@
+print it
+(-- expect
+empty
+--)
+
+1 + 1
+print it
+(-- expect
+2
+--)
+
+print it
+(-- expect
+empty
+--)
+
+function foo
+  1 + 1
+end function
+foo
+print it
+(-- expect
+2
+--)

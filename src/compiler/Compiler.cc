@@ -31,7 +31,7 @@ Strong<Bytecode> Compiler::compile(const Statement &statement) {
     addLocal();
 
     statement.accept(*this);
-    addReturn();
+    addImplicitReturnIfNeeded();
 
     return _failed ? nullptr : _frames.back().bytecode;
 }
@@ -218,9 +218,9 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
     bytecode().add(variable.range.start, opcode, index);
 }
 
-void Compiler::addReturn() {
+void Compiler::addImplicitReturnIfNeeded() {
     if (bytecode().code().size() == 0 || bytecode().code().back() != Opcode::Return) {
-        bytecode().add(SourceLocation{0, 0}, Opcode::Empty);
+        bytecode().add(SourceLocation{0, 0}, Opcode::GetIt);
         bytecode().add(SourceLocation{0, 0}, Opcode::Return);
     }
 }
@@ -270,7 +270,7 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     functionDecl.statement->accept(*this);
 
     // Add implicit return statement if necessary.
-    addReturn();
+    addImplicitReturnIfNeeded();
 
     auto functionCaptures = captures();
     _frames.pop_back();

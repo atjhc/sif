@@ -40,6 +40,7 @@ struct CallFrame {
     std::vector<Bytecode::Iterator> jumps;
     std::vector<size_t> sps;
     Value error;
+    Value it;
 
     CallFrame(Strong<Bytecode> bytecode, const std::vector<size_t> &captures, size_t sp)
         : bytecode(bytecode), ip(bytecode->code().begin()), captures(captures), sp(sp) {}
@@ -57,6 +58,7 @@ class VirtualMachine {
     const Mapping<std::string, Value> exports() const;
 
     const Value &it() const { return _it; }
+    Value &it() { return _it; }
 
   private:
     Optional<Error> call(Value, int count);
