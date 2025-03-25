@@ -31,8 +31,14 @@ VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : _config(con
 void VirtualMachine::addGlobal(const std::string &name, const Value global) {
     _globals[name] = global;
 }
-const Mapping<std::string, Value> VirtualMachine::globals() const { return _globals; }
 
+void VirtualMachine::addGlobals(const Mapping<std::string, Value> &globals) {
+    for (const auto &global : globals) {
+        _globals[global.first] = global.second;
+    }
+}
+
+const Mapping<std::string, Value> VirtualMachine::globals() const { return _globals; }
 const Mapping<std::string, Value> VirtualMachine::exports() const { return _exports; }
 
 CallFrame &VirtualMachine::frame() { return _frames.back(); }

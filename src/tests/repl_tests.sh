@@ -46,6 +46,12 @@ run_test "Simple expression" "echo 'print \"hello\"' | $SIF_BINARY" "hello"
 # Test: Global variables persist
 run_test "Globals" "echo -e 'set a to 10\nprint a' | $SIF_BINARY" "10"
 
+# Test: Simple one-word function definitions
+run_test "Simple function" "echo -e 'function foo\n1\nend\nprint foo' | $SIF_BINARY" "1"
+
+# Test: Redefining functions as variables
+run_test "Function redifinition" "echo -e 'function foo\n1\nend\nset foo to 2\nprint foo' | $SIF_BINARY" "2"
+
 # Test: Exiting the REPL
 run_test "Quit command" "echo 'quit' | $SIF_BINARY" ""
 

@@ -96,13 +96,16 @@ void Parser::declare(const std::string &variable) {
     _variables.insert(variable);
 }
 
-void Parser::declare(const std::vector<std::string> &variables) {
+void Parser::declare(const Set<std::string> &variables) {
     for (const auto &variable : variables) {
         declare(variable);
     }
 }
 
 const std::vector<Signature> &Parser::declarations() const { return _exportedDeclarations; }
+
+const std::vector<Signature> &Parser::signatures() const { return _scopes.back().signatures; }
+const Set<std::string> &Parser::variables() const { return _scopes.back().variables; }
 
 const std::vector<SourceRange> &Parser::commentRanges() const { return _commentRanges; }
 
@@ -272,9 +275,7 @@ void Parser::commit() {
 
 void Parser::beginScope(const Parser::Scope &scope) {
     _scopes.push_back(scope);
-    for (auto &&signature : scope.signatures) {
-        _grammar.insert(signature, signature.terms.begin());
-    }
+    _grammar.insert(scope.signatures.begin(), scope.signatures.end());
 }
 
 void Parser::endScope() {
@@ -288,12 +289,8 @@ void Parser::endScope() {
     _grammar.argument = MakeOwned<Grammar>();
 
     for (auto &&scope : _scopes) {
-        for (auto &&signature : scope.signatures) {
-            _grammar.insert(signature, signature.terms.begin());
-        }
-        for (auto &&variable : scope.variables) {
-            _variables.insert(variable);
-        }
+        _grammar.insert(scope.signatures.begin(), scope.signatures.end());
+        _variables.insert(scope.variables.begin(), scope.variables.end());
     }
 }
 
@@ -482,8 +479,12 @@ Strong<Statement> Parser::parseFunction() {
         if (_scopes.size() == 1) {
             _exportedDeclarations.push_back(signature.value());
         }
-        // TODO: How should we handle ambiguous redefinitions?
         _grammar.insert(signature.value());
+
+        // Overwrite any existing variable declarations.
+        auto name = signature.value().name();
+        _variables.erase(name);
+        _scopes.back().variables.erase(name);
     }
 
     beginScope();

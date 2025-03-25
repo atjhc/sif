@@ -53,8 +53,9 @@ class VirtualMachine {
     Result<Value, Error> execute(const Strong<Bytecode> &bytecode);
 
     void addGlobal(const std::string &name, const Value value);
-    const Mapping<std::string, Value> globals() const;
+    void addGlobals(const Mapping<std::string, Value> &globals);
 
+    const Mapping<std::string, Value> globals() const;
     const Mapping<std::string, Value> exports() const;
 
     const Value &it() const { return _it; }

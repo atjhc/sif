@@ -73,6 +73,8 @@ Core coreModule;
 System systemModule;
 
 Mapping<std::string, Value> globals;
+Set<std::string> variables;
+std::vector<Signature> signatures;
 
 class REPLReader : public Reader {
   public:
@@ -111,12 +113,11 @@ int evaluate(const std::string &name, Reader &reader) {
 
     parser.declare(coreModule.signatures());
     parser.declare(systemModule.signatures());
+    parser.declare(variables);
+    parser.declare(signatures);
     parser.declare(Signature::Make("clear").value());
 
-    for (auto &&global : globals) {
-        parser.declare(global.first);
-        vm.addGlobal(global.first, global.second);
-    }
+    vm.addGlobals(globals);
 
     auto statement = parser.statement();
     if (parser.failed()) {
@@ -147,7 +148,10 @@ int evaluate(const std::string &name, Reader &reader) {
         reporter.report(result.error());
         return RuntimeFailure;
     }
-    globals = vm.exports();
+
+    variables = parser.variables();
+    signatures = parser.signatures();
+    globals.insert(vm.exports().begin(), vm.exports().end());
 
     return Success;
 }

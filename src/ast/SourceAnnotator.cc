@@ -48,7 +48,7 @@ void SourceAnnotator::visit(const FunctionDecl &functionDecl) {
                         for (const auto &target : argument.targets) {
                             if (target.name) {
                                 _ranges.emplace_back(target.name.value().range,
-                                                    Annotation::Kind::Variable);
+                                                     Annotation::Kind::Variable);
                             }
                         }
                     },

@@ -47,18 +47,43 @@ class Parser {
     Parser(const ParserConfig &config);
     ~Parser();
 
+    /// @brief Parse and return a Statement object.
+    /// @return Returns a strong reference to the Statement object.
     Strong<Statement> statement();
+
+    /// @brief Parse and return a signature object.
+    /// @return Returns an optional Signature object which will be set if the parser was successful.
     Optional<Signature> signature();
 
+    /// @return Returns a bool value indicating if the parser failed to parse.
     bool failed() const;
 
+    /// @brief Declare the signature as a valid function call.
+    /// @param signature Signature to be matched for function calls.
     void declare(const Signature &signature);
+
+    /// @brief Declare a list of signatures as valid function calls.
+    /// @param signatures The list of Signature objects to be matched for function calls.
     void declare(const std::vector<Signature> &signatures);
 
+    /// @brief Declare a variable
+    /// @param variable The variable name
     void declare(const std::string &variable);
-    void declare(const std::vector<std::string> &variables);
 
+    /// @brief Declare a set of variables.
+    /// @param variables The Set of variables
+    void declare(const Set<std::string> &variables);
+
+    /// @return Returns the list of internally declared functions after parsing.
     const std::vector<Signature> &declarations() const;
+
+    /// @return Returns the set of declared variables after parsing.
+    const Set<std::string> &variables() const;
+
+    /// @return Returns the list of all internally and externally declared functions after parsing.
+    const std::vector<Signature> &signatures() const;
+
+    /// @return Returns the list of ranges where comments were detected.
     const std::vector<SourceRange> &commentRanges() const;
 
   private:

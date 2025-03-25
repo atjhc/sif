@@ -26,14 +26,26 @@ SIF_NAMESPACE_BEGIN
 struct Grammar {
     Owned<Grammar> argument;
     Mapping<std::string, Owned<Grammar>> terms;
+
     Optional<Signature> signature;
 
-    bool insert(const Signature &signature, std::vector<Signature::Term>::const_iterator term);
+    template <class InputIt> bool insert(InputIt first, InputIt last) {
+        bool result = true;
+        auto it = first;
+        while (it != last) {
+            if (!insert(*it++)) {
+                result = false;
+            }
+        }
+        return result;
+    }
     bool insert(const Signature &signature) { return insert(signature, signature.terms.cbegin()); }
 
     std::vector<Signature> allSignatures() const;
-
     bool isLeaf() const { return argument == nullptr && terms.size() == 0; }
+
+  private:
+    bool insert(const Signature &signature, std::vector<Signature::Term>::const_iterator term);
 };
 
 SIF_NAMESPACE_END
