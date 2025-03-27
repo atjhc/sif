@@ -22,12 +22,21 @@
 
 SIF_NAMESPACE_BEGIN
 
-Scanner::Scanner() : _currentLocation{1, 1}, _skipNewlines(0) {}
+Scanner::Scanner() : _currentLocation{1, 1, 0}, _skipNewlines(0) {}
 
 void Scanner::reset(const std::string &contents) {
     _start = _current = contents.begin();
     _end = contents.end();
     _currentLocation = {1, 1, 0};
+}
+
+void Scanner::enableMultilineMode() {
+   _multilineMode = true;
+}
+
+void Scanner::disableMultilineMode() {
+    _multilineMode = false;
+    _skipNewlines = 0;
 }
 
 Token Scanner::scan() {
@@ -81,22 +90,34 @@ Token Scanner::scan() {
     case ';':
         return make(Token::Type::NewLine);
     case '(':
-        _skipNewlines++;
+        if (_multilineMode) {
+            _skipNewlines++;
+        }
         return make(Token::Type::LeftParen);
     case ')':
-        _skipNewlines--;
+        if (_multilineMode) {
+            _skipNewlines--;
+        }
         return make(Token::Type::RightParen);
     case '[':
-        _skipNewlines++;
+        if (_multilineMode) {
+            _skipNewlines++;
+        }
         return make(Token::Type::LeftBracket);
     case ']':
-        _skipNewlines--;
+        if (_multilineMode) {
+            _skipNewlines--;
+        }
         return make(Token::Type::RightBracket);
     case '{':
-        _skipNewlines++;
+        if (_multilineMode) {
+            _skipNewlines++;
+        }
         return make(Token::Type::LeftBrace);
     case '}':
-        _skipNewlines--;
+        if (_multilineMode) {
+            _skipNewlines--;
+        }
         return make(Token::Type::RightBrace);
     case '+':
         return make(Token::Type::Plus);
@@ -384,10 +405,11 @@ void Scanner::skipWhitespace() {
         auto c = utf8::peek_next(_current, _end);
         switch (c) {
         case '\n':
-            if (_skipNewlines) {
+            if (_skipNewlines > 0) {
                 _currentLocation.lineNumber++;
                 _currentLocation.position = 1;
                 advance();
+                std::cout << "skipped newline" << std::endl;
                 break;
             }
             return;

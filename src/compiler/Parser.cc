@@ -314,10 +314,11 @@ std::string Parser::_traceTokens() const {
 
 #pragma mark - Grammar
 
-Optional<Signature> Parser::parseSignature() {
+Signature Parser::parseSignature() {
     Signature signature;
     Set<std::string> argumentNames;
 
+    _config.scanner.disableMultilineMode();
     while (peek().isWord() || peek().type == Token::Type::LeftParen ||
            peek().type == Token::Type::LeftBrace) {
         auto token = advance();
@@ -325,10 +326,11 @@ Optional<Signature> Parser::parseSignature() {
             std::vector<Token> tokens({token});
             while (match({Token::Type::Slash})) {
                 auto word = consumeWord();
-                if (!word) {
-                    return emitError(Error(peek().range.start, "expected a word"));
+                if (word) {
+                    tokens.push_back(word.value());
+                } else {
+                    emitError(Error(peek().range.start, "expected a word"));
                 }
-                tokens.push_back(word.value());
             }
             if (tokens.size() > 1) {
                 std::sort(tokens.begin(), tokens.end(),
@@ -343,21 +345,21 @@ Optional<Signature> Parser::parseSignature() {
                 if (auto word = consumeWord()) {
                     choice.tokens.push_back(word.value());
                 } else {
-                    return emitError(Error(peek().range.start, "expected a word"));
+                    emitError(Error(peek().range.start, "expected a word"));
                 }
             } while (match({Token::Type::Slash}));
             if (!consume(Token::Type::RightParen)) {
-                return emitError(Error(peek().range.start, Concat("expected ", Quoted(")"))));
+                emitError(Error(peek().range.start, Concat("expected ", Quoted(")"))));
             }
             signature.terms.push_back(Signature::Option{choice});
         } else {
             std::vector<Signature::Argument::Target> targets;
             do {
-                Optional<Token> name;
-                Optional<Token> typeName;
+                Optional<Token> name = None;
+                Optional<Token> typeName = None;
                 if ((name = consumeWord())) {
                     if (argumentNames.find(name.value().text) != argumentNames.end()) {
-                        return emitError(Error(name.value().range,
+                        emitError(Error(name.value().range,
                                                "duplicate argument names in function declaration"));
                     }
                     argumentNames.insert(name.value().text);
@@ -365,35 +367,36 @@ Optional<Signature> Parser::parseSignature() {
                         if (auto result = consumeWord()) {
                             typeName = result.value();
                         } else {
-                            return emitError(Error(peek().range.start, "expected a type name"));
+                            emitError(Error(peek().range.start, "expected a type name"));
                         }
                     }
                 } else if (match({Token::Type::Colon})) {
                     if (auto result = consumeWord()) {
                         typeName = result.value();
                     } else {
-                        return emitError(Error(peek().range.start, "expected a type name"));
+                        emitError(Error(peek().range.start, "expected a type name"));
                     }
                 }
                 targets.push_back(Signature::Argument::Target{name, typeName});
             } while (match({Token::Type::Comma}));
             if (!consume(Token::Type::RightBrace)) {
-                return emitError(Error(peek().range.start, Concat("expected ", Quoted("}"))));
+                emitError(Error(peek().range.start, Concat("expected ", Quoted("}"))));
             }
             signature.terms.push_back(Signature::Argument{targets});
         }
     }
     if (signature.terms.size() == 0) {
-        return emitError(Error(peek().range.start,
+        emitError(Error(peek().range.start,
                                Concat("expected a word, ", Quoted("("), ", or ", Quoted("{"))));
     }
     if (match({Token::Type::Arrow})) {
         if (auto word = consumeWord()) {
             signature.typeName = word.value();
         } else {
-            return emitError(Error(peek().range.start, "expected a type name"));
+            emitError(Error(peek().range.start, "expected a type name"));
         }
     }
+    _config.scanner.enableMultilineMode();
     return signature;
 }
 
@@ -466,36 +469,30 @@ Strong<Statement> Parser::parseFunction() {
     decl->range.start = previous().range.start;
 
     auto signature = parseSignature();
-    if (!signature) {
-        synchronize();
-    } else if (!consumeNewLine()) {
+    if (!consumeNewLine()) {
         emitError(Error(peek().range.start, "expected a new line"));
         synchronize();
     }
 
-    if (signature) {
-        decl->signature = signature.value();
-        _scopes.back().signatures.push_back(signature.value());
-        if (_scopes.size() == 1) {
-            _exportedDeclarations.push_back(signature.value());
-        }
-        _grammar.insert(signature.value());
-
-        // Overwrite any existing variable declarations.
-        auto name = signature.value().name();
-        _variables.erase(name);
-        _scopes.back().variables.erase(name);
+    decl->signature = signature;
+    _scopes.back().signatures.push_back(signature);
+    if (_scopes.size() == 1) {
+        _exportedDeclarations.push_back(signature);
     }
+    _grammar.insert(signature);
+
+    // Overwrite any existing variable declarations.
+    auto name = signature.name();
+    _variables.erase(name);
+    _scopes.back().variables.erase(name);
 
     beginScope();
-    if (signature) {
-        for (auto &&argument : signature->arguments()) {
-            for (auto &&target : argument.targets) {
-                auto token = target.name;
-                if (token) {
-                    auto name = lowercase(token->text);
-                    declare(name);
-                }
+    for (auto &&argument : signature.arguments()) {
+        for (auto &&target : argument.targets) {
+            auto token = target.name;
+            if (token) {
+                auto name = lowercase(token->text);
+                declare(name);
             }
         }
     }

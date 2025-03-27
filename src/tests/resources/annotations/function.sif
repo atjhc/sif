@@ -37,3 +37,21 @@ function
 (-- annotations
 control function
 --)
+
+function foo/
+(-- annotations
+control function
+call foo
+--)
+
+function {foo:
+(-- annotations
+control function
+variable foo
+--)
+
+function (foo
+(-- annotations
+control function
+call foo
+--)

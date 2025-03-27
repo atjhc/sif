@@ -124,7 +124,7 @@ class Parser {
     std::string _traceTokens() const;
 #endif
 
-    Optional<Signature> parseSignature();
+    Signature parseSignature();
 
     Strong<Statement> parseBlock(const TokenTypes &endTypes = {});
     Strong<Statement> parseStatement();

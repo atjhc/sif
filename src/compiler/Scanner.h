@@ -30,7 +30,11 @@ class Scanner {
     Scanner();
 
     void reset(const std::string &contents);
+
     Token scan();
+
+    void enableMultilineMode();
+    void disableMultilineMode();
 
   private:
     bool isCharacter(wchar_t);
@@ -56,6 +60,7 @@ class Scanner {
     SourceLocation _startLocation, _currentLocation;
     int _skipNewlines;
     Strong<Reader> _reader;
+    bool _multilineMode = false;
 };
 
 SIF_NAMESPACE_END
