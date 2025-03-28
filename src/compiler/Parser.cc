@@ -188,6 +188,10 @@ Token Parser::scan() {
         token = _config.scanner.scan();
     }
 
+    if (token.type == Token::Type::Error) {
+        emitError(Error(token.range, token.text));
+    }
+
     _tokens.push_back(token);
     trace(Concat("Scanned: ", Describe(token)));
 #if defined(DEBUG)
