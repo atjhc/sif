@@ -103,3 +103,11 @@ casing "correct"
 (-- expect
 correct
 --)
+
+function width of {width, _}
+  width
+end function
+print width of {10, 20}
+(-- expect
+10
+--)

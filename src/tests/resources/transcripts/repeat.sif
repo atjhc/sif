@@ -84,3 +84,6 @@ repeat
   end repeat
   exit repeat
 end repeat
+
+repeat for _ in 1 ... 2
+end repeat

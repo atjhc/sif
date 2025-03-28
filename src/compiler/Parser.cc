@@ -92,6 +92,10 @@ void Parser::declare(const std::vector<Signature> &signatures) {
 }
 
 void Parser::declare(const std::string &variable) {
+    if (variable == "_") {
+        return;
+    }
+
     _scopes.back().variables.insert(variable);
     _variables.insert(variable);
 }
@@ -362,7 +366,9 @@ Signature Parser::parseSignature() {
                         emitError(Error(name.value().range,
                                                "duplicate argument names in function declaration"));
                     }
-                    argumentNames.insert(name.value().text);
+                    if (name.value().text != "_") {
+                        argumentNames.insert(name.value().text);
+                    }
                     if (match({Token::Type::Colon})) {
                         if (auto result = consumeWord()) {
                             typeName = result.value();
@@ -1465,6 +1471,9 @@ Result<Strong<Expression>, Error> Parser::parseVariable() {
     }
     if (!scope) {
         start = token.value().range.start;
+    }
+    if (token.value().text == "_") {
+        emitError(Error(token.value().range, Concat(Quoted("_"), " may not be used as a variable name")));
     }
     auto variable = MakeStrong<Variable>(token.value(), scope);
     variable->range = SourceRange{start, token.value().range.end};

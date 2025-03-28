@@ -59,3 +59,9 @@ print point
 (-- expect
 2 3
 --)
+
+set _, y to {1, 2}
+print y
+(-- expect
+2
+--)
