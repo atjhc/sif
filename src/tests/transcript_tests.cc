@@ -83,12 +83,13 @@ TEST_CASE(TranscriptTests, All) {
         ParserConfig config{scanner, reader, loader, reporter};
         Parser parser(config);
 
-        CoreConfig coreConfig{out, in, err, std::mt19937_64()};
+        CoreConfig coreConfig{std::mt19937_64()};
         coreConfig.randomInteger = [&coreConfig](Integer max) {
             return coreConfig.engine() % max;
         };
         Core core(coreConfig);
-        System system;
+        SystemConfig systemConfig{out, in, err};
+        System system(systemConfig);
 
         parser.declare(Core().signatures());
         parser.declare(System().signatures());

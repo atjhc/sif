@@ -368,7 +368,7 @@ Signature Parser::parseSignature() {
                 if ((name = consumeWord())) {
                     if (argumentNames.find(name.value().text) != argumentNames.end()) {
                         emitError(Error(name.value().range,
-                                               "duplicate argument names in function declaration"));
+                                        "duplicate argument names in function declaration"));
                     }
                     if (name.value().text != "_") {
                         argumentNames.insert(name.value().text);
@@ -397,7 +397,7 @@ Signature Parser::parseSignature() {
     }
     if (signature.terms.size() == 0) {
         emitError(Error(peek().range.start,
-                               Concat("expected a word, ", Quoted("("), ", or ", Quoted("{"))));
+                        Concat("expected a word, ", Quoted("("), ", or ", Quoted("{"))));
     }
     if (match({Token::Type::Arrow})) {
         if (auto word = consumeWord()) {
@@ -1477,7 +1477,8 @@ Result<Strong<Expression>, Error> Parser::parseVariable() {
         start = token.value().range.start;
     }
     if (token.value().text == "_") {
-        emitError(Error(token.value().range, Concat(Quoted("_"), " may not be used as a variable name")));
+        emitError(
+            Error(token.value().range, Concat(Quoted("_"), " may not be used as a variable name")));
     }
     auto variable = MakeStrong<Variable>(token.value(), scope);
     variable->range = SourceRange{start, token.value().range.end};

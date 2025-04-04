@@ -21,9 +21,15 @@
 
 SIF_NAMESPACE_BEGIN
 
+struct SystemConfig {
+    std::ostream &out = std::cout;
+    std::istream &in = std::cin;
+    std::ostream &err = std::cerr;
+};
+
 class System : public Module {
   public:
-    System();
+    System(const SystemConfig &config = SystemConfig());
 
     void setArguments(char **argv);
     void setEnvironment(char **envp);
@@ -35,8 +41,6 @@ class System : public Module {
     Mapping<std::string, Value> values() const override;
 
   private:
-    static void _files(Mapping<Signature, Strong<Native>, Signature::Hash> &natives);
-
     Mapping<Signature, Strong<Native>, Signature::Hash> _natives;
 
     std::vector<std::string> _arguments;

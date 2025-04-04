@@ -86,96 +86,6 @@ static auto _get_T(CallFrame &frame, SourceLocation location, Value *values)
     return values[0];
 }
 
-static auto _write_T(std::ostream &out)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return
-        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                out << Join(list->values(), " ");
-            } else {
-                out << values[0];
-            }
-            return Value();
-        };
-}
-
-static auto _write_error_T(std::ostream &err)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return
-        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                err << Join(list->values(), " ");
-            } else {
-                err << values[0];
-            }
-            return Value();
-        };
-}
-
-static auto _print_T(std::ostream &out)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return
-        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                out << Join(list->values(), " ");
-            } else {
-                out << values[0];
-            }
-            out << std::endl;
-            return Value();
-        };
-}
-
-static auto _print_error_T(std::ostream &err)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return
-        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                for (const auto &item : list->values()) {
-                    err << item;
-                }
-            } else {
-                err << values[0];
-            }
-            err << std::endl;
-            return Value();
-        };
-}
-
-static auto _read_a_word(std::istream &in)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-        std::string input;
-        in >> input;
-        return input;
-    };
-}
-
-static auto _read_a_line(std::istream &in)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-        std::string input;
-        std::getline(in, input);
-        return input;
-    };
-}
-
-static auto _read_a_character(std::istream &in)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
-        std::istreambuf_iterator<char> it(in.rdbuf());
-        std::istreambuf_iterator<char> eos;
-        std::string result;
-        try {
-            char32_t input = utf8::next(it, eos);
-            result = utf8::utf32to8(std::u32string_view(&input, 1));
-        } catch (const utf8::exception &exception) {
-            return Fail(Error(location, exception.what()));
-        }
-        return result;
-    };
-}
-
 static auto _the_description_of_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     std::ostringstream ss;
@@ -1114,16 +1024,6 @@ static void _core(ModuleMap &natives) {
     natives[S("(a) copy of {}")] = N(_a_copy_of_T);
 }
 
-static void _io(ModuleMap &natives, std::ostream &out, std::istream &in, std::ostream &err) {
-    natives[S("write {}")] = N(_write_T(out));
-    natives[S("write error {}")] = N(_write_error_T(err));
-    natives[S("print {}")] = N(_print_T(out));
-    natives[S("print error {}")] = N(_print_error_T(err));
-    natives[S("read (a) word")] = N(_read_a_word(in));
-    natives[S("read (a) line")] = N(_read_a_line(in));
-    natives[S("read (a) character")] = N(_read_a_character(in));
-}
-
 static void _common(ModuleMap &natives) {
     natives[S("(the) size of {}")] = N(_the_size_of_T);
     natives[S("{} contains {}")] = N(_T_contains_T);
@@ -1265,7 +1165,6 @@ static void _math(ModuleMap &natives) {
 
 Core::Core(const CoreConfig &config) : _config(config) {
     _core(_natives);
-    _io(_natives, _config.out, _config.in, _config.err);
     _common(_natives);
     _types(_natives);
     _dictionary(_natives);

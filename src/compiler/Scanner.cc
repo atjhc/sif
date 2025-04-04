@@ -30,9 +30,7 @@ void Scanner::reset(const std::string &contents) {
     _currentLocation = {1, 1, 0};
 }
 
-void Scanner::enableMultilineMode() {
-   _multilineMode = true;
-}
+void Scanner::enableMultilineMode() { _multilineMode = true; }
 
 void Scanner::disableMultilineMode() {
     _multilineMode = false;

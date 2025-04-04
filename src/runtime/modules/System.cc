@@ -18,6 +18,7 @@
 #include "Error.h"
 #include "Utilities.h"
 
+#include "extern/utf8.h"
 #include "runtime/VirtualMachine.h"
 #include "runtime/modules/System.h"
 #include "runtime/objects/Dictionary.h"
@@ -34,6 +35,96 @@ SIF_NAMESPACE_BEGIN
 
 using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
+
+static auto _write_T(std::ostream &out)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (const auto &list = values[0].as<List>()) {
+                out << Join(list->values(), " ");
+            } else {
+                out << values[0];
+            }
+            return Value();
+        };
+}
+
+static auto _write_error_T(std::ostream &err)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (const auto &list = values[0].as<List>()) {
+                err << Join(list->values(), " ");
+            } else {
+                err << values[0];
+            }
+            return Value();
+        };
+}
+
+static auto _print_T(std::ostream &out)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (const auto &list = values[0].as<List>()) {
+                out << Join(list->values(), " ");
+            } else {
+                out << values[0];
+            }
+            out << std::endl;
+            return Value();
+        };
+}
+
+static auto _print_error_T(std::ostream &err)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return
+        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+            if (const auto &list = values[0].as<List>()) {
+                for (const auto &item : list->values()) {
+                    err << item;
+                }
+            } else {
+                err << values[0];
+            }
+            err << std::endl;
+            return Value();
+        };
+}
+
+static auto _read_a_word(std::istream &in)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        std::string input;
+        in >> input;
+        return input;
+    };
+}
+
+static auto _read_a_line(std::istream &in)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        std::string input;
+        std::getline(in, input);
+        return input;
+    };
+}
+
+static auto _read_a_character(std::istream &in)
+    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        std::istreambuf_iterator<char> it(in.rdbuf());
+        std::istreambuf_iterator<char> eos;
+        std::string result;
+        try {
+            char32_t input = utf8::next(it, eos);
+            result = utf8::utf32to8(std::u32string_view(&input, 1));
+        } catch (const utf8::exception &exception) {
+            return Fail(Error(location, exception.what()));
+        }
+        return result;
+    };
+}
 
 static auto _the_contents_of_file_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
@@ -147,7 +238,17 @@ static auto _copy_T_to_T(CallFrame &frame, SourceLocation location, Value *value
     return Value();
 }
 
-void System::_files(ModuleMap &natives) {
+static void _io(ModuleMap &natives, std::ostream &out, std::istream &in, std::ostream &err) {
+    natives[S("write {}")] = N(_write_T(out));
+    natives[S("write error {}")] = N(_write_error_T(err));
+    natives[S("print {}")] = N(_print_T(out));
+    natives[S("print error {}")] = N(_print_error_T(err));
+    natives[S("read (a) word")] = N(_read_a_word(in));
+    natives[S("read (a) line")] = N(_read_a_line(in));
+    natives[S("read (a) character")] = N(_read_a_character(in));
+}
+
+static void _files(ModuleMap &natives) {
     natives[S("(the) contents of file {}")] = N(_the_contents_of_file_T);
     natives[S("(the) contents of directory {}")] = N(_the_contents_of_directory_T);
     natives[S("remove file {}")] = N(_remove_file_T);
@@ -156,7 +257,7 @@ void System::_files(ModuleMap &natives) {
     natives[S("copy file/directory {} to {}")] = N(_copy_T_to_T);
 }
 
-System::System() {
+System::System(const SystemConfig &config) {
     _natives[S("the arguments")] = MakeStrong<Native>(
         [this](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             return MakeStrong<List>(_arguments.begin(), _arguments.end());
@@ -179,6 +280,7 @@ System::System() {
         [this](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             return _systemVersion;
         });
+    _io(_natives, config.out, config.in, config.err);
     _files(_natives);
 }
 
