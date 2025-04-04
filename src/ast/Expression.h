@@ -182,6 +182,7 @@ struct Variable : Expression {
         Optional<SourceRange> scope;
     } ranges;
 
+    Variable() {}
     Variable(const Token &name, Optional<Scope> scope = None);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }

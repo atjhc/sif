@@ -145,22 +145,22 @@ class Parser {
     Result<Strong<Statement>, Error> parseReturn();
     Result<Strong<Statement>, Error> parseExpressionStatement();
 
-    Result<Strong<Expression>, Error> parseExpression();
-    Result<Strong<Expression>, Error> parseClause();
-    Result<Strong<Expression>, Error> parseEquality();
-    Result<Strong<Expression>, Error> parseComparison();
-    Result<Strong<Expression>, Error> parseList();
-    Result<Strong<Expression>, Error> parseRange();
-    Result<Strong<Expression>, Error> parseTerm();
-    Result<Strong<Expression>, Error> parseFactor();
-    Result<Strong<Expression>, Error> parseExponent();
-    Result<Strong<Expression>, Error> parseUnary();
-    Result<Strong<Expression>, Error> parseCall();
-    Result<Strong<Expression>, Error> parseSubscript();
-    Result<Strong<Expression>, Error> parsePrimary();
-    Result<Strong<Expression>, Error> parseVariable();
-    Result<Strong<Expression>, Error> parseGrouping();
-    Result<Strong<Expression>, Error> parseContainerLiteral();
+    Strong<Expression> parseExpression();
+    Strong<Expression> parseClause();
+    Strong<Expression> parseEquality();
+    Strong<Expression> parseComparison();
+    Strong<Expression> parseList();
+    Strong<Expression> parseRange();
+    Strong<Expression> parseTerm();
+    Strong<Expression> parseFactor();
+    Strong<Expression> parseExponent();
+    Strong<Expression> parseUnary();
+    Strong<Expression> parseCall();
+    Strong<Expression> parseSubscript();
+    Strong<Expression> parsePrimary();
+    Strong<Expression> parseVariable();
+    Strong<Expression> parseGrouping();
+    Strong<Expression> parseContainerLiteral();
 
     ParserConfig _config;
 

@@ -1,0 +1,66 @@
+1 +
+(-- error
+expected an expression
+--)
+
+1 *
+(-- error
+expected an expression
+--)
+
+1 /
+(-- error
+expected an expression
+--)
+
+1 ^
+(-- error
+expected an expression
+--)
+
+-
+(-- error
+expected an expression
+--)
+
+()
+(-- error
+expected an expression
+--)
+
+foo[
+(-- error
+expected an expression
+--)
+
+set a to
+(-- error
+expected an expression
+--)
+
+set a[
+(-- error
+expected an expression
+--)
+
+set a[] to
+(-- error
+expected an expression
+--)
+
+if
+(-- error
+expected an expression
+--)
+
+repeat while
+end
+(-- error
+expected an expression
+--)
+
+repeat until
+end
+(-- error
+expected an expression
+--)

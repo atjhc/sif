@@ -21,7 +21,7 @@ if true true then
 end if
 (-- error
 expected "then"
-expected expression
+expected an expression
 --)
 
 if true true then set a to 1
@@ -34,15 +34,15 @@ if true true then set a to 1
 else set a to
 (-- error
 expected "then"
-expected expression
+expected an expression
 --)
 
 if true true then set a to
 else set a to
 (-- error
 expected "then"
-expected expression
-expected expression
+expected an expression
+expected an expression
 --)
 
 repeat a
@@ -56,14 +56,14 @@ repeat while
  set a to 1
 end repe
 (-- error
-expected expression
+expected an expression
 --)
 
 repeat until
  set a to 1
 end repeat
 (-- error
-expected expression
+expected an expression
 --)
 
 repeat for

@@ -194,7 +194,7 @@ struct Return : Statement {
 struct ExpressionStatement : Statement {
     Strong<Expression> expression;
 
-    ExpressionStatement(Strong<Expression> expression);
+    ExpressionStatement(Strong<Expression> expression = nullptr);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
