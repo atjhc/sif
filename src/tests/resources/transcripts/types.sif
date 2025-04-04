@@ -1,0 +1,29 @@
+print an empty string
+(-- expect
+
+--)
+
+print the description of an empty list
+(-- expect
+{}
+--)
+
+print an empty dictionary
+(-- expect
+{:}
+--)
+
+print yes as a string
+(-- expect
+yes
+--)
+
+print "1" as an integer
+(-- expect
+1
+--)
+
+print "1.1" as a number
+(-- expect
+1.1
+--)

@@ -403,6 +403,21 @@ static auto _T_as_a_string(CallFrame &frame, SourceLocation location, Value *val
     return values[0].toString();
 }
 
+static auto _an_empty_string(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Value(std::string());
+}
+
+static auto _an_empty_list(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Value(MakeStrong<List>());
+}
+
+static auto _an_empty_dictionary(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return Value(MakeStrong<Dictionary>());
+}
+
 static auto _the_keys_of_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto dictionary = values[0].as<Dictionary>();
@@ -1045,6 +1060,9 @@ static void _types(ModuleMap &natives) {
     natives[S("{} as (a/an) integer")] = N(_T_as_an_integer);
     natives[S("{} as (a/an) number")] = N(_T_as_a_number);
     natives[S("{} as (a/an) string")] = N(_T_as_a_string);
+    natives[S("an empty string")] = N(_an_empty_string);
+    natives[S("an empty list")] = N(_an_empty_list);
+    natives[S("an empty dict/dictionary")] = N(_an_empty_dictionary);
 }
 
 static void _dictionary(ModuleMap &natives) {
