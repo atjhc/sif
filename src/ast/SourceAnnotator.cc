@@ -150,7 +150,9 @@ void SourceAnnotator::visit(const Assignment &set) {
 }
 
 void SourceAnnotator::visit(const ExpressionStatement &statement) {
-    statement.expression->accept(*this);
+    if (statement.expression) {
+        statement.expression->accept(*this);
+    }
 }
 
 void SourceAnnotator::visit(const Repeat &repeat) {
