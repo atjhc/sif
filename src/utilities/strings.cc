@@ -23,6 +23,30 @@ std::string string_from_escaped_string(const std::string &str) {
         if (*i == '\\') {
             if (++i == end)
                 continue;
+            if (isoctal(*i)) {
+                unsigned char c = *i - '0';
+                auto send = i + 3;
+                i++;
+                while (i < send && i < end && isoctal(*i)) {
+                    c *= 8;
+                    c += *i - '0';
+                    i++;
+                }
+                ss << c;
+                continue;
+            }
+            if (*i == 'x') {
+                unsigned char c = 0;
+                auto send = i + 3;
+                i++;
+                while (i < send && i < end && isxdigit(*i)) {
+                    c *= 16;
+                    c += hex_to_int(*i);
+                    i++;
+                }
+                ss << c;
+                continue;
+            }
             switch (*i) {
             case '\\':
                 ss << '\\';
@@ -60,30 +84,9 @@ std::string string_from_escaped_string(const std::string &str) {
             case 'v':
                 ss << '\v';
                 break;
-            }
-            if (isoctal(*i)) {
-                unsigned char c = *i - '0';
-                auto send = i + 3;
-                i++;
-                while (i < send && i < end && isoctal(*i)) {
-                    c *= 8;
-                    c += *i - '0';
-                    i++;
-                }
-                ss << c;
-                continue;
-            }
-            if (*i == 'x') {
-                unsigned char c = 0;
-                auto send = i + 3;
-                i++;
-                while (i < send && i < end && isxdigit(*i)) {
-                    c *= 16;
-                    c += hex_to_int(*i);
-                    i++;
-                }
-                ss << c;
-                continue;
+            default:
+                ss << *i;
+                break;
             }
             i++;
         } else {

@@ -114,6 +114,8 @@ bool Value::isObject() const {
     return false;
 }
 
+bool Value::isString() const { return isObject() && as<String>() != nullptr; }
+
 Strong<Object> Value::asObject() const {
     if (auto v = std::get_if<Strong<Object>>(&_value)) {
         return *v;

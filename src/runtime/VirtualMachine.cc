@@ -336,7 +336,22 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             break;
         }
         case Opcode::Add: {
-            BINARY(+);
+            auto rhs = Pop(_stack);
+            auto lhs = Pop(_stack);
+
+            // Only allow string concatenation between strings
+            if (lhs.isString() && rhs.isString()) {
+                std::ostringstream ss;
+                ss << lhs << rhs;
+                Push(_stack, ss.str());
+            } else if (lhs.isInteger() && rhs.isInteger()) {
+                Push(_stack, lhs.asInteger() + rhs.asInteger());
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                Push(_stack, lhs.castFloat() + rhs.castFloat());
+            } else {
+                error = Error(frame().bytecode->location(frame().ip - 1),
+                              Concat("mismatched types: ", lhs.typeName(), " + ", rhs.typeName()));
+            }
             break;
         }
         case Opcode::Subtract: {

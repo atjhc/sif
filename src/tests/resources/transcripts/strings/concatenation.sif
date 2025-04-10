@@ -1,0 +1,5 @@
+set greeting to "Hello " + "World" + "!"
+print greeting
+(-- expect
+Hello World!
+--)

@@ -867,6 +867,62 @@ static auto _the_number_of_chunks_in_T(chunk::type chunkType)
     };
 }
 
+static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (!values[0].isString()) {
+        return Fail(Error(location, "expected a string"));
+    }
+    auto formatStr = values[0].as<String>()->string();
+
+    std::vector<Value> args;
+    if (auto list = values[1].as<List>()) {
+        args = list->values();
+    } else {
+        args.push_back(values[1]);
+    }
+
+    std::ostringstream result;
+    size_t pos = 0;
+    size_t nextPos = 0;
+    size_t argIndex = 0; // Current auto-index for {} placeholders
+
+    while ((nextPos = formatStr.find('{', pos)) != std::string::npos) {
+        if (nextPos > 0 && formatStr[nextPos - 1] == '\\') {
+            result << formatStr.substr(pos, nextPos - pos - 1) << '{';
+            pos = nextPos + 1;
+            continue;
+        }
+
+        result << formatStr.substr(pos, nextPos - pos);
+        size_t closeBrace = formatStr.find('}', nextPos);
+        if (closeBrace == std::string::npos) {
+            return Fail(Error(location, "unterminated placeholder in format string"));
+        }
+
+        if (closeBrace > nextPos + 1) {
+            std::string indexStr = formatStr.substr(nextPos + 1, closeBrace - nextPos - 1);
+            try {
+                size_t index = std::stoul(indexStr);
+                if (index >= args.size()) {
+                    return Fail(Error(location, "format index out of range"));
+                }
+                result << args[index];
+            } catch (std::exception &e) {
+                return Fail(Error(location, "invalid format index"));
+            }
+        } else {
+            if (argIndex >= args.size()) {
+                return Fail(Error(location, "not enough arguments for format"));
+            }
+            result << args[argIndex++];
+        }
+        pos = closeBrace + 1;
+    }
+
+    result << formatStr.substr(pos);
+    return result.str();
+}
+
 static auto _T_up_to_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isInteger() || !values[1].isInteger()) {
@@ -1146,6 +1202,7 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
         N(_the_number_of_chunks_in_T(chunk::character));
     natives[S("(the) number of words (in/of) {}")] = N(_the_number_of_chunks_in_T(chunk::word));
     natives[S("(the) number of lines (in/of) {}")] = N(_the_number_of_chunks_in_T(chunk::line));
+    natives[S("format string {} with {}")] = N(_format_string_T_with_T);
 }
 
 static void _range(ModuleMap &natives, std::mt19937_64 &engine,

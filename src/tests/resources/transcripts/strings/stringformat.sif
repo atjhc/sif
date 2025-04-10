@@ -1,0 +1,31 @@
+set a to 42
+set name to "World"
+set items to {"apple", "banana", "cherry"}
+
+set greeting to "Hello {}!"
+set greeting to format string greeting with name
+print greeting
+(-- expect
+Hello World!
+--)
+
+set message to "The answer is {0}"
+set message to format string message with a
+print message
+(-- expect
+The answer is 42
+--)
+
+set list_format to "Items: {}, {1}, {0}"
+set formatted to format string list_format with items
+print formatted
+(-- expect
+Items: apple, banana, apple
+--)
+
+set escaped to "Not a placeholder: \\{}"
+set escaped to format string escaped with name
+print escaped
+(-- expect
+Not a placeholder: {}
+--)
