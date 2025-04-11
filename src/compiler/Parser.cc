@@ -1473,6 +1473,7 @@ Strong<Expression> Parser::parseInterpolation(bool interpolating, char stringTer
         _config.scanner.stringTerminal = stringTerminal;
         advance();
         interpolation->right = MakeStrong<Literal>(previous());
+        interpolation->right->range = previous().range;
     } else if (match({Token::Type::Interpolation})) {
         interpolation->right = parseInterpolation(interpolating, stringTerminal);
     } else {
