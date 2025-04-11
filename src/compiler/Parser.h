@@ -158,9 +158,10 @@ class Parser {
     Strong<Expression> parseCall();
     Strong<Expression> parseSubscript();
     Strong<Expression> parsePrimary();
+    Strong<Expression> parseInterpolation(bool interpolating, char stringTerminal);
     Strong<Expression> parseVariable();
     Strong<Expression> parseGrouping();
-    Strong<Expression> parseContainerLiteral();
+    Strong<Expression> parseContainerLiteral(bool expectingBrace);
 
     ParserConfig _config;
 

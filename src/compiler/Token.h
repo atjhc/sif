@@ -52,6 +52,9 @@ struct Token {
         If,
         In,
         IntLiteral,
+        OpenInterpolation,
+        Interpolation,
+        ClosedInterpolation,
         Is,
         LeftBrace,
         LeftBracket,
@@ -99,7 +102,8 @@ struct Token {
     bool isEndOfStatement() const;
 
     std::string encodedString() const;
-    std::string encodedStringOrWord() const;
+    std::string encodedStringLiteralOrWord() const;
+    char openingStringTerminal() const;
 
     std::string description() const;
     std::string debugDescription() const;

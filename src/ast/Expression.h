@@ -35,6 +35,7 @@ struct RangeLiteral;
 struct ListLiteral;
 struct DictionaryLiteral;
 struct Literal;
+struct StringInterpolation;
 
 struct Expression : Node {
     struct Visitor {
@@ -47,6 +48,7 @@ struct Expression : Node {
         virtual void visit(const ListLiteral &) = 0;
         virtual void visit(const DictionaryLiteral &) = 0;
         virtual void visit(const Literal &) = 0;
+        virtual void visit(const StringInterpolation &) = 0;
     };
 
     virtual ~Expression() = default;
@@ -192,6 +194,18 @@ struct Literal : Expression {
     Token token;
 
     Literal(Token token);
+
+    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+};
+
+struct StringInterpolation : Expression {
+    Token left;
+    Strong<Expression> expression;
+    Strong<Expression> right;
+
+    StringInterpolation() {}
+    StringInterpolation(Token leftPart, Strong<Expression> expression,
+                        Strong<Expression> rightPart = nullptr);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

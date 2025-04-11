@@ -72,6 +72,7 @@ enum class Opcode : uint8_t {
     SetIt,
     PushJump,
     PopJump,
+    ToString,
 };
 
 class Bytecode {

@@ -75,6 +75,7 @@ class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
     void visit(const ListLiteral &) override;
     void visit(const DictionaryLiteral &) override;
     void visit(const Literal &) override;
+    void visit(const StringInterpolation &) override;
 
   private:
     std::vector<Annotation> _ranges;

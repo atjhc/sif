@@ -71,6 +71,7 @@ bool Token::isPrimary() const {
     case Token::Type::FloatLiteral:
     case Token::Type::BoolLiteral:
     case Token::Type::StringLiteral:
+    case Token::Type::OpenInterpolation:
     case Token::Type::Local:
     case Token::Type::Global:
         return true;
@@ -82,16 +83,22 @@ bool Token::isPrimary() const {
 bool Token::isEndOfStatement() const { return type == Type::NewLine || type == Type::EndOfFile; }
 
 std::string Token::encodedString() const {
-    assert(type == Type::StringLiteral);
+    assert(type == Type::StringLiteral || type == Type::OpenInterpolation ||
+           type == Type::Interpolation || type == Type::ClosedInterpolation);
     return string_from_escaped_string(std::string(text.begin() + 1, text.end() - 1));
 }
 
-std::string Token::encodedStringOrWord() const {
+std::string Token::encodedStringLiteralOrWord() const {
     if (type == Type::StringLiteral) {
         return encodedString();
     }
     assert(type == Type::Word);
     return text;
+}
+
+char Token::openingStringTerminal() const {
+    assert(type == Type::StringLiteral || type == Type::OpenInterpolation);
+    return text[0];
 }
 
 std::string Token::description() const {

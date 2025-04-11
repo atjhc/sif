@@ -302,4 +302,17 @@ void PrettyPrinter::visit(const DictionaryLiteral &dictionary) {
 
 void PrettyPrinter::visit(const Literal &literal) { out << literal.token.text; }
 
+void PrettyPrinter::visit(const StringInterpolation &interpolation) {
+    out << interpolation.left.text.substr(0, interpolation.left.text.size());
+    // out << "{";
+    interpolation.expression->accept(*this);
+    // out << "}";
+
+    if (interpolation.right) {
+        interpolation.right->accept(*this);
+    } else {
+        out << "\"";
+    }
+}
+
 SIF_NAMESPACE_END

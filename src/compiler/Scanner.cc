@@ -113,6 +113,9 @@ Token Scanner::scan() {
         }
         return make(Token::Type::LeftBrace);
     case '}':
+        if (interpolating) {
+            return scanString('}', stringTerminal);
+        }
         if (_multilineMode) {
             _skipNewlines--;
         }
@@ -146,9 +149,9 @@ Token Scanner::scan() {
     case '>':
         return make(match('=') ? Token::Type::GreaterThanOrEqual : Token::Type::GreaterThan);
     case '"':
-        return scanString('"');
+        return scanString('"', '"');
     case '\'':
-        return scanString('\'');
+        return scanString('\'', '\'');
     case '.':
         if (match('.')) {
             if (match('.')) {
@@ -312,14 +315,26 @@ Token::Type Scanner::checkKeyword(int offset, int length, const char *name, Toke
     return type;
 }
 
-Token Scanner::scanString(char terminal) {
+Token Scanner::scanString(char startingQuote, char terminalQuote) {
+    bool hasInterpolation = false;
+    bool escaped = false;
+
     while (!isAtEnd()) {
         auto c = _current[0];
-        if (c == terminal)
-            break;
         if (c == '\n') {
             _currentLocation.lineNumber++;
             _currentLocation.position = 1;
+        }
+
+        if (escaped) {
+            escaped = false;
+        } else if (c == '\\') {
+            escaped = true;
+        } else if (c == '{' && !escaped) {
+            hasInterpolation = true;
+            break;
+        } else if (c == terminalQuote) {
+            break;
         }
         advanceCharacter();
     }
@@ -328,7 +343,18 @@ Token Scanner::scanString(char terminal) {
         return makeError("unterminated string");
     }
 
-    advance();
+    advance(); // consume the closing terminal
+    if (hasInterpolation) {
+        if (startingQuote == '}') {
+            return make(Token::Type::Interpolation);
+        } else {
+            return make(Token::Type::OpenInterpolation);
+        }
+    }
+
+    if (startingQuote == '}') {
+        return make(Token::Type::ClosedInterpolation);
+    }
     return make(Token::Type::StringLiteral);
 }
 
@@ -407,7 +433,6 @@ void Scanner::skipWhitespace() {
                 _currentLocation.lineNumber++;
                 _currentLocation.position = 1;
                 advance();
-                std::cout << "skipped newline" << std::endl;
                 break;
             }
             return;

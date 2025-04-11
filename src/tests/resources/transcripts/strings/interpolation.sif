@@ -1,0 +1,62 @@
+set name to "World"
+set message to "Hello {name}!"
+print message
+(-- expect
+Hello World!
+--)
+
+set a to 5
+set b to 10
+print "The sum of {a} and {b} is {a + b}"
+(-- expect
+The sum of 5 and 10 is 15
+--)
+
+function greeting
+  return "Hello"
+end function
+print("{greeting}, friend!")
+(-- expect
+Hello, friend!
+--)
+
+print "This is not \{interpolated\}"
+(-- expect
+This is not {interpolated}
+--)
+
+set items to "apple", "banana", "orange"
+print "Your items: {items[0]} and {items[1]}"
+(-- expect
+Your items: apple and banana
+--)
+
+set person to {"name": "Alice", "age": 30}
+print "Person: {person["name"]} is {person["age"]} years old"
+(-- expect
+Person: Alice is 30 years old
+--)
+
+print "list: {{1, 2, 3}}"
+(-- expect
+list: {1, 2, 3}
+--)
+
+print "dictionary: {{"foo": 1}}"
+(-- expect
+dictionary: {"foo": 1}
+--)
+
+set foo to "foo"
+print "subscript: {{"foo": 1}["{foo}"]}"
+(-- expect
+subscript: 1
+--)
+repeat for i in 1...3
+  print("Iteration {i}")
+end
+(-- expect
+Iteration 1
+Iteration 2
+Iteration 3
+--)

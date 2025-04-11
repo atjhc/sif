@@ -112,6 +112,7 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     void visit(const ListLiteral &) override;
     void visit(const DictionaryLiteral &) override;
     void visit(const Literal &) override;
+    void visit(const StringInterpolation &) override;
 
     CompilerConfig _config;
 

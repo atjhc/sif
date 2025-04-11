@@ -297,9 +297,23 @@ void SourceAnnotator::visit(const Literal &literal) {
         _ranges.emplace_back(literal.range, Annotation::Kind::NumberLiteral);
         break;
     case Token::Type::StringLiteral:
+    case Token::Type::OpenInterpolation:
+    case Token::Type::Interpolation:
+    case Token::Type::ClosedInterpolation:
         _ranges.emplace_back(literal.range, Annotation::Kind::StringLiteral);
+        break;
     default:
         break;
+    }
+}
+
+void SourceAnnotator::visit(const StringInterpolation &interpolation) {
+    _ranges.emplace_back(interpolation.left.range, Annotation::Kind::StringLiteral);
+    if (interpolation.expression) {
+        interpolation.expression->accept(*this);
+    }
+    if (interpolation.right) {
+        interpolation.right->accept(*this);
     }
 }
 

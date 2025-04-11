@@ -308,7 +308,7 @@ void Compiler::visit(const Try &tryStatement) {
 }
 
 void Compiler::visit(const Use &useStatement) {
-    auto source = useStatement.target.encodedStringOrWord();
+    auto source = useStatement.target.encodedStringLiteralOrWord();
     auto module = _config.moduleProvider.module(source);
     if (!module) {
         return;
@@ -323,7 +323,7 @@ void Compiler::visit(const Use &useStatement) {
 }
 
 void Compiler::visit(const Using &usingStatement) {
-    auto source = usingStatement.target.encodedStringOrWord();
+    auto source = usingStatement.target.encodedStringLiteralOrWord();
     auto module = _config.moduleProvider.module(source);
     if (!module) {
         return;
@@ -599,6 +599,7 @@ void Compiler::visit(const DictionaryLiteral &dictionary) {
 static inline Value valueOf(const Token &token) {
     switch (token.type) {
     case Token::Type::StringLiteral:
+    case Token::Type::ClosedInterpolation:
         return token.encodedString();
     case Token::Type::IntLiteral:
         return std::stol(token.text);
@@ -639,6 +640,19 @@ void Compiler::visit(const Literal &literal) {
     } catch (const std::out_of_range &) {
         error(literal, "value is too large or too small");
     }
+}
+
+void Compiler::visit(const StringInterpolation &interpolation) {
+    auto leftIndex = bytecode().addConstant(interpolation.left.encodedString());
+    bytecode().add(interpolation.range.start, Opcode::Constant, leftIndex);
+
+    interpolation.expression->accept(*this);
+
+    bytecode().add(interpolation.expression->range.start, Opcode::ToString);
+    bytecode().add(interpolation.expression->range.start, Opcode::Add);
+
+    interpolation.right->accept(*this);
+    bytecode().add(interpolation.right->range.start, Opcode::Add);
 }
 
 SIF_NAMESPACE_END

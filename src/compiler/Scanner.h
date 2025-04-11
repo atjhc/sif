@@ -36,6 +36,9 @@ class Scanner {
     void enableMultilineMode();
     void disableMultilineMode();
 
+    bool interpolating = false;
+    char stringTerminal = 0;
+
   private:
     bool isCharacter(wchar_t);
 
@@ -47,7 +50,7 @@ class Scanner {
     void skipComments();
     void skipLine();
 
-    Token scanString(char terminal);
+    Token scanString(char startingQuote, char terminalQuote);
     Token scanNumber();
     Token scanWord();
 

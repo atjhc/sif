@@ -305,6 +305,9 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::SetIt:
         out << "SetIt";
         return position + 1;
+    case Opcode::ToString:
+        out << "ToString";
+        return position + 1;
     }
 }
 

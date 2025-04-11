@@ -510,6 +510,13 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             std::cout << Peek(_stack) << std::endl;
             break;
         }
+        case Opcode::ToString: {
+            auto value = Pop(_stack);
+            std::ostringstream ss;
+            ss << value;
+            Push(_stack, ss.str());
+            break;
+        }
         }
 #if defined(DEBUG)
         if (_config.enableTracing) {

@@ -43,4 +43,8 @@ DictionaryLiteral::DictionaryLiteral(Mapping<Strong<Expression>, Strong<Expressi
 
 Literal::Literal(Token token) : token(token) {}
 
+StringInterpolation::StringInterpolation(Token leftPart, Strong<Expression> expression,
+                                         Strong<Expression> rightPart)
+    : left(leftPart), expression(expression), right(rightPart) {}
+
 SIF_NAMESPACE_END
