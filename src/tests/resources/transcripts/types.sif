@@ -5,12 +5,12 @@ print an empty string
 
 print the description of an empty list
 (-- expect
-{}
+[]
 --)
 
 print an empty dictionary
 (-- expect
-{:}
+[:]
 --)
 
 print yes as a string

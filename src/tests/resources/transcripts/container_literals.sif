@@ -1,10 +1,10 @@
-print type name of {}
-print type name of {:}
-print {1, 2, 3}
-print {1: "one"}
+print type name of []
+print type name of [:]
+print [1, 2, 3]
+print [1: "one"]
 (-- expect
 list
 dictionary
 1 2 3
-{1: one}
+[1: one]
 --)

@@ -89,9 +89,9 @@ unpack(1, 2, 3)
 --)
 
 function scale {x, y} {scale}
-  return {x * scale, y * scale}
+  return [x * scale, y * scale]
 end function
-print scale (1, 2) 10
+print scale [1, 2] 10
 (-- expect
 10 20
 --)
@@ -107,7 +107,7 @@ correct
 function width of {width, _}
   width
 end function
-print width of {10, 20}
+print width of [10, 20]
 (-- expect
 10
 --)

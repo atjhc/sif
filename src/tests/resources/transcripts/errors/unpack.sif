@@ -4,7 +4,7 @@ print error (the error)
 expected a list but got string
 --)
 
-try set x, y to {1, 2, 3}
+try set x, y to [1, 2, 3]
 print error (the error)
 (-- error
 expected 2 values but got 3
@@ -20,9 +20,9 @@ expected a list but got string
 --)
 
 function point {x, y}
-	return {x, y}
+	return [x, y]
 end function
-try point {1, 2, 3}
+try point [1, 2, 3]
 print error (the error)
 (-- error
 expected 2 values but got 3

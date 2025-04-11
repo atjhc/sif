@@ -3,8 +3,8 @@ Solution to part 1 of https://adventofcode.com/2024/day/1
 --)
 
 set lines to the list of lines in the contents of file "input.txt"
-set list1 to {}
-set list2 to {}
+set list1 to []
+set list2 to []
 repeat for line in lines
   set words to the list of words in line
   get item 0 in words

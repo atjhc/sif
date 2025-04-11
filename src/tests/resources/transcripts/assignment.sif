@@ -1,4 +1,4 @@
-set a to {1, 2, 3}
+set a to [1, 2, 3]
 set a[0] to 10
 print a
 (-- expect
@@ -11,14 +11,14 @@ print a
 10 20 3
 --)
 
-set a to {"one": 1}
+set a to ["one": 1]
 set a["one"] to 10
 print a["one"]
 (-- expect
 10
 --)
 
-set a to {"one": {"two": 2}}
+set a to ["one": ["two": 2]]
 set a["one"]["two"] to 20
 print a["one"]["two"]
 (-- expect
@@ -39,28 +39,28 @@ print a
 four 5 six
 --)
 
-set point to {4, 2}
+set point to [4, 2]
 set x, y to point
 print x, y
 (-- expect
 4 2
 --)
 
-set a to {"one": 1}
-set x, a["one"] to {1, "one"}
+set a to ["one": 1]
+set x, a["one"] to [1, "one"]
 print x, a["one"]
 (-- expect
 1 one
 --)
 
-set point to {1, 2}
-set point[0], point[1] to {2, 3}
+set point to [1, 2]
+set point[0], point[1] to [2, 3]
 print point
 (-- expect
 2 3
 --)
 
-set _, y to {1, 2}
+set _, y to [1, 2]
 print y
 (-- expect
 2

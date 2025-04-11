@@ -4,8 +4,8 @@ Solution to part 2 of https://adventofcode.com/2024/day/1
 
 set lines to the list of lines in the contents of file "input.txt"
 
-set leftList to {}
-set rightMapping to {:}
+set leftList to []
+set rightMapping to [:]
 
 repeat for line in lines
 	set numbers to the list of words in line

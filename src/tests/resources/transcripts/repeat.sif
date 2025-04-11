@@ -63,7 +63,7 @@ end repeat
 5
 --)
 
-repeat for i in {1, empty, 3}
+repeat for i in [1, empty, 3]
     print i
 end repeat
 (-- expect
@@ -72,8 +72,8 @@ empty
 3
 --)
 
-repeat for x in {0}
-  repeat for y in {0}
+repeat for x in [0]
+  repeat for y in [0]
     exit repeat
   end repeat
 end repeat

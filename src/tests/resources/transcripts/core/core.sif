@@ -11,8 +11,8 @@ print the language patch version
 
 set one to 1
 set two to "two"
-set three to {3}
-set four to {"four": 4}
+set three to [3]
+set four to ["four": 4]
 set five to 1...5
 
 print get one
@@ -24,7 +24,7 @@ print get five
 1
 two
 3
-{"four": 4}
+["four": 4]
 1...5
 --)
 
@@ -49,8 +49,8 @@ print the description of five
 (-- expect
 1
 two
-{3}
-{"four": 4}
+[3]
+["four": 4]
 1...5
 --)
 

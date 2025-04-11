@@ -33,9 +33,7 @@ class Scanner {
 
     Token scan();
 
-    void enableMultilineMode();
-    void disableMultilineMode();
-
+    bool ignoreNewLines = false;
     bool interpolating = false;
     char stringTerminal = 0;
 
@@ -61,9 +59,7 @@ class Scanner {
 
     std::string::const_iterator _start, _end, _current;
     SourceLocation _startLocation, _currentLocation;
-    int _skipNewlines;
     Strong<Reader> _reader;
-    bool _multilineMode = false;
 };
 
 SIF_NAMESPACE_END

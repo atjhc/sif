@@ -1,6 +1,6 @@
 set a to 42
 set name to "World"
-set items to {"apple", "banana", "cherry"}
+set items to ["apple", "banana", "cherry"]
 
 set greeting to "Hello \{}!"
 set greeting to format string greeting with name

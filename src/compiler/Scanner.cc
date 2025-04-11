@@ -22,19 +22,12 @@
 
 SIF_NAMESPACE_BEGIN
 
-Scanner::Scanner() : _currentLocation{1, 1, 0}, _skipNewlines(0) {}
+Scanner::Scanner() : _currentLocation{1, 1, 0} {}
 
 void Scanner::reset(const std::string &contents) {
     _start = _current = contents.begin();
     _end = contents.end();
     _currentLocation = {1, 1, 0};
-}
-
-void Scanner::enableMultilineMode() { _multilineMode = true; }
-
-void Scanner::disableMultilineMode() {
-    _multilineMode = false;
-    _skipNewlines = 0;
 }
 
 Token Scanner::scan() {
@@ -88,36 +81,18 @@ Token Scanner::scan() {
     case ';':
         return make(Token::Type::NewLine);
     case '(':
-        if (_multilineMode) {
-            _skipNewlines++;
-        }
         return make(Token::Type::LeftParen);
     case ')':
-        if (_multilineMode) {
-            _skipNewlines--;
-        }
         return make(Token::Type::RightParen);
     case '[':
-        if (_multilineMode) {
-            _skipNewlines++;
-        }
         return make(Token::Type::LeftBracket);
     case ']':
-        if (_multilineMode) {
-            _skipNewlines--;
-        }
         return make(Token::Type::RightBracket);
     case '{':
-        if (_multilineMode) {
-            _skipNewlines++;
-        }
         return make(Token::Type::LeftBrace);
     case '}':
         if (interpolating) {
             return scanString('}', stringTerminal);
-        }
-        if (_multilineMode) {
-            _skipNewlines--;
         }
         return make(Token::Type::RightBrace);
     case '+':
@@ -429,7 +404,7 @@ void Scanner::skipWhitespace() {
         auto c = utf8::peek_next(_current, _end);
         switch (c) {
         case '\n':
-            if (_skipNewlines > 0) {
+            if (ignoreNewLines) {
                 _currentLocation.lineNumber++;
                 _currentLocation.position = 1;
                 advance();

@@ -206,29 +206,35 @@ Token Parser::scan() {
 }
 
 Token Parser::advance() {
-    if (!isAtEnd()) {
-        if (!_recording && _tokens.size() > 1) {
-            _tokens.erase(_tokens.begin());
-        }
-        if (_recording || _index == 0) {
-            _index++;
-        }
+    // If we are recording, advance the index. Scan if needed.
+    if (_recording) {
+        _index += 1;
         if (_index == _tokens.size()) {
             scan();
         }
+        return previous();
     }
+
+    // Erase previous, but don't yet scan until needed.
+    if (_tokens.size() == 2) {
+        _tokens.erase(_tokens.begin());
+        return previous();
+    }
+
+    scan();
+    _index += 1;
     return previous();
 }
 
 Token Parser::peek() {
-    if (_tokens.size() == 0) {
+    if (_index == _tokens.size()) {
         return scan();
     }
     return _tokens[_index];
 }
 
 Token Parser::previous() {
-    if (_tokens.size() > 1) {
+    if (_tokens.size() > 0) {
         return _tokens[_index - 1];
     }
     throw std::runtime_error("scanner underflow");
@@ -326,7 +332,6 @@ Signature Parser::parseSignature() {
     Signature signature;
     Set<std::string> argumentNames;
 
-    _config.scanner.disableMultilineMode();
     while (peek().isWord() || peek().type == Token::Type::LeftParen ||
            peek().type == Token::Type::LeftBrace) {
         auto token = advance();
@@ -406,7 +411,6 @@ Signature Parser::parseSignature() {
             emitError(Error(peek().range.start, "expected a type name"));
         }
     }
-    _config.scanner.enableMultilineMode();
     return signature;
 }
 
@@ -1419,26 +1423,40 @@ Strong<Expression> Parser::parsePrimary() {
         return literal;
     }
 
-    if (peek().type == Token::Type::OpenInterpolation) {
+    if (match({Token::Type::OpenInterpolation})) {
         auto interpolating = _config.scanner.interpolating;
         auto stringTerminal = _config.scanner.stringTerminal;
+        auto ignoreNewLines = _config.scanner.ignoreNewLines;
         _config.scanner.interpolating = true;
-        _config.scanner.stringTerminal = peek().openingStringTerminal();
+        _config.scanner.ignoreNewLines = true;
+        _config.scanner.stringTerminal = previous().openingStringTerminal();
 
-        advance();
-        return parseInterpolation(interpolating, stringTerminal);
+        auto interpolation = parseInterpolation();
+
+        _config.scanner.interpolating = interpolating;
+        _config.scanner.ignoreNewLines = ignoreNewLines;
+        _config.scanner.stringTerminal = stringTerminal;
+        return interpolation;
     }
 
     if (match({Token::Type::LeftParen})) {
-        return parseGrouping();
+        auto ignoreNewLines = _config.scanner.ignoreNewLines;
+        _config.scanner.ignoreNewLines = true;
+
+        auto grouping = parseGrouping();
+
+        _config.scanner.ignoreNewLines = ignoreNewLines;
+        return grouping;
     }
 
-    if (check({Token::Type::LeftBrace})) {
-        auto interpolating = _config.scanner.interpolating;
-        _config.scanner.interpolating = false;
+    if (match({Token::Type::LeftBracket})) {
+        auto ignoreNewLines = _config.scanner.ignoreNewLines;
+        _config.scanner.ignoreNewLines = true;
 
-        advance();
-        return parseContainerLiteral(interpolating);
+        auto container = parseContainerLiteral();
+
+        _config.scanner.ignoreNewLines = ignoreNewLines;
+        return container;
     }
 
     if (peek().isWord() || peek().type == Token::Type::Global ||
@@ -1450,16 +1468,13 @@ Strong<Expression> Parser::parsePrimary() {
     return nullptr;
 }
 
-Strong<Expression> Parser::parseInterpolation(bool interpolating, char stringTerminal) {
+Strong<Expression> Parser::parseInterpolation() {
     auto interpolation = MakeStrong<StringInterpolation>();
     interpolation->left = previous();
     interpolation->range.start = interpolation->left.range.start;
 
-    if (check({Token::Type::ClosedInterpolation})) {
+    if (match({Token::Type::ClosedInterpolation})) {
         emitError(Error(peek().range, "empty interpolation"));
-        _config.scanner.interpolating = interpolating;
-        _config.scanner.stringTerminal = stringTerminal;
-        advance();
         return interpolation;
     }
 
@@ -1468,14 +1483,11 @@ Strong<Expression> Parser::parseInterpolation(bool interpolating, char stringTer
         return interpolation;
     }
 
-    if (check({Token::Type::ClosedInterpolation})) {
-        _config.scanner.interpolating = interpolating;
-        _config.scanner.stringTerminal = stringTerminal;
-        advance();
+    if (match({Token::Type::ClosedInterpolation})) {
         interpolation->right = MakeStrong<Literal>(previous());
         interpolation->right->range = previous().range;
     } else if (match({Token::Type::Interpolation})) {
-        interpolation->right = parseInterpolation(interpolating, stringTerminal);
+        interpolation->right = parseInterpolation();
     } else {
         emitError(Error(peek().range, "unterminated interpolation"));
     }
@@ -1518,18 +1530,16 @@ Strong<Expression> Parser::parseGrouping() {
     grouping->expression = parseExpression();
     if (consume(Token::Type::RightParen)) {
         grouping->ranges.rightGrouping = previous().range;
-        grouping->range.end = peek().range.end;
+        grouping->range.end = previous().range.end;
     } else {
         emitError(Error(peek().range, Concat("expected ", Quoted(")"))));
     }
     return grouping;
 }
 
-Strong<Expression> Parser::parseContainerLiteral(bool interpolating) {
+Strong<Expression> Parser::parseContainerLiteral() {
     auto start = previous().range.start;
-    if (check({Token::Type::RightBrace})) {
-        _config.scanner.interpolating = interpolating;
-        advance();
+    if (match({Token::Type::RightBracket})) {
         auto container = MakeStrong<ListLiteral>();
         container->range = SourceRange{start, previous().range.end};
         return container;
@@ -1537,8 +1547,7 @@ Strong<Expression> Parser::parseContainerLiteral(bool interpolating) {
     if (match({Token::Type::Colon})) {
         auto container = MakeStrong<DictionaryLiteral>();
         container->range.start = start;
-        _config.scanner.interpolating = interpolating;
-        if (!consume(Token::Type::RightBrace)) {
+        if (!consume(Token::Type::RightBracket)) {
             emitError(Error(peek().range, Concat("expected ", Quoted("}"))));
             return container;
         }
@@ -1592,7 +1601,7 @@ Strong<Expression> Parser::parseContainerLiteral(bool interpolating) {
             listExpression->expressions.push_back(expression);
         } while (match({Token::Type::Comma}));
         containerExpression = listExpression;
-    } else if (check({Token::Type::RightBrace})) {
+    } else if (check({Token::Type::RightBracket})) {
         std::vector<Strong<Expression>> values;
         values.push_back(expression);
         containerExpression = MakeStrong<ListLiteral>(values);
@@ -1606,8 +1615,7 @@ Strong<Expression> Parser::parseContainerLiteral(bool interpolating) {
         return listExpression;
     }
 
-    _config.scanner.interpolating = interpolating;
-    if (!consume(Token::Type::RightBrace)) {
+    if (!consume(Token::Type::RightBracket)) {
         emitError(Error(peek().range, Concat("expected ", Quoted("}"))));
     }
     containerExpression->range = SourceRange{start, previous().range.end};

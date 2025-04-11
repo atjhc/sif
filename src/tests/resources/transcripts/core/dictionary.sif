@@ -1,47 +1,47 @@
-print the size of {"one": 1, "two": 2, "three": 3, "four": 4}
+print the size of ["one": 1, "two": 2, "three": 3, "four": 4]
 (-- expect
 4
 --)
 
-print item "two" in {"one": 1, "two": 2, "three": 3, "four": 4}
+print item "two" in ["one": 1, "two": 2, "three": 3, "four": 4]
 (-- expect
 2
 --)
 
-print insert item 1 with key "one" into {:}
+print insert item 1 with key "one" into [:]
 (-- expect
-{"one": 1}
+["one": 1]
 --)
 
-print remove item "one" from {"one": 1}
+print remove item "one" from ["one": 1]
 (-- expect
-{:}
+[:]
 --)
 
-print {"one": 1, "two": 2, "three": 3, "four": 4} contains "two"
-(-- expect
-yes
---)
-
-print "two" is in {"one": 1, "two": 2, "three": 3, "four": 4}
+print ["one": 1, "two": 2, "three": 3, "four": 4] contains "two"
 (-- expect
 yes
 --)
 
-print the keys of {"one": 1}
+print "two" is in ["one": 1, "two": 2, "three": 3, "four": 4]
+(-- expect
+yes
+--)
+
+print the keys of ["one": 1]
 (-- expect
 one
 --)
 
-print the values of {"one": 1}
+print the values of ["one": 1]
 (-- expect
 1
 --)
 
-set x to {:}
+set x to [:]
 set y to a copy of x
 set y["one"] to 1
 print x
 (-- expect
-{:}
+[:]
 --)

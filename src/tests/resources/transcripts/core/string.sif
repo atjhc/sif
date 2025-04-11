@@ -134,22 +134,22 @@ yes
 print the description of the list of characters in "My voice"
 print the description of the list of characters in "私の声"
 (-- expect
-{"M", "y", " ", "v", "o", "i", "c", "e"}
-{"私", "の", "声"}
+["M", "y", " ", "v", "o", "i", "c", "e"]
+["私", "の", "声"]
 --)
 
 print the description of the list of words in "My voice is my password."
 print the description of the list of words in "私 の 声 は 私 の パスワード です."
 (-- expect
-{"My", "voice", "is", "my", "password."}
-{"私", "の", "声", "は", "私", "の", "パスワード", "です."}
+["My", "voice", "is", "my", "password."]
+["私", "の", "声", "は", "私", "の", "パスワード", "です."]
 --)
 
 print the description of the list of lines in "My\nvoice\nis\nmy\npassword."
 print the description of the list of lines in "私の声は\n私のパスワード\nです."
 (-- expect
-{"My", "voice", "is", "my", "password."}
-{"私の声は", "私のパスワード", "です."}
+["My", "voice", "is", "my", "password."]
+["私の声は", "私のパスワード", "です."]
 --)
 
 set x to "hello world"

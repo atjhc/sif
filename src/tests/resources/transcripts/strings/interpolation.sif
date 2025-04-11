@@ -31,24 +31,24 @@ print "Your items: {items[0]} and {items[1]}"
 Your items: apple and banana
 --)
 
-set person to {"name": "Alice", "age": 30}
+set person to ["name": "Alice", "age": 30]
 print "Person: {person["name"]} is {person["age"]} years old"
 (-- expect
 Person: Alice is 30 years old
 --)
 
-print "list: {{1, 2, 3}}"
+print "list: {[1, 2, 3]}"
 (-- expect
-list: {1, 2, 3}
+list: [1, 2, 3]
 --)
 
-print "dictionary: {{"foo": 1}}"
+print "dictionary: {["foo": 1]}"
 (-- expect
-dictionary: {"foo": 1}
+dictionary: ["foo": 1]
 --)
 
 set foo to "foo"
-print "subscript: {{"foo": 1}["{foo}"]}"
+print "subscript: {["foo": 1]["{foo}"]}"
 (-- expect
 subscript: 1
 --)

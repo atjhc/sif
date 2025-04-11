@@ -41,7 +41,7 @@ std::string List::typeName() const { return "list"; }
 
 std::string List::description() const {
     std::ostringstream ss;
-    ss << "{";
+    ss << "[";
     auto it = _values.begin();
     while (it != _values.end()) {
         ss << it->description();
@@ -50,7 +50,7 @@ std::string List::description() const {
             ss << ", ";
         }
     }
-    ss << "}";
+    ss << "]";
     return ss.str();
 }
 
