@@ -1,0 +1,19 @@
+print "\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F"
+(-- expect
+@ABCDEFGHIJKLMNO
+--)
+
+print "\100\101\102\103\104\105\106\107\110\111\112\113\114\115\116\117"
+(-- expect
+@ABCDEFGHIJKLMNO
+--)
+
+print "\x9"
+(-- expect
+	
+--)
+
+print "\11"
+(-- expect
+	
+--)

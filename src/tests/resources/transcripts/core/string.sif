@@ -159,3 +159,38 @@ print x
 (-- expect
 hello world
 --)
+
+print char of 65
+print ord of "A"
+(-- expect
+A
+65
+--)
+
+print char of 128144
+print ord of "💐"
+(-- expect
+💐
+128144
+--)
+
+print char of 128519
+print ord of "😇"
+(-- expect
+😇
+128519
+--)
+
+print char of 2047
+print ord of "߿"
+(-- expect
+߿
+2047
+--)
+
+print char of 65536
+print ord of "𐀀"
+(-- expect
+𐀀
+65536
+--)

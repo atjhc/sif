@@ -26,4 +26,8 @@ std::string string_from_escaped_string(const std::string &str);
 
 std::string escaped_string_from_string(const std::string &str);
 
+std::string encode_utf8(uint32_t codepoint);
+
+uint32_t decode_utf8(const std::string &utf8);
+
 SIF_NAMESPACE_END

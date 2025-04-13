@@ -26,6 +26,7 @@
 
 #include "extern/utf8.h"
 #include "utilities/chunk.h"
+#include "utilities/strings.h"
 
 #include <charconv>
 #include <format>
@@ -923,6 +924,31 @@ static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, V
     return result.str();
 }
 
+static auto _character_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (!values[0].isInteger()) {
+        return Fail(Error(location, "expected an integer"));
+    }
+    auto value = values[0].asInteger();
+    try {
+        return encode_utf8(value);
+    } catch (...) {
+        return Fail(Error(location, "invalid unicode codepoint"));
+    }
+}
+
+static auto _ordinal_of_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (!values[0].isString()) {
+        return Fail(Error(location, "expected a string"));
+    }
+    try {
+        return decode_utf8(values[0].toString());
+    } catch (const std::exception &e) {
+        return Fail(Error(location, e.what()));
+    }
+}
+
 static auto _T_up_to_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isInteger() || !values[1].isInteger()) {
@@ -1202,7 +1228,14 @@ static void _string(ModuleMap &natives, std::mt19937_64 &engine,
         N(_the_number_of_chunks_in_T(chunk::character));
     natives[S("(the) number of words (in/of) {}")] = N(_the_number_of_chunks_in_T(chunk::word));
     natives[S("(the) number of lines (in/of) {}")] = N(_the_number_of_chunks_in_T(chunk::line));
+
     natives[S("format string {} with {}")] = N(_format_string_T_with_T);
+
+    natives[S("(the) char/character (of) {}")] = N(_character_of_T);
+    natives[S("(the) numToChar (of) {}")] = N(_character_of_T);
+
+    natives[S("(the) ord/ordinal (of) {}")] = N(_ordinal_of_T);
+    natives[S("(the) charToNum (of) {}")] = N(_ordinal_of_T);
 }
 
 static void _range(ModuleMap &natives, std::mt19937_64 &engine,
