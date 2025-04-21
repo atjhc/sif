@@ -51,6 +51,7 @@ class VirtualMachine {
     VirtualMachine(const VirtualMachineConfig &config = VirtualMachineConfig());
 
     Result<Value, Error> execute(const Strong<Bytecode> &bytecode);
+    void requestHalt();
 
     void addGlobal(const std::string &name, const Value value);
     void addGlobals(const Mapping<std::string, Value> &globals);
@@ -76,6 +77,7 @@ class VirtualMachine {
     VirtualMachineConfig _config;
 #pragma GCC diagnostic pop
 
+    std::atomic<bool> _haltRequested{false};
     std::vector<Value> _stack;
     std::vector<CallFrame> _frames;
     Mapping<std::string, Value> _globals;

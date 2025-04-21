@@ -527,6 +527,10 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             std::cout << std::endl;
         }
 #endif
+        if (_haltRequested) {
+            error = Error(frame().bytecode->location(frame().ip), "program halted");
+            return Fail(error.value());
+        }
         if (error.has_value()) {
             if (frame().sps.size() > 0) {
                 auto sp = Pop(frame().sps);
@@ -551,6 +555,10 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             return returnValue.value();
         }
     }
+}
+
+void VirtualMachine::requestHalt() {
+    _haltRequested = true;
 }
 
 Optional<Error> VirtualMachine::call(Value object, int count) {
