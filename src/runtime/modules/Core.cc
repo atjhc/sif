@@ -931,7 +931,7 @@ static auto _character_of_T(CallFrame &frame, SourceLocation location, Value *va
     }
     auto value = values[0].asInteger();
     try {
-        return encode_utf8(value);
+        return encode_utf8(static_cast<uint32_t>(value));
     } catch (...) {
         return Fail(Error(location, "invalid unicode codepoint"));
     }
