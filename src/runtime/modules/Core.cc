@@ -1014,7 +1014,11 @@ static auto _the_func_of_T(double (*func)(double))
                 return Fail(Error(location, "expected a number"));
             }
             auto argument = values[0].castFloat();
-            return func(argument);
+            auto result = func(argument);
+            if (isnan(result)) {
+                return Fail(Error(location, "domain error"));
+            }
+            return result;
         };
 }
 
@@ -1251,7 +1255,9 @@ static void _range(ModuleMap &natives, std::mt19937_64 &engine,
 static void _math(ModuleMap &natives) {
     natives[S("(the) abs (of) {}")] = N(_the_abs_of_T);
     natives[S("(the) sin (of) {}")] = N(_the_func_of_T(sin));
+    natives[S("(the) asin (of) {}")] = N(_the_func_of_T(asin));
     natives[S("(the) cos (of) {}")] = N(_the_func_of_T(cos));
+    natives[S("(the) acos (of) {}")] = N(_the_func_of_T(acos));
     natives[S("(the) tan (of) {}")] = N(_the_func_of_T(tan));
     natives[S("(the) atan (of) {}")] = N(_the_func_of_T(atan));
     natives[S("(the) exp (of) {}")] = N(_the_func_of_T(exp));
@@ -1261,6 +1267,7 @@ static void _math(ModuleMap &natives) {
     natives[S("(the) log10 (of) {}")] = N(_the_func_of_T(log10));
     natives[S("(the) log (of) {}")] = N(_the_func_of_T(log));
     natives[S("(the) sqrt (of) {}")] = N(_the_func_of_T(sqrt));
+    natives[S("(the) square root (of) {}")] = N(_the_func_of_T(sqrt));
     natives[S("(the) ceil (of) {}")] = N(_the_func_of_T(ceil));
     natives[S("(the) floor (of) {}")] = N(_the_func_of_T(floor));
     natives[S("round {}")] = N(_the_func_of_T(round));
