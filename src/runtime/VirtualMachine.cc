@@ -26,7 +26,7 @@
 
 SIF_NAMESPACE_BEGIN
 
-VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : _config(config) {}
+VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : config(config) {}
 
 void VirtualMachine::addGlobal(const std::string &name, const Value global) {
     _globals[name] = global;
@@ -94,7 +94,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         Push(_stack, Value());
     }
 #if defined(DEBUG)
-    if (_config.enableTracing) {
+    if (config.enableTracing) {
         std::cout << "[" << _stack << "]" << std::endl;
         if (_frames.size() > 1) {
             std::cout << "[" << Join(_frames, ", ") << "]" << std::endl;
@@ -106,7 +106,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         Optional<Value> returnValue;
         Optional<Error> error;
 #if defined(DEBUG)
-        if (_config.enableTracing) {
+        if (config.enableTracing) {
             std::cout << frame().bytecode->decodePosition(frame().ip) << " ";
             frame().bytecode->disassemble(std::cout, frame().ip);
         }
@@ -519,7 +519,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         }
         }
 #if defined(DEBUG)
-        if (_config.enableTracing) {
+        if (config.enableTracing) {
             std::cout << std::endl << "[" << _stack << "]" << std::endl;
             if (_frames.size() > 1) {
                 std::cout << "[" << Join(_frames, ", ") << "]" << std::endl;

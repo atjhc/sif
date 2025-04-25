@@ -62,6 +62,11 @@ class VirtualMachine {
     const Value &it() const { return _it; }
     Value &it() { return _it; }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-private-field"
+    VirtualMachineConfig config;
+#pragma GCC diagnostic pop
+
   private:
     Optional<Error> call(Value, int count);
     Optional<Error> range(Value, Value, bool);
@@ -71,11 +76,6 @@ class VirtualMachine {
 #if defined(DEBUG)
     friend std::ostream &operator<<(std::ostream &out, const CallFrame &f);
 #endif
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-private-field"
-    VirtualMachineConfig _config;
-#pragma GCC diagnostic pop
 
     std::atomic<bool> _haltRequested{false};
     std::vector<Value> _stack;

@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
 #if defined(DEBUG)
     vmConfig.enableTracing = traceRuntime;
 #endif
-    vm = VirtualMachine(vmConfig);
+    vm.config = vmConfig;
 
     for (const auto &pair : coreModule.values()) {
         vm.addGlobal(pair.first, pair.second);
