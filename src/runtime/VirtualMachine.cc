@@ -169,6 +169,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto location = ReadJump(frame().ip);
             frame().jumps.push_back(frame().bytecode->code().begin() + location);
             frame().sps.push_back(_stack.size());
+            frame().error = Value();
             break;
         }
         case Opcode::PopJump: {
