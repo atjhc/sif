@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "compiler/Scanner.h"
+#include <sif/compiler/Scanner.h>
 #include "tests/TestSuite.h"
 
 #include <filesystem>

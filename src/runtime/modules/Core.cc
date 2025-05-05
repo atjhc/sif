@@ -14,15 +14,14 @@
 //  limitations under the License.
 //
 
-#include "Common.h"
-#include "Error.h"
 #include "Utilities.h"
+#include "sif/Error.h"
 
-#include "runtime/modules/Core.h"
-#include "runtime/objects/Dictionary.h"
-#include "runtime/objects/List.h"
-#include "runtime/objects/Native.h"
-#include "runtime/objects/String.h"
+#include "sif/runtime/modules/Core.h"
+#include "sif/runtime/objects/Dictionary.h"
+#include "sif/runtime/objects/List.h"
+#include "sif/runtime/objects/Native.h"
+#include "sif/runtime/objects/String.h"
 
 #include "extern/utf8.h"
 #include "utilities/chunk.h"

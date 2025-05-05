@@ -14,20 +14,20 @@
 //  limitations under the License.
 //
 
-#include "Common.h"
-#include "ast/PrettyPrinter.h"
-#include "compiler/Compiler.h"
-#include "compiler/Parser.h"
-#include "compiler/Reader.h"
-#include "runtime/ModuleLoader.h"
-#include "runtime/VirtualMachine.h"
-#include "runtime/modules/Core.h"
-#include "runtime/modules/System.h"
-#include "runtime/objects/Dictionary.h"
-#include "runtime/objects/List.h"
-#include "runtime/objects/Native.h"
-#include "runtime/objects/String.h"
 #include "utilities/chunk.h"
+#include <sif/Common.h>
+#include <sif/ast/PrettyPrinter.h>
+#include <sif/compiler/Compiler.h>
+#include <sif/compiler/Parser.h>
+#include <sif/compiler/Reader.h>
+#include <sif/runtime/ModuleLoader.h>
+#include <sif/runtime/VirtualMachine.h>
+#include <sif/runtime/modules/Core.h>
+#include <sif/runtime/modules/System.h>
+#include <sif/runtime/objects/Dictionary.h>
+#include <sif/runtime/objects/List.h>
+#include <sif/runtime/objects/Native.h>
+#include <sif/runtime/objects/String.h>
 
 #include <chrono>
 #include <fstream>

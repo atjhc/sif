@@ -11,7 +11,7 @@
 //  limitations under the License.
 //
 
-#include "runtime/objects/Native.h"
+#include "sif/runtime/objects/Native.h"
 
 SIF_NAMESPACE_BEGIN
 

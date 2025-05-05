@@ -14,12 +14,14 @@
 //  limitations under the License.
 //
 
-#include "runtime/ModuleLoader.h"
+#include "sif/runtime/ModuleLoader.h"
 
-#include "runtime/modules/Core.h"
-#include "runtime/modules/System.h"
+#include "sif/runtime/modules/Core.h"
+#include "sif/runtime/modules/System.h"
 
-#include "compiler/Reporter.h"
+#include "sif/compiler/Compiler.h"
+#include "sif/compiler/Parser.h"
+#include "sif/compiler/Reporter.h"
 
 SIF_NAMESPACE_BEGIN
 

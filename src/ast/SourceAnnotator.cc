@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "SourceAnnotator.h"
+#include "sif/ast/SourceAnnotator.h"
 
 SIF_NAMESPACE_BEGIN
 

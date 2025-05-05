@@ -14,6 +14,7 @@ test: debug
 format:
 	find src -type f -name '*.cc' -not -path 'src/tests/*' -not -path 'src/extern/*' -exec clang-format -i --style=file {} \;
 	find src -type f -name '*.h' -not -path 'src/tests/*' -not -path 'src/extern/*' -exec clang-format -i --style=file {} \;
+	find include -type f -name '*.h' -exec clang-format -i --style=file {} \;
 
 ${DSTROOT}/release:
 	mkdir -p ${DSTROOT}/release

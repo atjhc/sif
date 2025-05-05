@@ -14,9 +14,10 @@
 //  limitations under the License.
 //
 
-#include "compiler/Compiler.h"
-#include "runtime/objects/Function.h"
-#include "runtime/objects/String.h"
+#include "sif/compiler/Compiler.h"
+#include "Utilities.h"
+#include "sif/runtime/objects/Function.h"
+#include "sif/runtime/objects/String.h"
 #include "utilities/strings.h"
 
 #include <climits>

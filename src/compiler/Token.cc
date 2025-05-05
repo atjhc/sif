@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "compiler/Token.h"
+#include "sif/compiler/Token.h"
 #include "utilities/strings.h"
 #include <cassert>
 

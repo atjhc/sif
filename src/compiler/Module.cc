@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "Module.h"
+#include "sif/compiler/Module.h"
 
 SIF_NAMESPACE_BEGIN
 

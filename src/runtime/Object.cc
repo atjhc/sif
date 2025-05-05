@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "runtime/Object.h"
+#include "sif/runtime/Object.h"
 
 SIF_NAMESPACE_BEGIN
 

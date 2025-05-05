@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "ast/Expression.h"
+#include <sif/ast/Expression.h>
 
 SIF_NAMESPACE_BEGIN
 

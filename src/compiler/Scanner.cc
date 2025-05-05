@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "Scanner.h"
+#include "sif/compiler/Scanner.h"
 
 #include "extern/utf8.h"
 

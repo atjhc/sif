@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "Reader.h"
+#include "sif/compiler/Reader.h"
 
 #include <fstream>
 #include <iostream>

@@ -14,16 +14,15 @@
 //  limitations under the License.
 //
 
-#include "Common.h"
-#include "Error.h"
 #include "Utilities.h"
+#include "sif/Error.h"
 
 #include "extern/utf8.h"
-#include "runtime/VirtualMachine.h"
-#include "runtime/modules/System.h"
-#include "runtime/objects/Dictionary.h"
-#include "runtime/objects/List.h"
-#include "runtime/objects/String.h"
+#include "sif/runtime/VirtualMachine.h"
+#include "sif/runtime/modules/System.h"
+#include "sif/runtime/objects/Dictionary.h"
+#include "sif/runtime/objects/List.h"
+#include "sif/runtime/objects/String.h"
 
 #include <filesystem>
 #include <fstream>

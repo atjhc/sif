@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "compiler/Grammar.h"
+#include "sif/compiler/Grammar.h"
 #include "Utilities.h"
 
 #include <set>

@@ -14,14 +14,14 @@
 //  limitations under the License.
 //
 
-#include "compiler/Compiler.h"
-#include "compiler/Parser.h"
-#include "compiler/Scanner.h"
-#include "runtime/VirtualMachine.h"
-#include "runtime/modules/Core.h"
-#include "runtime/modules/System.h"
-#include "runtime/objects/List.h"
-#include "runtime/ModuleLoader.h"
+#include <sif/compiler/Compiler.h>
+#include <sif/compiler/Parser.h>
+#include <sif/compiler/Scanner.h>
+#include <sif/runtime/VirtualMachine.h>
+#include <sif/runtime/modules/Core.h>
+#include <sif/runtime/modules/System.h>
+#include <sif/runtime/objects/List.h>
+#include <sif/runtime/ModuleLoader.h>
 #include "tests/TestSuite.h"
 
 #include <filesystem>

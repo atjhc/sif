@@ -42,7 +42,6 @@ endif()
 
 # Collect source files
 file(GLOB_RECURSE SIF_SOURCES "src/*.cc")
-file(GLOB_RECURSE SIF_HEADERS "src/*.h")
 
 # Exclude tools and tests from the library build
 list(FILTER SIF_SOURCES EXCLUDE REGEX "src/tools/.*")
@@ -50,14 +49,17 @@ list(FILTER SIF_SOURCES EXCLUDE REGEX "src/tests/.*")
 list(FILTER SIF_SOURCES EXCLUDE REGEX "src/extern/.*")
 
 # Create a static library
-add_library(sif STATIC ${SIF_SOURCES} ${SIF_HEADERS})
-target_include_directories(sif PUBLIC src)
+add_library(sif STATIC ${SIF_SOURCES})
+target_include_directories(sif PRIVATE "src")
+target_include_directories(sif PUBLIC "include")
+
 target_compile_features(sif PUBLIC cxx_std_20)
 
 # Define executable for the main tool
-add_executable(sif_tool src/tools/sif.cc)
+add_executable(sif_tool "src/tools/sif.cc")
 target_link_libraries(sif_tool PRIVATE sif)
-target_include_directories(sif_tool PRIVATE src)
+target_include_directories(sif_tool PRIVATE "src")
+target_include_directories(sif_tool PUBLIC "include")
 
 # Define executable for fuzzing
 if(CMAKE_BUILD_TYPE STREQUAL "Fuzz")
@@ -83,7 +85,7 @@ enable_testing()
 file(GLOB_RECURSE TEST_SOURCES "src/tests/*.cc")
 add_executable(sif_tests ${TEST_SOURCES} src/tools/tests.cc)
 target_link_libraries(sif_tests PRIVATE sif)
-target_include_directories(sif_tests PRIVATE src)
+target_include_directories(sif_tests PRIVATE "src")
 file(COPY src/tests/resources DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY src/tests/repl_tests.sh DESTINATION ${CMAKE_BINARY_DIR})
 

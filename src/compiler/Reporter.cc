@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "Reporter.h"
+#include "sif/compiler/Reporter.h"
 #include "utilities/chunk.h"
 
 #include <iostream>

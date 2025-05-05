@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "ast/PrettyPrinter.h"
+#include "sif/ast/PrettyPrinter.h"
 
 SIF_NAMESPACE_BEGIN
 

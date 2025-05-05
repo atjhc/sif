@@ -14,13 +14,13 @@
 //  limitations under the License.
 //
 
-#include "runtime/VirtualMachine.h"
-#include "runtime/objects/Dictionary.h"
-#include "runtime/objects/Function.h"
-#include "runtime/objects/List.h"
-#include "runtime/objects/Native.h"
-#include "runtime/objects/Range.h"
-#include "runtime/objects/String.h"
+#include "sif/runtime/VirtualMachine.h"
+#include "sif/runtime/objects/Dictionary.h"
+#include "sif/runtime/objects/Function.h"
+#include "sif/runtime/objects/List.h"
+#include "sif/runtime/objects/Native.h"
+#include "sif/runtime/objects/Range.h"
+#include "sif/runtime/objects/String.h"
 
 #include <cmath>
 
@@ -558,9 +558,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
     }
 }
 
-void VirtualMachine::requestHalt() {
-    _haltRequested = true;
-}
+void VirtualMachine::requestHalt() { _haltRequested = true; }
 
 Optional<Error> VirtualMachine::call(Value object, int count) {
     if (auto fn = object.as<Function>()) {

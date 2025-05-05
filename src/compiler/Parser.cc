@@ -14,10 +14,10 @@
 //  limitations under the License.
 //
 
-#include "compiler/Parser.h"
-#include "Error.h"
+#include "sif/compiler/Parser.h"
 #include "Utilities.h"
-#include "ast/Repeat.h"
+#include "sif/Error.h"
+#include "sif/ast/Repeat.h"
 #include "utilities/strings.h"
 
 #include <vector>

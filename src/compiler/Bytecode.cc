@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "compiler/Bytecode.h"
-#include "runtime/objects/Function.h"
+#include "sif/runtime/objects/Function.h"
+#include <sif/compiler/Bytecode.h>
 
 #include <climits>
 #include <cmath>

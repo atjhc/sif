@@ -14,10 +14,10 @@
 //  limitations under the License.
 //
 
-#include "compiler/Parser.h"
-#include "compiler/Reader.h"
-#include "compiler/Scanner.h"
-#include "runtime/ModuleLoader.h"
+#include <sif/compiler/Parser.h>
+#include <sif/compiler/Reader.h>
+#include <sif/compiler/Scanner.h>
+#include <sif/runtime/ModuleLoader.h>
 #include "tests/TestSuite.h"
 
 #include <string>

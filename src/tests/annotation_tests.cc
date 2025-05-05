@@ -16,17 +16,17 @@
 
 #include "tests/TestSuite.h"
 #include "utilities/strings.h"
-#include "compiler/Parser.h"
-#include "compiler/Scanner.h"
-#include "runtime/ModuleLoader.h"
+#include <sif/compiler/Parser.h>
+#include <sif/compiler/Scanner.h>
+#include <sif/runtime/ModuleLoader.h>
 #include "utilities/devnull.h"
-#include "ast/SourceAnnotator.h"
+#include <sif/ast/SourceAnnotator.h>
 #include "utilities/chunk.h"
 
 using namespace sif;
 
 static std::string stringForAnnotationKind(SourceAnnotator::Annotation::Kind kind) {
-    switch (kind) {
+switch (kind) {
     case SourceAnnotator::Annotation::Kind::Control: return "control";
     case SourceAnnotator::Annotation::Kind::Comment: return "comment";
     case SourceAnnotator::Annotation::Kind::StringLiteral: return "string";

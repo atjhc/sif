@@ -14,10 +14,10 @@
 //  limitations under the License.
 //
 
-#include "runtime/Value.h"
-#include "runtime/Object.h"
+#include "sif/runtime/Object.h"
+#include <sif/runtime/Value.h>
 
-#include "runtime/objects/String.h"
+#include "sif/runtime/objects/String.h"
 
 #include <format>
 #include <iostream>

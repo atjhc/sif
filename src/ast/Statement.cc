@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "ast/Statement.h"
+#include <sif/ast/Statement.h>
 
 SIF_NAMESPACE_BEGIN
 

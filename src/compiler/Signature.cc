@@ -14,11 +14,11 @@
 //  limitations under the License.
 //
 
-#include "compiler/Signature.h"
+#include "sif/compiler/Signature.h"
 #include "Utilities.h"
-#include "compiler/Parser.h"
-#include "compiler/Scanner.h"
-#include "runtime/ModuleLoader.h"
+#include "sif/compiler/Parser.h"
+#include "sif/compiler/Scanner.h"
+#include "sif/runtime/ModuleLoader.h"
 
 SIF_NAMESPACE_BEGIN
 

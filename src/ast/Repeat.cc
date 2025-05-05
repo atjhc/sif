@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include "ast/Repeat.h"
-#include "ast/Statement.h"
+#include <sif/ast/Repeat.h>
+#include <sif/ast/Statement.h>
 
 SIF_NAMESPACE_BEGIN
 

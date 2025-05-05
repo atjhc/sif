@@ -12,7 +12,7 @@
 //  limitations under the License.
 //
 
-#include "runtime/objects/String.h"
+#include "sif/runtime/objects/String.h"
 
 #include "extern/utf8.h"
 #include "utilities/strings.h"
