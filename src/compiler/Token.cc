@@ -74,6 +74,7 @@ bool Token::isPrimary() const {
     case Token::Type::OpenInterpolation:
     case Token::Type::Local:
     case Token::Type::Global:
+    case Token::Type::Minus:
         return true;
     default:
         return false;

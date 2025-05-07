@@ -46,6 +46,10 @@ struct Error {
     Error(const SourceLocation &location, std::format_string<Args...> fmt, Args &&...args)
         : Error(location, std::format(fmt, std::forward<Args>(args)...)) {}
 
+    template <class... Args>
+    Error(const SourceRange &range, std::format_string<Args...> fmt, Args &&...args)
+        : Error(range, std::format(fmt, std::forward<Args>(args)...)) {}
+
     std::string what() const { return value.toString(); }
 
     SourceRange range;

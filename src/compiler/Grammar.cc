@@ -37,7 +37,7 @@ bool Grammar::insert(const Signature &signature,
         auto word = lowercase(token.text);
         auto it = terms.find(word);
         if (it == terms.end()) {
-            auto grammar = MakeOwned<Grammar>();
+            auto grammar = MakeStrong<Grammar>();
             grammar->insert(signature, std::next(term));
             terms[word] = std::move(grammar);
             return;
@@ -53,7 +53,7 @@ bool Grammar::insert(const Signature &signature,
             }
             return;
         }
-        argument = MakeOwned<Grammar>();
+        argument = MakeStrong<Grammar>();
         argument->insert(signature, std::next(term));
     };
     auto insertChoice = [&](Signature::Choice choice) {

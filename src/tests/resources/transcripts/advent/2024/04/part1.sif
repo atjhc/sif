@@ -4,7 +4,7 @@ Solution to part 1 of https://adventofcode.com/2024/day/4
 
 set board to []
 repeat for line in the list of lines in the contents of file "input.txt"
-  insert (the list of characters in line) at the end of board
+  insert the list of characters in line at the end of board
 end repeat
 set height to the size of board
 set width to the size of board[0]

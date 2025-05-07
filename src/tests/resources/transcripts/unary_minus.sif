@@ -1,0 +1,29 @@
+print -1
+print -1 +  1
+print -1 +  1
+print  1 + -1
+print -1 + -1
+(-- expect
+-1
+0
+0
+0
+-2
+--)
+
+function {a} plus {b}
+  return a + b
+end function
+print -1 plus 1
+(-- expect
+0
+--)
+
+
+function add {a} to {b}
+  return a + b
+end function
+print add -1 to 1
+(-- expect
+0
+--)

@@ -28,7 +28,8 @@ expected an expression
 expected an expression
 --)
 
-foo[
+set foo to empty
+foo[]
 (-- error
 expected an expression
 --)
@@ -43,14 +44,22 @@ set a[
 expected an expression
 --)
 
+set a[]
+(-- error
+expected an expression
+expected "to"
+--)
+
 set a[] to
 (-- error
+expected an expression
 expected an expression
 --)
 
 if
 (-- error
 expected an expression
+expected "then"
 --)
 
 repeat while

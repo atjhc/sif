@@ -109,6 +109,7 @@ class Parser {
     Token peek();
     Token previous();
     Token synchronize(const TokenTypes &tokenTypes = {Token::Type::NewLine});
+    Token synchronizeTo(const TokenTypes &tokenTypes = {Token::Type::NewLine});
 
     void checkpoint();
     void rewind();
@@ -155,7 +156,9 @@ class Parser {
     Strong<Expression> parseFactor();
     Strong<Expression> parseExponent();
     Strong<Expression> parseUnary();
-    Strong<Expression> parseCall();
+    Strong<Expression> parseCallPostfix();
+    Strong<Expression> parseCallPrefix();
+    Strong<Expression> parseCall(bool);
     Strong<Expression> parseSubscript();
     Strong<Expression> parsePrimary();
     Strong<Expression> parseInterpolation();
@@ -169,7 +172,7 @@ class Parser {
     std::vector<Signature> _exportedDeclarations;
     std::vector<SourceRange> _commentRanges;
 
-    Grammar _grammar;
+    sif::Strong<Grammar> _grammar;
     Set<std::string> _variables;
 
     std::vector<Token> _tokens;

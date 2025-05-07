@@ -1,5 +1,5 @@
 function foo
-    print "foo"
+  print "foo"
 end
 foo
 (-- expect
@@ -7,7 +7,7 @@ foo
 --)
 
 function {x} plus {y}
-    return x + y
+  return x + y
 end
 print 10 plus 20
 print 10 plus 20 plus 30
@@ -16,11 +16,24 @@ print 10 plus 20 plus 30
 60
 --)
 
+function add {a} and {b}
+  return a + b
+end function
+print add 1 plus 2 and 3
+print add 1 plus 2 plus 3 and 4
+print add add 1 plus 2 plus 3 and 4 and 5
+(-- expect
+6
+10
+15
+--)
+
+set baz to 0
 function foo bar
-    return 10
+  return 10
 end
 function foo bar {}
-    return 100
+  return 100
 end
 print foo bar
 print foo bar baz
@@ -30,10 +43,10 @@ print foo bar baz
 --)
 
 function say {msg}
-    print msg
+  print msg
 end
 function say {msg} {count}
-    print msg, count
+  print msg, count
 end
 say "Hello"
 say "Hello" 10
@@ -43,7 +56,7 @@ Hello 10
 --)
 
 function (the) (current) time
-    return 12345
+  return 12345
 end
 print time
 print the time
@@ -57,7 +70,7 @@ print current time
 --)
 
 function an/the H
-    return "H"
+  return "H"
 end
 print an h
 print the H
@@ -67,7 +80,7 @@ H
 --)
 
 function (a/an/the) P
-    return "P"
+  return "P"
 end function
 print P
 print a P

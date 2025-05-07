@@ -54,7 +54,7 @@ expected "forever", "while", "until", "for", or a new line
 
 repeat while
  set a to 1
-end repe
+end repeat
 (-- error
 expected an expression
 --)

@@ -8,9 +8,9 @@ set list2 to []
 repeat for line in lines
   set words to the list of words in line
   get item 0 in words
-  insert (it as an integer) at the end of list1
+  insert it as an integer at the end of list1
   get item 1 in words
-  insert (it as an integer) at the end of list2
+  insert it as an integer at the end of list2
 end repeat
 
 sort list1

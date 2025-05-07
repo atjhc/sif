@@ -1,4 +1,0 @@
-print _
-(-- error
-"_" may not be used as a variable name
---)

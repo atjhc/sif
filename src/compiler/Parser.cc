@@ -45,7 +45,8 @@ Parser::Parser(const ParserConfig &config) : _config(config) {
     _index = 0;
     _parsingDepth = 0;
     _scopes.push_back(Scope());
-    _grammar.argument = MakeOwned<Grammar>();
+    _grammar = MakeStrong<Grammar>();
+    _grammar->argument = MakeStrong<Grammar>();
     _variables.insert("it");
     _variables.insert("empty");
 }
@@ -82,7 +83,7 @@ bool Parser::failed() const { return _failed; }
 
 void Parser::declare(const Signature &signature) {
     _scopes.back().signatures.push_back(signature);
-    _grammar.insert(signature);
+    _grammar->insert(signature);
 }
 
 void Parser::declare(const std::vector<Signature> &signatures) {
@@ -256,6 +257,22 @@ Token Parser::synchronize(const Parser::TokenTypes &tokenTypes) {
     return previous();
 }
 
+Token Parser::synchronizeTo(const Parser::TokenTypes &tokenTypes) {
+    trace("Synchronizing");
+    _recording = false;
+    while (!isAtEnd()) {
+        if (check(tokenTypes)) {
+            break;
+        }
+        advance();
+    }
+    trace("end Synchronizing");
+    if (isAtEnd()) {
+        return peek();
+    }
+    return previous();
+}
+
 NoneType Parser::emitError(const Error &error) {
     _failed = true;
     _config.reporter.report(error);
@@ -289,7 +306,7 @@ void Parser::commit() {
 
 void Parser::beginScope(const Parser::Scope &scope) {
     _scopes.push_back(scope);
-    _grammar.insert(scope.signatures.begin(), scope.signatures.end());
+    _grammar->insert(scope.signatures.begin(), scope.signatures.end());
 }
 
 void Parser::endScope() {
@@ -299,11 +316,11 @@ void Parser::endScope() {
     _variables.insert("it");
     _variables.insert("empty");
 
-    _grammar = Grammar();
-    _grammar.argument = MakeOwned<Grammar>();
+    _grammar = MakeStrong<Grammar>();
+    _grammar->argument = MakeStrong<Grammar>();
 
     for (auto &&scope : _scopes) {
-        _grammar.insert(scope.signatures.begin(), scope.signatures.end());
+        _grammar->insert(scope.signatures.begin(), scope.signatures.end());
         _variables.insert(scope.variables.begin(), scope.variables.end());
     }
 }
@@ -493,7 +510,7 @@ Strong<Statement> Parser::parseFunction() {
     if (_scopes.size() == 1) {
         _exportedDeclarations.push_back(signature);
     }
-    _grammar.insert(signature);
+    _grammar->insert(signature);
 
     // Overwrite any existing variable declarations.
     auto name = signature.name();
@@ -543,11 +560,7 @@ Strong<Statement> Parser::parseIf() {
     if (condition) {
         ifStatement->condition = condition;
     } else {
-        auto token = synchronize({Token::Type::Then, Token::Type::NewLine});
-        if (token.isEndOfStatement()) {
-            return ifStatement;
-        }
-        ifStatement->ranges.then = token.range;
+        synchronizeTo({Token::Type::Then, Token::Type::NewLine});
     }
 
     consumeNewLine();
@@ -665,7 +678,7 @@ Strong<Statement> Parser::parseUse() {
     if (module && module.value()) {
         Append(_scopes.back().signatures, module.value()->signatures());
         for (auto &&signature : module.value()->signatures()) {
-            _grammar.insert(signature);
+            _grammar->insert(signature);
         }
     } else if (!module) {
         emitError(Error(useStatement->range, module.error().what()));
@@ -956,6 +969,10 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
             }
         } else {
             while (match({Token::Type::LeftBracket})) {
+                if (match({Token::Type::RightBracket})) {
+                    emitError(Error(previous().range, "expected an expression"));
+                    break;
+                }
                 auto subscript = parseExpression();
                 if (!subscript) {
                     synchronize();
@@ -1267,7 +1284,7 @@ Strong<Expression> Parser::parseFactor() {
 }
 
 Strong<Expression> Parser::parseExponent() {
-    auto expression = parseUnary();
+    auto expression = parseCallPostfix();
     if (!expression) {
         return expression;
     }
@@ -1277,7 +1294,7 @@ Strong<Expression> Parser::parseExponent() {
         binaryExpression->binaryOperator = binaryOp(operatorToken.value().type);
         binaryExpression->leftExpression = expression;
         binaryExpression->range.start = start;
-        auto unary = parseUnary();
+        auto unary = parseCallPostfix();
         if (!unary) {
             return binaryExpression;
         }
@@ -1286,21 +1303,6 @@ Strong<Expression> Parser::parseExponent() {
         expression = binaryExpression;
     }
     return expression;
-}
-
-Strong<Expression> Parser::parseUnary() {
-    if (auto operatorToken = match({Token::Type::Minus, Token::Type::Not})) {
-        auto unaryExpression = MakeStrong<Unary>(unaryOp(operatorToken.value().type));
-        unaryExpression->range.start = operatorToken.value().range.start;
-        auto unary = parseUnary();
-        if (!unary) {
-            return unaryExpression;
-        }
-        unaryExpression->expression = unary;
-        unaryExpression->range.start = unary->range.end;
-        return unaryExpression;
-    }
-    return parseCall();
 }
 
 static std::string computeErrorString(const Signature &matchingSignature,
@@ -1316,77 +1318,137 @@ static std::string computeErrorString(const Signature &matchingSignature,
     return errorString;
 }
 
-Strong<Expression> Parser::parseCall() {
+// Parse functions with postfix signatures, e.g. "{} a"
+Strong<Expression> Parser::parseCallPostfix() { return parseCall(false); }
+
+// Parse functions with prefix signatures, e.g. "a {}"
+Strong<Expression> Parser::parseCallPrefix() { return parseCall(true); }
+
+Strong<Expression> Parser::parseCall(bool prefix) {
+    Signature matchingSignature;
     std::vector<Strong<Expression>> arguments;
     std::vector<SourceRange> ranges;
-    Signature matchingSignature;
+    auto start = peek().range.start;
+    auto grammar = _grammar;
 
-    auto grammar = &_grammar;
-    auto token = peek();
-    auto start = token.range.start;
+    if (prefix) {
+        auto token = peek();
 
-    while (token.isPrimary()) {
+        // Check if this is a prefix call.
+        if (!token.isWord()) {
+            return parseUnary();
+        }
+
+        // Favor parsing variable names.
+        auto word = lowercase(token.text);
+        auto variable = _variables.find(word);
+        if (variable != _variables.end() && grammar->argument) {
+            return parseUnary();
+        }
+
+        advance();
+
+        // Bail early if we don't recognize this identifier.
+        auto term = grammar->terms.find(word);
+        if (term == grammar->terms.end()) {
+            emitError(Error(token.range, "unknown expression {}", Quoted(word)));
+            return nullptr;
+        }
+
+        matchingSignature.terms.emplace_back(token);
+        ranges.push_back(token.range);
+        grammar = term->second;
+    } else {
+        // Attempt to parse the more tightly bound prefix function calls first. (e.g. "a {}")
+        auto expression = parseCallPrefix();
+        if (!expression) {
+            return expression;
+        }
+
+        // Check if there is more to be parsed.
+        if (!peek().isPrimary()) {
+            return expression;
+        }
+
+        matchingSignature.terms.emplace_back(Signature::Argument());
+        arguments.push_back(expression);
+        grammar = grammar->argument;
+    }
+
+    // Match tokens as long as they are either words or expressions (groups, literals, etc.).
+    // Break early if we can't match anything in our known grammar.
+    while (peek().isPrimary()) {
+        auto token = peek();
         if (token.isWord()) {
             auto word = lowercase(token.text);
             auto variable = _variables.find(word);
             if (variable != _variables.end() && grammar->argument) {
-                auto argument =
-                    (grammar->argument->isLeaf() && grammar != &_grammar ? parseList()
-                                                                         : parseSubscript());
+                auto argument = (grammar->argument->isLeaf() ? parseList() : parseCallPostfix());
                 if (!argument) {
                     return argument;
                 }
                 arguments.push_back(argument);
                 matchingSignature.terms.emplace_back(Signature::Argument());
-                grammar = grammar->argument.get();
-                token = peek();
+                grammar = grammar->argument;
                 continue;
             }
             auto term = grammar->terms.find(word);
             if (term != grammar->terms.end()) {
                 matchingSignature.terms.emplace_back(token);
-                grammar = term->second.get();
-                advance();
                 ranges.push_back(token.range);
-                token = peek();
+                grammar = term->second;
+                advance();
                 continue;
             }
         }
         if (grammar->argument) {
-            auto argument =
-                (grammar->argument->isLeaf() && grammar != &_grammar ? parseList()
-                                                                     : parseSubscript());
+            auto argument = (grammar->argument->isLeaf() ? parseList() : parseCallPostfix());
             if (!argument) {
                 return argument;
             }
             arguments.push_back(argument);
             matchingSignature.terms.emplace_back(Signature::Argument());
-            grammar = grammar->argument.get();
-            token = peek();
+            ranges.push_back(token.range);
+            grammar = grammar->argument;
             continue;
         }
         break;
     }
-    if (matchingSignature.terms.size() == 1) {
-        if (arguments.size() == 1) {
-            return arguments[0];
-        }
+
+    // Check if we managed to match any additional terms for this function. If not, return
+    // just the expression.
+    if (arguments.size() == 1 && matchingSignature.terms.size() == 1) {
+        return arguments[0];
     }
+
+    // Check if we have a signature matching this pattern. If not, we can report some possible
+    // completions.
     auto signature = grammar->signature;
     if (!signature) {
-        if (matchingSignature.terms.size() == 0) {
-            emitError(Error(start, "expected an expression"));
-            return nullptr;
-        }
-
         auto errorString = computeErrorString(matchingSignature, grammar->allSignatures());
         emitError(Error(SourceRange{start, previous().range.end}, errorString));
         return nullptr;
     }
+
     auto call = MakeStrong<Call>(signature.value(), arguments);
     call->range = SourceRange{start, previous().range.end};
     call->ranges = ranges;
     return call;
+}
+
+Strong<Expression> Parser::parseUnary() {
+    if (auto operatorToken = match({Token::Type::Minus, Token::Type::Not})) {
+        auto unaryExpression = MakeStrong<Unary>(unaryOp(operatorToken.value().type));
+        unaryExpression->range.start = operatorToken.value().range.start;
+        auto unary = parseUnary();
+        if (!unary) {
+            return unaryExpression;
+        }
+        unaryExpression->expression = unary;
+        unaryExpression->range.start = unary->range.end;
+        return unaryExpression;
+    }
+    return parseSubscript();
 }
 
 Strong<Expression> Parser::parseSubscript() {
@@ -1396,16 +1458,20 @@ Strong<Expression> Parser::parseSubscript() {
     }
     auto start = expression->range.start;
     while (auto operatorToken = match({Token::Type::LeftBracket})) {
-        auto subscript = parseExpression();
-        if (!subscript) {
-            return subscript;
+        auto subscript = MakeStrong<Binary>(expression, Binary::Subscript, nullptr);
+        subscript->range.start = start;
+        expression = subscript;
+        if (match({Token::Type::RightBracket})) {
+            emitError(Error(previous().range, "expected an expression"));
+            subscript->range.end = previous().range.end;
+            break;
         }
+        subscript->rightExpression = parseExpression();
         if (!consume(Token::Type::RightBracket)) {
             emitError(Error(peek().range, Concat("expected ", Quoted("]"))));
-            return nullptr;
+            break;
         }
-        expression = MakeStrong<Binary>(expression, Binary::Subscript, subscript);
-        expression->range = SourceRange{start, previous().range.end};
+        subscript->range.end = previous().range.end;
     }
     return expression;
 }
@@ -1462,6 +1528,11 @@ Strong<Expression> Parser::parsePrimary() {
     if (peek().isWord() || peek().type == Token::Type::Global ||
         peek().type == Token::Type::Local) {
         return parseVariable();
+    }
+
+    if (peek().isEndOfStatement()) {
+        emitError(Error(peek().range, Concat("expected an expression")));
+        return nullptr;
     }
 
     emitError(Error(peek().range, Concat("unexpected ", peek().description())));
@@ -1527,6 +1598,10 @@ Strong<Expression> Parser::parseGrouping() {
     grouping->ranges.leftGrouping = previous().range;
     grouping->range.start = previous().range.start;
 
+    if (match({Token::Type::RightParen})) {
+        emitError(Error(previous().range, "expected an expression"));
+        return grouping;
+    }
     grouping->expression = parseExpression();
     if (consume(Token::Type::RightParen)) {
         grouping->ranges.rightGrouping = previous().range;

@@ -24,8 +24,8 @@
 SIF_NAMESPACE_BEGIN
 
 struct Grammar {
-    Owned<Grammar> argument;
-    Mapping<std::string, Owned<Grammar>> terms;
+    Strong<Grammar> argument;
+    Mapping<std::string, Strong<Grammar>> terms;
 
     Optional<Signature> signature;
 
