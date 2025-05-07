@@ -387,8 +387,8 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             break;
         }
         case Opcode::Exponent: {
-            auto lhs = Pop(_stack);
             auto rhs = Pop(_stack);
+            auto lhs = Pop(_stack);
             if (lhs.isNumber() && rhs.isNumber()) {
                 Push(_stack, std::pow(lhs.castFloat(), rhs.castFloat()));
             } else {
