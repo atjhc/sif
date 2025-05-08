@@ -403,6 +403,31 @@ static auto _T_as_a_string(CallFrame &frame, SourceLocation location, Value *val
     return values[0].toString();
 }
 
+static auto _T_is_a_integer(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return values[0].isInteger();
+}
+
+static auto _T_is_a_number(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return values[0].isNumber();
+}
+
+static auto _T_is_a_string(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return values[0].isString();
+}
+
+static auto _T_is_a_list(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return values[0].as<List>() != nullptr;
+}
+
+static auto _T_is_a_dictionary(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    return values[0].as<Dictionary>() != nullptr;
+}
+
 static auto _an_empty_string(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(std::string());
@@ -1117,11 +1142,11 @@ static void _core(ModuleMap &natives) {
     natives[S("quit")] = N(_quit);
     natives[S("quit with {}")] = N(_quit_with_T);
     natives[S("get {}")] = N(_get_T);
-    natives[S("(the) description of {}")] = N(_the_description_of_T);
-    natives[S("(the) debug description of {}")] = N(_the_debug_description_of_T);
-    natives[S("(the) hash value of {}")] = N(_the_hash_value_of_T);
-    natives[S("(the) type name of {}")] = N(_the_type_name_of_T);
-    natives[S("(a) copy of {}")] = N(_a_copy_of_T);
+    natives[S("(the) description (of) {}")] = N(_the_description_of_T);
+    natives[S("(the) debug description (of) {}")] = N(_the_debug_description_of_T);
+    natives[S("(the) hash value (of) {}")] = N(_the_hash_value_of_T);
+    natives[S("(the) type name (of) {}")] = N(_the_type_name_of_T);
+    natives[S("(a) copy (of) {}")] = N(_a_copy_of_T);
 }
 
 static void _common(ModuleMap &natives) {
@@ -1142,10 +1167,15 @@ static void _common(ModuleMap &natives) {
 }
 
 static void _types(ModuleMap &natives) {
-    natives[S("{} as (a/an) integer")] = N(_T_as_an_integer);
-    natives[S("{} as (a/an) number")] = N(_T_as_a_number);
-    natives[S("{} as (a/an) string")] = N(_T_as_a_string);
-    natives[S("an empty string")] = N(_an_empty_string);
+    natives[S("{} as (a/an) int/integer")] = N(_T_as_an_integer);
+    natives[S("{} as (a/an) num/number")] = N(_T_as_a_number);
+    natives[S("{} as (a/an) str/string")] = N(_T_as_a_string);
+    natives[S("{} is (a/an) int/integer")] = N(_T_is_a_integer);
+    natives[S("{} is (a/an) num/number")] = N(_T_is_a_number);
+    natives[S("{} is (a/an) str/string")] = N(_T_is_a_string);
+    natives[S("{} is (a/an) list")] = N(_T_is_a_list);
+    natives[S("{} is (a/an) dict/dictionary")] = N(_T_is_a_dictionary);
+    natives[S("an empty str/string")] = N(_an_empty_string);
     natives[S("an empty list")] = N(_an_empty_list);
     natives[S("an empty dict/dictionary")] = N(_an_empty_dictionary);
 }

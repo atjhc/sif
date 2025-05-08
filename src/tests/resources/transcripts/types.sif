@@ -27,3 +27,28 @@ print "1.1" as a number
 (-- expect
 1.1
 --)
+
+print 1 is an integer
+(-- expect
+yes
+--)
+
+print 1.1 is a number
+(-- expect
+yes
+--)
+
+print "1" is a string
+(-- expect
+yes
+--)
+
+print [] is a list
+(-- expect
+yes
+--)
+
+print [:] is a dictionary
+(-- expect
+yes
+--)
