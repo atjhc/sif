@@ -41,21 +41,22 @@ void SourceAnnotator::visit(const FunctionDecl &functionDecl) {
                     _annotations.emplace_back(token.range, Annotation::Kind::Call);
                 }
             };
-            std::visit(
-                Overload{
-                    [&](Token token) { _annotations.emplace_back(token.range, Annotation::Kind::Call); },
-                    [&](Signature::Argument argument) {
-                        for (const auto &target : argument.targets) {
-                            if (target.name) {
-                                _annotations.emplace_back(target.name.value().range,
-                                                     Annotation::Kind::Variable);
-                            }
-                        }
-                    },
-                    choice,
-                    [&](Signature::Option option) { choice(option.choice); },
-                },
-                term);
+            std::visit(Overload{
+                           [&](Token token) {
+                               _annotations.emplace_back(token.range, Annotation::Kind::Call);
+                           },
+                           [&](Signature::Argument argument) {
+                               for (const auto &target : argument.targets) {
+                                   if (target.name) {
+                                       _annotations.emplace_back(target.name.value().range,
+                                                                 Annotation::Kind::Variable);
+                                   }
+                               }
+                           },
+                           choice,
+                           [&](Signature::Option option) { choice(option.choice); },
+                       },
+                       term);
         }
     }
     if (functionDecl.statement) {
@@ -65,7 +66,8 @@ void SourceAnnotator::visit(const FunctionDecl &functionDecl) {
         _annotations.emplace_back(functionDecl.ranges.end.value(), Annotation::Kind::Control);
     }
     if (functionDecl.ranges.endFunction) {
-        _annotations.emplace_back(functionDecl.ranges.endFunction.value(), Annotation::Kind::Control);
+        _annotations.emplace_back(functionDecl.ranges.endFunction.value(),
+                                  Annotation::Kind::Control);
     }
 }
 
@@ -181,7 +183,8 @@ void SourceAnnotator::visit(const RepeatCondition &repeat) {
         _annotations.emplace_back(repeat.Repeat::ranges.end.value(), Annotation::Kind::Control);
     }
     if (repeat.Repeat::ranges.endRepeat) {
-        _annotations.emplace_back(repeat.Repeat::ranges.endRepeat.value(), Annotation::Kind::Control);
+        _annotations.emplace_back(repeat.Repeat::ranges.endRepeat.value(),
+                                  Annotation::Kind::Control);
     }
 }
 
@@ -204,7 +207,8 @@ void SourceAnnotator::visit(const RepeatFor &foreach) {
         _annotations.emplace_back(foreach.Repeat::ranges.end.value(), Annotation::Kind::Control);
     }
     if (foreach.Repeat::ranges.endRepeat) {
-        _annotations.emplace_back(foreach.Repeat::ranges.endRepeat.value(), Annotation::Kind::Control);
+        _annotations.emplace_back(foreach.Repeat::ranges.endRepeat.value(),
+                                  Annotation::Kind::Control);
     }
 }
 
@@ -237,7 +241,8 @@ void SourceAnnotator::visit(const Grouping &grouping) {
         grouping.expression->accept(*this);
     }
     if (grouping.ranges.rightGrouping) {
-        _annotations.emplace_back(grouping.ranges.rightGrouping.value(), Annotation::Kind::Operator);
+        _annotations.emplace_back(grouping.ranges.rightGrouping.value(),
+                                  Annotation::Kind::Operator);
     }
 }
 

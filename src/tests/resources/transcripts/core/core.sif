@@ -58,3 +58,63 @@ print the hash value of one
 (-- expect
 1
 --)
+
+print 1 is 1
+(-- expect
+yes
+--)
+
+print 1 is 0
+(-- expect
+no
+--)
+
+print 1 is not 1
+(-- expect
+no
+--)
+
+print 1 is not 0
+(-- expect
+yes
+--)
+
+print [] is empty
+(-- expect
+yes
+--)
+
+print [:] is empty
+(-- expect
+yes
+--)
+
+print "" is empty
+(-- expect
+yes
+--)
+
+print (1..<1) is empty
+(-- expect
+yes
+--)
+
+print [0] is not empty
+(-- expect
+yes
+--)
+
+print [1:1] is not empty
+(-- expect
+yes
+--)
+
+print "a" is not empty
+(-- expect
+yes
+--)
+
+print (1...1) is not empty
+(-- expect
+yes
+--)

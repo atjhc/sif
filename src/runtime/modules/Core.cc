@@ -177,6 +177,38 @@ static auto _the_size_of_T(CallFrame &frame, SourceLocation location, Value *val
     return static_cast<long>(size);
 }
 
+static auto _T_is_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (values[1].isEmpty()) {
+        if (auto list = values[0].as<List>()) {
+            return list->values().size() == 0;
+        } else if (auto dictionary = values[0].as<Dictionary>()) {
+            return dictionary->values().size() == 0;
+        } else if (auto string = values[0].as<String>()) {
+            return string->string().size() == 0;
+        } else if (auto range = values[0].as<Range>()) {
+            return range->size() == 0;
+        }
+    }
+    return values[0] == values[1];
+}
+
+static auto _T_is_not_T(CallFrame &frame, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (values[1].isEmpty()) {
+        if (auto list = values[0].as<List>()) {
+            return list->values().size() != 0;
+        } else if (auto dictionary = values[0].as<Dictionary>()) {
+            return dictionary->values().size() != 0;
+        } else if (auto string = values[0].as<String>()) {
+            return string->string().size() != 0;
+        } else if (auto range = values[0].as<Range>()) {
+            return range->size() != 0;
+        }
+    }
+    return values[0] != values[1];
+}
+
 static auto _contains(SourceLocation location, Value object, Value value) -> Result<Value, Error> {
     if (auto list = object.as<List>()) {
         return list->contains(value);
@@ -1151,6 +1183,8 @@ static void _core(ModuleMap &natives) {
 
 static void _common(ModuleMap &natives) {
     natives[S("(the) size of {}")] = N(_the_size_of_T);
+    natives[S("{} is {}")] = N(_T_is_T);
+    natives[S("{} is not {}")] = N(_T_is_not_T);
     natives[S("{} contains {}")] = N(_T_contains_T);
     natives[S("{} is in {}")] = N(_T_is_in_T);
     natives[S("{} starts with {}")] = N(_T_starts_with_T);
