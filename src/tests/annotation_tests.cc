@@ -25,16 +25,16 @@
 
 using namespace sif;
 
-static std::string stringForAnnotationKind(SourceAnnotator::Annotation::Kind kind) {
+static std::string stringForAnnotationKind(Annotation::Kind kind) {
 switch (kind) {
-    case SourceAnnotator::Annotation::Kind::Control: return "control";
-    case SourceAnnotator::Annotation::Kind::Comment: return "comment";
-    case SourceAnnotator::Annotation::Kind::StringLiteral: return "string";
-    case SourceAnnotator::Annotation::Kind::NumberLiteral: return "number";
-    case SourceAnnotator::Annotation::Kind::Call: return "call";
-    case SourceAnnotator::Annotation::Kind::Operator: return "operator";
-    case SourceAnnotator::Annotation::Kind::Variable: return "variable";
-    case SourceAnnotator::Annotation::Kind::Module: return "module";
+    case Annotation::Kind::Control: return "control";
+    case Annotation::Kind::Comment: return "comment";
+    case Annotation::Kind::StringLiteral: return "string";
+    case Annotation::Kind::NumberLiteral: return "number";
+    case Annotation::Kind::Call: return "call";
+    case Annotation::Kind::Operator: return "operator";
+    case Annotation::Kind::Variable: return "variable";
+    case Annotation::Kind::Module: return "module";
     }
 }
 

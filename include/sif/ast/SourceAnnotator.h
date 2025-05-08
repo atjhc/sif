@@ -25,24 +25,24 @@
 
 SIF_NAMESPACE_BEGIN
 
-class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
-  public:
-    struct Annotation {
-        enum class Kind {
-            Control,
-            Comment,
-            StringLiteral,
-            NumberLiteral,
-            Call,
-            Operator,
-            Variable,
-            Module,
-        };
-
-        SourceRange range;
-        Kind kind;
+struct Annotation {
+    enum class Kind {
+        Control,
+        Comment,
+        StringLiteral,
+        NumberLiteral,
+        Call,
+        Operator,
+        Variable,
+        Module,
     };
 
+    SourceRange range;
+    Kind kind;
+};
+
+class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
+  public:
     SourceAnnotator();
 
     std::vector<Annotation> annotate(const Statement &);
@@ -78,7 +78,7 @@ class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
     void visit(const StringInterpolation &) override;
 
   private:
-    std::vector<Annotation> _ranges;
+    std::vector<Annotation> _annotations;
 };
 
 SIF_NAMESPACE_END
