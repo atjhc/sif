@@ -38,7 +38,8 @@ RangeLiteral::RangeLiteral(Strong<Expression> start, Strong<Expression> end, boo
 
 ListLiteral::ListLiteral(std::vector<Strong<Expression>> expressions) : expressions(expressions) {}
 
-DictionaryLiteral::DictionaryLiteral(Mapping<Strong<Expression>, Strong<Expression>> values)
+DictionaryLiteral::DictionaryLiteral(
+    std::vector<std::pair<Strong<Expression>, Strong<Expression>>> values)
     : values(values) {}
 
 Literal::Literal(Token token) : token(token) {}

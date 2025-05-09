@@ -1,7 +1,53 @@
-{
--- empty for now
+[
+(-- annotations
+operator [
+--)
+
+[]
+(-- annotations
+operator [
+operator ]
+--)
+
+[1]
+(-- annotations
+operator [
+number 1
+operator ]
+--)
+
+[1, 2]
+(-- annotations
+operator [
+number 1
+operator ,
+number 2
+operator ]
+--)
+
+[:]
+(-- annotations
+operator [
+operator :
+operator ]
+--)
+
+[1: 2]
+(-- annotations
+operator [
+number 1
+operator :
+number 2
+operator ]
+--)
 
 (
 (-- annotations
 operator (
+--)
+
+-1
+(-- annotations
+operator -
+number 1
 --)

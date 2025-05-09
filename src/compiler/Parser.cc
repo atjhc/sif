@@ -1439,6 +1439,7 @@ Strong<Expression> Parser::parseCall(bool prefix) {
 Strong<Expression> Parser::parseUnary() {
     if (auto operatorToken = match({Token::Type::Minus, Token::Type::Not})) {
         auto unaryExpression = MakeStrong<Unary>(unaryOp(operatorToken.value().type));
+        unaryExpression->ranges.operator_ = operatorToken.value().range;
         unaryExpression->range.start = operatorToken.value().range.start;
         auto unary = parseUnary();
         if (!unary) {
@@ -1614,39 +1615,45 @@ Strong<Expression> Parser::parseGrouping() {
 
 Strong<Expression> Parser::parseContainerLiteral() {
     auto start = previous().range.start;
+    auto leftBracketRange = previous().range;
     if (match({Token::Type::RightBracket})) {
         auto container = MakeStrong<ListLiteral>();
+        container->ranges.leftBracket = leftBracketRange;
+        container->ranges.rightBracket = previous().range;
         container->range = SourceRange{start, previous().range.end};
         return container;
     }
     if (match({Token::Type::Colon})) {
         auto container = MakeStrong<DictionaryLiteral>();
         container->range.start = start;
+        container->ranges.leftBracket = leftBracketRange;
+        container->ranges.colons.push_back(previous().range);
         if (!consume(Token::Type::RightBracket)) {
-            emitError(Error(peek().range, Concat("expected ", Quoted("}"))));
+            emitError(Error(peek().range, Concat("expected ", Quoted("]"))));
             return container;
         }
+        container->ranges.rightBracket = previous().range;
         container->range.end = previous().range.end;
         return container;
     }
 
     Strong<Expression> containerExpression;
     auto expression = parseTerm();
-    if (!expression) {
-        return expression;
-    }
 
     if (match({Token::Type::Colon})) {
         auto dictionaryExpression = MakeStrong<DictionaryLiteral>();
         dictionaryExpression->range.start = start;
+        dictionaryExpression->ranges.leftBracket = leftBracketRange;
+        dictionaryExpression->ranges.colons.push_back(previous().range);
 
         auto valueExpression = parseTerm();
         if (!valueExpression) {
             return dictionaryExpression;
         }
-        dictionaryExpression->values[expression] = valueExpression;
+        dictionaryExpression->values.push_back({expression, valueExpression});
         if (consume(Token::Type::Comma)) {
             do {
+                dictionaryExpression->ranges.commas.push_back(previous().range);
                 auto keyExpression = parseTerm();
                 if (!keyExpression) {
                     return dictionaryExpression;
@@ -1655,20 +1662,23 @@ Strong<Expression> Parser::parseContainerLiteral() {
                     emitError(Error(peek().range, Concat("expected ", Quoted(":"))));
                     return dictionaryExpression;
                 }
+                dictionaryExpression->ranges.colons.push_back(previous().range);
                 auto valueExpression = parseTerm();
                 if (!valueExpression) {
                     return dictionaryExpression;
                 }
-                dictionaryExpression->values[keyExpression] = valueExpression;
+                dictionaryExpression->values.push_back({keyExpression, valueExpression});
             } while (match({Token::Type::Comma}));
         }
         containerExpression = dictionaryExpression;
     } else if (match({Token::Type::Comma})) {
         auto listExpression = MakeStrong<ListLiteral>();
+        listExpression->ranges.leftBracket = leftBracketRange;
         listExpression->range.start = start;
 
         listExpression->expressions.push_back(expression);
         do {
+            listExpression->ranges.commas.push_back(previous().range);
             auto expression = parseTerm();
             if (!expression) {
                 return listExpression;
@@ -1679,19 +1689,31 @@ Strong<Expression> Parser::parseContainerLiteral() {
     } else if (check({Token::Type::RightBracket})) {
         std::vector<Strong<Expression>> values;
         values.push_back(expression);
-        containerExpression = MakeStrong<ListLiteral>(values);
+        auto listExpression = MakeStrong<ListLiteral>(values);
+        listExpression->ranges.leftBracket = leftBracketRange;
+        listExpression->ranges.rightBracket = peek().range;
+        containerExpression = listExpression;
     } else {
         emitError(Error(peek().range,
-                        Concat("expected ", Quoted(":"), ", ", Quoted(","), " or ", Quoted("}"))));
+                        Concat("expected ", Quoted(":"), ", ", Quoted(","), " or ", Quoted("]"))));
 
         auto listExpression = MakeStrong<ListLiteral>();
+        listExpression->ranges.leftBracket = leftBracketRange;
         listExpression->range.start = start;
-        listExpression->expressions.push_back(expression);
+        if (expression) {
+            listExpression->expressions.push_back(expression);
+        }
         return listExpression;
     }
 
     if (!consume(Token::Type::RightBracket)) {
-        emitError(Error(peek().range, Concat("expected ", Quoted("}"))));
+        emitError(Error(peek().range, Concat("expected ", Quoted("]"))));
+    }
+    if (auto listLiteral = Cast<ListLiteral>(containerExpression)) {
+        listLiteral->ranges.rightBracket = previous().range;
+    }
+    if (auto dictionaryLiteral = Cast<DictionaryLiteral>(containerExpression)) {
+        dictionaryLiteral->ranges.rightBracket = previous().range;
     }
     containerExpression->range = SourceRange{start, previous().range.end};
     return containerExpression;

@@ -150,8 +150,8 @@ struct ListLiteral : Expression {
     std::vector<Strong<Expression>> expressions;
 
     struct {
-        Optional<SourceRange> leftGrouping;
-        Optional<SourceRange> rightGrouping;
+        Optional<SourceRange> leftBracket;
+        Optional<SourceRange> rightBracket;
         std::vector<SourceRange> commas;
     } ranges;
 
@@ -161,15 +161,16 @@ struct ListLiteral : Expression {
 };
 
 struct DictionaryLiteral : Expression {
-    Mapping<Strong<Expression>, Strong<Expression>> values;
+    std::vector<std::pair<Strong<Expression>, Strong<Expression>>> values;
 
     struct {
-        SourceRange leftBrace;
-        SourceRange rightBrace;
+        SourceRange leftBracket;
+        SourceRange rightBracket;
+        std::vector<SourceRange> colons;
         std::vector<SourceRange> commas;
     } ranges;
 
-    DictionaryLiteral(Mapping<Strong<Expression>, Strong<Expression>> = {});
+    DictionaryLiteral(std::vector<std::pair<Strong<Expression>, Strong<Expression>>> = {});
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

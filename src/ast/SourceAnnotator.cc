@@ -281,16 +281,36 @@ void SourceAnnotator::visit(const RangeLiteral &range) {
 }
 
 void SourceAnnotator::visit(const ListLiteral &list) {
-    for (auto &&expression : list.expressions) {
+    if (list.ranges.leftBracket) {
+        _annotations.emplace_back(list.ranges.leftBracket.value(), Annotation::Kind::Operator);
+    }
+    for (int i = 0; i < list.expressions.size(); i++) {
+        auto expression = list.expressions[i];
         expression->accept(*this);
+        if (i < list.ranges.commas.size()) {
+            _annotations.emplace_back(list.ranges.commas[i], Annotation::Kind::Operator);
+        }
+    }
+    if (list.ranges.rightBracket) {
+        _annotations.emplace_back(list.ranges.rightBracket.value(), Annotation::Kind::Operator);
     }
 }
 
 void SourceAnnotator::visit(const DictionaryLiteral &dictionary) {
-    for (auto &&pair : dictionary.values) {
+    _annotations.emplace_back(dictionary.ranges.leftBracket, Annotation::Kind::Operator);
+    for (int i = 0; i < dictionary.values.size(); i++) {
+        const auto &pair = dictionary.values[i];
         pair.first->accept(*this);
+        _annotations.emplace_back(dictionary.ranges.colons[i], Annotation::Kind::Operator);
         pair.second->accept(*this);
+        if (i < dictionary.ranges.commas.size()) {
+            _annotations.emplace_back(dictionary.ranges.commas[i], Annotation::Kind::Operator);
+        }
     }
+    if (dictionary.values.size() == 0 && dictionary.ranges.colons.size() == 1) {
+        _annotations.emplace_back(dictionary.ranges.colons[0], Annotation::Kind::Operator);
+    }
+    _annotations.emplace_back(dictionary.ranges.rightBracket, Annotation::Kind::Operator);
 }
 
 void SourceAnnotator::visit(const Literal &literal) {
