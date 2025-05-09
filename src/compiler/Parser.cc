@@ -1150,6 +1150,8 @@ Strong<Expression> Parser::parseEquality() {
         auto binaryExpression = MakeStrong<Binary>();
         binaryExpression->leftExpression = expression;
         binaryExpression->range.start = start;
+        binaryExpression->ranges.operator_ = previous().range;
+
         if (operatorToken.value().type == Token::Type::Is && match({Token::Type::Not})) {
             binaryExpression->binaryOperator = Binary::Operator::NotEqual;
         } else {
@@ -1179,6 +1181,7 @@ Strong<Expression> Parser::parseComparison() {
         binaryExpression->leftExpression = expression;
         binaryExpression->binaryOperator = binaryOp(operatorToken.value().type);
         binaryExpression->range.start = start;
+        binaryExpression->ranges.operator_ = previous().range;
 
         auto list = parseList();
         if (!list) {
@@ -1202,6 +1205,7 @@ Strong<Expression> Parser::parseList() {
         listExpression->range.start = start;
         listExpression->expressions.push_back(expression);
         while (match({Token::Type::Comma})) {
+            listExpression->ranges.commas.push_back(previous().range);
             auto range = parseRange();
             if (!range) {
                 return listExpression;
@@ -1225,6 +1229,7 @@ Strong<Expression> Parser::parseRange() {
         auto rangeExpression = MakeStrong<RangeLiteral>();
         rangeExpression->start = expression;
         rangeExpression->range.start = start;
+        rangeExpression->ranges.operator_ = previous().range;
         rangeExpression->closed =
             rangeOperator.value().type == Token::Type::ThreeDots ? true : false;
         auto term = parseTerm();
@@ -1249,6 +1254,7 @@ Strong<Expression> Parser::parseTerm() {
         binaryExpression->leftExpression = expression;
         binaryExpression->binaryOperator = binaryOp(operatorToken.value().type);
         binaryExpression->range.start = start;
+        binaryExpression->ranges.operator_ = previous().range;
         auto factor = parseFactor();
         if (!factor) {
             return binaryExpression;
@@ -1272,6 +1278,7 @@ Strong<Expression> Parser::parseFactor() {
         binaryExpression->leftExpression = expression;
         binaryExpression->binaryOperator = binaryOp(operatorToken.value().type);
         binaryExpression->range.start = start;
+        binaryExpression->ranges.operator_ = previous().range;
         auto exponent = parseExponent();
         if (!exponent) {
             return exponent;
@@ -1294,6 +1301,7 @@ Strong<Expression> Parser::parseExponent() {
         binaryExpression->binaryOperator = binaryOp(operatorToken.value().type);
         binaryExpression->leftExpression = expression;
         binaryExpression->range.start = start;
+        binaryExpression->ranges.operator_ = previous().range;
         auto unary = parseCallPostfix();
         if (!unary) {
             return binaryExpression;
