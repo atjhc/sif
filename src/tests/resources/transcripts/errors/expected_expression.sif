@@ -47,7 +47,7 @@ expected an expression
 set a[]
 (-- error
 expected an expression
-expected "to"
+expected “to”
 --)
 
 set a[] to
@@ -59,7 +59,7 @@ expected an expression
 if
 (-- error
 expected an expression
-expected "then"
+expected “then”
 --)
 
 repeat while

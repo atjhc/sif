@@ -2,7 +2,7 @@ repeat while false
   function a
     next repeat
 (-- error
-unexpected "next" outside repeat block
+unexpected “next” outside repeat block
 --)
   end function
 end repeat
@@ -11,7 +11,7 @@ repeat while false
   function a
     exit repeat
 (-- error
-unexpected "exit" outside repeat block
+unexpected “exit” outside repeat block
 --)
   end function
 end repeat

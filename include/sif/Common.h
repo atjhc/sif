@@ -79,6 +79,10 @@ inline constexpr NoneType None = std::nullopt;
 
 template <class E> tl::unexpected<E> Fail(const E &error) { return tl::unexpected(error); }
 
+template <class... Args> std::string Format(std::format_string<Args...> fmt, Args &&...args) {
+    return std::format(fmt, std::forward<Args>(args)...);
+}
+
 template <class T, class... Args>
 std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T>> MakeOwned(Args &&...args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));

@@ -136,7 +136,7 @@ Token Scanner::scan() {
             }
         }
     }
-    return makeError(Concat("unknown character: ", int(c)));
+    return makeError(Format(Errors::UnknownCharacter, int(c)));
 }
 
 Token Scanner::scanWord() {
@@ -315,7 +315,7 @@ Token Scanner::scanString(char startingQuote, char terminalQuote) {
     }
 
     if (isAtEnd()) {
-        return makeError("unterminated string");
+        return makeError(std::string(Errors::UnterminatedString));
     }
 
     advance(); // consume the closing terminal

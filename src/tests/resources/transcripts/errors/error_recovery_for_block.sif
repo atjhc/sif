@@ -3,44 +3,44 @@ function a ...
 end function
 (-- error
 expected a new line
-unexpected "exit" outside repeat block
+unexpected “exit” outside repeat block
 --)
 
 if true print 1
 (-- error
-expected "then"
+expected “then”
 --)
 
 if true true then set a to 1
 (-- error
-expected "then"
+expected “then”
 --)
 
 if true true then
   set a to
 end if
 (-- error
-expected "then"
+expected “then”
 expected an expression
 --)
 
 if true true then set a to 1
 else set a to 1
 (-- error
-expected "then"
+expected “then”
 --)
 
 if true true then set a to 1
 else set a to
 (-- error
-expected "then"
+expected “then”
 expected an expression
 --)
 
 if true true then set a to
 else set a to
 (-- error
-expected "then"
+expected “then”
 expected an expression
 expected an expression
 --)
@@ -49,7 +49,7 @@ repeat a
   set a to 1
 end repeat
 (-- error
-expected "forever", "while", "until", "for", or a new line
+expected “forever”, “while”, “until”, “for”, or a new line
 --)
 
 repeat while
@@ -71,5 +71,5 @@ repeat for
 end repeat
 (-- error
 expected a variable name
-expected "in"
+expected “in”
 --)

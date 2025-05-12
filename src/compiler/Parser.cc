@@ -359,7 +359,7 @@ Signature Parser::parseSignature() {
                 if (word) {
                     tokens.push_back(word.value());
                 } else {
-                    emitError(Error(peek().range.start, "expected a word"));
+                    emitError(Error(peek().range, Errors::ExpectedWord));
                 }
             }
             if (tokens.size() > 1) {
@@ -375,11 +375,11 @@ Signature Parser::parseSignature() {
                 if (auto word = consumeWord()) {
                     choice.tokens.push_back(word.value());
                 } else {
-                    emitError(Error(peek().range.start, "expected a word"));
+                    emitError(Error(peek().range, Errors::ExpectedWord));
                 }
             } while (match({Token::Type::Slash}));
             if (!consume(Token::Type::RightParen)) {
-                emitError(Error(peek().range.start, Concat("expected ", Quoted(")"))));
+                emitError(Error(peek().range, Errors::ExpectedRightParens));
             }
             signature.terms.push_back(Signature::Option{choice});
         } else {
@@ -389,8 +389,7 @@ Signature Parser::parseSignature() {
                 Optional<Token> typeName = None;
                 if ((name = consumeWord())) {
                     if (argumentNames.find(name.value().text) != argumentNames.end()) {
-                        emitError(Error(name.value().range,
-                                        "duplicate argument names in function declaration"));
+                        emitError(Error(name.value().range, Errors::DuplicateArgumentNames));
                     }
                     if (name.value().text != "_") {
                         argumentNames.insert(name.value().text);
@@ -399,33 +398,32 @@ Signature Parser::parseSignature() {
                         if (auto result = consumeWord()) {
                             typeName = result.value();
                         } else {
-                            emitError(Error(peek().range.start, "expected a type name"));
+                            emitError(Error(peek().range.start, Errors::ExpectedATypeName));
                         }
                     }
                 } else if (match({Token::Type::Colon})) {
                     if (auto result = consumeWord()) {
                         typeName = result.value();
                     } else {
-                        emitError(Error(peek().range.start, "expected a type name"));
+                        emitError(Error(peek().range.start, Errors::ExpectedATypeName));
                     }
                 }
                 targets.push_back(Signature::Argument::Target{name, typeName});
             } while (match({Token::Type::Comma}));
             if (!consume(Token::Type::RightBrace)) {
-                emitError(Error(peek().range.start, Concat("expected ", Quoted("}"))));
+                emitError(Error(peek().range.start, Errors::ExpectedRightCurlyBrace));
             }
             signature.terms.push_back(Signature::Argument{targets});
         }
     }
     if (signature.terms.size() == 0) {
-        emitError(Error(peek().range.start,
-                        Concat("expected a word, ", Quoted("("), ", or ", Quoted("{"))));
+        emitError(Error(peek().range.start, Errors::ExpectedWordParenOrCurly));
     }
     if (match({Token::Type::Arrow})) {
         if (auto word = consumeWord()) {
             signature.typeName = word.value();
         } else {
-            emitError(Error(peek().range.start, "expected a type name"));
+            emitError(Error(peek().range.start, Errors::ExpectedATypeName));
         }
     }
     return signature;
@@ -485,7 +483,7 @@ Strong<Statement> Parser::parseStatement() {
         return nullptr;
     }
     if (!consumeNewLine()) {
-        emitError(Error(peek().range.start, "expected a new line"));
+        emitError(Error(peek().range.start, Errors::ExpectedANewLine));
         synchronize();
         return nullptr;
     }
@@ -501,7 +499,7 @@ Strong<Statement> Parser::parseFunction() {
 
     auto signature = parseSignature();
     if (!consumeNewLine()) {
-        emitError(Error(peek().range.start, "expected a new line"));
+        emitError(Error(peek().range.start, Errors::ExpectedANewLine));
         synchronize();
     }
 
@@ -541,7 +539,7 @@ Strong<Statement> Parser::parseFunction() {
             decl->range.end = previous().range.end;
         }
     } else {
-        emitError(Error(peek().range.start, Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range.start, Errors::ExpectedEnd));
     }
 
     _parsingDepth--;
@@ -565,7 +563,7 @@ Strong<Statement> Parser::parseIf() {
 
     consumeNewLine();
     if (!consume(Token::Type::Then)) {
-        emitError(Error(peek().range.start, Concat("expected ", Quoted("then"))));
+        emitError(Error(peek().range.start, Errors::ExpectedThen));
         auto token = synchronize({Token::Type::Then, Token::Type::NewLine});
         if (token.isEndOfStatement()) {
             return ifStatement;
@@ -582,8 +580,7 @@ Strong<Statement> Parser::parseIf() {
         }
         token = match({Token::Type::End, Token::Type::Else});
         if (!token) {
-            emitError(Error(peek().range.start,
-                            Concat("expected ", Quoted("end"), " or ", Quoted("else"))));
+            emitError(Error(peek().range.start, Errors::ExpectedEndOrElse));
         } else if (token.value().type == Token::Type::End) {
             ifStatement->ranges.end = token.value().range;
             if (match({Token::Type::If})) {
@@ -625,12 +622,12 @@ Strong<Statement> Parser::parseIf() {
                     ifStatement->ranges.endIf = previous().range;
                 }
             } else {
-                emitError(Error(peek().range.start, Concat("expected ", Quoted("end"))));
+                emitError(Error(peek().range.start, Errors::ExpectedEnd));
             }
 
             _parsingDepth--;
             if (!consumeNewLine()) {
-                emitError(Error(peek().range.start, "expected new line or end of script"));
+                emitError(Error(peek().range.start, Errors::ExpectedNewLineOrEndOfScript));
                 synchronize();
                 return ifStatement;
             }
@@ -664,7 +661,7 @@ Strong<Statement> Parser::parseUse() {
     useStatement->ranges.use = previous().range;
     Optional<Token> token = match({Token::Type::StringLiteral, Token::Type::Word});
     if (!token) {
-        emitError(Error(peek().range, "expected a string or word"));
+        emitError(Error(peek().range, Errors::ExpectedStringOrWord));
         synchronize();
         return useStatement;
     }
@@ -692,7 +689,7 @@ Strong<Statement> Parser::parseUsing() {
     usingStatement->ranges.using_ = previous().range;
     Optional<Token> token = match({Token::Type::StringLiteral, Token::Type::Word});
     if (!token) {
-        emitError(Error(peek().range, "expected a string literal or word"));
+        emitError(Error(peek().range, Errors::ExpectedStringOrWord));
         synchronize();
         return usingStatement;
     }
@@ -716,7 +713,7 @@ Strong<Statement> Parser::parseUsing() {
             usingStatement->range.end = peek().range.end;
         }
         if (!consumeEnd(Token::Type::Using)) {
-            emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
+            emitError(Error(peek().range, Errors::ExpectedEnd));
         }
         if (previous().type == Token::Type::Using) {
             usingStatement->ranges.endUsing = previous().range;
@@ -749,7 +746,7 @@ Strong<Statement> Parser::parseTry() {
             tryStatement->range.end = peek().range.end;
         }
         if (!consumeEnd(Token::Type::Try)) {
-            emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
+            emitError(Error(peek().range, Errors::ExpectedEnd));
         }
         if (previous().type == Token::Type::Try) {
             tryStatement->ranges.endTry = previous().range;
@@ -779,7 +776,7 @@ Strong<Statement> Parser::parseRepeat() {
             foreverRange = previous().range;
         }
         if (token.has_value() && !consumeNewLine()) {
-            emitError(Error(peek().range, "expected a new line"));
+            emitError(Error(peek().range, Errors::ExpectedANewLine));
             synchronize();
         }
         auto statement = parseRepeatForever();
@@ -807,9 +804,7 @@ Strong<Statement> Parser::parseRepeat() {
         return statement;
     }
 
-    emitError(
-        Error(peek().range, Concat("expected ", Quoted("forever"), ", ", Quoted("while"), ", ",
-                                   Quoted("until"), ", ", Quoted("for"), ", or a new line")));
+    emitError(Error(peek().range, Errors::ExpectedForeverWhileUntilFor));
     synchronize();
     auto repeat = parseRepeatForever();
     repeat->ranges.repeat = repeatRange;
@@ -833,7 +828,7 @@ Strong<Repeat> Parser::parseRepeatForever() {
             repeat->range.end = previous().range.end;
         }
     } else {
-        emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range, Errors::ExpectedEnd));
     }
 
     _parsingDepth--;
@@ -850,7 +845,7 @@ Strong<RepeatCondition> Parser::parseRepeatCondition() {
     repeat->condition = parseExpression();
 
     if (!consumeNewLine()) {
-        emitError(Error(peek().range, "expected a new line"));
+        emitError(Error(peek().range, Errors::ExpectedANewLine));
         synchronize();
     }
 
@@ -865,7 +860,7 @@ Strong<RepeatCondition> Parser::parseRepeatCondition() {
             repeat->range.end = previous().range.end;
         }
     } else {
-        emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range, Errors::ExpectedEnd));
     }
 
     _parsingDepth--;
@@ -884,7 +879,7 @@ Strong<RepeatFor> Parser::parseRepeatFor() {
             declare(name);
             repeat->variables.push_back(variable);
         } else {
-            emitError(Error(peek().range, "expected a variable name"));
+            emitError(Error(peek().range, Errors::ExpectedAVariableName));
             break;
         }
     } while (match({Token::Type::Comma}));
@@ -894,11 +889,11 @@ Strong<RepeatFor> Parser::parseRepeatFor() {
         repeat->expression = parseExpression();
 
         if (!consumeNewLine()) {
-            emitError(Error(peek().range, "expected a new line"));
+            emitError(Error(peek().range, Errors::ExpectedANewLine));
             synchronize();
         }
     } else {
-        emitError(Error(peek().range, Concat("expected ", Quoted("in"))));
+        emitError(Error(peek().range, Errors::ExpectedIn));
         synchronize({Token::Type::In, Token::Type::NewLine});
     }
 
@@ -913,7 +908,7 @@ Strong<RepeatFor> Parser::parseRepeatFor() {
             repeat->range.end = previous().range.end;
         }
     } else {
-        emitError(Error(peek().range, Concat("expected ", Quoted("end"))));
+        emitError(Error(peek().range, Errors::ExpectedEnd));
     }
 
     _parsingDepth--;
@@ -955,7 +950,7 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
 
         auto token = consumeWord();
         if (!token) {
-            emitError(Error(peek().range, "expected a variable name"));
+            emitError(Error(peek().range, Errors::ExpectedAVariableName));
             synchronize();
             return assignment;
         }
@@ -963,14 +958,14 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
             if (auto word = consumeWord()) {
                 typeName = word.value();
             } else {
-                emitError(Error(peek().range, "expected a type name"));
+                emitError(Error(peek().range, Errors::ExpectedATypeName));
                 synchronize();
                 return assignment;
             }
         } else {
             while (match({Token::Type::LeftBracket})) {
                 if (match({Token::Type::RightBracket})) {
-                    emitError(Error(previous().range, "expected an expression"));
+                    emitError(Error(previous().range, Errors::ExpectedAnExpression));
                     break;
                 }
                 auto subscript = parseExpression();
@@ -980,7 +975,7 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
                 }
                 subscripts.push_back(subscript);
                 if (!consume(Token::Type::RightBracket)) {
-                    emitError(Error(peek().range, Concat("expected ", Quoted("]"))));
+                    emitError(Error(peek().range, Errors::ExpectedRightBracket));
                     return assignment;
                 }
             }
@@ -999,7 +994,7 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
     assignment->targets = variableDecls;
 
     if (!consume(Token::Type::To)) {
-        emitError(Error(peek().range, Concat("expected ", Quoted("to"))));
+        emitError(Error(peek().range, Errors::ExpectedTo));
         synchronize();
         return assignment;
     }
@@ -1013,13 +1008,12 @@ Result<Strong<Statement>, Error> Parser::parseExit() {
     auto exitRepeat = MakeStrong<ExitRepeat>();
     exitRepeat->ranges.exit = previous().range;
     if (!_parsingRepeat) {
-        emitError(
-            Error(peek().range, Concat("unexpected ", Quoted("exit"), " outside repeat block")));
+        emitError(Error(peek().range, Errors::UnexpectedExit));
     }
     if (consume(Token::Type::Repeat)) {
         exitRepeat->ranges.repeat = previous().range;
     } else {
-        emitError(Error(peek().range, Concat("expected ", Quoted("repeat"))));
+        emitError(Error(peek().range, Errors::ExpectedRepeat));
     }
     exitRepeat->range = SourceRange{exitRepeat->ranges.exit.start, previous().range.end};
     return exitRepeat;
@@ -1029,13 +1023,12 @@ Result<Strong<Statement>, Error> Parser::parseNext() {
     auto nextRepeat = MakeStrong<NextRepeat>();
     nextRepeat->ranges.next = previous().range;
     if (!_parsingRepeat) {
-        emitError(
-            Error(peek().range, Concat("unexpected ", Quoted("next"), " outside repeat block")));
+        emitError(Error(peek().range, Errors::UnexpectedNext));
     }
     if (consume(Token::Type::Repeat)) {
         nextRepeat->ranges.repeat = previous().range;
     } else {
-        emitError(Error(peek().range.start, Concat("expected ", Quoted("repeat"))));
+        emitError(Error(peek().range.start, Errors::ExpectedRepeat));
     }
     nextRepeat->range = SourceRange{nextRepeat->ranges.next.start, previous().range.end};
     return nextRepeat;
@@ -1359,7 +1352,7 @@ Strong<Expression> Parser::parseCall(bool prefix) {
         // Bail early if we don't recognize this identifier.
         auto term = grammar->terms.find(word);
         if (term == grammar->terms.end()) {
-            emitError(Error(token.range, "unknown expression {}", Quoted(word)));
+            emitError(Error(token.range, Errors::UnknownExpression, word));
             return nullptr;
         }
 
@@ -1471,13 +1464,13 @@ Strong<Expression> Parser::parseSubscript() {
         subscript->range.start = start;
         expression = subscript;
         if (match({Token::Type::RightBracket})) {
-            emitError(Error(previous().range, "expected an expression"));
+            emitError(Error(previous().range, Errors::ExpectedAnExpression));
             subscript->range.end = previous().range.end;
             break;
         }
         subscript->rightExpression = parseExpression();
         if (!consume(Token::Type::RightBracket)) {
-            emitError(Error(peek().range, Concat("expected ", Quoted("]"))));
+            emitError(Error(peek().range, Errors::ExpectedRightBracket));
             break;
         }
         subscript->range.end = previous().range.end;
@@ -1540,11 +1533,11 @@ Strong<Expression> Parser::parsePrimary() {
     }
 
     if (peek().isEndOfStatement()) {
-        emitError(Error(peek().range, Concat("expected an expression")));
+        emitError(Error(peek().range, Errors::ExpectedAnExpression));
         return nullptr;
     }
 
-    emitError(Error(peek().range, Concat("unexpected ", peek().description())));
+    emitError(Error(peek().range, Errors::UnexpectedToken, peek().description()));
     return nullptr;
 }
 
@@ -1554,7 +1547,7 @@ Strong<Expression> Parser::parseInterpolation() {
     interpolation->range.start = interpolation->left.range.start;
 
     if (match({Token::Type::ClosedInterpolation})) {
-        emitError(Error(peek().range, "empty interpolation"));
+        emitError(Error(peek().range, Errors::EmptyInterpolation));
         return interpolation;
     }
 
@@ -1569,7 +1562,7 @@ Strong<Expression> Parser::parseInterpolation() {
     } else if (match({Token::Type::Interpolation})) {
         interpolation->right = parseInterpolation();
     } else {
-        emitError(Error(peek().range, "unterminated interpolation"));
+        emitError(Error(peek().range, Errors::UnterminatedInterpolation));
     }
 
     if (interpolation->right) {
@@ -1590,13 +1583,12 @@ Strong<Expression> Parser::parseVariable() {
     }
     auto token = consumeWord();
     if (!token) {
-        emitError(Error(peek().range, "expected a variable name"));
+        emitError(Error(peek().range, Errors::ExpectedAVariableName));
         return variable;
     }
     variable->name = token.value();
     if (token.value().text == "_") {
-        emitError(
-            Error(token.value().range, Concat(Quoted("_"), " may not be used as a variable name")));
+        emitError(Error(token.value().range, Errors::UnderscoreNotAllowed));
     }
     variable->range.end = token.value().range.end;
     return variable;
@@ -1608,7 +1600,7 @@ Strong<Expression> Parser::parseGrouping() {
     grouping->range.start = previous().range.start;
 
     if (match({Token::Type::RightParen})) {
-        emitError(Error(previous().range, "expected an expression"));
+        emitError(Error(previous().range, Errors::ExpectedAnExpression));
         return grouping;
     }
     grouping->expression = parseExpression();
@@ -1616,7 +1608,7 @@ Strong<Expression> Parser::parseGrouping() {
         grouping->ranges.rightGrouping = previous().range;
         grouping->range.end = previous().range.end;
     } else {
-        emitError(Error(peek().range, Concat("expected ", Quoted(")"))));
+        emitError(Error(peek().range, Errors::ExpectedRightParens));
     }
     return grouping;
 }
@@ -1637,7 +1629,7 @@ Strong<Expression> Parser::parseContainerLiteral() {
         container->ranges.leftBracket = leftBracketRange;
         container->ranges.colons.push_back(previous().range);
         if (!consume(Token::Type::RightBracket)) {
-            emitError(Error(peek().range, Concat("expected ", Quoted("]"))));
+            emitError(Error(peek().range, Errors::ExpectedRightBracket));
             return container;
         }
         container->ranges.rightBracket = previous().range;
@@ -1667,7 +1659,7 @@ Strong<Expression> Parser::parseContainerLiteral() {
                     return dictionaryExpression;
                 }
                 if (!consume(Token::Type::Colon)) {
-                    emitError(Error(peek().range, Concat("expected ", Quoted(":"))));
+                    emitError(Error(peek().range, Errors::ExpectedColon));
                     return dictionaryExpression;
                 }
                 dictionaryExpression->ranges.colons.push_back(previous().range);
@@ -1702,8 +1694,7 @@ Strong<Expression> Parser::parseContainerLiteral() {
         listExpression->ranges.rightBracket = peek().range;
         containerExpression = listExpression;
     } else {
-        emitError(Error(peek().range,
-                        Concat("expected ", Quoted(":"), ", ", Quoted(","), " or ", Quoted("]"))));
+        emitError(Error(peek().range, Errors::ExpectedColonCommaOrBracket));
 
         auto listExpression = MakeStrong<ListLiteral>();
         listExpression->ranges.leftBracket = leftBracketRange;
@@ -1715,7 +1706,7 @@ Strong<Expression> Parser::parseContainerLiteral() {
     }
 
     if (!consume(Token::Type::RightBracket)) {
-        emitError(Error(peek().range, Concat("expected ", Quoted("]"))));
+        emitError(Error(peek().range, Errors::ExpectedRightBracket));
     }
     if (auto listLiteral = Cast<ListLiteral>(containerExpression)) {
         listLiteral->ranges.rightBracket = previous().range;

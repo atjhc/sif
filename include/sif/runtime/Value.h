@@ -41,7 +41,9 @@ class Value {
     Value(Value &&v) = default;
 
     template <typename T> Value(const T &v) : _value(v) {}
+
     Value(const std::string &string);
+    Value(std::string_view view) : Value(std::string(view)) {}
 
     Value &operator=(const Value &v) {
         _value = v._value;

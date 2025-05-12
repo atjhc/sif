@@ -44,7 +44,7 @@ std::vector<Compiler::Local> &Compiler::locals() { return _frames.back().locals;
 std::vector<Function::Capture> &Compiler::captures() { return _frames.back().captures; }
 
 void Compiler::error(const SourceRange &range, const std::string &message) {
-    _config.errorReporter.report(Error(range, message));
+    _config.errorReporter.report(Error(range, Value(message)));
     _failed = true;
 }
 
@@ -99,7 +99,7 @@ void Compiler::assignLocal(const SourceLocation &location, const std::string &na
     } else {
         addLocal(name);
         if (i > UINT16_MAX) {
-            error(location, "too many local variables");
+            error(location, Format(Errors::TooManyLocalVariables));
             return;
         }
         index = static_cast<uint16_t>(locals().size()) - 1;
@@ -174,8 +174,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
                     index = static_cast<uint16_t>(i);
                     opcode = Opcode::GetCapture;
                 } else {
-                    error(variable,
-                          Concat("unused local variable ", Quoted(name), " will always be empty"));
+                    error(variable, Format(Errors::UnusedLocalVariable, name));
                     return;
                 }
                 break;
@@ -206,8 +205,7 @@ void Compiler::resolve(const Variable &variable, const std::string &name) {
                 index = static_cast<uint16_t>(i);
                 opcode = Opcode::GetCapture;
             } else {
-                error(variable,
-                      Concat("unused local variable ", Quoted(name), " will always be empty"));
+                error(variable, Format(Errors::UnusedLocalVariable, name));
                 return;
             }
         } else {
@@ -355,7 +353,7 @@ void Compiler::visit(const Assignment &assignment) {
     if (assignment.targets.size() > 1) {
         uint16_t count;
         if (assignment.targets.size() > UINT16_MAX) {
-            error(*assignment.expression, "too many assignment targets");
+            error(*assignment.expression, Format(Errors::TooManyAssignmentTargets));
             return;
         }
         count = assignment.targets.size();
@@ -639,7 +637,7 @@ void Compiler::visit(const Literal &literal) {
         auto index = bytecode().addConstant(valueOf(literal.token));
         bytecode().add(literal.range.start, Opcode::Constant, index);
     } catch (const std::out_of_range &) {
-        error(literal, "value is too large or too small");
+        error(literal, Format(Errors::ValueOutOfRange));
     }
 }
 

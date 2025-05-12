@@ -36,7 +36,7 @@ bool FileReader::readable() const { return false; }
 Optional<Error> FileReader::read(int scopeDepth) {
     std::ifstream file(_path);
     if (!file) {
-        return Error(Concat("can't open file ", Quoted(_path)));
+        return Error(Errors::CantOpenFile, _path);
     }
     std::ostringstream ss;
     ss << file.rdbuf();

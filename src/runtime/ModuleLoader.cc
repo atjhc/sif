@@ -29,7 +29,7 @@ Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
     // Check if the module is already in the process of loading,
     // which implies a circular dependency.
     if (_loading.find(name) != _loading.end()) {
-        return Fail(Error("Circular module import"));
+        return Fail(Error(Errors::CircularModuleImport));
     }
 
     // Check if the module has already been loaded.
@@ -56,7 +56,7 @@ Result<Strong<Module>, Error> ModuleLoader::module(const std::string &name) {
     }
 
     if (modulePath.empty()) {
-        return Fail(Error(Concat("module ", Quoted(name), " not found")));
+        return Fail(Error(Errors::ModuleNotFound, name));
     }
 
     auto scanner = Scanner();
