@@ -991,6 +991,11 @@ Result<Strong<Statement>, Error> Parser::parseAssignment() {
             SourceRange{assignmentTarget->variable->range.start, previous().range.end};
         variableDecls.push_back(assignmentTarget);
     } while (match({Token::Type::Comma}));
+
+    if (variableDecls.size() == 1 && variableDecls[0]->variable->name.text == "_") {
+        emitError(Error(variableDecls[0]->range, Errors::UnderscoreNotAllowed));
+    }
+
     assignment->targets = variableDecls;
 
     if (!consume(Token::Type::To)) {
