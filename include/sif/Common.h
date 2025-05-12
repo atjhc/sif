@@ -198,7 +198,7 @@ static inline std::ostream &operator<<(std::ostream &out, const SourceRange &ran
 }
 
 static inline std::ostream &operator<<(std::ostream &out, const SourceLocation &location) {
-    return out << Concat(location.lineNumber, ":", location.position);
+    return out << Concat(location.lineNumber + 1, ":", location.position + 1);
 }
 
 template <class... Ts> struct Overload : Ts... { using Ts::operator()...; };

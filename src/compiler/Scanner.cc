@@ -22,12 +22,12 @@
 
 SIF_NAMESPACE_BEGIN
 
-Scanner::Scanner() : _currentLocation{1, 1, 0} {}
+Scanner::Scanner() : _currentLocation{0, 0, 0} {}
 
 void Scanner::reset(const std::string &contents) {
     _start = _current = contents.begin();
     _end = contents.end();
-    _currentLocation = {1, 1, 0};
+    _currentLocation = {0, 0, 0};
 }
 
 Token Scanner::scan() {
@@ -53,7 +53,7 @@ Token Scanner::scan() {
             } else {
                 if (advance() == '\n') {
                     _currentLocation.lineNumber++;
-                    _currentLocation.position = 1;
+                    _currentLocation.position = 0;
                 }
             }
         }
@@ -75,7 +75,7 @@ Token Scanner::scan() {
         return make(Token::Type::Comment);
     case '\n': {
         _currentLocation.lineNumber++;
-        _currentLocation.position = 1;
+        _currentLocation.position = 0;
         return make(Token::Type::NewLine);
     }
     case ';':
@@ -298,7 +298,7 @@ Token Scanner::scanString(char startingQuote, char terminalQuote) {
         auto c = _current[0];
         if (c == '\n') {
             _currentLocation.lineNumber++;
-            _currentLocation.position = 1;
+            _currentLocation.position = 0;
         }
 
         if (escaped) {
@@ -406,7 +406,7 @@ void Scanner::skipWhitespace() {
         case '\n':
             if (ignoreNewLines) {
                 _currentLocation.lineNumber++;
-                _currentLocation.position = 1;
+                _currentLocation.position = 0;
                 advance();
                 break;
             }
