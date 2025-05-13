@@ -38,6 +38,28 @@ SIF_NAMESPACE_BEGIN
 using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
 
+namespace Errors {
+inline constexpr std::string_view CantCompare = "can't compare “{}” ({}) and “{}” ({})";
+inline constexpr std::string_view ExpectedAString = "expected a string";
+inline constexpr std::string_view ExpectedIntegerOrRange = "expected an integer or range";
+inline constexpr std::string_view ExpectedStringOrList = "expected a string or list";
+inline constexpr std::string_view ExpectedARange = "expected a range";
+inline constexpr std::string_view ExpectedAnInteger = "expected an integer";
+inline constexpr std::string_view ExpectedAList = "expected a list";
+inline constexpr std::string_view ExpectedANumber = "expected a number";
+inline constexpr std::string_view ExpectedADictionary = "expected a dictionary";
+inline constexpr std::string_view ListIsEmpty = "list is empty";
+inline constexpr std::string_view DomainError = "domain error";
+inline constexpr std::string_view InvalidUnicodeCodePoint = "invalid unicode codepoint";
+inline constexpr std::string_view UnterminatedFormat = "unterminated placeholder in format string";
+inline constexpr std::string_view FormatOutOfRange = "format index out of range";
+inline constexpr std::string_view InvalidFormatIndex = "invalid format index";
+inline constexpr std::string_view NotEnoughFormatArgs = "not enough arguments for format";
+inline constexpr std::string_view CantConvertToInteger = "can't convert this value to an integer";
+inline constexpr std::string_view CantConvertToNumber = "can't convert this value to a number";
+inline constexpr std::string_view ExpectedListOrDictionary = "expected a list or dictionary";
+} // namespace Errors
+
 static auto _the_language_version(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(std::string(Version));
@@ -76,7 +98,7 @@ static auto _quit(CallFrame &frame, SourceLocation location, Value *values)
 static auto _quit_with_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     exit(static_cast<int>(values[0].asInteger()));
 }
@@ -116,6 +138,22 @@ static auto _a_copy_of_T(CallFrame &frame, SourceLocation location, Value *value
     return values[0];
 }
 
+static bool _case_insensitive_lexicographic_compare(const std::string &a, const std::string &b) {
+    auto itA = a.begin();
+    auto itB = b.begin();
+    while (itA != a.end() && itB != b.end()) {
+        char lowerA = std::tolower(*itA);
+        char lowerB = std::tolower(*itB);
+        if (lowerA < lowerB)
+            return true;
+        if (lowerA > lowerB)
+            return false;
+        ++itA;
+        ++itB;
+    }
+    return a.size() < b.size();
+}
+
 static auto _sort_list(CallFrame &frame, SourceLocation location, Strong<List> list)
     -> Result<Value, Error> {
     try {
@@ -125,11 +163,12 @@ static auto _sort_list(CallFrame &frame, SourceLocation location, Strong<List> l
                           return a.asInteger() < b.asInteger();
                       } else if (a.isNumber() && b.isNumber()) {
                           return a.castFloat() < b.castFloat();
+                      } else if (a.isString() && b.isString()) {
+                          return _case_insensitive_lexicographic_compare(a.toString(),
+                                                                         b.toString());
                       }
-                      if (a.type() != b.type() || a.typeName() != b.typeName()) {
-                          throw Error(location, "can't compare {} {} and {} {}", a.typeName(),
-                                      a.toString(), b.typeName(), b.toString());
-                      }
+                      throw Error(location, Errors::CantCompare, a.toString(), a.typeName(),
+                                  b.toString(), b.typeName());
                       return true;
                   });
     } catch (const Error &error) {
@@ -172,7 +211,7 @@ static auto _the_size_of_T(CallFrame &frame, SourceLocation location, Value *val
     } else if (auto range = values[0].as<Range>()) {
         size = range->size();
     } else {
-        return Fail(Error(location, "expected a string, list, dictionary, or range"));
+        return Fail(Error(location, Errors::ExpectedListStringDictRange));
     }
     return static_cast<long>(size);
 }
@@ -218,17 +257,17 @@ static auto _contains(SourceLocation location, Value object, Value value) -> Res
         if (auto lookup = value.as<String>()) {
             return string->string().find(lookup->string()) != std::string::npos;
         }
-        return Fail(Error(location, "expected a string argument"));
+        return Fail(Error(location, Errors::ExpectedAString));
     } else if (auto range = object.as<Range>()) {
         if (auto queryRange = value.as<Range>()) {
             return range->contains(*queryRange);
         }
         if (!value.isInteger()) {
-            return Fail(Error(location, "expected an integer or range"));
+            return Fail(Error(location, Errors::ExpectedIntegerOrRange));
         }
         return range->contains(value.asInteger());
     }
-    return Fail(Error(location, "expected a string, list, dictionary, or range"));
+    return Fail(Error(location, Errors::ExpectedListStringDictRange));
 }
 
 static auto _T_contains_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -246,13 +285,13 @@ static auto _T_starts_with_T(CallFrame &frame, SourceLocation location, Value *v
     if (auto string = values[0].as<String>()) {
         auto searchString = values[1].as<String>();
         if (!searchString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         return string->startsWith(*searchString);
     } else if (auto list = values[0].as<List>()) {
         return list->startsWith(values[1]);
     }
-    return Fail(Error(location, "expected a string or list"));
+    return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
 static auto _T_ends_with_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -260,13 +299,13 @@ static auto _T_ends_with_T(CallFrame &frame, SourceLocation location, Value *val
     if (auto string = values[0].as<String>()) {
         auto searchString = values[1].as<String>();
         if (!searchString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         return string->endsWith(*searchString);
     } else if (auto list = values[0].as<List>()) {
         return list->endsWith(values[1]);
     }
-    return Fail(Error(location, "expected a string or list"));
+    return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
 static auto _item_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -276,7 +315,7 @@ static auto _item_T_in_T(CallFrame &frame, SourceLocation location, Value *value
     } else if (auto dictionary = values[1].as<Dictionary>()) {
         return dictionary->subscript(location, values[0]);
     }
-    return Fail(Error(location, "expected a list or dictionary"));
+    return Fail(Error(location, Errors::ExpectedListOrDictionary));
 }
 
 static auto _insert_T_at_the_end_of_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -286,12 +325,11 @@ static auto _insert_T_at_the_end_of_T(CallFrame &frame, SourceLocation location,
     } else if (auto string = values[1].as<String>()) {
         auto insertText = values[0].as<String>();
         if (!insertText) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         string->string().append(insertText->string());
     } else {
-        return Fail(
-            Error(location, Concat("expected a list or string, got ", values[1].typeName())));
+        return Fail(Error(location, Errors::ExpectedStringOrList));
     }
     return values[1];
 }
@@ -303,13 +341,13 @@ static auto _remove_item_T_from_T(CallFrame &frame, SourceLocation location, Val
         return dictionary;
     } else if (auto list = values[1].as<List>()) {
         if (!values[0].isInteger()) {
-            return Fail(Error(location, "expected an integer index"));
+            return Fail(Error(location, Errors::ExpectedAnInteger));
         }
         auto index = values[0].asInteger();
         list->values().erase(list->values().begin() + index);
         return list;
     }
-    return Fail(Error(location, "expected a dictionary"));
+    return Fail(Error(location, Errors::ExpectedADictionary));
 }
 
 static auto _the_first_offset_of_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -317,7 +355,7 @@ static auto _the_first_offset_of_T_in_T(CallFrame &frame, SourceLocation locatio
     if (auto text = values[1].as<String>()) {
         auto searchString = values[0].as<String>();
         if (!searchString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto result = text->findFirst(*searchString);
         return result == std::string::npos ? Value() : Integer(result);
@@ -327,7 +365,7 @@ static auto _the_first_offset_of_T_in_T(CallFrame &frame, SourceLocation locatio
         }
         return Value();
     }
-    return Fail(Error(location, "expected a string"));
+    return Fail(Error(location, Errors::ExpectedAString));
 }
 
 static auto _the_last_offset_of_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -335,7 +373,7 @@ static auto _the_last_offset_of_T_in_T(CallFrame &frame, SourceLocation location
     if (auto text = values[1].as<String>()) {
         auto searchString = values[0].as<String>();
         if (!searchString) {
-            return Fail(Error(location, "expected a string or list"));
+            return Fail(Error(location, Errors::ExpectedStringOrList));
         }
         auto result = text->findLast(*searchString);
         return result == std::string::npos ? Value() : Integer(result);
@@ -345,7 +383,7 @@ static auto _the_last_offset_of_T_in_T(CallFrame &frame, SourceLocation location
         }
         return Value();
     }
-    return Fail(Error(location, "expected a string or list"));
+    return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
 static auto _replace_all_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -353,11 +391,11 @@ static auto _replace_all_T_with_T_in_T(CallFrame &frame, SourceLocation location
     if (auto text = values[2].as<String>()) {
         auto searchString = values[0].as<String>();
         if (!searchString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto replacementString = values[1].as<String>();
         if (!replacementString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         text->replaceAll(*searchString, *replacementString);
         return text;
@@ -365,7 +403,7 @@ static auto _replace_all_T_with_T_in_T(CallFrame &frame, SourceLocation location
         list->replaceAll(values[0], values[1]);
         return list;
     }
-    return Fail(Error(location, "expected a string or list"));
+    return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
 static auto _replace_first_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -373,11 +411,11 @@ static auto _replace_first_T_with_T_in_T(CallFrame &frame, SourceLocation locati
     if (auto text = values[2].as<String>()) {
         auto searchString = values[0].as<String>();
         if (!searchString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto replacementString = values[1].as<String>();
         if (!replacementString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         text->replaceFirst(*searchString, *replacementString);
         return text;
@@ -385,7 +423,7 @@ static auto _replace_first_T_with_T_in_T(CallFrame &frame, SourceLocation locati
         list->replaceFirst(values[0], values[1]);
         return list;
     }
-    return Fail(Error(location, "expected a string or list"));
+    return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
 static auto _replace_last_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -393,11 +431,11 @@ static auto _replace_last_T_with_T_in_T(CallFrame &frame, SourceLocation locatio
     if (auto text = values[2].as<String>()) {
         auto searchString = values[0].as<String>();
         if (!searchString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto replacementString = values[1].as<String>();
         if (!replacementString) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         text->replaceLast(*searchString, *replacementString);
         return text;
@@ -405,7 +443,7 @@ static auto _replace_last_T_with_T_in_T(CallFrame &frame, SourceLocation locatio
         list->replaceLast(values[0], values[1]);
         return list;
     }
-    return Fail(Error(location, "expected a string or list"));
+    return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
 static auto _T_as_an_integer(CallFrame &frame, SourceLocation location, Value *values)
@@ -416,7 +454,7 @@ static auto _T_as_an_integer(CallFrame &frame, SourceLocation location, Value *v
     if (auto castable = values[0].as<NumberCastable>()) {
         return castable->castInteger();
     }
-    return Fail(Error(location, "can't convert this value to a number"));
+    return Fail(Error(location, Errors::CantConvertToInteger));
 }
 
 static auto _T_as_a_number(CallFrame &frame, SourceLocation location, Value *values)
@@ -427,7 +465,7 @@ static auto _T_as_a_number(CallFrame &frame, SourceLocation location, Value *val
     if (auto castable = values[0].as<NumberCastable>()) {
         return castable->castFloat();
     }
-    return Fail(Error(location, "can't convert this value to a number"));
+    return Fail(Error(location, Errors::CantConvertToNumber));
 }
 
 static auto _T_as_a_string(CallFrame &frame, SourceLocation location, Value *values)
@@ -479,7 +517,7 @@ static auto _the_keys_of_T(CallFrame &frame, SourceLocation location, Value *val
     -> Result<Value, Error> {
     auto dictionary = values[0].as<Dictionary>();
     if (!dictionary) {
-        return Fail(Error(location, "expected a dictionary"));
+        return Fail(Error(location, Errors::ExpectedADictionary));
     }
     auto keys = MakeStrong<List>();
     for (const auto &pair : dictionary->values()) {
@@ -492,7 +530,7 @@ static auto _the_values_of_T(CallFrame &frame, SourceLocation location, Value *v
     -> Result<Value, Error> {
     auto dictionary = values[0].as<Dictionary>();
     if (!dictionary) {
-        return Fail(Error(location, "expected a dictionary"));
+        return Fail(Error(location, Errors::ExpectedADictionary));
     }
     auto valuesList = MakeStrong<List>();
     for (const auto &pair : dictionary->values()) {
@@ -505,7 +543,7 @@ static auto _insert_item_T_with_key_T_into_T(CallFrame &frame, SourceLocation lo
                                              Value *values) -> Result<Value, Error> {
     auto dictionary = values[2].as<Dictionary>();
     if (!dictionary) {
-        return Fail(Error(location, "expected a dictionary"));
+        return Fail(Error(location, Errors::ExpectedADictionary));
     }
     dictionary->values()[values[1]] = values[0];
     return dictionary;
@@ -515,13 +553,13 @@ static auto _items_T_to_T_in_T(CallFrame &frame, SourceLocation location, Value 
     -> Result<Value, Error> {
     auto list = values[2].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     if (!values[0].isInteger()) {
-        return Fail(Error(location, "expected an integer index"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     if (!values[1].isInteger()) {
-        return Fail(Error(location, "expected an integer index"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     auto index1 = values[0].asInteger();
     auto index2 = values[1].asInteger();
@@ -532,7 +570,7 @@ static auto _the_middle_item_in_T(CallFrame &frame, SourceLocation location, Val
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     return list->values().at(list->values().size() / 2);
 }
@@ -541,7 +579,7 @@ static auto _the_last_item_in_T(CallFrame &frame, SourceLocation location, Value
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     return list->values().back();
 }
@@ -550,7 +588,7 @@ static auto _the_number_of_items_in_T(CallFrame &frame, SourceLocation location,
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     return Integer(list->values().size());
 }
@@ -561,7 +599,7 @@ static auto _any_item_in_T(std::function<Integer(Integer)> randomInteger)
                            Value *values) -> Result<Value, Error> {
         auto list = values[0].as<List>();
         if (!list) {
-            return Fail(Error(location, "expected a list"));
+            return Fail(Error(location, Errors::ExpectedAList));
         }
         return list->values().at(randomInteger(list->values().size()));
     };
@@ -571,13 +609,13 @@ static auto _remove_items_T_to_T_from_T(CallFrame &frame, SourceLocation locatio
     -> Result<Value, Error> {
     auto list = values[2].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     if (!values[0].isInteger()) {
-        return Fail(Error(location, "expected an integer index"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     if (!values[1].isInteger()) {
-        return Fail(Error(location, "expected an integer index"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     auto index1 = values[0].asInteger();
     auto index2 = values[1].asInteger();
@@ -589,10 +627,10 @@ static auto _insert_T_at_index_T_into_T(CallFrame &frame, SourceLocation locatio
     -> Result<Value, Error> {
     auto list = values[2].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     if (!values[1].isInteger()) {
-        return Fail(Error(location, "expected an integer index"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     auto index = values[1].asInteger();
     list->values().insert(list->values().begin() + index, values[0]);
@@ -603,7 +641,7 @@ static auto _reverse_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     std::reverse(list->values().begin(), list->values().end());
     return list;
@@ -613,7 +651,7 @@ static auto _reversed_T(CallFrame &frame, SourceLocation location, Value *values
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     return MakeStrong<List>(list->values().rbegin(), list->values().rend());
 }
@@ -624,7 +662,7 @@ static auto _shuffle_T(std::mt19937_64 &engine)
                      Value *values) -> Result<Value, Error> {
         auto list = values[0].as<List>();
         if (!list) {
-            return Fail(Error(location, "expected a list"));
+            return Fail(Error(location, Errors::ExpectedAList));
         }
         std::shuffle(list->values().begin(), list->values().end(), engine);
         return list;
@@ -637,7 +675,7 @@ static auto _shuffled_T(std::mt19937_64 &engine)
                      Value *values) -> Result<Value, Error> {
         auto list = values[0].as<List>();
         if (!list) {
-            return Fail(Error(location, "expected a list"));
+            return Fail(Error(location, Errors::ExpectedAList));
         }
         auto result = MakeStrong<List>(list->values());
         std::shuffle(result->values().begin(), result->values().end(), engine);
@@ -649,7 +687,7 @@ static auto _join_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     std::ostringstream str;
     for (auto it = list->values().begin(); it < list->values().end(); it++) {
@@ -662,11 +700,11 @@ static auto _join_T_using_T(CallFrame &frame, SourceLocation location, Value *va
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     auto joinString = values[1].as<String>();
     if (!joinString) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     std::ostringstream str;
     for (auto it = list->values().begin(); it < list->values().end(); it++) {
@@ -682,14 +720,14 @@ static auto _insert_T_at_character_T_in_T(CallFrame &frame, SourceLocation locat
     -> Result<Value, Error> {
     auto insertText = values[0].as<String>();
     if (!insertText) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     if (!values[1].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     auto text = values[2].as<String>();
     if (!text) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     auto chunk = index_chunk(chunk::type::character, values[1].asInteger(), text->string());
     text->string().insert(chunk.begin(), insertText->string().begin(), insertText->string().end());
@@ -700,11 +738,11 @@ static auto _remove_all_T_from_T(CallFrame &frame, SourceLocation location, Valu
     -> Result<Value, Error> {
     auto removeText = values[0].as<String>();
     if (!removeText) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     auto text = values[1].as<String>();
     if (!text) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     text->replaceAll(*removeText, String(""));
     return text;
@@ -714,11 +752,11 @@ static auto _remove_first_T_from_T(CallFrame &frame, SourceLocation location, Va
     -> Result<Value, Error> {
     auto removeText = values[0].as<String>();
     if (!removeText) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     auto text = values[1].as<String>();
     if (!text) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     text->replaceFirst(*removeText, String(""));
     return text;
@@ -728,11 +766,11 @@ static auto _remove_last_T_from_T(CallFrame &frame, SourceLocation location, Val
     -> Result<Value, Error> {
     auto removeText = values[0].as<String>();
     if (!removeText) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     auto text = values[1].as<String>();
     if (!text) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     text->replaceLast(*removeText, String(""));
     return text;
@@ -743,16 +781,16 @@ static auto _replace_chunk_T_with_T_in_T(chunk::type chunkType)
     return [chunkType](CallFrame &frame, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger()) {
-            return Fail(Error(location, "expected an integer"));
+            return Fail(Error(location, Errors::ExpectedAnInteger));
         }
         auto index = values[0].asInteger();
         auto replacement = values[1].as<String>();
         if (!replacement) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto text = values[2].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
 
         auto chunk = index_chunk(chunkType, index, text->string());
@@ -766,17 +804,17 @@ static auto _replace_chunks_T_to_T_with_T_in_T(chunk::type chunkType)
     return [chunkType](CallFrame &frame, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger() || !values[1].isInteger()) {
-            return Fail(Error(location, "expected an integer"));
+            return Fail(Error(location, Errors::ExpectedAnInteger));
         }
         auto start = values[0].asInteger();
         auto end = values[1].asInteger();
         auto replacement = values[2].as<String>();
         if (!replacement) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto text = values[3].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto chunk = range_chunk(chunkType, start, end, text->string());
         text->string().replace(chunk.begin(), chunk.end(), replacement->string());
@@ -789,12 +827,12 @@ static auto _remove_chunk_T_from_T(chunk::type chunkType)
     return [chunkType](CallFrame &frame, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger()) {
-            return Fail(Error(location, "expected an integer"));
+            return Fail(Error(location, Errors::ExpectedAnInteger));
         }
         auto index = values[0].asInteger();
         auto text = values[1].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto chunk = index_chunk(chunkType, index, text->string());
         text->string().erase(chunk.begin(), chunk.end());
@@ -807,16 +845,16 @@ static auto _remove_chunks_T_to_T_from_T(chunk::type chunkType)
     return [chunkType](CallFrame &frame, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger()) {
-            return Fail(Error(location, "expected an integer"));
+            return Fail(Error(location, Errors::ExpectedAnInteger));
         }
         if (!values[1].isInteger()) {
-            return Fail(Error(location, "expected an integer"));
+            return Fail(Error(location, Errors::ExpectedAnInteger));
         }
         auto start = values[0].asInteger();
         auto end = values[1].asInteger();
         auto text = values[2].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         auto chunk = range_chunk(chunkType, start, end, text->string());
         text->string().erase(chunk.begin(), chunk.end());
@@ -830,7 +868,7 @@ static auto _the_list_of_chunks_in_T(chunk::type chunkType)
                        Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         std::vector<Value> result;
         size_t index = 0;
@@ -848,12 +886,12 @@ static auto _chunk_T_in_T(chunk::type chunkType)
     return [chunkType](CallFrame &frame, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger()) {
-            return Fail(Error(location, "expected an integer"));
+            return Fail(Error(location, Errors::ExpectedAnInteger));
         }
         auto index = values[0].asInteger();
         auto text = values[1].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         return index_chunk(chunkType, index, text->string()).get();
     };
@@ -864,13 +902,13 @@ static auto _chunks_T_to_T_in_T(chunk::type chunkType)
     return [chunkType](CallFrame &frame, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger() || !values[1].isInteger()) {
-            return Fail(Error(location, "expected an integer"));
+            return Fail(Error(location, Errors::ExpectedAnInteger));
         }
         auto start = values[0].asInteger();
         auto end = values[1].asInteger();
         auto text = values[2].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         return range_chunk(chunkType, start, end, text->string()).get();
     };
@@ -882,7 +920,7 @@ static auto _any_chunk_in_T(chunk::type chunkType, std::function<Integer(Integer
                                       Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         return random_chunk(chunkType, randomInteger, text->string()).get();
     };
@@ -894,7 +932,7 @@ static auto _the_middle_chunk_in_T(chunk::type chunkType)
                        Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         return middle_chunk(chunkType, text->string()).get();
     };
@@ -906,7 +944,7 @@ static auto _the_last_chunk_in_T(chunk::type chunkType)
                        Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         return last_chunk(chunkType, text->string()).get();
     };
@@ -918,7 +956,7 @@ static auto _the_number_of_chunks_in_T(chunk::type chunkType)
                        Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
-            return Fail(Error(location, "expected a string"));
+            return Fail(Error(location, Errors::ExpectedAString));
         }
         return static_cast<Integer>(count_chunk(chunkType, text->string()).count);
     };
@@ -927,7 +965,7 @@ static auto _the_number_of_chunks_in_T(chunk::type chunkType)
 static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isString()) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     auto formatStr = values[0].as<String>()->string();
 
@@ -941,7 +979,7 @@ static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, V
     std::ostringstream result;
     size_t pos = 0;
     size_t nextPos = 0;
-    size_t argIndex = 0; // Current auto-index for {} placeholders
+    size_t argIndex = 0;
 
     while ((nextPos = formatStr.find('{', pos)) != std::string::npos) {
         if (nextPos > 0 && formatStr[nextPos - 1] == '\\') {
@@ -953,7 +991,7 @@ static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, V
         result << formatStr.substr(pos, nextPos - pos);
         size_t closeBrace = formatStr.find('}', nextPos);
         if (closeBrace == std::string::npos) {
-            return Fail(Error(location, "unterminated placeholder in format string"));
+            return Fail(Error(location, Errors::UnterminatedFormat));
         }
 
         if (closeBrace > nextPos + 1) {
@@ -961,15 +999,15 @@ static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, V
             try {
                 size_t index = std::stoul(indexStr);
                 if (index >= args.size()) {
-                    return Fail(Error(location, "format index out of range"));
+                    return Fail(Error(location, Errors::FormatOutOfRange));
                 }
                 result << args[index];
             } catch (std::exception &e) {
-                return Fail(Error(location, "invalid format index"));
+                return Fail(Error(location, Errors::InvalidFormatIndex));
             }
         } else {
             if (argIndex >= args.size()) {
-                return Fail(Error(location, "not enough arguments for format"));
+                return Fail(Error(location, Errors::NotEnoughFormatArgs));
             }
             result << args[argIndex++];
         }
@@ -983,20 +1021,20 @@ static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, V
 static auto _character_of_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     auto value = values[0].asInteger();
     try {
         return encode_utf8(static_cast<uint32_t>(value));
     } catch (...) {
-        return Fail(Error(location, "invalid unicode codepoint"));
+        return Fail(Error(location, Errors::InvalidUnicodeCodePoint));
     }
 }
 
 static auto _ordinal_of_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isString()) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(Error(location, Errors::ExpectedAString));
     }
     try {
         return decode_utf8(values[0].toString());
@@ -1008,7 +1046,7 @@ static auto _ordinal_of_T(CallFrame &frame, SourceLocation location, Value *valu
 static auto _T_up_to_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isInteger() || !values[1].isInteger()) {
-        return Fail(Error(location, "expected an integer"));
+        return Fail(Error(location, Errors::ExpectedAnInteger));
     }
     return MakeStrong<Range>(values[0].asInteger(), values[1].asInteger(), true);
 }
@@ -1018,7 +1056,7 @@ static auto _the_lower_bound_of_T(CallFrame &frame, SourceLocation location, Val
     if (auto range = values[0].as<Range>()) {
         return range->start();
     }
-    return Fail(Error(location, "expected a range"));
+    return Fail(Error(location, Errors::ExpectedARange));
 }
 
 static auto _the_upper_bound_of_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -1026,7 +1064,7 @@ static auto _the_upper_bound_of_T(CallFrame &frame, SourceLocation location, Val
     if (auto range = values[0].as<Range>()) {
         return range->end();
     }
-    return Fail(Error(location, "expected a range"));
+    return Fail(Error(location, Errors::ExpectedARange));
 }
 
 static auto _T_is_closed(CallFrame &frame, SourceLocation location, Value *values)
@@ -1034,7 +1072,7 @@ static auto _T_is_closed(CallFrame &frame, SourceLocation location, Value *value
     if (auto range = values[0].as<Range>()) {
         return range->closed();
     }
-    return Fail(Error(location, "expected a range"));
+    return Fail(Error(location, Errors::ExpectedARange));
 }
 
 static auto _T_overlaps_with_T(CallFrame &frame, SourceLocation location, Value *values)
@@ -1042,10 +1080,10 @@ static auto _T_overlaps_with_T(CallFrame &frame, SourceLocation location, Value 
     auto range1 = values[0].as<Range>();
     auto range2 = values[1].as<Range>();
     if (!range1) {
-        return Fail(Error(location, "expected a range"));
+        return Fail(Error(location, Errors::ExpectedARange));
     }
     if (!range2) {
-        return Fail(Error(location, "expected a range"));
+        return Fail(Error(location, Errors::ExpectedARange));
     }
     return range1->overlaps(*range2);
 }
@@ -1058,7 +1096,7 @@ static auto _a_random_number_in_T(std::function<Integer(Integer)> randomInteger)
             return range->start() +
                    randomInteger(range->end() - range->start() + (range->closed() ? 1 : 0));
         }
-        return Fail(Error(location, "expected a range"));
+        return Fail(Error(location, Errors::ExpectedARange));
     };
 }
 
@@ -1067,12 +1105,12 @@ static auto _the_func_of_T(double (*func)(double))
     return
         [func](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
             if (!values[0].isNumber()) {
-                return Fail(Error(location, "expected a number"));
+                return Fail(Error(location, Errors::ExpectedANumber));
             }
             auto argument = values[0].castFloat();
             auto result = func(argument);
             if (isnan(result)) {
-                return Fail(Error(location, "domain error"));
+                return Fail(Error(location, Errors::DomainError));
             }
             return result;
         };
@@ -1081,7 +1119,7 @@ static auto _the_func_of_T(double (*func)(double))
 static auto _the_abs_of_T(CallFrame &frame, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isNumber()) {
-        return Fail(Error(location, "expected a number"));
+        return Fail(Error(location, Errors::ExpectedANumber));
     }
     if (values[0].isFloat()) {
         return std::fabs(values[0].asFloat());
@@ -1093,19 +1131,19 @@ static auto _the_maximum_value_of_T(CallFrame &frame, SourceLocation location, V
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     if (list->values().size() == 0) {
-        return Fail(Error(location, "list is empty"));
+        return Fail(Error(location, Errors::ListIsEmpty));
     }
     auto first = list->values().front();
     if (!first.isNumber()) {
-        return Fail(Error(location, "expected a number"));
+        return Fail(Error(location, Errors::ExpectedANumber));
     }
     auto max = first.castFloat();
     for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
         if (!it->isNumber()) {
-            return Fail(Error(location, "expected a number"));
+            return Fail(Error(location, Errors::ExpectedANumber));
         }
         auto value = it->castFloat();
         if (value > max) {
@@ -1119,19 +1157,19 @@ static auto _the_minimum_value_of_T(CallFrame &frame, SourceLocation location, V
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     if (list->values().size() == 0) {
-        return Fail(Error(location, "list is empty"));
+        return Fail(Error(location, Errors::ListIsEmpty));
     }
     auto first = list->values().front();
     if (!first.isNumber()) {
-        return Fail(Error(location, "expected a number"));
+        return Fail(Error(location, Errors::ExpectedANumber));
     }
     auto min = first.castFloat();
     for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
         if (!it->isNumber()) {
-            return Fail(Error(location, "expected a number"));
+            return Fail(Error(location, Errors::ExpectedANumber));
         }
         auto value = it->castFloat();
         if (value < min) {
@@ -1145,19 +1183,19 @@ static auto _the_average_of_T(CallFrame &frame, SourceLocation location, Value *
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
-        return Fail(Error(location, "expected a list"));
+        return Fail(Error(location, Errors::ExpectedAList));
     }
     if (list->values().size() == 0) {
-        return Fail(Error(location, "list is empty"));
+        return Fail(Error(location, Errors::ListIsEmpty));
     }
     auto first = list->values().front();
     if (!first.isNumber()) {
-        return Fail(Error(location, "expected a number"));
+        return Fail(Error(location, Errors::ExpectedANumber));
     }
     auto sum = first.castFloat();
     for (auto it = list->values().begin() + 1; it < list->values().end(); it++) {
         if (!it->isNumber()) {
-            return Fail(Error(location, "expected a number"));
+            return Fail(Error(location, Errors::ExpectedANumber));
         }
         sum = sum + it->castFloat();
     }

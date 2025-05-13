@@ -12,3 +12,8 @@ print sort [2.1, 5, 100.2343]
 (-- expect
 2.1 5 100.2343
 --)
+
+print sort ["banana", "Apple", "cherry", "apricot", "Blueberry"]
+(-- expect
+Apple apricot banana Blueberry cherry
+--)
