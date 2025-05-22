@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
         vm.addGlobal(pair.first, pair.second);
     }
 
-    vm.addGlobal("clear", MakeStrong<Native>([](CallFrame &frame, SourceLocation location,
+    vm.addGlobal("clear", MakeStrong<Native>([](VirtualMachine &vm, SourceLocation location,
                                                 Value *values) -> Result<Value, Error> {
                      std::cout << ANSI_CLEAR_SCREEN << ANSI_RESET_CURSOR;
                      return Value();

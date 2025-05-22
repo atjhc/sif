@@ -581,7 +581,7 @@ Optional<Error> VirtualMachine::call(Value object, int count) {
             Push(_stack, Value());
         }
     } else if (auto native = object.as<Native>()) {
-        auto result = native->callable()(frame(), frame().bytecode->location(frame().ip - 3),
+        auto result = native->callable()(*this, frame().bytecode->location(frame().ip - 3),
                                          &_stack.end()[-count]);
         _stack.erase(_stack.end() - count - 1, _stack.end());
         if (result) {

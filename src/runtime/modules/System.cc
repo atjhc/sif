@@ -36,9 +36,9 @@ using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
 
 static auto _write_T(std::ostream &out)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
     return
-        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        [&out](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
             if (const auto &list = values[0].as<List>()) {
                 out << Join(list->values(), " ");
             } else {
@@ -49,9 +49,9 @@ static auto _write_T(std::ostream &out)
 }
 
 static auto _write_error_T(std::ostream &err)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
     return
-        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        [&err](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
             if (const auto &list = values[0].as<List>()) {
                 err << Join(list->values(), " ");
             } else {
@@ -62,9 +62,9 @@ static auto _write_error_T(std::ostream &err)
 }
 
 static auto _print_T(std::ostream &out)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
     return
-        [&out](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        [&out](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
             if (const auto &list = values[0].as<List>()) {
                 out << Join(list->values(), " ");
             } else {
@@ -76,9 +76,9 @@ static auto _print_T(std::ostream &out)
 }
 
 static auto _print_error_T(std::ostream &err)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
     return
-        [&err](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        [&err](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
             if (const auto &list = values[0].as<List>()) {
                 for (const auto &item : list->values()) {
                     err << item;
@@ -92,8 +92,8 @@ static auto _print_error_T(std::ostream &err)
 }
 
 static auto _read_a_word(std::istream &in)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
         std::string input;
         in >> input;
         return input;
@@ -101,8 +101,8 @@ static auto _read_a_word(std::istream &in)
 }
 
 static auto _read_a_line(std::istream &in)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
         std::string input;
         std::getline(in, input);
         return input;
@@ -110,8 +110,8 @@ static auto _read_a_line(std::istream &in)
 }
 
 static auto _read_a_character(std::istream &in)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [&in](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
         std::istreambuf_iterator<char> it(in.rdbuf());
         std::istreambuf_iterator<char> eos;
         std::string result;
@@ -125,7 +125,7 @@ static auto _read_a_character(std::istream &in)
     };
 }
 
-static auto _the_contents_of_file_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_contents_of_file_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto path = values[0].as<String>();
     if (!path) {
@@ -140,7 +140,7 @@ static auto _the_contents_of_file_T(CallFrame &frame, SourceLocation location, V
     return Value(sstr.str());
 }
 
-static auto _the_contents_of_directory_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_contents_of_directory_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto path = values[0].as<String>();
     if (!path) {
@@ -159,7 +159,7 @@ static auto _the_contents_of_directory_T(CallFrame &frame, SourceLocation locati
     return results;
 }
 
-static auto _remove_file_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _remove_file_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto pathString = values[0].as<String>();
     if (!pathString) {
@@ -176,7 +176,7 @@ static auto _remove_file_T(CallFrame &frame, SourceLocation location, Value *val
     return Value();
 }
 
-static auto _remove_directory_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _remove_directory_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto pathValue = values[0].as<String>();
     if (!pathValue) {
@@ -193,7 +193,7 @@ static auto _remove_directory_T(CallFrame &frame, SourceLocation location, Value
     return Value();
 }
 
-static auto _move_T_to_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _move_T_to_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto fromValue = values[0].as<String>();
     if (!fromValue) {
@@ -215,7 +215,7 @@ static auto _move_T_to_T(CallFrame &frame, SourceLocation location, Value *value
     return Value();
 }
 
-static auto _copy_T_to_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _copy_T_to_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto fromValue = values[0].as<String>();
     if (!fromValue) {
@@ -258,11 +258,11 @@ static void _files(ModuleMap &natives) {
 
 System::System(const SystemConfig &config) {
     _natives[S("the arguments")] = MakeStrong<Native>(
-        [this](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        [this](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
             return MakeStrong<List>(_arguments.begin(), _arguments.end());
         });
     _natives[S("the environment")] = MakeStrong<Native>(
-        [this](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        [this](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
             auto dictionary = MakeStrong<Dictionary>();
             for (auto pair : _environment) {
                 dictionary->values()[Value(pair.first)] = Value(pair.second);
@@ -270,13 +270,13 @@ System::System(const SystemConfig &config) {
             return dictionary;
         });
     _natives[S("the clock")] =
-        MakeStrong<Native>([](CallFrame &frame, SourceLocation location,
+        MakeStrong<Native>([](VirtualMachine &vm, SourceLocation location,
                               Value *values) -> Result<Value, Error> { return Integer(clock()); });
     _natives[S("the system name")] =
-        MakeStrong<Native>([this](CallFrame &frame, SourceLocation location,
+        MakeStrong<Native>([this](VirtualMachine &vm, SourceLocation location,
                                   Value *values) -> Result<Value, Error> { return _systemName; });
     _natives[S("the system version")] = MakeStrong<Native>(
-        [this](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        [this](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
             return _systemVersion;
         });
     _io(_natives, config.out, config.in, config.err);

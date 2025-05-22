@@ -60,42 +60,42 @@ inline constexpr std::string_view CantConvertToNumber = "can't convert this valu
 inline constexpr std::string_view ExpectedListOrDictionary = "expected a list or dictionary";
 } // namespace Errors
 
-static auto _the_language_version(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_language_version(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(std::string(Version));
 }
 
-static auto _the_language_major_version(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_language_major_version(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(MajorVersion);
 }
 
-static auto _the_language_minor_version(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_language_minor_version(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(MinorVersion);
 }
 
-static auto _the_language_patch_version(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_language_patch_version(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(PatchVersion);
 }
 
-static auto _the_error(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_error(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
-    return frame.error;
+    return vm.error();
 }
 
-static auto _error_with_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _error_with_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Fail(Error(location, values[0]));
 }
 
-static auto _quit(CallFrame &frame, SourceLocation location, Value *values)
+static auto _quit(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     exit(0);
 }
 
-static auto _quit_with_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _quit_with_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isInteger()) {
         return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -103,34 +103,34 @@ static auto _quit_with_T(CallFrame &frame, SourceLocation location, Value *value
     exit(static_cast<int>(values[0].asInteger()));
 }
 
-static auto _get_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _get_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0];
 }
 
-static auto _the_description_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_description_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     std::ostringstream ss;
     ss << values[0];
     return ss.str();
 }
 
-static auto _the_debug_description_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_debug_description_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0].debugDescription();
 }
 
-static auto _the_hash_value_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_hash_value_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Integer(Value::Hash()(values[0]));
 }
 
-static auto _the_type_name_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_type_name_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return lowercase(values[0].typeName());
 }
 
-static auto _a_copy_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _a_copy_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto copyable = values[0].as<Copyable>()) {
         return copyable->copy();
@@ -154,7 +154,7 @@ static bool _case_insensitive_lexicographic_compare(const std::string &a, const 
     return a.size() < b.size();
 }
 
-static auto _sort_list(CallFrame &frame, SourceLocation location, Strong<List> list)
+static auto _sort_list(VirtualMachine &vm, SourceLocation location, Strong<List> list)
     -> Result<Value, Error> {
     try {
         std::sort(list->values().begin(), list->values().end(),
@@ -177,29 +177,29 @@ static auto _sort_list(CallFrame &frame, SourceLocation location, Strong<List> l
     return Value(list);
 }
 
-static auto _sort_string(CallFrame &frame, SourceLocation location, Strong<String> string)
+static auto _sort_string(VirtualMachine &vm, SourceLocation location, Strong<String> string)
     -> Result<Value, Error> {
     return Fail(Error(location, "not supported"));
 }
 
-static auto _sort_dictionary(CallFrame &frame, SourceLocation location,
+static auto _sort_dictionary(VirtualMachine &vm, SourceLocation location,
                              Strong<Dictionary> dictionary) -> Result<Value, Error> {
     return Fail(Error(location, "not supported"));
 }
 
-static auto _sort_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _sort_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto list = values[0].as<List>()) {
-        return _sort_list(frame, location, list);
+        return _sort_list(vm, location, list);
     } else if (auto string = values[0].as<String>()) {
-        return _sort_string(frame, location, string);
+        return _sort_string(vm, location, string);
     } else if (auto dictionary = values[0].as<Dictionary>()) {
-        return _sort_dictionary(frame, location, dictionary);
+        return _sort_dictionary(vm, location, dictionary);
     }
     return values[0];
 }
 
-static auto _the_size_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_size_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     size_t size = 0;
     if (auto list = values[0].as<List>()) {
@@ -216,7 +216,7 @@ static auto _the_size_of_T(CallFrame &frame, SourceLocation location, Value *val
     return static_cast<long>(size);
 }
 
-static auto _T_is_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (values[1].isEmpty()) {
         if (auto list = values[0].as<List>()) {
@@ -232,7 +232,7 @@ static auto _T_is_T(CallFrame &frame, SourceLocation location, Value *values)
     return values[0] == values[1];
 }
 
-static auto _T_is_not_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_not_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (values[1].isEmpty()) {
         if (auto list = values[0].as<List>()) {
@@ -270,17 +270,17 @@ static auto _contains(SourceLocation location, Value object, Value value) -> Res
     return Fail(Error(location, Errors::ExpectedListStringDictRange));
 }
 
-static auto _T_contains_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_contains_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return _contains(location, values[0], values[1]);
 }
 
-static auto _T_is_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return _contains(location, values[1], values[0]);
 }
 
-static auto _T_starts_with_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_starts_with_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto string = values[0].as<String>()) {
         auto searchString = values[1].as<String>();
@@ -294,7 +294,7 @@ static auto _T_starts_with_T(CallFrame &frame, SourceLocation location, Value *v
     return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
-static auto _T_ends_with_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_ends_with_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto string = values[0].as<String>()) {
         auto searchString = values[1].as<String>();
@@ -308,7 +308,7 @@ static auto _T_ends_with_T(CallFrame &frame, SourceLocation location, Value *val
     return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
-static auto _item_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _item_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto list = values[1].as<List>()) {
         return list->subscript(location, values[0]);
@@ -318,7 +318,7 @@ static auto _item_T_in_T(CallFrame &frame, SourceLocation location, Value *value
     return Fail(Error(location, Errors::ExpectedListOrDictionary));
 }
 
-static auto _insert_T_at_the_end_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _insert_T_at_the_end_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto list = values[1].as<List>()) {
         list->values().push_back(values[0]);
@@ -334,7 +334,7 @@ static auto _insert_T_at_the_end_of_T(CallFrame &frame, SourceLocation location,
     return values[1];
 }
 
-static auto _remove_item_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _remove_item_T_from_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto dictionary = values[1].as<Dictionary>()) {
         dictionary->values().erase(values[0]);
@@ -350,7 +350,7 @@ static auto _remove_item_T_from_T(CallFrame &frame, SourceLocation location, Val
     return Fail(Error(location, Errors::ExpectedADictionary));
 }
 
-static auto _the_first_offset_of_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_first_offset_of_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto text = values[1].as<String>()) {
         auto searchString = values[0].as<String>();
@@ -368,7 +368,7 @@ static auto _the_first_offset_of_T_in_T(CallFrame &frame, SourceLocation locatio
     return Fail(Error(location, Errors::ExpectedAString));
 }
 
-static auto _the_last_offset_of_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_last_offset_of_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto text = values[1].as<String>()) {
         auto searchString = values[0].as<String>();
@@ -386,7 +386,7 @@ static auto _the_last_offset_of_T_in_T(CallFrame &frame, SourceLocation location
     return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
-static auto _replace_all_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _replace_all_T_with_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto text = values[2].as<String>()) {
         auto searchString = values[0].as<String>();
@@ -406,7 +406,7 @@ static auto _replace_all_T_with_T_in_T(CallFrame &frame, SourceLocation location
     return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
-static auto _replace_first_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _replace_first_T_with_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto text = values[2].as<String>()) {
         auto searchString = values[0].as<String>();
@@ -426,7 +426,7 @@ static auto _replace_first_T_with_T_in_T(CallFrame &frame, SourceLocation locati
     return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
-static auto _replace_last_T_with_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _replace_last_T_with_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto text = values[2].as<String>()) {
         auto searchString = values[0].as<String>();
@@ -446,7 +446,7 @@ static auto _replace_last_T_with_T_in_T(CallFrame &frame, SourceLocation locatio
     return Fail(Error(location, Errors::ExpectedStringOrList));
 }
 
-static auto _T_as_an_integer(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_as_an_integer(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (values[0].isNumber()) {
         return Value(values[0].castInteger());
@@ -457,7 +457,7 @@ static auto _T_as_an_integer(CallFrame &frame, SourceLocation location, Value *v
     return Fail(Error(location, Errors::CantConvertToInteger));
 }
 
-static auto _T_as_a_number(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_as_a_number(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (values[0].isNumber()) {
         return Value(values[0].castFloat());
@@ -468,52 +468,52 @@ static auto _T_as_a_number(CallFrame &frame, SourceLocation location, Value *val
     return Fail(Error(location, Errors::CantConvertToNumber));
 }
 
-static auto _T_as_a_string(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_as_a_string(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0].toString();
 }
 
-static auto _T_is_a_integer(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_a_integer(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0].isInteger();
 }
 
-static auto _T_is_a_number(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_a_number(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0].isNumber();
 }
 
-static auto _T_is_a_string(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_a_string(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0].isString();
 }
 
-static auto _T_is_a_list(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_a_list(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0].as<List>() != nullptr;
 }
 
-static auto _T_is_a_dictionary(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_a_dictionary(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return values[0].as<Dictionary>() != nullptr;
 }
 
-static auto _an_empty_string(CallFrame &frame, SourceLocation location, Value *values)
+static auto _an_empty_string(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(std::string());
 }
 
-static auto _an_empty_list(CallFrame &frame, SourceLocation location, Value *values)
+static auto _an_empty_list(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(MakeStrong<List>());
 }
 
-static auto _an_empty_dictionary(CallFrame &frame, SourceLocation location, Value *values)
+static auto _an_empty_dictionary(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     return Value(MakeStrong<Dictionary>());
 }
 
-static auto _the_keys_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_keys_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto dictionary = values[0].as<Dictionary>();
     if (!dictionary) {
@@ -526,7 +526,7 @@ static auto _the_keys_of_T(CallFrame &frame, SourceLocation location, Value *val
     return keys;
 }
 
-static auto _the_values_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_values_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto dictionary = values[0].as<Dictionary>();
     if (!dictionary) {
@@ -539,7 +539,7 @@ static auto _the_values_of_T(CallFrame &frame, SourceLocation location, Value *v
     return valuesList;
 }
 
-static auto _insert_item_T_with_key_T_into_T(CallFrame &frame, SourceLocation location,
+static auto _insert_item_T_with_key_T_into_T(VirtualMachine &vm, SourceLocation location,
                                              Value *values) -> Result<Value, Error> {
     auto dictionary = values[2].as<Dictionary>();
     if (!dictionary) {
@@ -549,7 +549,7 @@ static auto _insert_item_T_with_key_T_into_T(CallFrame &frame, SourceLocation lo
     return dictionary;
 }
 
-static auto _items_T_to_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _items_T_to_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[2].as<List>();
     if (!list) {
@@ -566,7 +566,7 @@ static auto _items_T_to_T_in_T(CallFrame &frame, SourceLocation location, Value 
     return MakeStrong<List>(list->values().begin() + index1, list->values().begin() + index2 + 1);
 }
 
-static auto _the_middle_item_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_middle_item_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -575,7 +575,7 @@ static auto _the_middle_item_in_T(CallFrame &frame, SourceLocation location, Val
     return list->values().at(list->values().size() / 2);
 }
 
-static auto _the_last_item_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_last_item_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -584,7 +584,7 @@ static auto _the_last_item_in_T(CallFrame &frame, SourceLocation location, Value
     return list->values().back();
 }
 
-static auto _the_number_of_items_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_number_of_items_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -594,8 +594,8 @@ static auto _the_number_of_items_in_T(CallFrame &frame, SourceLocation location,
 }
 
 static auto _any_item_in_T(std::function<Integer(Integer)> randomInteger)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [randomInteger](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [randomInteger](VirtualMachine &vm, SourceLocation location,
                            Value *values) -> Result<Value, Error> {
         auto list = values[0].as<List>();
         if (!list) {
@@ -605,7 +605,7 @@ static auto _any_item_in_T(std::function<Integer(Integer)> randomInteger)
     };
 }
 
-static auto _remove_items_T_to_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _remove_items_T_to_T_from_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[2].as<List>();
     if (!list) {
@@ -623,7 +623,7 @@ static auto _remove_items_T_to_T_from_T(CallFrame &frame, SourceLocation locatio
     return list;
 }
 
-static auto _insert_T_at_index_T_into_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _insert_T_at_index_T_into_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[2].as<List>();
     if (!list) {
@@ -637,7 +637,7 @@ static auto _insert_T_at_index_T_into_T(CallFrame &frame, SourceLocation locatio
     return list;
 }
 
-static auto _reverse_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _reverse_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -647,7 +647,7 @@ static auto _reverse_T(CallFrame &frame, SourceLocation location, Value *values)
     return list;
 }
 
-static auto _reversed_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _reversed_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -657,8 +657,8 @@ static auto _reversed_T(CallFrame &frame, SourceLocation location, Value *values
 }
 
 static auto _shuffle_T(std::mt19937_64 &engine)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [&engine](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [&engine](VirtualMachine &vm, SourceLocation location,
                      Value *values) -> Result<Value, Error> {
         auto list = values[0].as<List>();
         if (!list) {
@@ -670,8 +670,8 @@ static auto _shuffle_T(std::mt19937_64 &engine)
 }
 
 static auto _shuffled_T(std::mt19937_64 &engine)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [&engine](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [&engine](VirtualMachine &vm, SourceLocation location,
                      Value *values) -> Result<Value, Error> {
         auto list = values[0].as<List>();
         if (!list) {
@@ -683,7 +683,7 @@ static auto _shuffled_T(std::mt19937_64 &engine)
     };
 }
 
-static auto _join_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _join_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -696,7 +696,7 @@ static auto _join_T(CallFrame &frame, SourceLocation location, Value *values)
     return str.str();
 }
 
-static auto _join_T_using_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _join_T_using_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -716,7 +716,7 @@ static auto _join_T_using_T(CallFrame &frame, SourceLocation location, Value *va
     return str.str();
 }
 
-static auto _insert_T_at_character_T_in_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _insert_T_at_character_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto insertText = values[0].as<String>();
     if (!insertText) {
@@ -734,7 +734,7 @@ static auto _insert_T_at_character_T_in_T(CallFrame &frame, SourceLocation locat
     return text;
 }
 
-static auto _remove_all_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _remove_all_T_from_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto removeText = values[0].as<String>();
     if (!removeText) {
@@ -748,7 +748,7 @@ static auto _remove_all_T_from_T(CallFrame &frame, SourceLocation location, Valu
     return text;
 }
 
-static auto _remove_first_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _remove_first_T_from_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto removeText = values[0].as<String>();
     if (!removeText) {
@@ -762,7 +762,7 @@ static auto _remove_first_T_from_T(CallFrame &frame, SourceLocation location, Va
     return text;
 }
 
-static auto _remove_last_T_from_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _remove_last_T_from_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto removeText = values[0].as<String>();
     if (!removeText) {
@@ -777,8 +777,8 @@ static auto _remove_last_T_from_T(CallFrame &frame, SourceLocation location, Val
 }
 
 static auto _replace_chunk_T_with_T_in_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger()) {
             return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -800,8 +800,8 @@ static auto _replace_chunk_T_with_T_in_T(chunk::type chunkType)
 }
 
 static auto _replace_chunks_T_to_T_with_T_in_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger() || !values[1].isInteger()) {
             return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -823,8 +823,8 @@ static auto _replace_chunks_T_to_T_with_T_in_T(chunk::type chunkType)
 }
 
 static auto _remove_chunk_T_from_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger()) {
             return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -841,8 +841,8 @@ static auto _remove_chunk_T_from_T(chunk::type chunkType)
 }
 
 static auto _remove_chunks_T_to_T_from_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger()) {
             return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -863,8 +863,8 @@ static auto _remove_chunks_T_to_T_from_T(chunk::type chunkType)
 }
 
 static auto _the_list_of_chunks_in_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
@@ -882,8 +882,8 @@ static auto _the_list_of_chunks_in_T(chunk::type chunkType)
 }
 
 static auto _chunk_T_in_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger()) {
             return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -898,8 +898,8 @@ static auto _chunk_T_in_T(chunk::type chunkType)
 }
 
 static auto _chunks_T_to_T_in_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         if (!values[0].isInteger() || !values[1].isInteger()) {
             return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -915,8 +915,8 @@ static auto _chunks_T_to_T_in_T(chunk::type chunkType)
 }
 
 static auto _any_chunk_in_T(chunk::type chunkType, std::function<Integer(Integer)> randomInteger)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType, randomInteger](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType, randomInteger](VirtualMachine &vm, SourceLocation location,
                                       Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
@@ -927,8 +927,8 @@ static auto _any_chunk_in_T(chunk::type chunkType, std::function<Integer(Integer
 }
 
 static auto _the_middle_chunk_in_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
@@ -939,8 +939,8 @@ static auto _the_middle_chunk_in_T(chunk::type chunkType)
 }
 
 static auto _the_last_chunk_in_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
@@ -951,8 +951,8 @@ static auto _the_last_chunk_in_T(chunk::type chunkType)
 }
 
 static auto _the_number_of_chunks_in_T(chunk::type chunkType)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [chunkType](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [chunkType](VirtualMachine &vm, SourceLocation location,
                        Value *values) -> Result<Value, Error> {
         auto text = values[0].as<String>();
         if (!text) {
@@ -962,7 +962,7 @@ static auto _the_number_of_chunks_in_T(chunk::type chunkType)
     };
 }
 
-static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _format_string_T_with_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isString()) {
         return Fail(Error(location, Errors::ExpectedAString));
@@ -1018,7 +1018,7 @@ static auto _format_string_T_with_T(CallFrame &frame, SourceLocation location, V
     return result.str();
 }
 
-static auto _character_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _character_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isInteger()) {
         return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -1031,7 +1031,7 @@ static auto _character_of_T(CallFrame &frame, SourceLocation location, Value *va
     }
 }
 
-static auto _ordinal_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _ordinal_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isString()) {
         return Fail(Error(location, Errors::ExpectedAString));
@@ -1043,7 +1043,7 @@ static auto _ordinal_of_T(CallFrame &frame, SourceLocation location, Value *valu
     }
 }
 
-static auto _T_up_to_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_up_to_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isInteger() || !values[1].isInteger()) {
         return Fail(Error(location, Errors::ExpectedAnInteger));
@@ -1051,7 +1051,7 @@ static auto _T_up_to_T(CallFrame &frame, SourceLocation location, Value *values)
     return MakeStrong<Range>(values[0].asInteger(), values[1].asInteger(), true);
 }
 
-static auto _the_lower_bound_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_lower_bound_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto range = values[0].as<Range>()) {
         return range->start();
@@ -1059,7 +1059,7 @@ static auto _the_lower_bound_of_T(CallFrame &frame, SourceLocation location, Val
     return Fail(Error(location, Errors::ExpectedARange));
 }
 
-static auto _the_upper_bound_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_upper_bound_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto range = values[0].as<Range>()) {
         return range->end();
@@ -1067,7 +1067,7 @@ static auto _the_upper_bound_of_T(CallFrame &frame, SourceLocation location, Val
     return Fail(Error(location, Errors::ExpectedARange));
 }
 
-static auto _T_is_closed(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_is_closed(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto range = values[0].as<Range>()) {
         return range->closed();
@@ -1075,7 +1075,7 @@ static auto _T_is_closed(CallFrame &frame, SourceLocation location, Value *value
     return Fail(Error(location, Errors::ExpectedARange));
 }
 
-static auto _T_overlaps_with_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _T_overlaps_with_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto range1 = values[0].as<Range>();
     auto range2 = values[1].as<Range>();
@@ -1089,8 +1089,8 @@ static auto _T_overlaps_with_T(CallFrame &frame, SourceLocation location, Value 
 }
 
 static auto _a_random_number_in_T(std::function<Integer(Integer)> randomInteger)
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
-    return [randomInteger](CallFrame &frame, SourceLocation location,
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
+    return [randomInteger](VirtualMachine &vm, SourceLocation location,
                            Value *values) -> Result<Value, Error> {
         if (auto range = values[0].as<Range>()) {
             return range->start() +
@@ -1101,9 +1101,9 @@ static auto _a_random_number_in_T(std::function<Integer(Integer)> randomInteger)
 }
 
 static auto _the_func_of_T(double (*func)(double))
-    -> std::function<Result<Value, Error>(CallFrame &, SourceLocation, Value *)> {
+    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
     return
-        [func](CallFrame &frame, SourceLocation location, Value *values) -> Result<Value, Error> {
+        [func](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
             if (!values[0].isNumber()) {
                 return Fail(Error(location, Errors::ExpectedANumber));
             }
@@ -1116,7 +1116,7 @@ static auto _the_func_of_T(double (*func)(double))
         };
 }
 
-static auto _the_abs_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_abs_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (!values[0].isNumber()) {
         return Fail(Error(location, Errors::ExpectedANumber));
@@ -1127,7 +1127,7 @@ static auto _the_abs_of_T(CallFrame &frame, SourceLocation location, Value *valu
     return std::abs(values[0].asInteger());
 }
 
-static auto _the_maximum_value_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_maximum_value_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -1153,7 +1153,7 @@ static auto _the_maximum_value_of_T(CallFrame &frame, SourceLocation location, V
     return max;
 }
 
-static auto _the_minimum_value_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_minimum_value_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
@@ -1179,7 +1179,7 @@ static auto _the_minimum_value_of_T(CallFrame &frame, SourceLocation location, V
     return min;
 }
 
-static auto _the_average_of_T(CallFrame &frame, SourceLocation location, Value *values)
+static auto _the_average_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {

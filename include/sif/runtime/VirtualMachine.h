@@ -59,6 +59,9 @@ class VirtualMachine {
     const Mapping<std::string, Value> globals() const;
     const Mapping<std::string, Value> exports() const;
 
+    const Value &error() const { return _frames.back().error; }
+    Value &error() { return _frames.back().error; }
+
     const Value &it() const { return _it; }
     Value &it() { return _it; }
 
