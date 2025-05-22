@@ -82,6 +82,7 @@ inline constexpr std::string_view ExpectedList = "expected a list but got {}";
 inline constexpr std::string_view ExpectedNumber = "expected a number but got {}";
 inline constexpr std::string_view UnpackListMismatch = "expected {} values but got {}";
 inline constexpr std::string_view DivideByZero = "divide by zero";
+inline constexpr std::string_view InvalidFunctionSignature = "invalid function signature";
 } // namespace Errors
 
 struct Error {

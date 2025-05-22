@@ -118,6 +118,16 @@ std::string Signature::description() const {
 
 bool Signature::endsWithArgument() const { return std::holds_alternative<Argument>(terms.back()); }
 
+bool Signature::isValid() const {
+    bool hasAtLeastOneTokenTerm = false;
+    for (auto &&term : terms) {
+        if (std::holds_alternative<Token>(term) || std::holds_alternative<Choice>(term)) {
+            hasAtLeastOneTokenTerm = true;
+        }
+    }
+    return hasAtLeastOneTokenTerm;
+}
+
 std::vector<Signature::Argument> Signature::arguments() const {
     std::vector<Argument> result;
     for (auto &&term : terms) {

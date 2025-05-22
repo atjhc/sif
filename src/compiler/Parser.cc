@@ -348,6 +348,7 @@ std::string Parser::_traceTokens() const {
 Signature Parser::parseSignature() {
     Signature signature;
     Set<std::string> argumentNames;
+    auto start = peek().range.start;
 
     while (peek().isWord() || peek().type == Token::Type::LeftParen ||
            peek().type == Token::Type::LeftBrace) {
@@ -425,6 +426,11 @@ Signature Parser::parseSignature() {
         } else {
             emitError(Error(peek().range.start, Errors::ExpectedATypeName));
         }
+    }
+
+    auto range = SourceRange{start, previous().range.end};
+    if (!signature.isValid()) {
+        emitError(Error(range, Errors::InvalidFunctionSignature));
     }
     return signature;
 }
@@ -1351,7 +1357,6 @@ Strong<Expression> Parser::parseCall(bool prefix) {
         if (variable != _variables.end() && grammar->argument) {
             return parseUnary();
         }
-
         advance();
 
         // Bail early if we don't recognize this identifier.
@@ -1368,11 +1373,6 @@ Strong<Expression> Parser::parseCall(bool prefix) {
         // Attempt to parse the more tightly bound prefix function calls first. (e.g. "a {}")
         auto expression = parseCallPrefix();
         if (!expression) {
-            return expression;
-        }
-
-        // Check if there is more to be parsed.
-        if (!peek().isPrimary()) {
             return expression;
         }
 
