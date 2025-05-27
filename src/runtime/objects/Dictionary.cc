@@ -67,7 +67,8 @@ Value Dictionary::enumerator(Value self) const {
     return MakeStrong<DictionaryEnumerator>(self.as<Dictionary>());
 }
 
-Result<Value, Error> Dictionary::subscript(SourceLocation location, const Value &value) const {
+Result<Value, Error> Dictionary::subscript(VirtualMachine &vm, SourceLocation location,
+                                           const Value &value) const {
     auto it = _values.find(value);
     if (it == _values.end()) {
         return Value();
@@ -76,9 +77,21 @@ Result<Value, Error> Dictionary::subscript(SourceLocation location, const Value 
     }
 }
 
-Result<Value, Error> Dictionary::setSubscript(SourceLocation, const Value &key, Value value) {
+Result<Value, Error> Dictionary::setSubscript(VirtualMachine &vm, SourceLocation, const Value &key,
+                                              Value value) {
     _values[key] = value;
     return Value();
+}
+
+void Dictionary::trace(const std::function<void(Strong<Object> &)> &visitor) {
+    for (auto &pair : _values) {
+        if (pair.first.isObject()) {
+            visitor(const_cast<Value &>(pair.first).reference());
+        }
+        if (pair.second.isObject()) {
+            visitor(pair.second.reference());
+        }
+    }
 }
 
 #pragma mark - DictionaryEnumerator
@@ -98,6 +111,11 @@ std::string DictionaryEnumerator::typeName() const { return "DictionaryEnumerato
 
 std::string DictionaryEnumerator::description() const {
     return Concat("E(", _dictionary->description(), ")");
+}
+
+void DictionaryEnumerator::trace(const std::function<void(Strong<Object> &)> &visitor) {
+    Strong<Object> obj = _dictionary;
+    visitor(obj);
 }
 
 SIF_NAMESPACE_END

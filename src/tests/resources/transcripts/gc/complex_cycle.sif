@@ -1,0 +1,27 @@
+-- Test complex multi-container cycle
+set a to []
+set b to [:]
+set c to [tracking object]
+
+-- Create interconnected cycle: a -> b -> c -> a
+insert b at the end of a
+set b["c"] to c
+insert a at the end of c
+print track count
+
+-- Clear all references
+set a to empty
+set b to empty
+set c to empty
+0
+print track count
+
+-- GC should break complex cycle
+collect garbage
+print track count
+
+(-- expect
+1
+1
+0
+--)

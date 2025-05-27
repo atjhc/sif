@@ -1,0 +1,22 @@
+-- Test dictionary key cycle
+set dict to [:]
+set key_list to [tracking object]
+set dict[key_list] to "value"
+insert dict at the end of key_list
+print track count
+
+-- Clear references - but held by key cycle
+set dict to empty
+set key_list to empty
+0
+print track count
+
+-- GC should break the key cycle
+collect garbage
+print track count
+
+(-- expect
+1
+1
+0
+--)

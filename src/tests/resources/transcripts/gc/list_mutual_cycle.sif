@@ -1,0 +1,22 @@
+-- Test mutual list cycle
+set a to [tracking object]
+set b to []
+insert a at the end of b
+insert b at the end of a
+print track count
+
+-- Clear references - but objects held by cycle
+set a to empty
+set b to empty
+0
+print track count
+
+-- GC should break the cycle
+collect garbage
+print track count
+
+(-- expect
+1
+1
+0
+--)

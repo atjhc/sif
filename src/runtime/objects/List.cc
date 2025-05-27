@@ -23,20 +23,6 @@ const std::vector<Value> &List::values() const { return _values; }
 
 size_t List::size() const { return values().size(); }
 
-Value List::operator[](const Range &range) const {
-    auto start = _values.begin() + range.start();
-    auto end = _values.begin() + range.end() + (range.closed() ? 1 : 0);
-    if (start < _values.begin())
-        start = _values.begin();
-    if (start > _values.end())
-        start = _values.end() - 1;
-    if (end < _values.begin())
-        end = _values.begin();
-    if (end > _values.end())
-        end = _values.end();
-    return MakeStrong<List>(std::vector(start, end));
-}
-
 std::string List::typeName() const { return "list"; }
 
 std::string List::description() const {
@@ -123,9 +109,20 @@ Strong<Object> List::copy() const { return MakeOwned<List>(values()); }
 
 Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
 
-Result<Value, Error> List::subscript(SourceLocation location, const Value &value) const {
+Result<Value, Error> List::subscript(VirtualMachine &vm, SourceLocation location,
+                                     const Value &value) const {
     if (auto range = value.as<Range>()) {
-        return Value(this->operator[](*range));
+        auto start = _values.begin() + range->start();
+        auto end = _values.begin() + range->end() + (range->closed() ? 1 : 0);
+        if (start < _values.begin())
+            start = _values.begin();
+        if (start > _values.end())
+            start = _values.end() - 1;
+        if (end < _values.begin())
+            end = _values.begin();
+        if (end > _values.end())
+            end = _values.end();
+        return vm.make<List>(std::vector(start, end));
     }
     if (value.isInteger()) {
         auto index = value.asInteger();
@@ -138,7 +135,8 @@ Result<Value, Error> List::subscript(SourceLocation location, const Value &value
     return Fail(Error(location, "expected an integer or range"));
 }
 
-Result<Value, Error> List::setSubscript(SourceLocation location, const Value &key, Value value) {
+Result<Value, Error> List::setSubscript(VirtualMachine &vm, SourceLocation location,
+                                        const Value &key, Value value) {
     if (auto range = key.as<Range>()) {
         _values.erase(_values.begin() + range->start(),
                       _values.begin() + range->end() + (range->closed() ? 1 : 0));
@@ -152,6 +150,14 @@ Result<Value, Error> List::setSubscript(SourceLocation location, const Value &ke
         _values[key.asInteger()] = value;
     }
     return Value();
+}
+
+void List::trace(const std::function<void(Strong<Object> &)> &visitor) {
+    for (auto &value : _values) {
+        if (value.isObject()) {
+            visitor(value.reference());
+        }
+    }
 }
 
 #pragma mark - ListEnumerator
@@ -172,5 +178,10 @@ bool ListEnumerator::isAtEnd() { return _list->values().size() == _index; }
 std::string ListEnumerator::typeName() const { return "ListEnumerator"; }
 
 std::string ListEnumerator::description() const { return Concat("E(", _list->description(), ")"); }
+
+void ListEnumerator::trace(const std::function<void(Strong<Object> &)> &visitor) {
+    Strong<Object> obj = _list;
+    visitor(obj);
+}
 
 SIF_NAMESPACE_END

@@ -65,6 +65,17 @@ class VirtualMachine {
     const Value &it() const { return _it; }
     Value &it() { return _it; }
 
+    template <class T, class... Args> std::shared_ptr<T> make(Args &&...args) {
+        auto obj = std::shared_ptr<T>(new T(std::forward<Args>(args)...), [&](auto p) {
+            _trackedContainers.erase(p);
+            delete p;
+        });
+        trackObject(obj);
+        return obj;
+    }
+
+    void collectGarbage();
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-private-field"
     VirtualMachineConfig config;
@@ -76,6 +87,9 @@ class VirtualMachine {
 
     CallFrame &frame();
 
+    void trackObject(Strong<Object> object);
+    std::vector<Strong<Object>> gatherRootObjects() const;
+
 #if defined(DEBUG)
     friend std::ostream &operator<<(std::ostream &out, const CallFrame &f);
 #endif
@@ -86,6 +100,9 @@ class VirtualMachine {
     Mapping<std::string, Value> _globals;
     Mapping<std::string, Value> _exports;
     Value _it;
+
+    // Garbage collection state
+    Mapping<Object *, Weak<Object>> _trackedContainers;
 };
 
 SIF_NAMESPACE_END

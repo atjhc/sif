@@ -120,7 +120,8 @@ Value String::enumerator(Value self) const {
     return MakeStrong<StringEnumerator>(self.as<String>());
 }
 
-Result<Value, Error> String::subscript(SourceLocation location, const Value &value) const {
+Result<Value, Error> String::subscript(VirtualMachine &vm, SourceLocation location,
+                                       const Value &value) const {
     if (value.isInteger()) {
         auto index = value.asInteger();
         if (index >= _string.size() || _string.size() + index < 0) {
@@ -134,7 +135,8 @@ Result<Value, Error> String::subscript(SourceLocation location, const Value &val
     return Fail(Error(location, "expected an integer or range"));
 }
 
-Result<Value, Error> String::setSubscript(SourceLocation location, const Value &key, Value value) {
+Result<Value, Error> String::setSubscript(VirtualMachine &vm, SourceLocation location,
+                                          const Value &key, Value value) {
     if (auto range = key.as<Range>()) {
         if (auto string = value.as<String>()) {
             _string.replace(_string.begin() + range->start(),

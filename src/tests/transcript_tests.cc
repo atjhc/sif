@@ -22,7 +22,10 @@
 #include <sif/runtime/modules/System.h>
 #include <sif/runtime/objects/List.h>
 #include <sif/runtime/ModuleLoader.h>
+#include <sif/runtime/objects/Native.h>
+#include <sif/compiler/Signature.h>
 #include "tests/TestSuite.h"
+#include "tests/TrackingObject.h"
 
 #include <filesystem>
 #include <iostream>
@@ -93,6 +96,9 @@ TEST_CASE(TranscriptTests, All) {
 
         parser.declare(Core().signatures());
         parser.declare(System().signatures());
+        parser.declare(Signature::Make("tracking object").value());
+        parser.declare(Signature::Make("track count").value());
+        parser.declare(Signature::Make("collect garbage").value());
         auto statement = parser.statement();
 
         if (!parser.failed()) {
@@ -106,6 +112,22 @@ TEST_CASE(TranscriptTests, All) {
                 for (const auto &function : system.values()) {
                     vm.addGlobal(function.first, function.second);
                 }
+
+                vm.addGlobal("tracking object", MakeStrong<Native>([&vm](VirtualMachine &, SourceLocation, Value *) -> Result<Value, Error> {
+                    auto obj = vm.make<TrackingObject>();
+                    return obj;
+                }));
+
+                vm.addGlobal("track count", MakeStrong<Native>([](VirtualMachine &, SourceLocation, Value *) -> Result<Value, Error> {
+                    return Value(static_cast<Integer>(TrackingObject::count));
+                }));
+
+                vm.addGlobal("collect garbage", MakeStrong<Native>([](VirtualMachine &vm, SourceLocation, Value *) -> Result<Value, Error> {
+                    vm.collectGarbage();
+                    return Value();
+                }));
+
+                TrackingObject::count = 0;
                 auto result = vm.execute(bytecode);
                 if (!result) {
                     err << result.error().what() << std::endl;

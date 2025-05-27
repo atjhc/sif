@@ -1,0 +1,24 @@
+-- Test enumerator objects involved in reference cycles
+-- Enumerators hold references to their source containers,
+-- which might be part of cycles
+
+function a cycle
+  set a to [tracking object]
+  insert a at the end of a
+end function
+
+repeat for item in a cycle
+  collect garbage
+  print track count
+  exit repeat
+end
+set item to empty
+
+print track count
+collect garbage
+print track count
+(-- expect
+1
+1
+0
+--)

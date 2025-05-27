@@ -1,0 +1,27 @@
+-- Test dictionary key-value cycle
+set dict to [:]
+set key_list to [tracking object]
+set value_list to []
+
+-- Create cycle: dict[key_list] = value_list, key_list contains dict, value_list contains key_list
+set dict[key_list] to value_list
+insert dict at the end of key_list
+insert key_list at the end of value_list
+print track count
+
+-- Clear references - but held by complex cycle
+set dict to empty
+set key_list to empty
+set value_list to empty
+0
+print track count
+
+-- GC should break the complex key-value cycle
+collect garbage
+print track count
+
+(-- expect
+1
+1
+0
+--)

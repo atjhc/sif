@@ -16,27 +16,19 @@
 
 #pragma once
 
-#include <functional>
-#include <sif/Common.h>
+#include <sif/runtime/Object.h>
 
 SIF_NAMESPACE_BEGIN
 
-class Object {
+class TrackingObject : public Object {
   public:
-    virtual ~Object() = default;
+    TrackingObject();
+    ~TrackingObject();
 
-    virtual std::string typeName() const = 0;
-    virtual bool equals(Strong<Object>) const;
-    virtual size_t hash() const;
+    std::string typeName() const override;
+    std::string description() const override;
 
-    virtual std::string toString() const;
-    virtual std::string description() const = 0;
-    virtual std::string debugDescription() const;
-
-    virtual void trace(const std::function<void(Strong<Object> &)> &visitor) {}
-    bool visited = false;
+    static int count;
 };
-
-std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);
 
 SIF_NAMESPACE_END

@@ -1,0 +1,22 @@
+-- Test dictionary-list cycle
+set dict to [:]
+set list to [tracking object]
+set dict["list"] to list
+insert dict at the end of list
+print track count
+
+-- Clear references - but held by cycle
+set dict to empty
+set list to empty
+0
+print track count
+
+-- GC should break the cycle
+collect garbage
+print track count
+
+(-- expect
+1
+1
+0
+--)

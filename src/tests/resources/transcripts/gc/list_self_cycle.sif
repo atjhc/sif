@@ -1,0 +1,19 @@
+-- Test list self-reference cycle
+set list to [tracking object]
+insert list at the end of list
+print track count
+
+-- Clear reference - but object is still held by the cycle
+set list to empty
+0
+print track count
+
+-- GC should break the cycle
+collect garbage
+print track count
+
+(-- expect
+1
+1
+0
+--)

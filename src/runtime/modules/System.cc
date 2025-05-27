@@ -93,36 +93,39 @@ static auto _print_error_T(std::ostream &err)
 
 static auto _read_a_word(std::istream &in)
     -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-        std::string input;
-        in >> input;
-        return input;
-    };
+    return
+        [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
+            std::string input;
+            in >> input;
+            return input;
+        };
 }
 
 static auto _read_a_line(std::istream &in)
     -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-        std::string input;
-        std::getline(in, input);
-        return input;
-    };
+    return
+        [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
+            std::string input;
+            std::getline(in, input);
+            return input;
+        };
 }
 
 static auto _read_a_character(std::istream &in)
     -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-        std::istreambuf_iterator<char> it(in.rdbuf());
-        std::istreambuf_iterator<char> eos;
-        std::string result;
-        try {
-            char32_t input = utf8::next(it, eos);
-            result = utf8::utf32to8(std::u32string_view(&input, 1));
-        } catch (const utf8::exception &exception) {
-            return Fail(Error(location, exception.what()));
-        }
-        return result;
-    };
+    return
+        [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
+            std::istreambuf_iterator<char> it(in.rdbuf());
+            std::istreambuf_iterator<char> eos;
+            std::string result;
+            try {
+                char32_t input = utf8::next(it, eos);
+                result = utf8::utf32to8(std::u32string_view(&input, 1));
+            } catch (const utf8::exception &exception) {
+                return Fail(Error(location, exception.what()));
+            }
+            return result;
+        };
 }
 
 static auto _the_contents_of_file_T(VirtualMachine &vm, SourceLocation location, Value *values)
@@ -151,7 +154,7 @@ static auto _the_contents_of_directory_T(VirtualMachine &vm, SourceLocation loca
     if (error) {
         return Fail(Error(location, Value(error.message())));
     }
-    Strong<List> results = MakeStrong<List>();
+    Strong<List> results = vm.make<List>();
     for (auto it : std::filesystem::directory_iterator(path->string())) {
         auto itemPath = it.path();
         results->values().push_back(itemPath.string());
@@ -259,11 +262,11 @@ static void _files(ModuleMap &natives) {
 System::System(const SystemConfig &config) {
     _natives[S("the arguments")] = MakeStrong<Native>(
         [this](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return MakeStrong<List>(_arguments.begin(), _arguments.end());
+            return vm.make<List>(_arguments.begin(), _arguments.end());
         });
     _natives[S("the environment")] = MakeStrong<Native>(
         [this](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto dictionary = MakeStrong<Dictionary>();
+            auto dictionary = vm.make<Dictionary>();
             for (auto pair : _environment) {
                 dictionary->values()[Value(pair.first)] = Value(pair.second);
             }

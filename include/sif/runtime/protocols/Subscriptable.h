@@ -19,12 +19,15 @@
 #include <sif/Common.h>
 #include <sif/Error.h>
 #include <sif/runtime/Value.h>
+#include <sif/runtime/VirtualMachine.h>
 
 SIF_NAMESPACE_BEGIN
 
 struct Subscriptable {
-    virtual Result<Value, Error> subscript(SourceLocation, const Value &) const = 0;
-    virtual Result<Value, Error> setSubscript(SourceLocation, const Value &, Value) = 0;
+    virtual Result<Value, Error> subscript(VirtualMachine &, SourceLocation,
+                                           const Value &) const = 0;
+    virtual Result<Value, Error> setSubscript(VirtualMachine &, SourceLocation, const Value &,
+                                              Value) = 0;
 };
 
 SIF_NAMESPACE_END

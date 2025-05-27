@@ -1,0 +1,20 @@
+-- Test dictionary self-reference cycle
+set dict to [:]
+set dict["self"] to dict
+set dict["obj"] to [tracking object]
+print track count
+
+-- Clear reference - but dict held by self-cycle
+set dict to empty
+0
+print track count
+
+-- GC should break the cycle
+collect garbage
+print track count
+
+(-- expect
+1
+1
+0
+--)

@@ -49,8 +49,11 @@ class Dictionary : public Object, public Copyable, public Enumerable, public Sub
     Value enumerator(Value self) const override;
 
     // Subscriptable
-    Result<Value, Error> subscript(SourceLocation, const Value &) const override;
-    Result<Value, Error> setSubscript(SourceLocation, const Value &, Value) override;
+    Result<Value, Error> subscript(VirtualMachine &, SourceLocation, const Value &) const override;
+    Result<Value, Error> setSubscript(VirtualMachine &, SourceLocation, const Value &,
+                                      Value) override;
+
+    void trace(const std::function<void(Strong<Object> &)> &visitor) override;
 
   private:
     ValueMap _values;
@@ -65,6 +68,8 @@ class DictionaryEnumerator : public Enumerator {
 
     std::string typeName() const override;
     std::string description() const override;
+
+    void trace(const std::function<void(Strong<Object> &)> &visitor) override;
 
   private:
     Strong<Dictionary> _dictionary;

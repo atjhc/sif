@@ -93,7 +93,7 @@ struct TestSuiteConfig {
 struct TestSuite {
     TestSuiteConfig config;
 
-    TestSuite(const TestSuiteConfig &c = TestSuiteConfig("src/tests")) : config(c) {}
+    TestSuite(const TestSuiteConfig &c = TestSuiteConfig("src/tests/resources")) : config(c) {}
 
     int run(const std::string &groupName, const std::string &testName);
 

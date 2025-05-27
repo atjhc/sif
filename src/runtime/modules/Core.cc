@@ -311,9 +311,9 @@ static auto _T_ends_with_T(VirtualMachine &vm, SourceLocation location, Value *v
 static auto _item_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto list = values[1].as<List>()) {
-        return list->subscript(location, values[0]);
+        return list->subscript(vm, location, values[0]);
     } else if (auto dictionary = values[1].as<Dictionary>()) {
-        return dictionary->subscript(location, values[0]);
+        return dictionary->subscript(vm, location, values[0]);
     }
     return Fail(Error(location, Errors::ExpectedListOrDictionary));
 }
@@ -505,12 +505,12 @@ static auto _an_empty_string(VirtualMachine &vm, SourceLocation location, Value 
 
 static auto _an_empty_list(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
-    return Value(MakeStrong<List>());
+    return Value(vm.make<List>());
 }
 
 static auto _an_empty_dictionary(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
-    return Value(MakeStrong<Dictionary>());
+    return Value(vm.make<Dictionary>());
 }
 
 static auto _the_keys_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
@@ -519,7 +519,7 @@ static auto _the_keys_of_T(VirtualMachine &vm, SourceLocation location, Value *v
     if (!dictionary) {
         return Fail(Error(location, Errors::ExpectedADictionary));
     }
-    auto keys = MakeStrong<List>();
+    auto keys = vm.make<List>();
     for (const auto &pair : dictionary->values()) {
         keys->values().push_back(pair.first);
     }
@@ -532,7 +532,7 @@ static auto _the_values_of_T(VirtualMachine &vm, SourceLocation location, Value 
     if (!dictionary) {
         return Fail(Error(location, Errors::ExpectedADictionary));
     }
-    auto valuesList = MakeStrong<List>();
+    auto valuesList = vm.make<List>();
     for (const auto &pair : dictionary->values()) {
         valuesList->values().push_back(pair.second);
     }
@@ -563,7 +563,7 @@ static auto _items_T_to_T_in_T(VirtualMachine &vm, SourceLocation location, Valu
     }
     auto index1 = values[0].asInteger();
     auto index2 = values[1].asInteger();
-    return MakeStrong<List>(list->values().begin() + index1, list->values().begin() + index2 + 1);
+    return vm.make<List>(list->values().begin() + index1, list->values().begin() + index2 + 1);
 }
 
 static auto _the_middle_item_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
@@ -653,7 +653,7 @@ static auto _reversed_T(VirtualMachine &vm, SourceLocation location, Value *valu
     if (!list) {
         return Fail(Error(location, Errors::ExpectedAList));
     }
-    return MakeStrong<List>(list->values().rbegin(), list->values().rend());
+    return vm.make<List>(list->values().rbegin(), list->values().rend());
 }
 
 static auto _shuffle_T(std::mt19937_64 &engine)
@@ -677,7 +677,7 @@ static auto _shuffled_T(std::mt19937_64 &engine)
         if (!list) {
             return Fail(Error(location, Errors::ExpectedAList));
         }
-        auto result = MakeStrong<List>(list->values());
+        auto result = vm.make<List>(list->values());
         std::shuffle(result->values().begin(), result->values().end(), engine);
         return result;
     };
@@ -716,8 +716,8 @@ static auto _join_T_using_T(VirtualMachine &vm, SourceLocation location, Value *
     return str.str();
 }
 
-static auto _insert_T_at_character_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
-    -> Result<Value, Error> {
+static auto _insert_T_at_character_T_in_T(VirtualMachine &vm, SourceLocation location,
+                                          Value *values) -> Result<Value, Error> {
     auto insertText = values[0].as<String>();
     if (!insertText) {
         return Fail(Error(location, Errors::ExpectedAString));
@@ -877,7 +877,7 @@ static auto _the_list_of_chunks_in_T(chunk::type chunkType)
             result.push_back(Value(chunk.get()));
             chunk = index_chunk(chunkType, index++, text->string());
         }
-        return MakeStrong<List>(result);
+        return vm.make<List>(result);
     };
 }
 

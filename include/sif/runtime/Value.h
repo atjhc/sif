@@ -17,7 +17,6 @@
 #pragma once
 
 #include <sif/Common.h>
-// #include "Utilities.h"
 
 #include <cstdlib>
 #include <iomanip>
@@ -70,6 +69,8 @@ class Value {
     Integer asInteger() const;
     Float asFloat() const;
     Strong<Object> asObject() const;
+
+    Strong<Object> &reference();
 
     Integer castInteger() const;
     Float castFloat() const;

@@ -123,6 +123,13 @@ Strong<Object> Value::asObject() const {
     throw std::runtime_error("expected object type");
 }
 
+Strong<Object> &Value::reference() {
+    if (auto v = std::get_if<Strong<Object>>(&_value)) {
+        return *v;
+    }
+    throw std::runtime_error("expected object type");
+}
+
 std::ostream &operator<<(std::ostream &out, const std::monostate &) { return out << "empty"; }
 
 std::string Value::toString() const {

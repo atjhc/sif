@@ -14,29 +14,26 @@
 //  limitations under the License.
 //
 
-#pragma once
-
-#include <functional>
-#include <sif/Common.h>
+#include "TrackingObject.h"
 
 SIF_NAMESPACE_BEGIN
 
-class Object {
-  public:
-    virtual ~Object() = default;
+int TrackingObject::count = 0;
 
-    virtual std::string typeName() const = 0;
-    virtual bool equals(Strong<Object>) const;
-    virtual size_t hash() const;
+TrackingObject::TrackingObject() {
+    count++;
+}
 
-    virtual std::string toString() const;
-    virtual std::string description() const = 0;
-    virtual std::string debugDescription() const;
+TrackingObject::~TrackingObject() {
+    count--;
+}
 
-    virtual void trace(const std::function<void(Strong<Object> &)> &visitor) {}
-    bool visited = false;
-};
+std::string TrackingObject::typeName() const {
+    return "TrackingObject";
+}
 
-std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);
+std::string TrackingObject::description() const {
+    return "TrackingObject";
+}
 
 SIF_NAMESPACE_END

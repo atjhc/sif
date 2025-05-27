@@ -21,8 +21,11 @@
 #include "sif/runtime/objects/Native.h"
 #include "sif/runtime/objects/Range.h"
 #include "sif/runtime/objects/String.h"
+#include "sif/runtime/protocols/Enumerable.h"
 
+#include <algorithm>
 #include <cmath>
+#include <stack>
 
 SIF_NAMESPACE_BEGIN
 
@@ -191,7 +194,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto index = ReadConstant(frame().ip);
             auto constant = frame().bytecode->constants()[index];
             if (auto copyable = constant.as<Copyable>()) {
-                Push(_stack, copyable->copy());
+                auto copy = copyable->copy();
+                trackObject(copy);
+                Push(_stack, copy);
             } else {
                 Push(_stack, constant);
             }
@@ -278,7 +283,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             for (size_t i = 0; i < count; i++) {
                 values[count - i - 1] = Pop(_stack);
             }
-            Push(_stack, MakeStrong<List>(values));
+            auto list = make<List>(values);
+            trackObject(list);
+            Push(_stack, list);
             break;
         }
         case Opcode::UnpackList: {
@@ -308,7 +315,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 auto key = Pop(_stack);
                 values[key] = value;
             }
-            Push(_stack, MakeStrong<Dictionary>(values));
+            auto dictionary = make<Dictionary>(values);
+            trackObject(dictionary);
+            Push(_stack, dictionary);
             break;
         }
         case Opcode::Negate: {
@@ -447,8 +456,8 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
             if (auto subscriptable = lhs.as<Subscriptable>()) {
-                if (auto result =
-                        subscriptable->subscript(frame().bytecode->location(frame().ip - 1), rhs)) {
+                if (auto result = subscriptable->subscript(
+                        *this, frame().bytecode->location(frame().ip - 1), rhs)) {
                     Push(_stack, result.value());
                 } else {
                     error = result.error();
@@ -467,7 +476,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto value = Pop(_stack);
             if (auto subscriptable = target.as<Subscriptable>()) {
                 auto result = subscriptable->setSubscript(
-                    frame().bytecode->location(frame().ip - 1), subscript, value);
+                    *this, frame().bytecode->location(frame().ip - 1), subscript, value);
                 if (!result) {
                     error = result.error();
                     break;
@@ -608,6 +617,110 @@ Optional<Error> VirtualMachine::range(Value start, Value end, bool closed) {
     }
     Push(_stack, MakeStrong<Range>(start.asInteger(), end.asInteger(), closed));
     return None;
+}
+
+#pragma mark - Garbage Collection
+
+void VirtualMachine::trackObject(Strong<Object> object) {
+    // Only track container objects that can form cycles
+    if (Cast<List>(object) || Cast<Dictionary>(object)) {
+        _trackedContainers[object.get()] = object;
+    }
+}
+
+std::vector<Strong<Object>> VirtualMachine::gatherRootObjects() const {
+    std::vector<Strong<Object>> roots;
+
+    // Add objects from globals
+    for (const auto &pair : _globals) {
+        if (pair.second.isObject()) {
+            roots.push_back(pair.second.asObject());
+        }
+    }
+
+    // Add objects from exports
+    for (const auto &pair : _exports) {
+        if (pair.second.isObject()) {
+            roots.push_back(pair.second.asObject());
+        }
+    }
+
+    // Add objects from the VM stack
+    for (const auto &value : _stack) {
+        if (value.isObject()) {
+            roots.push_back(value.asObject());
+        }
+    }
+
+    // Add objects from the "it" variable
+    if (_it.isObject()) {
+        roots.push_back(_it.asObject());
+    }
+
+    // Add objects from call frames
+    for (const auto &frame : _frames) {
+        if (frame.error.isObject()) {
+            roots.push_back(frame.error.asObject());
+        }
+        if (frame.it.isObject()) {
+            roots.push_back(frame.it.asObject());
+        }
+    }
+
+    return roots;
+}
+
+void VirtualMachine::collectGarbage() {
+    if (_trackedContainers.empty())
+        return;
+
+    std::vector<Strong<Object>> strongRefs;
+    strongRefs.reserve(_trackedContainers.size());
+
+    // Lock all weak pointers once and reset visited flags
+    for (const auto &pair : _trackedContainers) {
+        auto obj = pair.second.lock();
+        obj->visited = false;
+        strongRefs.push_back(std::move(obj));
+    }
+
+    // Mark reachable objects
+    static const auto markReachable = [](Object *root) {
+        std::stack<Object *> stack;
+        stack.push(root);
+        while (!stack.empty()) {
+            auto *current = stack.top();
+            stack.pop();
+            if (current->visited) {
+                continue;
+            }
+            current->visited = true;
+            current->trace([&stack](Strong<Object> &child) {
+                if (child && !child->visited) {
+                    stack.push(child.get());
+                }
+            });
+        }
+    };
+
+    // Mark from roots
+    for (auto &root : gatherRootObjects()) {
+        markReachable(root.get());
+    }
+
+    // Break cycles
+    std::vector<Strong<Object>> unmarkedContainers;
+    unmarkedContainers.reserve(strongRefs.size());
+
+    for (auto &obj : strongRefs) {
+        if (!obj->visited) {
+            unmarkedContainers.push_back(obj);
+        }
+    }
+
+    for (auto &obj : unmarkedContainers) {
+        obj->trace([](Strong<Object> &child) { child.reset(); });
+    }
 }
 
 SIF_NAMESPACE_END

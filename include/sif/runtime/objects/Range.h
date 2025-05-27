@@ -49,8 +49,9 @@ class Range : public Object, public Enumerable, public Subscriptable {
     Value enumerator(Value self) const override;
 
     // Subscriptable
-    Result<Value, Error> subscript(SourceLocation, const Value &) const override;
-    Result<Value, Error> setSubscript(SourceLocation, const Value &, Value) override;
+    Result<Value, Error> subscript(VirtualMachine &, SourceLocation, const Value &) const override;
+    Result<Value, Error> setSubscript(VirtualMachine &, SourceLocation, const Value &,
+                                      Value) override;
 
   private:
     Integer _start;

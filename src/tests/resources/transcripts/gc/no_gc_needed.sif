@@ -1,0 +1,21 @@
+-- Test that non-cyclic references don't need GC
+set obj to [tracking object]
+set list to []
+insert obj at the end of list
+print track count
+
+-- Clear references - should auto-cleanup via refcounting
+set obj to empty
+set list to empty
+0
+print track count
+
+-- GC should have nothing to do
+collect garbage
+print track count
+
+(-- expect
+1
+0
+0
+--)

@@ -1,0 +1,34 @@
+-- Test that enumerators function as roots and trace to underlying objects.
+
+repeat for item in [tracking object]
+  collect garbage
+  print track count
+end
+set item to empty
+print track count
+(-- expect
+1
+0
+--)
+
+repeat for item in ["one": tracking object]
+  collect garbage
+  print track count
+end
+set item to empty
+print track count
+(-- expect
+1
+0
+--)
+
+repeat for item in [tracking object: "one"]
+  collect garbage
+  print track count
+end
+set item to empty
+print track count
+(-- expect
+1
+0
+--)
