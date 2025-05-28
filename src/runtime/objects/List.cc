@@ -26,17 +26,34 @@ size_t List::size() const { return values().size(); }
 std::string List::typeName() const { return "list"; }
 
 std::string List::description() const {
+    std::unordered_set<const Object *> visited;
+    return description(visited);
+}
+
+std::string List::description(Set<const Object *> &visited) const {
+    if (visited.find(this) != visited.end()) {
+        return "[...]";
+    }
+    visited.insert(this);
+
     std::ostringstream ss;
     ss << "[";
     auto it = _values.begin();
     while (it != _values.end()) {
-        ss << it->description();
+        if (it->isObject()) {
+            ss << it->asObject()->description(visited);
+        } else {
+            ss << it->description();
+        }
         it++;
         if (it != _values.end()) {
             ss << ", ";
         }
     }
     ss << "]";
+
+    // Remove this object from visited set (for other branches)
+    visited.erase(this);
     return ss.str();
 }
 

@@ -24,6 +24,8 @@ size_t Object::hash() const { return reinterpret_cast<size_t>(this); }
 
 std::string Object::toString() const { return description(); }
 
+std::string Object::description(Set<const Object *> &visited) const { return description(); }
+
 std::string Object::debugDescription() const { return description(); }
 
 std::ostream &operator<<(std::ostream &out, const Strong<Object> &object) {

@@ -16,8 +16,9 @@
 
 #pragma once
 
-#include <functional>
 #include <sif/Common.h>
+
+#include <functional>
 
 SIF_NAMESPACE_BEGIN
 
@@ -31,6 +32,7 @@ class Object {
 
     virtual std::string toString() const;
     virtual std::string description() const = 0;
+    virtual std::string description(Set<const Object *> &visited) const;
     virtual std::string debugDescription() const;
 
     virtual void trace(const std::function<void(Strong<Object> &)> &visitor) {}

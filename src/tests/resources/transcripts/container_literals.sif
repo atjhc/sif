@@ -6,5 +6,5 @@ print [1: "one"]
 list
 dictionary
 1 2 3
-[1: one]
+[1: "one"]
 --)

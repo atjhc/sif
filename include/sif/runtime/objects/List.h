@@ -53,6 +53,7 @@ class List : public Object, public Copyable, public Enumerable, public Subscript
 
     std::string typeName() const override;
     std::string description() const override;
+    std::string description(Set<const Object *> &visited) const override;
     bool equals(Strong<Object> object) const override;
     size_t hash() const override;
 

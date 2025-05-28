@@ -26,11 +26,32 @@ ValueMap &Dictionary::values() { return _values; }
 std::string Dictionary::typeName() const { return "dictionary"; }
 
 std::string Dictionary::description() const {
+    Set<const Object *> visited;
+    return description(visited);
+}
+
+std::string Dictionary::description(Set<const Object *> &visited) const {
+    if (visited.find(this) != visited.end()) {
+        return "[...]";
+    }
+    visited.insert(this);
+
     std::ostringstream ss;
     ss << "[";
     auto it = _values.begin();
     while (it != _values.end()) {
-        ss << it->first.description() << ": " << it->second;
+        if (it->first.isObject()) {
+            ss << it->first.asObject()->description(visited);
+        } else {
+            ss << it->first.description();
+        }
+
+        ss << ": ";
+        if (it->second.isObject()) {
+            ss << it->second.asObject()->description(visited);
+        } else {
+            ss << it->second.description();
+        }
         it++;
         if (it != _values.end()) {
             ss << ", ";
@@ -40,6 +61,9 @@ std::string Dictionary::description() const {
         ss << ":";
     }
     ss << "]";
+
+    // Remove this object from visited set (for other branches)
+    visited.erase(this);
     return ss.str();
 }
 
