@@ -3,6 +3,7 @@ insert
 no matching function "insert"
 Possible matches:
   insert {} at index {} into {}
+  insert {} at (the) beginning of {}
   insert {} at (the) end of {}
   insert {} at char/character {} in {}
   insert item {} with key {} into {}

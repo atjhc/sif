@@ -48,6 +48,7 @@ inline constexpr std::string_view ExpectedAnInteger = "expected an integer";
 inline constexpr std::string_view ExpectedAList = "expected a list";
 inline constexpr std::string_view ExpectedANumber = "expected a number";
 inline constexpr std::string_view ExpectedADictionary = "expected a dictionary";
+inline constexpr std::string_view ExpectedADictionaryOrList = "expected a dictionary or list";
 inline constexpr std::string_view ListIsEmpty = "list is empty";
 inline constexpr std::string_view DomainError = "domain error";
 inline constexpr std::string_view InvalidUnicodeCodePoint = "invalid unicode codepoint";
@@ -318,6 +319,22 @@ static auto _item_T_in_T(VirtualMachine &vm, SourceLocation location, Value *val
     return Fail(Error(location, Errors::ExpectedListOrDictionary));
 }
 
+static auto _insert_T_at_the_beginning_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto list = values[1].as<List>()) {
+        list->values().insert(list->values().begin(), values[0]);
+    } else if (auto string = values[1].as<String>()) {
+        auto insertText = values[0].as<String>();
+        if (!insertText) {
+            return Fail(Error(location, Errors::ExpectedAString));
+        }
+        string->string().insert(0, insertText->string());
+    } else {
+        return Fail(Error(location, Errors::ExpectedStringOrList));
+    }
+    return values[1];
+}
+
 static auto _insert_T_at_the_end_of_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto list = values[1].as<List>()) {
@@ -334,6 +351,30 @@ static auto _insert_T_at_the_end_of_T(VirtualMachine &vm, SourceLocation locatio
     return values[1];
 }
 
+static auto _remove_the_first_item_from_T(VirtualMachine &vm, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto list = values[0].as<List>()) {
+        if (list->size() == 0) {
+            return Value();
+        }
+        list->values().erase(list->values().begin());
+        return list;
+    }
+    return Fail(Error(location, Errors::ExpectedAList));
+}
+
+static auto _remove_the_last_item_from_T(VirtualMachine &vm, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    if (auto list = values[0].as<List>()) {
+        if (list->size() == 0) {
+            return Value();
+        }
+        list->values().pop_back();
+        return list;
+    }
+    return Fail(Error(location, Errors::ExpectedAList));
+}
+
 static auto _remove_item_T_from_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     if (auto dictionary = values[1].as<Dictionary>()) {
@@ -347,7 +388,7 @@ static auto _remove_item_T_from_T(VirtualMachine &vm, SourceLocation location, V
         list->values().erase(list->values().begin() + index);
         return list;
     }
-    return Fail(Error(location, Errors::ExpectedADictionary));
+    return Fail(Error(location, Errors::ExpectedADictionaryOrList));
 }
 
 static auto _the_first_offset_of_T_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
@@ -566,11 +607,26 @@ static auto _items_T_to_T_in_T(VirtualMachine &vm, SourceLocation location, Valu
     return vm.make<List>(list->values().begin() + index1, list->values().begin() + index2 + 1);
 }
 
+static auto _the_first_item_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
+    -> Result<Value, Error> {
+    auto list = values[0].as<List>();
+    if (!list) {
+        return Fail(Error(location, Errors::ExpectedAList));
+    }
+    if (list->size() == 0) {
+        return Value();
+    }
+    return list->values().at(0);
+}
+
 static auto _the_middle_item_in_T(VirtualMachine &vm, SourceLocation location, Value *values)
     -> Result<Value, Error> {
     auto list = values[0].as<List>();
     if (!list) {
         return Fail(Error(location, Errors::ExpectedAList));
+    }
+    if (list->size() == 0) {
+        return Value();
     }
     return list->values().at(list->values().size() / 2);
 }
@@ -580,6 +636,9 @@ static auto _the_last_item_in_T(VirtualMachine &vm, SourceLocation location, Val
     auto list = values[0].as<List>();
     if (!list) {
         return Fail(Error(location, Errors::ExpectedAList));
+    }
+    if (list->size() == 0) {
+        return Value();
     }
     return list->values().back();
 }
@@ -1228,7 +1287,10 @@ static void _common(ModuleMap &natives) {
     natives[S("{} starts with {}")] = N(_T_starts_with_T);
     natives[S("{} ends with {}")] = N(_T_ends_with_T);
     natives[S("item {} in {}")] = N(_item_T_in_T);
+    natives[S("insert {} at (the) beginning of {}")] = N(_insert_T_at_the_beginning_of_T);
     natives[S("insert {} at (the) end of {}")] = N(_insert_T_at_the_end_of_T);
+    natives[S("remove (the) first item from {}")] = N(_remove_the_first_item_from_T);
+    natives[S("remove (the) last item from {}")] = N(_remove_the_last_item_from_T);
     natives[S("remove item {} from {}")] = N(_remove_item_T_from_T);
     natives[S("(the) (first) offset of {} in {}")] = N(_the_first_offset_of_T_in_T);
     natives[S("(the) last offset of {} in {}")] = N(_the_last_offset_of_T_in_T);
@@ -1261,6 +1323,7 @@ static void _dictionary(ModuleMap &natives) {
 static void _list(ModuleMap &natives, std::mt19937_64 &engine,
                   std::function<Integer(Integer)> randomInteger) {
     natives[S("items {} to {} (in/of) {}")] = N(_items_T_to_T_in_T);
+    natives[S("(the) first item (in/of) {}")] = N(_the_first_item_in_T);
     natives[S("(the) mid/middle item (in/of) {}")] = N(_the_middle_item_in_T);
     natives[S("(the) last item (in/of) {}")] = N(_the_last_item_in_T);
     natives[S("(the) number of items (in/of) {}")] = N(_the_number_of_items_in_T);

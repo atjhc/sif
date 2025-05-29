@@ -1,7 +1,6 @@
 -- http://rosettacode.org/wiki/Magic_8-ball
 
-set answers to "
-It is certain
+set answers to "It is certain
 It is decidedly so
 Without a doubt
 Yes - definitely

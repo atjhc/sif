@@ -182,7 +182,7 @@ This function evaluates to the type name of **value** as a string.
 
 ### Examples
 
-    a copy of {1, 2, 3}
+    a copy of [1, 2, 3]
     a copy of "Hello, World!"
 
 ### Description
@@ -201,8 +201,8 @@ Evaluates to a copy of **value**.
 ### Examples
 
     the description of 1
-    the description of {1, 2, 3}
-    the description of {"one": 1, "two": 2}
+    the description of [1, 2, 3]
+    the description of ["one": 1, "two": 2]
 
 ### Description
 Evaluates to a string describing **value**.
@@ -221,7 +221,7 @@ Evaluates to a string describing **value**.
 
     the hash value of 42
     the hash value of "Hello, World!"
-    the hash value of {1, 2, 3}
+    the hash value of [1, 2, 3]
 
 ### Description
 Evaluates to an integer representing a has of **value**.
@@ -235,7 +235,7 @@ read (a) word
     read a word
 
 ### Description
-Evaluates to a string read from stdin. This command will read one word from stdin, skipping whitespaces. A whitespace is defined as one of the following ASCII characters: 
+Evaluates to a string read from stdin. This command will read one word from stdin, skipping whitespaces. A whitespace is defined as one of the following ASCII characters:
 - space (0x20, " ")
 - form feed (0x0c, "\f")
 - line feed (0x0a, "\n")
