@@ -82,7 +82,7 @@ class VirtualMachine {
 #pragma GCC diagnostic pop
 
   private:
-    Optional<Error> call(Value, int count);
+    Optional<Error> call(Value, int, std::vector<SourceRange>);
     Optional<Error> range(Value, Value, bool);
 
     CallFrame &frame();

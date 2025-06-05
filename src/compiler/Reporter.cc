@@ -26,16 +26,13 @@ BasicReporter::BasicReporter(const std::string &name, const std::string &source)
 
 void BasicReporter::report(const Error &error) {
     std::cerr << _name << ":" << error.range.start << ": Error: " << error.what() << std::endl;
-    if (error.range.start.position > 0) {
-        std::cerr << index_chunk(chunk::line, error.range.start.lineNumber, _source).get()
-                  << std::endl;
-        std::cerr << std::string(error.range.start.position, ' ') << "^";
-        int rangeLength = error.range.end.position - error.range.start.position;
-        if (rangeLength > 1 && error.range.start.lineNumber == error.range.end.lineNumber) {
-            std::cerr << std::string(rangeLength - 1, '~');
-        }
-        std::cerr << std::endl;
+    std::cerr << index_chunk(chunk::line, error.range.start.lineNumber, _source).get() << std::endl;
+    std::cerr << std::string(error.range.start.position, ' ') << "^";
+    int rangeLength = error.range.end.position - error.range.start.position;
+    if (rangeLength > 1 && error.range.start.lineNumber == error.range.end.lineNumber) {
+        std::cerr << std::string(rangeLength - 1, '~');
     }
+    std::cerr << std::endl;
 }
 
 IOReporter::IOReporter(std::ostream &err) : _err(err) {}

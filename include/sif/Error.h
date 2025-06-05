@@ -27,23 +27,35 @@
 SIF_NAMESPACE_BEGIN
 
 namespace Errors {
+inline constexpr std::string_view ArgumentError = "argument {}: {}";
+inline constexpr std::string_view BoundsMismatch =
+    "lower bound must be less than or equal to the upper bound";
+inline constexpr std::string_view CantOpenFile = "can't open file {}";
+inline constexpr std::string_view CircularModuleImport = "circular module import";
+inline constexpr std::string_view DivideByZero = "divide by zero";
 inline constexpr std::string_view DuplicateArgumentNames =
     "duplicate argument names in function declaration";
-inline constexpr std::string_view CantOpenFile = "can't open file {}";
 inline constexpr std::string_view EmptyInterpolation = "empty interpolation";
 inline constexpr std::string_view ExpectedANewLine = "expected a new line";
 inline constexpr std::string_view ExpectedAnExpression = "expected an expression";
+inline constexpr std::string_view ExpectedAString = "expected a string";
 inline constexpr std::string_view ExpectedATypeName = "expected a type name";
 inline constexpr std::string_view ExpectedAVariableName = "expected a variable name";
 inline constexpr std::string_view ExpectedColon = "expected “:”";
 inline constexpr std::string_view ExpectedColonCommaOrBracket = "expected “:”, “,”, or “]”";
 inline constexpr std::string_view ExpectedEnd = "expected “end”";
 inline constexpr std::string_view ExpectedEndOrElse = "expected “end” or “else”";
+inline constexpr std::string_view ExpectedEnumerator = "expected an enumerator";
 inline constexpr std::string_view ExpectedForeverWhileUntilFor =
     "expected “forever”, “while”, “until”, “for”, or a new line";
 inline constexpr std::string_view ExpectedIn = "expected “in”";
+inline constexpr std::string_view ExpectedInteger = "expected an integer";
+inline constexpr std::string_view ExpectedList = "expected a list but got {}";
+inline constexpr std::string_view ExpectedListStringDictRange =
+    "expected a list, string, dictionary, or range";
 inline constexpr std::string_view ExpectedNewLineOrEndOfScript =
     "expected a new line or end of script";
+inline constexpr std::string_view ExpectedNumber = "expected a number but got {}";
 inline constexpr std::string_view ExpectedRepeat = "expected “repeat”";
 inline constexpr std::string_view ExpectedRightBracket = "expected “]”";
 inline constexpr std::string_view ExpectedRightCurlyBrace = "expected “}”";
@@ -51,38 +63,28 @@ inline constexpr std::string_view ExpectedRightParens = "expected “)”";
 inline constexpr std::string_view ExpectedStringOrWord = "expected a string or word";
 inline constexpr std::string_view ExpectedThen = "expected “then”";
 inline constexpr std::string_view ExpectedTo = "expected “to”";
+inline constexpr std::string_view ExpectedTrueOrFalse = "expected true or false";
 inline constexpr std::string_view ExpectedWord = "expected a word";
 inline constexpr std::string_view ExpectedWordParenOrCurly = "expected a word, “(”, or “{”";
+inline constexpr std::string_view InvalidFunctionSignature = "invalid function signature";
+inline constexpr std::string_view MismatchedTypes = "mismatched types: {} {} {}";
+inline constexpr std::string_view ModuleNotFound = "module “{}” not found";
+inline constexpr std::string_view ProgramHalted = "program halted";
+inline constexpr std::string_view TooManyAssignmentTargets = "too many assignment targets";
+inline constexpr std::string_view TooManyLocalVariables = "too many local variables";
 inline constexpr std::string_view UnderscoreNotAllowed = "“_” may not be used as a variable name";
 inline constexpr std::string_view UnexpectedExit = "unexpected “exit” outside repeat block";
 inline constexpr std::string_view UnexpectedNext = "unexpected “next” outside repeat block";
 inline constexpr std::string_view UnexpectedToken = "unexpected {}";
-inline constexpr std::string_view UnknownExpression = "unknown expression “{}”";
+inline constexpr std::string_view UnexpectedTypeForCall = "unexpected type for function call";
 inline constexpr std::string_view UnknownCharacter = "unknown character “{}”";
+inline constexpr std::string_view UnknownExpression = "unknown expression “{}”";
+inline constexpr std::string_view UnpackListMismatch = "expected {} values but got {}";
 inline constexpr std::string_view UnterminatedInterpolation = "unterminated interpolation";
 inline constexpr std::string_view UnterminatedString = "unterminated string";
-inline constexpr std::string_view TooManyAssignmentTargets = "too many assignment targets";
-inline constexpr std::string_view TooManyLocalVariables = "too many local variables";
 inline constexpr std::string_view UnusedLocalVariable =
     "unused local variable “{}” will always be empty";
 inline constexpr std::string_view ValueOutOfRange = "value is either too large or too small";
-inline constexpr std::string_view CircularModuleImport = "circular module import";
-inline constexpr std::string_view ModuleNotFound = "module “{}” not found";
-inline constexpr std::string_view ExpectedListStringDictRange =
-    "expected a list, string, dictionary, or range";
-inline constexpr std::string_view BoundsMismatch =
-    "lower bound must be less than or equal to the upper bound";
-inline constexpr std::string_view ExpectedInteger = "expected an integer";
-inline constexpr std::string_view UnexpectedTypeForCall = "unexpected type for function call";
-inline constexpr std::string_view ProgramHalted = "program halted";
-inline constexpr std::string_view MismatchedTypes = "mismatched types: {} {} {}";
-inline constexpr std::string_view ExpectedTrueOrFalse = "expected true or false";
-inline constexpr std::string_view ExpectedEnumerator = "expected an enumerator";
-inline constexpr std::string_view ExpectedList = "expected a list but got {}";
-inline constexpr std::string_view ExpectedNumber = "expected a number but got {}";
-inline constexpr std::string_view UnpackListMismatch = "expected {} values but got {}";
-inline constexpr std::string_view DivideByZero = "divide by zero";
-inline constexpr std::string_view InvalidFunctionSignature = "invalid function signature";
 } // namespace Errors
 
 struct Error {

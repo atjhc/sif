@@ -17,7 +17,7 @@ SIF_NAMESPACE_BEGIN
 
 Native::Native(const Native::Callable &callable) : _callable(callable) {}
 
-const Native::Native::Callable &Native::callable() const { return _callable; }
+const Native::Callable &Native::callable() const { return _callable; }
 
 std::string Native::typeName() const { return "function"; }
 

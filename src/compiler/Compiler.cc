@@ -467,8 +467,17 @@ void Compiler::visit(const NextRepeat &next) {
 void Compiler::visit(const Call &call) {
     resolve(call, call.signature.name());
     uint16_t totalCount = 0;
+    std::vector<SourceRange> argumentRanges;
+
+    if (_config.enableDebugInfo) {
+        argumentRanges.push_back(call.range);
+    }
+
     for (uint16_t i = 0; i < call.arguments.size(); i++) {
         const auto &argument = call.arguments[i];
+        if (_config.enableDebugInfo) {
+            argumentRanges.push_back(argument->range);
+        }
         argument->accept(*this);
         uint16_t count = call.signature.arguments()[i].targets.size();
         if (count > 1) {
@@ -476,7 +485,11 @@ void Compiler::visit(const Call &call) {
         }
         totalCount += count;
     }
-    bytecode().add(call.range.start, Opcode::Call, totalCount);
+
+    auto callLocation = bytecode().add(call.range.start, Opcode::Call, totalCount);
+    if (_config.enableDebugInfo && !argumentRanges.empty()) {
+        bytecode().addArgumentRanges(callLocation, argumentRanges);
+    }
 }
 
 void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*this); }

@@ -104,6 +104,18 @@ const std::vector<Value> &Bytecode::constants() const { return _constants; }
 
 SourceLocation Bytecode::location(Iterator it) const { return _locations[it - _code.begin()]; }
 
+void Bytecode::addArgumentRanges(size_t callLocation, const std::vector<SourceRange> &ranges) {
+    _argumentRanges[callLocation] = ranges;
+}
+
+std::vector<SourceRange> Bytecode::argumentRanges(size_t callLocation) const {
+    auto it = _argumentRanges.find(callLocation);
+    if (it != _argumentRanges.end()) {
+        return it->second;
+    }
+    return {};
+}
+
 static inline uint16_t ReadUInt16(Bytecode::Iterator position) {
     return RawValue(position[0]) << 8 | RawValue(position[1]);
 }

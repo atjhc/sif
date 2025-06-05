@@ -1,0 +1,97 @@
+# Regression tests - ensure basic functionality still works
+# These operations should all succeed without errors
+
+# Basic operations that should work correctly
+sort [3, 1, 2, 4]
+the size of [1, 2, 3]
+the size of "hello"
+the size of ["key": "value"]
+the size of (1 up to 5)
+
+# String operations that should work
+"hello world" contains "world"
+"hello" starts with "hel"
+"world" ends with "rld"
+replace all "l" with "x" in "hello"
+replace first "l" with "x" in "hello"
+replace last "l" with "x" in "hello"
+remove all "l" from "hello"
+the first offset of "l" in "hello"
+the last offset of "l" in "hello"
+
+# List operations that should work
+[1, 2, 3] contains 2
+the first item in [1, 2, 3]
+the last item in [1, 2, 3]
+the middle item in [1, 2, 3]
+the number of items in [1, 2, 3]
+item 1 in [1, 2, 3]
+insert "new" at the beginning of ["old"]
+insert "new" at the end of ["old"]
+remove the first item from [1, 2, 3]
+remove the last item from [1, 2, 3]
+reverse [1, 2, 3]
+reversed [1, 2, 3]
+join ["a", "b", "c"]
+join ["a", "b", "c"] using "-"
+
+# Dictionary operations that should work
+["a": 1, "b": 2] contains "a"
+the keys of ["a": 1, "b": 2]
+the values of ["a": 1, "b": 2]
+item "a" in ["a": 1, "b": 2]
+insert item "value" with key "new_key" into ["existing": "old"]
+
+# Range operations that should work
+1 up to 5
+the lower bound of (1 up to 5)
+the upper bound of (1 up to 5)
+(1 up to 5) is closed
+(1 up to 3) overlaps with (2 up to 4)
+(1 up to 5) contains 3
+
+# Math operations that should work
+the abs of -42
+the abs of -3.14
+the maximum value of [1, 5, 3, 2]
+the minimum value of [1, 5, 3, 2]
+the average of [1, 2, 3, 4, 5]
+
+# Type operations that should work
+42 as a string
+"42" as an integer
+"3.14" as a number
+42 is a integer
+"text" is a string
+[1, 2] is a list
+["key": "value"] is a dictionary
+
+# Format string operations that should work
+format string "Hello \{}" with ["world"]
+format string "Values: \{} and \{}" with [1, 2]
+format string "Named: \{1} and \{0}" with ["second", "first"]
+
+# Character operations that should work
+character of 65
+ordinal of "A"
+
+# Comparison operations that should work
+1 is 1
+"text" is "text"
+1 is not 2
+"a" is not "b"
+[] is empty
+[:] is empty
+"" is empty
+
+# Copy operations that should work
+a copy of [1, 2, 3]
+a copy of ["key": "value"]
+a copy of "text"
+
+# Basic utility operations that should work
+get "test value"
+the description of 42
+the debug description of [1, 2, 3]
+the hash value of "text"
+the type name of 42

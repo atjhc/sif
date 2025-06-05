@@ -502,9 +502,11 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             break;
         }
         case Opcode::Call: {
+            auto callLocation = frame().ip - frame().bytecode->code().begin() - 1;
             auto count = ReadConstant(frame().ip);
             auto object = _stack.end()[-count - 1];
-            error = call(object, count);
+            auto ranges = frame().bytecode->argumentRanges(callLocation);
+            error = call(object, count, ranges);
             break;
         }
         case Opcode::Empty: {
@@ -572,7 +574,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
 
 void VirtualMachine::requestHalt() { _haltRequested = true; }
 
-Optional<Error> VirtualMachine::call(Value object, int count) {
+Optional<Error> VirtualMachine::call(Value object, int count, std::vector<SourceRange> ranges) {
     if (auto fn = object.as<Function>()) {
         std::vector<size_t> captures;
         for (auto capture : fn->captures()) {
@@ -590,8 +592,12 @@ Optional<Error> VirtualMachine::call(Value object, int count) {
             Push(_stack, Value());
         }
     } else if (auto native = object.as<Native>()) {
-        auto result = native->callable()(*this, frame().bytecode->location(frame().ip - 3),
-                                         &_stack.end()[-count]);
+        auto location = frame().bytecode->location(frame().ip - 3);
+        auto args = &_stack.end()[-count];
+
+        NativeCallContext context(*this, location, args, ranges);
+        auto result = native->callable()(context);
+
         _stack.erase(_stack.end() - count - 1, _stack.end());
         if (result) {
             Push(_stack, result.value());

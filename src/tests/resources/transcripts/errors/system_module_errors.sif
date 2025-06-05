@@ -1,0 +1,11 @@
+try the contents of file 123
+print error (the error)
+(-- error
+expected a string
+--)
+
+try the contents of directory 456
+print error (the error)
+(-- error
+expected a string
+--)

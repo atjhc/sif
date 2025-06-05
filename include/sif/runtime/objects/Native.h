@@ -24,9 +24,37 @@
 
 SIF_NAMESPACE_BEGIN
 
+struct NativeCallContext {
+    VirtualMachine &vm;
+    SourceLocation location;
+    Value *arguments;
+    std::vector<SourceRange> ranges;
+
+    NativeCallContext(VirtualMachine &vm, SourceLocation location, Value *args,
+                      std::vector<SourceRange> ranges = {})
+        : vm(vm), location(location), arguments(args), ranges(ranges) {}
+
+    template <class... Args> Error error(std::format_string<Args...> fmt, Args &&...args) const {
+        if (ranges.size() > 0) {
+            return Error(ranges[0], fmt, std::forward<Args>(args)...);
+        } else {
+            return Error(location, Format(fmt, std::forward<Args>(args)...));
+        }
+    }
+
+    template <class... Args>
+    Error argumentError(int index, std::format_string<Args...> fmt, Args &&...args) const {
+        if (index >= 0 && index < ranges.size()) {
+            return Error(ranges[index + 1], fmt, std::forward<Args>(args)...);
+        }
+        return Error(location, Format(Errors::ArgumentError, index + 1,
+                                      Format(fmt, std::forward<Args>(args)...)));
+    }
+};
+
 class Native : public Object {
   public:
-    using Callable = std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)>;
+    using Callable = std::function<Result<Value, Error>(const NativeCallContext &)>;
 
     Native(const Callable &callable);
 

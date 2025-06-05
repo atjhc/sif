@@ -86,6 +86,7 @@ class Bytecode {
     void addRepeat(SourceLocation location, uint16_t argument);
     uint16_t addLocal(std::string local);
     uint16_t addConstant(Value constant);
+    void addArgumentRanges(size_t callLocation, const std::vector<SourceRange> &ranges);
 
     void patchRelativeJump(size_t location);
     void patchAbsoluteJump(size_t location);
@@ -95,6 +96,7 @@ class Bytecode {
     const std::vector<std::string> &locals() const;
     const std::vector<Value> &constants() const;
 
+    std::vector<SourceRange> argumentRanges(size_t callLocation) const;
     SourceLocation location(Iterator it) const;
 
     friend std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode);
@@ -121,6 +123,7 @@ class Bytecode {
     std::vector<Value> _constants;
     std::vector<std::string> _locals;
     std::vector<SourceLocation> _locations;
+    Mapping<size_t, std::vector<SourceRange>> _argumentRanges;
 };
 
 SIF_NAMESPACE_END

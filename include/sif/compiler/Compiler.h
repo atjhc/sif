@@ -31,7 +31,8 @@ SIF_NAMESPACE_BEGIN
 struct CompilerConfig {
     ModuleProvider &moduleProvider;
     Reporter &errorReporter;
-    bool interactive;
+    bool interactive = false;
+    bool enableDebugInfo = true;
 };
 
 class Compiler : public Statement::Visitor, public Expression::Visitor {

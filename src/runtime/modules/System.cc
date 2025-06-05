@@ -35,126 +35,121 @@ SIF_NAMESPACE_BEGIN
 using ModuleMap = Mapping<Signature, Strong<Native>, Signature::Hash>;
 static Signature S(const char *signature) { return Signature::Make(signature).value(); }
 
+namespace Errors {
+inline constexpr std::string_view UnableToOpenFile = "unable to open file";
+}
+
 static auto _write_T(std::ostream &out)
-    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return
-        [&out](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                out << Join(list->values(), " ");
-            } else {
-                out << values[0];
-            }
-            return Value();
-        };
+    -> std::function<Result<Value, Error>(const NativeCallContext &)> {
+    return [&out](const NativeCallContext &context) -> Result<Value, Error> {
+        if (const auto &list = context.arguments[0].as<List>()) {
+            out << Join(list->values(), " ");
+        } else {
+            out << context.arguments[0];
+        }
+        return Value();
+    };
 }
 
 static auto _write_error_T(std::ostream &err)
-    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return
-        [&err](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                err << Join(list->values(), " ");
-            } else {
-                err << values[0];
-            }
-            return Value();
-        };
+    -> std::function<Result<Value, Error>(const NativeCallContext &)> {
+    return [&err](const NativeCallContext &context) -> Result<Value, Error> {
+        if (const auto &list = context.arguments[0].as<List>()) {
+            err << Join(list->values(), " ");
+        } else {
+            err << context.arguments[0];
+        }
+        return Value();
+    };
 }
 
 static auto _print_T(std::ostream &out)
-    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return
-        [&out](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                out << Join(list->values(), " ");
-            } else {
-                out << values[0];
-            }
-            out << std::endl;
-            return Value();
-        };
+    -> std::function<Result<Value, Error>(const NativeCallContext &)> {
+    return [&out](const NativeCallContext &context) -> Result<Value, Error> {
+        if (const auto &list = context.arguments[0].as<List>()) {
+            out << Join(list->values(), " ");
+        } else {
+            out << context.arguments[0];
+        }
+        out << std::endl;
+        return Value();
+    };
 }
 
 static auto _print_error_T(std::ostream &err)
-    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return
-        [&err](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            if (const auto &list = values[0].as<List>()) {
-                for (const auto &item : list->values()) {
-                    err << item;
-                }
-            } else {
-                err << values[0];
+    -> std::function<Result<Value, Error>(const NativeCallContext &)> {
+    return [&err](const NativeCallContext &context) -> Result<Value, Error> {
+        if (const auto &list = context.arguments[0].as<List>()) {
+            for (const auto &item : list->values()) {
+                err << item;
             }
-            err << std::endl;
-            return Value();
-        };
+        } else {
+            err << context.arguments[0];
+        }
+        err << std::endl;
+        return Value();
+    };
 }
 
 static auto _read_a_word(std::istream &in)
-    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return
-        [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            std::string input;
-            in >> input;
-            return input;
-        };
+    -> std::function<Result<Value, Error>(const NativeCallContext &)> {
+    return [&in](const NativeCallContext &context) -> Result<Value, Error> {
+        std::string input;
+        in >> input;
+        return input;
+    };
 }
 
 static auto _read_a_line(std::istream &in)
-    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return
-        [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            std::string input;
-            std::getline(in, input);
-            return input;
-        };
+    -> std::function<Result<Value, Error>(const NativeCallContext &)> {
+    return [&in](const NativeCallContext &context) -> Result<Value, Error> {
+        std::string input;
+        std::getline(in, input);
+        return input;
+    };
 }
 
 static auto _read_a_character(std::istream &in)
-    -> std::function<Result<Value, Error>(VirtualMachine &, SourceLocation, Value *)> {
-    return
-        [&in](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            std::istreambuf_iterator<char> it(in.rdbuf());
-            std::istreambuf_iterator<char> eos;
-            std::string result;
-            try {
-                char32_t input = utf8::next(it, eos);
-                result = utf8::utf32to8(std::u32string_view(&input, 1));
-            } catch (const utf8::exception &exception) {
-                return Fail(Error(location, exception.what()));
-            }
-            return result;
-        };
+    -> std::function<Result<Value, Error>(const NativeCallContext &)> {
+    return [&in](const NativeCallContext &context) -> Result<Value, Error> {
+        std::istreambuf_iterator<char> it(in.rdbuf());
+        std::istreambuf_iterator<char> eos;
+        std::string result;
+        try {
+            char32_t input = utf8::next(it, eos);
+            result = utf8::utf32to8(std::u32string_view(&input, 1));
+        } catch (const utf8::exception &exception) {
+            return Fail(context.error("{}", exception.what()));
+        }
+        return result;
+    };
 }
 
-static auto _the_contents_of_file_T(VirtualMachine &vm, SourceLocation location, Value *values)
-    -> Result<Value, Error> {
-    auto path = values[0].as<String>();
+static auto _the_contents_of_file_T(const NativeCallContext &context) -> Result<Value, Error> {
+    auto path = context.arguments[0].as<String>();
     if (!path) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(context.argumentError(0, Errors::ExpectedAString));
     }
     std::ifstream file(path->string());
     if (!file.is_open()) {
-        return Fail(Error(location, "unable to open file"));
+        return Fail(context.argumentError(0, Errors::UnableToOpenFile));
     }
     std::ostringstream sstr;
     sstr << file.rdbuf();
     return Value(sstr.str());
 }
 
-static auto _the_contents_of_directory_T(VirtualMachine &vm, SourceLocation location, Value *values)
-    -> Result<Value, Error> {
-    auto path = values[0].as<String>();
+static auto _the_contents_of_directory_T(const NativeCallContext &context) -> Result<Value, Error> {
+    auto path = context.arguments[0].as<String>();
     if (!path) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(context.argumentError(0, Errors::ExpectedAString));
     }
     std::error_code error;
     auto it = std::filesystem::directory_iterator(path->string(), error);
     if (error) {
-        return Fail(Error(location, Value(error.message())));
+        return Fail(context.argumentError(0, "{}", error.message()));
     }
-    Strong<List> results = vm.make<List>();
+    Strong<List> results = context.vm.make<List>();
     for (auto it : std::filesystem::directory_iterator(path->string())) {
         auto itemPath = it.path();
         results->values().push_back(itemPath.string());
@@ -162,49 +157,46 @@ static auto _the_contents_of_directory_T(VirtualMachine &vm, SourceLocation loca
     return results;
 }
 
-static auto _remove_file_T(VirtualMachine &vm, SourceLocation location, Value *values)
-    -> Result<Value, Error> {
-    auto pathString = values[0].as<String>();
+static auto _remove_file_T(const NativeCallContext &context) -> Result<Value, Error> {
+    auto pathString = context.arguments[0].as<String>();
     if (!pathString) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(context.argumentError(0, Errors::ExpectedAString));
     }
     auto path = std::filesystem::path(pathString->string());
 
     std::error_code error;
     std::filesystem::remove(path, error);
     if (error) {
-        return Fail(Error(location, Value(error.message())));
+        return Fail(context.argumentError(0, "{}", error.message()));
     }
 
     return Value();
 }
 
-static auto _remove_directory_T(VirtualMachine &vm, SourceLocation location, Value *values)
-    -> Result<Value, Error> {
-    auto pathValue = values[0].as<String>();
+static auto _remove_directory_T(const NativeCallContext &context) -> Result<Value, Error> {
+    auto pathValue = context.arguments[0].as<String>();
     if (!pathValue) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(context.argumentError(0, Errors::ExpectedAString));
     }
     auto path = std::filesystem::path(pathValue->string());
 
     std::error_code error;
     std::filesystem::remove_all(path, error);
     if (error) {
-        return Fail(Error(location, Value(error.message())));
+        return Fail(context.argumentError(0, "{}", error.message()));
     }
 
     return Value();
 }
 
-static auto _move_T_to_T(VirtualMachine &vm, SourceLocation location, Value *values)
-    -> Result<Value, Error> {
-    auto fromValue = values[0].as<String>();
+static auto _move_T_to_T(const NativeCallContext &context) -> Result<Value, Error> {
+    auto fromValue = context.arguments[0].as<String>();
     if (!fromValue) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(context.argumentError(0, Errors::ExpectedAString));
     }
-    auto toValue = values[1].as<String>();
+    auto toValue = context.arguments[1].as<String>();
     if (!toValue) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(context.argumentError(1, Errors::ExpectedAString));
     }
     auto from = std::filesystem::path(fromValue->string());
     auto to = std::filesystem::path(toValue->string());
@@ -212,21 +204,20 @@ static auto _move_T_to_T(VirtualMachine &vm, SourceLocation location, Value *val
     std::error_code error;
     std::filesystem::rename(from, to, error);
     if (error) {
-        return Fail(Error(location, Value(error.message())));
+        return Fail(context.error("{}", error.message()));
     }
 
     return Value();
 }
 
-static auto _copy_T_to_T(VirtualMachine &vm, SourceLocation location, Value *values)
-    -> Result<Value, Error> {
-    auto fromValue = values[0].as<String>();
+static auto _copy_T_to_T(const NativeCallContext &context) -> Result<Value, Error> {
+    auto fromValue = context.arguments[0].as<String>();
     if (!fromValue) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(context.argumentError(0, Errors::ExpectedAString));
     }
-    auto toValue = values[0].as<String>();
+    auto toValue = context.arguments[1].as<String>();
     if (!toValue) {
-        return Fail(Error(location, "expected a string"));
+        return Fail(context.argumentError(1, Errors::ExpectedAString));
     }
     auto from = std::filesystem::path(fromValue->string());
     auto to = std::filesystem::path(toValue->string());
@@ -234,7 +225,7 @@ static auto _copy_T_to_T(VirtualMachine &vm, SourceLocation location, Value *val
     std::error_code error;
     std::filesystem::copy(from, to, error);
     if (error) {
-        return Fail(Error(location, Value(error.message())));
+        return Fail(context.error("{}", error.message()));
     }
 
     return Value();
@@ -260,26 +251,24 @@ static void _files(ModuleMap &natives) {
 }
 
 System::System(const SystemConfig &config) {
-    _natives[S("the arguments")] = MakeStrong<Native>(
-        [this](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            return vm.make<List>(_arguments.begin(), _arguments.end());
+    _natives[S("the arguments")] =
+        MakeStrong<Native>([this](const NativeCallContext &context) -> Result<Value, Error> {
+            return context.vm.make<List>(_arguments.begin(), _arguments.end());
         });
-    _natives[S("the environment")] = MakeStrong<Native>(
-        [this](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
-            auto dictionary = vm.make<Dictionary>();
+    _natives[S("the environment")] =
+        MakeStrong<Native>([this](const NativeCallContext &context) -> Result<Value, Error> {
+            auto dictionary = context.vm.make<Dictionary>();
             for (auto pair : _environment) {
                 dictionary->values()[Value(pair.first)] = Value(pair.second);
             }
             return dictionary;
         });
-    _natives[S("the clock")] =
-        MakeStrong<Native>([](VirtualMachine &vm, SourceLocation location,
-                              Value *values) -> Result<Value, Error> { return Integer(clock()); });
-    _natives[S("the system name")] =
-        MakeStrong<Native>([this](VirtualMachine &vm, SourceLocation location,
-                                  Value *values) -> Result<Value, Error> { return _systemName; });
-    _natives[S("the system version")] = MakeStrong<Native>(
-        [this](VirtualMachine &vm, SourceLocation location, Value *values) -> Result<Value, Error> {
+    _natives[S("the clock")] = MakeStrong<Native>(
+        [](const NativeCallContext &context) -> Result<Value, Error> { return Integer(clock()); });
+    _natives[S("the system name")] = MakeStrong<Native>(
+        [this](const NativeCallContext &context) -> Result<Value, Error> { return _systemName; });
+    _natives[S("the system version")] =
+        MakeStrong<Native>([this](const NativeCallContext &context) -> Result<Value, Error> {
             return _systemVersion;
         });
     _io(_natives, config.out, config.in, config.err);

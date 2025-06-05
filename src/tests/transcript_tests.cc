@@ -102,7 +102,9 @@ TEST_CASE(TranscriptTests, All) {
         auto statement = parser.statement();
 
         if (!parser.failed()) {
-            Compiler compiler(CompilerConfig{loader, reporter, false});
+            bool enableDebugInfo = source.find("# DEBUG_INFO: false") == std::string::npos;
+
+            Compiler compiler(CompilerConfig{loader, reporter, false, enableDebugInfo});
             auto bytecode = compiler.compile(*statement);
             if (bytecode) {
                 VirtualMachine vm;
@@ -113,17 +115,17 @@ TEST_CASE(TranscriptTests, All) {
                     vm.addGlobal(function.first, function.second);
                 }
 
-                vm.addGlobal("tracking object", MakeStrong<Native>([&vm](VirtualMachine &, SourceLocation, Value *) -> Result<Value, Error> {
-                    auto obj = vm.make<TrackingObject>();
+                vm.addGlobal("tracking object", MakeStrong<Native>([](const NativeCallContext &context) -> Result<Value, Error> {
+                    auto obj = context.vm.make<TrackingObject>();
                     return obj;
                 }));
 
-                vm.addGlobal("track count", MakeStrong<Native>([](VirtualMachine &, SourceLocation, Value *) -> Result<Value, Error> {
+                vm.addGlobal("track count", MakeStrong<Native>([](const NativeCallContext &context) -> Result<Value, Error> {
                     return Value(static_cast<Integer>(TrackingObject::count));
                 }));
 
-                vm.addGlobal("collect garbage", MakeStrong<Native>([](VirtualMachine &vm, SourceLocation, Value *) -> Result<Value, Error> {
-                    vm.collectGarbage();
+                vm.addGlobal("collect garbage", MakeStrong<Native>([](const NativeCallContext &context) -> Result<Value, Error> {
+                    context.vm.collectGarbage();
                     return Value();
                 }));
 

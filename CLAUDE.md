@@ -20,6 +20,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - REPL tests: `build/debug/repl_tests.sh build/debug/sif_tool`
 - Individual test transcripts in `src/tests/resources/transcripts/`
 
+#### Running Specific Tests
+- Run specific test group: `./build/debug/sif_tests -g GroupName`
+- Run specific test case: `./build/debug/sif_tests -g GroupName -t TestName`
+- List available options: `./build/debug/sif_tests --help`
+- Examples:
+  - `./build/debug/sif_tests -g DebugInfoIntegration`
+  - `./build/debug/sif_tests -g NativeCallContext -t ErrorMethodWithRanges`
+
+#### Transcript Test Format
+- `(-- expect --)` blocks validate stdout output
+- `(-- error --)` blocks validate stderr output and compilation errors
+- `print error (the error)` prints to stderr, so use `(-- error --)`
+- `print` statements print to stdout, so use `(-- expect --)`
+- Expected output blocks should immediately follow each test case (no blank line between)
+
 ## Architecture Overview
 
 Sif is a natural language-like scripting language with a three-stage execution pipeline:
