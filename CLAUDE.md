@@ -84,6 +84,10 @@ Sif is a natural language-like scripting language with a three-stage execution p
 - **Natural Syntax**: English-like control structures and function calls
 - **Bytecode Compilation**: Intermediate representation for efficient execution
 
+## Language Documentation
+
+@docs/introduction.md
+
 ## Important File Locations
 
 - Main entry point: `src/tools/sif.cc`
