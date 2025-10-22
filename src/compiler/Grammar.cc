@@ -18,6 +18,7 @@
 #include "Utilities.h"
 
 #include <set>
+#include <stack>
 #include <vector>
 
 SIF_NAMESPACE_BEGIN

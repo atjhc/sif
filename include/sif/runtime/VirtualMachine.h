@@ -21,6 +21,7 @@
 #include <sif/compiler/Bytecode.h>
 #include <sif/runtime/Value.h>
 
+#include <atomic>
 #include <stack>
 #include <vector>
 
@@ -76,10 +77,14 @@ class VirtualMachine {
 
     void collectGarbage();
 
+#ifdef __clang__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-private-field"
+#endif
     VirtualMachineConfig config;
+#ifdef __clang__
 #pragma GCC diagnostic pop
+#endif
 
   private:
     Optional<Error> call(Value, int, std::vector<SourceRange>);

@@ -36,6 +36,8 @@ switch (kind) {
     case Annotation::Kind::Variable: return "variable";
     case Annotation::Kind::Module: return "module";
     }
+    // Unreachable, but GCC requires a return statement
+    return "unknown";
 }
 
 static std::string gather(const std::string &source, const std::string &context) {

@@ -21,6 +21,7 @@
 #include "sif/runtime/objects/Dictionary.h"
 #include "sif/runtime/objects/List.h"
 #include "sif/runtime/objects/Native.h"
+#include "sif/runtime/objects/Range.h"
 #include "sif/runtime/objects/String.h"
 
 #include "extern/utf8.h"
@@ -655,20 +656,43 @@ static auto _insert_T_at_index_T_into_T(const NativeCallContext &context) -> Res
 }
 
 static auto _reverse_T(const NativeCallContext &context) -> Result<Value, Error> {
-    auto list = context.arguments[0].as<List>();
-    if (!list) {
-        return Fail(context.argumentError(0, Errors::ExpectedAList));
+    if (auto list = context.arguments[0].as<List>()) {
+        std::reverse(list->values().begin(), list->values().end());
+        return list;
+    } else if (auto string = context.arguments[0].as<String>()) {
+        std::reverse(string->string().begin(), string->string().end());
+        return string;
+    } else if (auto range = context.arguments[0].as<Range>()) {
+        // Ranges are immutable, so convert to a reversed list
+        std::vector<Value> values;
+        values.reserve(range->size());
+        for (Integer i = range->size() - 1; i >= 0; --i) {
+            values.push_back(range->start() + i);
+        }
+        return context.vm.make<List>(std::move(values));
+    } else {
+        return Fail(context.argumentError(0, "expected a list, string, or range"));
     }
-    std::reverse(list->values().begin(), list->values().end());
-    return list;
 }
 
 static auto _reversed_T(const NativeCallContext &context) -> Result<Value, Error> {
-    auto list = context.arguments[0].as<List>();
-    if (!list) {
-        return Fail(context.argumentError(0, Errors::ExpectedAList));
+    if (auto list = context.arguments[0].as<List>()) {
+        return context.vm.make<List>(list->values().rbegin(), list->values().rend());
+    } else if (auto string = context.arguments[0].as<String>()) {
+        std::string reversed = string->string();
+        std::reverse(reversed.begin(), reversed.end());
+        return context.vm.make<String>(reversed);
+    } else if (auto range = context.arguments[0].as<Range>()) {
+        // Convert range to a reversed list
+        std::vector<Value> values;
+        values.reserve(range->size());
+        for (Integer i = range->size() - 1; i >= 0; --i) {
+            values.push_back(range->start() + i);
+        }
+        return context.vm.make<List>(std::move(values));
+    } else {
+        return Fail(context.argumentError(0, "expected a list, string, or range"));
     }
-    return context.vm.make<List>(list->values().rbegin(), list->values().rend());
 }
 
 static auto _shuffle_T(std::mt19937_64 &engine)
@@ -1104,7 +1128,7 @@ static auto _the_func_of_T(double (*func)(double))
         }
         auto argument = context.arguments[0].castFloat();
         auto result = func(argument);
-        if (isnan(result)) {
+        if (std::isnan(result)) {
             return Fail(context.argumentError(0, Errors::DomainError));
         }
         return result;
