@@ -21,15 +21,27 @@
 #include <sif/compiler/Bytecode.h>
 #include <sif/runtime/Value.h>
 
+#include <atomic>
 #include <stack>
+#include <type_traits>
 #include <vector>
 
 SIF_NAMESPACE_BEGIN
 
+class List;
+class Dictionary;
+
 struct VirtualMachineConfig {
 #if defined(DEBUG)
+    // When true the VM dumps opcode-level tracing to stdout for debugging.
     bool enableTracing = false;
 #endif
+    // Starting threshold for bytes allocated before the GC is triggered automatically.
+    size_t initialGarbageCollectionThresholdBytes = 64 * 1024;
+    // Lower bound for the GC trigger threshold so it never shrinks too aggressively.
+    size_t minimumGarbageCollectionThresholdBytes = 16 * 1024;
+    // Multiplier applied to the next threshold after each successful collection.
+    double garbageCollectionGrowthFactor = 1.5;
 };
 
 struct CallFrame {
@@ -49,6 +61,7 @@ struct CallFrame {
 class VirtualMachine {
   public:
     VirtualMachine(const VirtualMachineConfig &config = VirtualMachineConfig());
+    ~VirtualMachine();
 
     Result<Value, Error> execute(const Strong<Bytecode> &bytecode);
     void requestHalt();
@@ -65,21 +78,32 @@ class VirtualMachine {
     const Value &it() const { return _it; }
     Value &it() { return _it; }
 
+    void notifyContainerMutation(List *list);
+    void notifyContainerMutation(Dictionary *dictionary);
+
+    void serviceGarbageCollection();
+
+    size_t bytesSinceLastCollection() const { return _bytesSinceLastGc; }
+    size_t currentTrackedBytes() const { return _liveContainerBytes; }
+    size_t garbageCollectionCount() const { return _garbageCollectionCount; }
+
     template <class T, class... Args> std::shared_ptr<T> make(Args &&...args) {
-        auto obj = std::shared_ptr<T>(new T(std::forward<Args>(args)...), [&](auto p) {
-            _trackedContainers.erase(p);
-            delete p;
-        });
-        trackObject(obj);
-        return obj;
+        if constexpr (IsTrackedContainer<T>) {
+            auto obj = std::shared_ptr<T>(new T(std::forward<Args>(args)...), [this](T *p) {
+                deregisterContainer(p);
+                delete p;
+            });
+            if (_inNativeCall) {
+                _transientRoots.emplace_back(obj);
+            }
+            trackContainer(obj);
+            return obj;
+        } else {
+            return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
+        }
     }
 
-    void collectGarbage();
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-private-field"
     VirtualMachineConfig config;
-#pragma GCC diagnostic pop
 
   private:
     Optional<Error> call(Value, int, std::vector<SourceRange>);
@@ -87,8 +111,16 @@ class VirtualMachine {
 
     CallFrame &frame();
 
-    void trackObject(Strong<Object> object);
+    void trackContainer(const Strong<Object> &container);
     std::vector<Strong<Object>> gatherRootObjects() const;
+
+    void refreshContainerMetrics(bool accumulateDebt);
+    void maybeTriggerGarbageCollection();
+    void runPendingGarbageCollection();
+    void cleanupExpiredContainers();
+    void deregisterContainer(Object *object);
+    void accountForContainer(Object *object, size_t newSize, bool accumulateDebt);
+    size_t estimateContainerSize(const Object *object) const;
 
 #if defined(DEBUG)
     friend std::ostream &operator<<(std::ostream &out, const CallFrame &f);
@@ -103,6 +135,15 @@ class VirtualMachine {
 
     // Garbage collection state
     Mapping<Object *, Weak<Object>> _trackedContainers;
+    Mapping<Object *, size_t> _containerSizes;
+    size_t _bytesSinceLastGc = 0;
+    size_t _nextGcThreshold = 0;
+    size_t _liveContainerBytes = 0;
+    size_t _garbageCollectionCount = 0;
+    bool _gcInProgress = false;
+    bool _gcPending = false;
+    bool _inNativeCall = false;
+    std::vector<Weak<Object>> _transientRoots;
 };
 
 SIF_NAMESPACE_END

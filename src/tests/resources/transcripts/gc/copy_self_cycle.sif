@@ -1,0 +1,20 @@
+-- Test copy retains GC tracking
+set original to [tracking object]
+set copy to a copy of original
+insert copy at the end of copy
+print track count
+
+-- Drop external references; cycle still holds the tracking object
+set original to empty
+set copy to empty
+print track count
+
+-- GC should collect the self-referential copy
+collect garbage
+print track count
+
+(-- expect
+1
+1
+0
+--)

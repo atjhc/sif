@@ -87,6 +87,18 @@ void Bytecode::patchRelativeJump(size_t index) {
     _code[index + 2] = static_cast<Opcode>(offset & 0xff);
 }
 
+void Bytecode::patchRelativeJumpTo(size_t index, size_t target) {
+    if (target < index + 3) {
+        throw std::out_of_range("jump targets instructions before the branch");
+    }
+    auto offset = target - index - 3;
+    if (offset > USHRT_MAX) {
+        throw std::out_of_range(Concat("jump out of range (", USHRT_MAX, ")"));
+    }
+    _code[index + 1] = static_cast<Opcode>(offset >> 8);
+    _code[index + 2] = static_cast<Opcode>(offset & 0xff);
+}
+
 void Bytecode::patchAbsoluteJump(size_t index) {
     auto destination = _code.size();
     if (destination > USHRT_MAX) {

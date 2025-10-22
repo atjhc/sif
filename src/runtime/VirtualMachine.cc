@@ -24,12 +24,27 @@
 #include "sif/runtime/protocols/Enumerable.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <stack>
 
 SIF_NAMESPACE_BEGIN
 
-VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : config(config) {}
+VirtualMachine::VirtualMachine(const VirtualMachineConfig &config) : config(config) {
+    _nextGcThreshold = std::max(config.initialGarbageCollectionThresholdBytes,
+                                config.minimumGarbageCollectionThresholdBytes);
+}
+
+VirtualMachine::~VirtualMachine() {
+    _stack.clear();
+    _frames.clear();
+    _globals.clear();
+    _exports.clear();
+    _it = Value();
+
+    _gcPending = true;
+    runPendingGarbageCollection();
+}
 
 void VirtualMachine::addGlobal(const std::string &name, const Value global) {
     _globals[name] = global;
@@ -194,9 +209,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto index = ReadConstant(frame().ip);
             auto constant = frame().bytecode->constants()[index];
             if (auto copyable = constant.as<Copyable>()) {
-                auto copy = copyable->copy();
-                trackObject(copy);
-                Push(_stack, copy);
+                Push(_stack, copyable->copy(*this));
             } else {
                 Push(_stack, constant);
             }
@@ -214,7 +227,11 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                               Errors::ExpectedListStringDictRange);
                 break;
             }
-            Push(_stack, enumerable->enumerator(value));
+            auto enumeratorValue = enumerable->enumerator(value);
+            Push(_stack, enumeratorValue);
+            if (auto enumerator = enumeratorValue.as<Enumerator>()) {
+                trackContainer(std::static_pointer_cast<Object>(enumerator));
+            }
             break;
         }
         case Opcode::SetGlobal: {
@@ -284,7 +301,6 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 values[count - i - 1] = Pop(_stack);
             }
             auto list = make<List>(values);
-            trackObject(list);
             Push(_stack, list);
             break;
         }
@@ -316,7 +332,6 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 values[key] = value;
             }
             auto dictionary = make<Dictionary>(values);
-            trackObject(dictionary);
             Push(_stack, dictionary);
             break;
         }
@@ -544,6 +559,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
 #endif
         if (_haltRequested) {
             error = Error(frame().bytecode->location(frame().ip), Errors::ProgramHalted);
+            runPendingGarbageCollection();
             return Fail(error.value());
         }
         if (error.has_value()) {
@@ -560,6 +576,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 _frames.pop_back();
             }
             if (frame().jumps.size() == 0) {
+                runPendingGarbageCollection();
                 return Fail(error.value());
             }
             frame().error = error.value().value;
@@ -567,8 +584,11 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         }
         if (returnValue.has_value()) {
             _stack.clear();
+            runPendingGarbageCollection();
             return returnValue.value();
         }
+
+        maybeTriggerGarbageCollection();
     }
 }
 
@@ -596,6 +616,18 @@ Optional<Error> VirtualMachine::call(Value object, int count, std::vector<Source
         auto args = &_stack.end()[-count];
 
         NativeCallContext context(*this, location, args, ranges);
+
+        auto previousInNative = _inNativeCall;
+        auto startIndex = _transientRoots.size();
+        _inNativeCall = true;
+        [[maybe_unused]] auto guard = Defer([this, startIndex, previousInNative]() {
+            _transientRoots.resize(startIndex);
+            _inNativeCall = previousInNative;
+            if (!_inNativeCall && _gcPending) {
+                runPendingGarbageCollection();
+            }
+        });
+
         auto result = native->callable()(context);
 
         _stack.erase(_stack.end() - count - 1, _stack.end());
@@ -626,13 +658,6 @@ Optional<Error> VirtualMachine::range(Value start, Value end, bool closed) {
 }
 
 #pragma mark - Garbage Collection
-
-void VirtualMachine::trackObject(Strong<Object> object) {
-    // Only track container objects that can form cycles
-    if (Cast<List>(object) || Cast<Dictionary>(object)) {
-        _trackedContainers[object.get()] = object;
-    }
-}
 
 std::vector<Strong<Object>> VirtualMachine::gatherRootObjects() const {
     std::vector<Strong<Object>> roots;
@@ -673,60 +698,235 @@ std::vector<Strong<Object>> VirtualMachine::gatherRootObjects() const {
         }
     }
 
+    for (const auto &weak : _transientRoots) {
+        if (auto object = weak.lock()) {
+            roots.push_back(std::move(object));
+        }
+    }
+
     return roots;
 }
 
-void VirtualMachine::collectGarbage() {
-    if (_trackedContainers.empty())
-        return;
+void VirtualMachine::notifyContainerMutation(List *list) {
+    assert(list && "notifyContainerMutation called with null List");
+    accountForContainer(list, estimateContainerSize(list), true);
+    maybeTriggerGarbageCollection();
+}
 
+void VirtualMachine::notifyContainerMutation(Dictionary *dictionary) {
+    assert(dictionary && "notifyContainerMutation called with null Dictionary");
+    accountForContainer(dictionary, estimateContainerSize(dictionary), true);
+    maybeTriggerGarbageCollection();
+}
+
+void VirtualMachine::serviceGarbageCollection() {
+    if (_gcInProgress) {
+        return;
+    }
+    _gcPending = true;
+    runPendingGarbageCollection();
+}
+
+void VirtualMachine::trackContainer(const Strong<Object> &container) {
+    auto *object = container.get();
+    if (_trackedContainers.find(object) != _trackedContainers.end()) {
+        return;
+    }
+    _trackedContainers[object] = container;
+    accountForContainer(object, estimateContainerSize(object), true);
+    maybeTriggerGarbageCollection();
+}
+
+size_t VirtualMachine::estimateContainerSize(const Object *object) const {
+    if (auto list = dynamic_cast<const List *>(object)) {
+        const auto &values = list->values();
+        return sizeof(List) + values.capacity() * sizeof(Value);
+    }
+    if (auto dictionary = dynamic_cast<const Dictionary *>(object)) {
+        const auto &values = dictionary->values();
+        size_t elementBytes = values.size() * sizeof(ValueMap::value_type);
+        size_t bucketBytes = values.bucket_count() * sizeof(void *);
+        return sizeof(Dictionary) + elementBytes + bucketBytes;
+    }
+    return 0;
+}
+
+void VirtualMachine::cleanupExpiredContainers() {
+    std::vector<Object *> expired;
+    expired.reserve(_trackedContainers.size());
+    for (auto &entry : _trackedContainers) {
+        if (entry.second.expired()) {
+            expired.push_back(entry.first);
+        }
+    }
+    for (auto *ptr : expired) {
+        deregisterContainer(ptr);
+    }
+}
+
+void VirtualMachine::deregisterContainer(Object *object) {
+    auto sizeIt = _containerSizes.find(object);
+    if (sizeIt != _containerSizes.end()) {
+        size_t previous = sizeIt->second;
+        if (_liveContainerBytes >= previous) {
+            _liveContainerBytes -= previous;
+        } else {
+            _liveContainerBytes = 0;
+        }
+        _containerSizes.erase(sizeIt);
+    }
+    _trackedContainers.erase(object);
+}
+
+void VirtualMachine::accountForContainer(Object *object, size_t newSize, bool accumulateDebt) {
+    assert(object);
+    if (_trackedContainers.find(object) == _trackedContainers.end()) {
+        return;
+    }
+    auto &current = _containerSizes[object];
+    size_t previous = current;
+    if (newSize >= previous) {
+        size_t delta = newSize - previous;
+        if (delta > 0) {
+            _liveContainerBytes += delta;
+            if (accumulateDebt) {
+                _bytesSinceLastGc += delta;
+            }
+        }
+    } else {
+        size_t delta = previous - newSize;
+        if (_liveContainerBytes >= delta) {
+            _liveContainerBytes -= delta;
+        } else {
+            _liveContainerBytes = 0;
+        }
+    }
+    current = newSize;
+    if (_nextGcThreshold == 0) {
+        _nextGcThreshold = std::max(config.initialGarbageCollectionThresholdBytes,
+                                    config.minimumGarbageCollectionThresholdBytes);
+    }
+}
+
+void VirtualMachine::refreshContainerMetrics(bool accumulateDebt) {
+    cleanupExpiredContainers();
+    for (auto &entry : _trackedContainers) {
+        if (auto locked = entry.second.lock()) {
+            accountForContainer(entry.first, estimateContainerSize(locked.get()), accumulateDebt);
+        }
+    }
+}
+
+void VirtualMachine::maybeTriggerGarbageCollection() {
+    if (_gcInProgress) {
+        return;
+    }
+    if (_nextGcThreshold == 0 || _bytesSinceLastGc < _nextGcThreshold) {
+        return;
+    }
+    _gcPending = true;
+    runPendingGarbageCollection();
+}
+
+void VirtualMachine::runPendingGarbageCollection() {
+    if (!_gcPending || _gcInProgress) {
+        return;
+    }
+
+    // Clear out expired weak references so the collector only considers live candidates.
+    cleanupExpiredContainers();
+    if (_gcInProgress) {
+        return;
+    }
+
+    _gcInProgress = true;
+
+    size_t previousCount = _garbageCollectionCount;
+
+    // Hold strong references to every tracked container during the collection.
     std::vector<Strong<Object>> strongRefs;
     strongRefs.reserve(_trackedContainers.size());
 
-    // Lock all weak pointers once and reset visited flags
-    for (const auto &pair : _trackedContainers) {
-        auto obj = pair.second.lock();
-        obj->visited = false;
-        strongRefs.push_back(std::move(obj));
+    // Snapshot every root we can reach (stack, globals, frames, transient native roots, etc.).
+    auto roots = gatherRootObjects();
+
+    std::vector<Object *> expired;
+    for (auto &entry : _trackedContainers) {
+        auto locked = entry.second.lock();
+        if (!locked) {
+            expired.push_back(entry.first);
+            continue;
+        }
+        locked->visited = false;
+        strongRefs.push_back(std::move(locked));
     }
 
-    // Mark reachable objects
-    static const auto markReachable = [](Object *root) {
-        std::stack<Object *> stack;
-        stack.push(root);
-        while (!stack.empty()) {
-            auto *current = stack.top();
-            stack.pop();
-            if (current->visited) {
-                continue;
-            }
-            current->visited = true;
-            current->trace([&stack](Strong<Object> &child) {
-                if (child && !child->visited) {
-                    stack.push(child.get());
+    for (auto *ptr : expired) {
+        deregisterContainer(ptr);
+    }
+
+    if (!strongRefs.empty()) {
+        // Depth-first mark over the object graph starting from the root set.
+        static const auto markReachable = [](Object *root) {
+            std::stack<Object *> stack;
+            stack.push(root);
+            while (!stack.empty()) {
+                auto *current = stack.top();
+                stack.pop();
+                if (current->visited) {
+                    continue;
                 }
-            });
+                current->visited = true;
+                current->trace([&stack](Strong<Object> &child) {
+                    if (child && !child->visited) {
+                        stack.push(child.get());
+                    }
+                });
+            }
+        };
+
+        for (auto &root : roots) {
+            if (root) {
+                markReachable(root.get());
+            }
         }
-    };
 
-    // Mark from roots
-    for (auto &root : gatherRootObjects()) {
-        markReachable(root.get());
-    }
+        // Sweep: drop edges from any container that was not marked reachable.
+        for (auto &obj : strongRefs) {
+            if (!obj->visited) {
+                obj->trace([](Strong<Object> &child) { child.reset(); });
+            }
+        }
 
-    // Break cycles
-    std::vector<Strong<Object>> unmarkedContainers;
-    unmarkedContainers.reserve(strongRefs.size());
+        _garbageCollectionCount++;
 
-    for (auto &obj : strongRefs) {
-        if (!obj->visited) {
-            unmarkedContainers.push_back(obj);
+        // Refresh size accounting for survivors so thresholds stay accurate.
+        for (auto &obj : strongRefs) {
+            if (obj && obj->visited) {
+                accountForContainer(obj.get(), estimateContainerSize(obj.get()), false);
+            }
         }
     }
 
-    for (auto &obj : unmarkedContainers) {
-        obj->trace([](Strong<Object> &child) { child.reset(); });
+    _gcInProgress = false;
+
+    if (_garbageCollectionCount > previousCount) {
+        double growth = std::max(1.0, config.garbageCollectionGrowthFactor);
+        size_t baseline = std::max(config.initialGarbageCollectionThresholdBytes,
+                                   config.minimumGarbageCollectionThresholdBytes);
+        size_t nextThreshold = baseline;
+        if (_liveContainerBytes > 0) {
+            nextThreshold = std::max(
+                baseline,
+                static_cast<size_t>(std::ceil(static_cast<double>(_liveContainerBytes) * growth)));
+        }
+        _nextGcThreshold = nextThreshold;
+        _bytesSinceLastGc = 0;
     }
+
+    _gcPending = false;
+    cleanupExpiredContainers();
 }
+
 
 SIF_NAMESPACE_END

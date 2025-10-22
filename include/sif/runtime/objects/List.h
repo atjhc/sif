@@ -29,9 +29,12 @@
 
 SIF_NAMESPACE_BEGIN
 
+class VirtualMachine;
+
 class List : public Object, public Copyable, public Enumerable, public Subscriptable {
   public:
     List(const std::vector<Value> &values = {});
+    List(std::vector<Value> &&values);
 
     template <typename Iterator> List(Iterator begin, Iterator end) : _values(begin, end) {}
 
@@ -58,7 +61,7 @@ class List : public Object, public Copyable, public Enumerable, public Subscript
     size_t hash() const override;
 
     // Copyable
-    Strong<Object> copy() const override;
+    Strong<Object> copy(VirtualMachine &vm) const override;
 
     // Enumerable
     Value enumerator(Value self) const override;

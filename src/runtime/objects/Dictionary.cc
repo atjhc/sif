@@ -11,6 +11,7 @@
 //  limitations under the License.
 //
 
+#include "sif/runtime/VirtualMachine.h"
 #include "sif/runtime/objects/Dictionary.h"
 #include "sif/runtime/objects/List.h"
 #include "utilities/hasher.h"
@@ -21,7 +22,11 @@ Dictionary::Dictionary() {}
 
 Dictionary::Dictionary(const ValueMap &values) : _values(values) {}
 
+Dictionary::Dictionary(ValueMap &&values) : _values(std::move(values)) {}
+
 ValueMap &Dictionary::values() { return _values; }
+
+const ValueMap &Dictionary::values() const { return _values; }
 
 std::string Dictionary::typeName() const { return "dictionary"; }
 
@@ -85,7 +90,7 @@ size_t Dictionary::hash() const {
 
 bool Dictionary::contains(const Value &value) const { return _values.find(value) != _values.end(); }
 
-Strong<Object> Dictionary::copy() const { return MakeOwned<Dictionary>(_values); }
+Strong<Object> Dictionary::copy(VirtualMachine &vm) const { return vm.make<Dictionary>(_values); }
 
 Value Dictionary::enumerator(Value self) const {
     return MakeStrong<DictionaryEnumerator>(self.as<Dictionary>());
@@ -104,6 +109,7 @@ Result<Value, Error> Dictionary::subscript(VirtualMachine &vm, SourceLocation lo
 Result<Value, Error> Dictionary::setSubscript(VirtualMachine &vm, SourceLocation, const Value &key,
                                               Value value) {
     _values[key] = value;
+    vm.notifyContainerMutation(this);
     return Value();
 }
 

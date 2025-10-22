@@ -28,12 +28,16 @@
 
 SIF_NAMESPACE_BEGIN
 
+class VirtualMachine;
+
 class Dictionary : public Object, public Copyable, public Enumerable, public Subscriptable {
   public:
     Dictionary();
     Dictionary(const ValueMap &values);
+    Dictionary(ValueMap &&values);
 
     ValueMap &values();
+    const ValueMap &values() const;
 
     bool contains(const Value &value) const;
 
@@ -44,7 +48,7 @@ class Dictionary : public Object, public Copyable, public Enumerable, public Sub
     size_t hash() const override;
 
     // Copyable
-    Strong<Object> copy() const override;
+    Strong<Object> copy(VirtualMachine &vm) const override;
 
     // Enumerable
     Value enumerator(Value self) const override;

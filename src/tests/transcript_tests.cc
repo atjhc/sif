@@ -125,7 +125,7 @@ TEST_CASE(TranscriptTests, All) {
                 }));
 
                 vm.addGlobal("collect garbage", MakeStrong<Native>([](const NativeCallContext &context) -> Result<Value, Error> {
-                    context.vm.collectGarbage();
+                    context.vm.serviceGarbageCollection();
                     return Value();
                 }));
 

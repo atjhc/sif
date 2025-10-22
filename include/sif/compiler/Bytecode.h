@@ -89,6 +89,7 @@ class Bytecode {
     void addArgumentRanges(size_t callLocation, const std::vector<SourceRange> &ranges);
 
     void patchRelativeJump(size_t location);
+    void patchRelativeJumpTo(size_t location, size_t target);
     void patchAbsoluteJump(size_t location);
 
     const std::string &name() const;

@@ -446,11 +446,12 @@ void Compiler::visit(const RepeatFor &foreach) {
     foreach.statement->accept(*this);
 
     bytecode().addRepeat(foreach.range.start, _nextRepeat);
-    bytecode().patchRelativeJump(_nextRepeat);
-    for (auto location : _exitPatches.top()) {
-        bytecode().patchRelativeJump(location);
-    }
+    auto popLocation = bytecode().code().size();
     bytecode().add(foreach.range.start, Opcode::Pop);
+    bytecode().patchRelativeJumpTo(_nextRepeat, popLocation);
+    for (auto location : _exitPatches.top()) {
+        bytecode().patchRelativeJumpTo(location, popLocation);
+    }
 
     _nextRepeat = nextRepeat;
     _exitPatches.pop();

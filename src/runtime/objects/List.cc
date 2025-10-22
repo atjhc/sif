@@ -11,12 +11,15 @@
 //  limitations under the License.
 //
 
+#include "sif/runtime/VirtualMachine.h"
 #include "sif/runtime/objects/List.h"
 #include "utilities/hasher.h"
 
 SIF_NAMESPACE_BEGIN
 
 List::List(const std::vector<Value> &values) : _values(values) {}
+
+List::List(std::vector<Value> &&values) : _values(std::move(values)) {}
 
 std::vector<Value> &List::values() { return _values; }
 const std::vector<Value> &List::values() const { return _values; }
@@ -122,7 +125,7 @@ Optional<Integer> List::findLast(const Value &value) const {
     return result.base() - _values.begin() - 1;
 }
 
-Strong<Object> List::copy() const { return MakeOwned<List>(values()); }
+Strong<Object> List::copy(VirtualMachine &vm) const { return vm.make<List>(values()); }
 
 Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(self.as<List>()); }
 
@@ -166,6 +169,7 @@ Result<Value, Error> List::setSubscript(VirtualMachine &vm, SourceLocation locat
     if (key.isInteger()) {
         _values[key.asInteger()] = value;
     }
+    vm.notifyContainerMutation(this);
     return Value();
 }
 

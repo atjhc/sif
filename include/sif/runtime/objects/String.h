@@ -30,6 +30,8 @@
 
 SIF_NAMESPACE_BEGIN
 
+class VirtualMachine;
+
 class String : public Object,
                public Enumerable,
                public Subscriptable,
@@ -75,7 +77,7 @@ class String : public Object,
                                       Value) override;
 
     // Copyable
-    Strong<Object> copy() const override;
+    Strong<Object> copy(VirtualMachine &vm) const override;
 
     // Castable
     Result<Value, Error> castInteger() const override;

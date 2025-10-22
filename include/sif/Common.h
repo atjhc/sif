@@ -24,6 +24,8 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -34,6 +36,9 @@
 #define SIF_NAMESPACE_END }
 
 SIF_NAMESPACE_BEGIN
+
+class List;
+class Dictionary;
 
 #define MAJOR_VERSION 0
 #define MINOR_VERSION 0
@@ -96,8 +101,33 @@ template <class T, class U> Strong<T> Cast(const Strong<U> &arg) {
     return std::dynamic_pointer_cast<T>(arg);
 }
 
+template <class T> inline constexpr bool IsTrackedContainer = std::is_same_v<T, List> || std::is_same_v<T, Dictionary>;
+
 template <typename Container> void Append(Container &target, const Container &source) {
     std::copy(source.begin(), source.end(), std::back_inserter(target));
+}
+
+template <typename Fn> class DeferGuard {
+  public:
+    explicit DeferGuard(Fn fn) : _fn(std::move(fn)) {}
+    DeferGuard(const DeferGuard &) = delete;
+    DeferGuard &operator=(const DeferGuard &) = delete;
+    DeferGuard(DeferGuard &&other) noexcept : _fn(std::move(other._fn)), _active(other._active) {
+        other._active = false;
+    }
+    ~DeferGuard() {
+        if (_active) {
+            _fn();
+        }
+    }
+
+  private:
+    Fn _fn;
+    bool _active = true;
+};
+
+template <typename Fn> auto Defer(Fn &&fn) {
+    return DeferGuard<std::decay_t<Fn>>(std::forward<Fn>(fn));
 }
 
 static inline std::string Concat() { return std::string(); }

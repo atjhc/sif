@@ -30,6 +30,7 @@
 #include <charconv>
 #include <format>
 #include <random>
+#include <utility>
 
 SIF_NAMESPACE_BEGIN
 
@@ -124,7 +125,7 @@ static auto _the_type_name_of_T(const NativeCallContext &context) -> Result<Valu
 
 static auto _a_copy_of_T(const NativeCallContext &context) -> Result<Value, Error> {
     if (auto copyable = context.arguments[0].as<Copyable>()) {
-        return copyable->copy();
+        return copyable->copy(context.vm);
     }
     return context.arguments[0];
 }
@@ -309,6 +310,7 @@ static auto _insert_T_at_the_beginning_of_T(const NativeCallContext &context)
     -> Result<Value, Error> {
     if (auto list = context.arguments[1].as<List>()) {
         list->values().insert(list->values().begin(), context.arguments[0]);
+        context.vm.notifyContainerMutation(list.get());
     } else if (auto string = context.arguments[1].as<String>()) {
         auto insertText = context.arguments[0].as<String>();
         if (!insertText) {
@@ -324,6 +326,7 @@ static auto _insert_T_at_the_beginning_of_T(const NativeCallContext &context)
 static auto _insert_T_at_the_end_of_T(const NativeCallContext &context) -> Result<Value, Error> {
     if (auto list = context.arguments[1].as<List>()) {
         list->values().push_back(context.arguments[0]);
+        context.vm.notifyContainerMutation(list.get());
     } else if (auto string = context.arguments[1].as<String>()) {
         auto insertText = context.arguments[0].as<String>();
         if (!insertText) {
@@ -343,6 +346,7 @@ static auto _remove_the_first_item_from_T(const NativeCallContext &context)
             return Value();
         }
         list->values().erase(list->values().begin());
+        context.vm.notifyContainerMutation(list.get());
         return list;
     }
     return Fail(context.argumentError(0, Errors::ExpectedAList));
@@ -354,6 +358,7 @@ static auto _remove_the_last_item_from_T(const NativeCallContext &context) -> Re
             return Value();
         }
         list->values().pop_back();
+        context.vm.notifyContainerMutation(list.get());
         return list;
     }
     return Fail(context.argumentError(0, Errors::ExpectedAList));
@@ -362,6 +367,7 @@ static auto _remove_the_last_item_from_T(const NativeCallContext &context) -> Re
 static auto _remove_item_T_from_T(const NativeCallContext &context) -> Result<Value, Error> {
     if (auto dictionary = context.arguments[1].as<Dictionary>()) {
         dictionary->values().erase(context.arguments[0]);
+        context.vm.notifyContainerMutation(dictionary.get());
         return dictionary;
     } else if (auto list = context.arguments[1].as<List>()) {
         if (!context.arguments[0].isInteger()) {
@@ -369,6 +375,7 @@ static auto _remove_item_T_from_T(const NativeCallContext &context) -> Result<Va
         }
         auto index = context.arguments[0].asInteger();
         list->values().erase(list->values().begin() + index);
+        context.vm.notifyContainerMutation(list.get());
         return list;
     }
     return Fail(context.argumentError(1, Errors::ExpectedADictionaryOrList));
@@ -422,6 +429,7 @@ static auto _replace_all_T_with_T_in_T(const NativeCallContext &context) -> Resu
         return text;
     } else if (auto list = context.arguments[2].as<List>()) {
         list->replaceAll(context.arguments[0], context.arguments[1]);
+        context.vm.notifyContainerMutation(list.get());
         return list;
     }
     return Fail(context.argumentError(2, Errors::ExpectedStringOrList));
@@ -441,6 +449,7 @@ static auto _replace_first_T_with_T_in_T(const NativeCallContext &context) -> Re
         return text;
     } else if (auto list = context.arguments[2].as<List>()) {
         list->replaceFirst(context.arguments[0], context.arguments[1]);
+        context.vm.notifyContainerMutation(list.get());
         return list;
     }
     return Fail(context.argumentError(2, Errors::ExpectedStringOrList));
@@ -460,6 +469,7 @@ static auto _replace_last_T_with_T_in_T(const NativeCallContext &context) -> Res
         return text;
     } else if (auto list = context.arguments[2].as<List>()) {
         list->replaceLast(context.arguments[0], context.arguments[1]);
+        context.vm.notifyContainerMutation(list.get());
         return list;
     }
     return Fail(context.argumentError(2, Errors::ExpectedStringOrList));
@@ -526,11 +536,12 @@ static auto _the_keys_of_T(const NativeCallContext &context) -> Result<Value, Er
     if (!dictionary) {
         return Fail(context.argumentError(0, Errors::ExpectedADictionary));
     }
-    auto keys = context.vm.make<List>();
+    std::vector<Value> keys;
+    keys.reserve(dictionary->values().size());
     for (const auto &pair : dictionary->values()) {
-        keys->values().push_back(pair.first);
+        keys.emplace_back(pair.first);
     }
-    return keys;
+    return context.vm.make<List>(std::move(keys));
 }
 
 static auto _the_values_of_T(const NativeCallContext &context) -> Result<Value, Error> {
@@ -538,11 +549,12 @@ static auto _the_values_of_T(const NativeCallContext &context) -> Result<Value, 
     if (!dictionary) {
         return Fail(context.argumentError(0, Errors::ExpectedADictionary));
     }
-    auto valuesList = context.vm.make<List>();
+    std::vector<Value> values;
+    values.reserve(dictionary->values().size());
     for (const auto &pair : dictionary->values()) {
-        valuesList->values().push_back(pair.second);
+        values.emplace_back(pair.second);
     }
-    return valuesList;
+    return context.vm.make<List>(std::move(values));
 }
 
 static auto _insert_item_T_with_key_T_into_T(const NativeCallContext &context)
@@ -552,6 +564,7 @@ static auto _insert_item_T_with_key_T_into_T(const NativeCallContext &context)
         return Fail(context.argumentError(2, Errors::ExpectedADictionary));
     }
     dictionary->values()[context.arguments[1]] = context.arguments[0];
+    context.vm.notifyContainerMutation(dictionary.get());
     return dictionary;
 }
 
@@ -568,8 +581,10 @@ static auto _items_T_to_T_in_T(const NativeCallContext &context) -> Result<Value
     }
     auto index1 = context.arguments[0].asInteger();
     auto index2 = context.arguments[1].asInteger();
-    return context.vm.make<List>(list->values().begin() + index1,
-                                 list->values().begin() + index2 + 1);
+    auto result =
+        context.vm.make<List>(list->values().begin() + index1, list->values().begin() + index2 + 1);
+    context.vm.notifyContainerMutation(result.get());
+    return result;
 }
 
 static auto _the_first_item_in_T(const NativeCallContext &context) -> Result<Value, Error> {
@@ -638,6 +653,7 @@ static auto _remove_items_T_to_T_from_T(const NativeCallContext &context) -> Res
     auto index1 = context.arguments[0].asInteger();
     auto index2 = context.arguments[1].asInteger();
     list->values().erase(list->values().begin() + index1, list->values().begin() + index2 + 1);
+    context.vm.notifyContainerMutation(list.get());
     return list;
 }
 
@@ -651,6 +667,7 @@ static auto _insert_T_at_index_T_into_T(const NativeCallContext &context) -> Res
     }
     auto index = context.arguments[1].asInteger();
     list->values().insert(list->values().begin() + index, context.arguments[0]);
+    context.vm.notifyContainerMutation(list.get());
     return list;
 }
 
@@ -881,7 +898,7 @@ static auto _the_list_of_chunks_in_T(chunk::type chunkType)
             result.push_back(Value(chunk.get()));
             chunk = index_chunk(chunkType, index++, text->string());
         }
-        return context.vm.make<List>(result);
+        return context.vm.make<List>(std::move(result));
     };
 }
 

@@ -12,6 +12,7 @@
 //  limitations under the License.
 //
 
+#include "sif/runtime/VirtualMachine.h"
 #include "sif/runtime/objects/String.h"
 
 #include "extern/utf8.h"
@@ -60,7 +61,7 @@ bool String::equals(Strong<Object> object) const {
 
 size_t String::hash() const { return std::hash<std::string>{}(_string); }
 
-Strong<Object> String::copy() const { return MakeStrong<String>(_string); }
+Strong<Object> String::copy(VirtualMachine &vm) const { return vm.make<String>(_string); }
 
 void String::replaceAll(const String &searchString, const String &replacementString) {
     size_t offset = 0;

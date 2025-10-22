@@ -21,8 +21,10 @@
 
 SIF_NAMESPACE_BEGIN
 
+class VirtualMachine;
+
 struct Copyable {
-    virtual Strong<Object> copy() const = 0;
+    virtual Strong<Object> copy(VirtualMachine &vm) const = 0;
 };
 
 SIF_NAMESPACE_END

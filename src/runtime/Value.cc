@@ -166,7 +166,9 @@ bool Value::operator==(const Value &value) const {
         return true;
     }
     if (isObject() && value.isObject()) {
-        return asObject()->equals(value.asObject());
+        auto lhs = asObject();
+        auto rhs = value.asObject();
+        return lhs->equals(rhs);
     }
     if (type() != value.type() && isNumber() && value.isNumber()) {
         return castFloat() == value.castFloat();

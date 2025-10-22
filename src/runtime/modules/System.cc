@@ -27,6 +27,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sys/utsname.h>
+#include <utility>
 
 SIF_NAMESPACE_BEGIN
 
@@ -149,12 +150,11 @@ static auto _the_contents_of_directory_T(const NativeCallContext &context) -> Re
     if (error) {
         return Fail(context.argumentError(0, "{}", error.message()));
     }
-    Strong<List> results = context.vm.make<List>();
+    std::vector<Value> entries;
     for (auto it : std::filesystem::directory_iterator(path->string())) {
-        auto itemPath = it.path();
-        results->values().push_back(itemPath.string());
+        entries.emplace_back(it.path().string());
     }
-    return results;
+    return context.vm.make<List>(std::move(entries));
 }
 
 static auto _remove_file_T(const NativeCallContext &context) -> Result<Value, Error> {
@@ -257,11 +257,12 @@ System::System(const SystemConfig &config) {
         });
     _natives[S("the environment")] =
         MakeStrong<Native>([this](const NativeCallContext &context) -> Result<Value, Error> {
-            auto dictionary = context.vm.make<Dictionary>();
-            for (auto pair : _environment) {
-                dictionary->values()[Value(pair.first)] = Value(pair.second);
+            ValueMap entries;
+            entries.reserve(_environment.size());
+            for (const auto &pair : _environment) {
+                entries.emplace(Value(pair.first), Value(pair.second));
             }
-            return dictionary;
+            return context.vm.make<Dictionary>(std::move(entries));
         });
     _natives[S("the clock")] = MakeStrong<Native>(
         [](const NativeCallContext &context) -> Result<Value, Error> { return Integer(clock()); });
