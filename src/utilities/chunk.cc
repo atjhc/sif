@@ -21,10 +21,26 @@ std::string::const_iterator chunk::scan(std::string::const_iterator it, size_t l
             while (it < _end && iswhitespace(utf8::peek_next(it, _end)))
                 utf8::next(it, _end);
         } else if (_type == item) {
-            while (it < _end && utf8::peek_next(it, _end) != ',')
-                utf8::next(it, _end);
-            if (it < _end)
-                utf8::next(it, _end);
+            // Skip to end of current item (until we find delimiter)
+            auto delim_it = _delimiter.begin();
+            while (it < _end) {
+                if (delim_it == _delimiter.end()) {
+                    // Found complete delimiter, skip past it
+                    break;
+                }
+                auto current_char = utf8::peek_next(it, _end);
+                if (current_char == static_cast<uint32_t>(*delim_it)) {
+                    delim_it++;
+                    utf8::next(it, _end);
+                } else {
+                    // Mismatch, reset delimiter search
+                    if (delim_it != _delimiter.begin()) {
+                        delim_it = _delimiter.begin();
+                    } else {
+                        utf8::next(it, _end);
+                    }
+                }
+            }
         } else if (_type == line) {
             while (it < _end && !isnewline(utf8::peek_next(it, _end)))
                 utf8::next(it, _end);
@@ -42,8 +58,27 @@ std::string::const_iterator chunk::scan_end(std::string::const_iterator it) {
         while (it < _end && !iswhitespace(utf8::peek_next(it, _end)))
             utf8::next(it, _end);
     } else if (_type == item) {
-        while (it < _end && utf8::peek_next(it, _end) != ',')
-            utf8::next(it, _end);
+        // Find end of current item (until we find delimiter)
+        auto delim_it = _delimiter.begin();
+        while (it < _end) {
+            auto current_char = utf8::peek_next(it, _end);
+            if (current_char == static_cast<uint32_t>(*delim_it)) {
+                delim_it++;
+                if (delim_it == _delimiter.end()) {
+                    // Found complete delimiter, stop here (don't consume it)
+                    it = std::prev(it, _delimiter.size() - 1);
+                    break;
+                }
+                utf8::next(it, _end);
+            } else {
+                // Mismatch, reset delimiter search and continue
+                if (delim_it != _delimiter.begin()) {
+                    delim_it = _delimiter.begin();
+                } else {
+                    utf8::next(it, _end);
+                }
+            }
+        }
     } else if (_type == line) {
         while (it < _end && !isnewline(utf8::peek_next(it, _end)))
             utf8::next(it, _end);

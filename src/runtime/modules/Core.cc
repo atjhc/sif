@@ -60,6 +60,7 @@ inline constexpr std::string_view ExpectedARange = "expected a range";
 inline constexpr std::string_view ExpectedIntegerOrRange = "expected an integer or range";
 inline constexpr std::string_view ExpectedListOrDictionary = "expected a list or dictionary";
 inline constexpr std::string_view ExpectedStringOrList = "expected a string or list";
+inline constexpr std::string_view ExpectedListDictOrString = "expected a list, dictionary or string";
 inline constexpr std::string_view FormatOutOfRange = "format index out of range";
 inline constexpr std::string_view InvalidFormatIndex = "invalid format index";
 inline constexpr std::string_view InvalidUnicodeCodePoint = "invalid unicode codepoint";
@@ -302,8 +303,147 @@ static auto _item_T_in_T(const NativeCallContext &context) -> Result<Value, Erro
         return list->subscript(context.vm, context.location, context.arguments[0]);
     } else if (auto dictionary = context.arguments[1].as<Dictionary>()) {
         return dictionary->subscript(context.vm, context.location, context.arguments[0]);
+    } else if (auto string = context.arguments[1].as<String>()) {
+        if (!context.arguments[0].isInteger()) {
+            return Fail(context.argumentError(0, Errors::ExpectedAnInteger));
+        }
+        auto index = context.arguments[0].asInteger();
+        return Value(index_chunk(chunk::item, index, string->string()).get());
     }
-    return Fail(context.argumentError(1, Errors::ExpectedListOrDictionary));
+    return Fail(context.argumentError(1, Errors::ExpectedListDictOrString));
+}
+
+static auto _item_T_of_T_using_delimiter_T(const NativeCallContext &context)
+    -> Result<Value, Error> {
+    auto string = context.arguments[1].as<String>();
+    if (!string) {
+        return Fail(context.argumentError(1, Errors::ExpectedAString));
+    }
+    if (!context.arguments[0].isInteger()) {
+        return Fail(context.argumentError(0, Errors::ExpectedAnInteger));
+    }
+    auto delimiter = context.arguments[2].as<String>();
+    if (!delimiter) {
+        return Fail(context.argumentError(2, Errors::ExpectedAString));
+    }
+
+    auto index = context.arguments[0].asInteger();
+    return Value(index_chunk(chunk::item, index, string->string(), delimiter->string()).get());
+}
+
+static auto _items_of_T(const NativeCallContext &context) -> Result<Value, Error> {
+    if (auto string = context.arguments[0].as<String>()) {
+        std::vector<Value> values;
+        const auto &str = string->string();
+
+        if (str.empty()) {
+            return context.vm.make<List>(std::move(values));
+        }
+
+        size_t index = 0;
+        auto item = index_chunk(chunk::item, index++, str);
+        while (item.begin() < str.end()) {
+            values.emplace_back(item.get());
+            item = index_chunk(chunk::item, index++, str);
+        }
+
+        if (str.size() >= 1 && str.back() == ',') {
+            values.emplace_back(std::string());
+        }
+
+        return context.vm.make<List>(std::move(values));
+    }
+    return Fail(context.argumentError(0, Errors::ExpectedAString));
+}
+
+static auto _items_of_T_using_delimiter_T(const NativeCallContext &context)
+    -> Result<Value, Error> {
+    auto string = context.arguments[0].as<String>();
+    if (!string) {
+        return Fail(context.argumentError(0, Errors::ExpectedAString));
+    }
+    auto delimiter = context.arguments[1].as<String>();
+    if (!delimiter) {
+        return Fail(context.argumentError(1, Errors::ExpectedAString));
+    }
+
+    std::vector<Value> values;
+    const auto &str = string->string();
+    const auto &delim = delimiter->string();
+
+    if (str.empty()) {
+        return context.vm.make<List>(std::move(values));
+    }
+
+    size_t index = 0;
+    auto item = index_chunk(chunk::item, index++, str, delim);
+    while (item.begin() < str.end()) {
+        values.emplace_back(item.get());
+        item = index_chunk(chunk::item, index++, str, delim);
+    }
+
+    if (str.size() >= delim.size() &&
+        str.compare(str.size() - delim.size(), delim.size(), delim) == 0) {
+        values.emplace_back(std::string());
+    }
+
+    return context.vm.make<List>(std::move(values));
+}
+
+static auto _items_T_to_T_in_T(const NativeCallContext &context) -> Result<Value, Error> {
+    if (!context.arguments[0].isInteger()) {
+        return Fail(context.argumentError(0, Errors::ExpectedAnInteger));
+    }
+    if (!context.arguments[1].isInteger()) {
+        return Fail(context.argumentError(1, Errors::ExpectedAnInteger));
+    }
+
+    if (auto list = context.arguments[2].as<List>()) {
+        auto index1 = context.arguments[0].asInteger();
+        auto index2 = context.arguments[1].asInteger();
+        auto result = context.vm.make<List>(list->values().begin() + index1,
+                                           list->values().begin() + index2 + 1);
+        context.vm.notifyContainerMutation(result.get());
+        return result;
+    } else if (auto string = context.arguments[2].as<String>()) {
+        auto start = context.arguments[0].asInteger();
+        auto end = context.arguments[1].asInteger();
+
+        std::vector<Value> values;
+        for (auto i = start; i <= end; ++i) {
+            values.emplace_back(index_chunk(chunk::item, i, string->string()).get());
+        }
+        return context.vm.make<List>(std::move(values));
+    }
+    return Fail(context.argumentError(2, Errors::ExpectedStringOrList));
+}
+
+static auto _items_T_to_T_in_T_using_delimiter_T(const NativeCallContext &context)
+    -> Result<Value, Error> {
+    auto string = context.arguments[2].as<String>();
+    if (!string) {
+        return Fail(context.argumentError(2, Errors::ExpectedAString));
+    }
+    if (!context.arguments[0].isInteger()) {
+        return Fail(context.argumentError(0, Errors::ExpectedAnInteger));
+    }
+    if (!context.arguments[1].isInteger()) {
+        return Fail(context.argumentError(1, Errors::ExpectedAnInteger));
+    }
+    auto delimiter = context.arguments[3].as<String>();
+    if (!delimiter) {
+        return Fail(context.argumentError(3, Errors::ExpectedAString));
+    }
+
+    auto start = context.arguments[0].asInteger();
+    auto end = context.arguments[1].asInteger();
+
+    std::vector<Value> values;
+    for (auto i = start; i <= end; ++i) {
+        values.emplace_back(
+            index_chunk(chunk::item, i, string->string(), delimiter->string()).get());
+    }
+    return context.vm.make<List>(std::move(values));
 }
 
 static auto _insert_T_at_the_beginning_of_T(const NativeCallContext &context)
@@ -566,25 +706,6 @@ static auto _insert_item_T_with_key_T_into_T(const NativeCallContext &context)
     dictionary->values()[context.arguments[1]] = context.arguments[0];
     context.vm.notifyContainerMutation(dictionary.get());
     return dictionary;
-}
-
-static auto _items_T_to_T_in_T(const NativeCallContext &context) -> Result<Value, Error> {
-    auto list = context.arguments[2].as<List>();
-    if (!list) {
-        return Fail(context.argumentError(2, Errors::ExpectedAList));
-    }
-    if (!context.arguments[0].isInteger()) {
-        return Fail(context.argumentError(0, Errors::ExpectedAnInteger));
-    }
-    if (!context.arguments[1].isInteger()) {
-        return Fail(context.argumentError(1, Errors::ExpectedAnInteger));
-    }
-    auto index1 = context.arguments[0].asInteger();
-    auto index2 = context.arguments[1].asInteger();
-    auto result =
-        context.vm.make<List>(list->values().begin() + index1, list->values().begin() + index2 + 1);
-    context.vm.notifyContainerMutation(result.get());
-    return result;
 }
 
 static auto _the_first_item_in_T(const NativeCallContext &context) -> Result<Value, Error> {
@@ -1235,7 +1356,12 @@ static void _common(ModuleMap &natives) {
     natives[S("{} is in {}")] = N(_T_is_in_T);
     natives[S("{} starts with {}")] = N(_T_starts_with_T);
     natives[S("{} ends with {}")] = N(_T_ends_with_T);
-    natives[S("item {} in {}")] = N(_item_T_in_T);
+    natives[S("item {} in/of {}")] = N(_item_T_in_T);
+    natives[S("item {} in/of {} using delimiter {}")] = N(_item_T_of_T_using_delimiter_T);
+    natives[S("(all) items in/of {}")] = N(_items_of_T);
+    natives[S("(all) items in/of {} using delimiter {}")] = N(_items_of_T_using_delimiter_T);
+    natives[S("items {} to {} in/of {}")] = N(_items_T_to_T_in_T);
+    natives[S("items {} to {} in/of {} using delimiter {}")] = N(_items_T_to_T_in_T_using_delimiter_T);
     natives[S("insert {} at (the) beginning of {}")] = N(_insert_T_at_the_beginning_of_T);
     natives[S("insert {} at (the) end of {}")] = N(_insert_T_at_the_end_of_T);
     natives[S("remove (the) first item from {}")] = N(_remove_the_first_item_from_T);
@@ -1271,7 +1397,6 @@ static void _dictionary(ModuleMap &natives) {
 
 static void _list(ModuleMap &natives, std::mt19937_64 &engine,
                   std::function<Integer(Integer)> randomInteger) {
-    natives[S("items {} to {} (in/of) {}")] = N(_items_T_to_T_in_T);
     natives[S("(the) first item (in/of) {}")] = N(_the_first_item_in_T);
     natives[S("(the) mid/middle item (in/of) {}")] = N(_the_middle_item_in_T);
     natives[S("(the) last item (in/of) {}")] = N(_the_last_item_in_T);

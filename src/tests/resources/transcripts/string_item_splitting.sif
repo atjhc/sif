@@ -1,0 +1,97 @@
+-- Test string item splitting with delimiters
+
+-- Default comma delimiter
+set csv to "Alice,Bob,Charlie"
+print "CSV string: {csv}"
+(-- expect
+CSV string: Alice,Bob,Charlie
+--)
+
+print "Item 0: {item 0 of csv}"
+(-- expect
+Item 0: Alice
+--)
+
+print "Item 1: {item 1 of csv}"
+(-- expect
+Item 1: Bob
+--)
+
+print "Item 2: {item 2 of csv}"
+(-- expect
+Item 2: Charlie
+--)
+
+-- All items (returns list)
+print "All items: {the description of items of csv}"
+(-- expect
+All items: ["Alice", "Bob", "Charlie"]
+--)
+
+-- Items range
+print "Items 0 to 1: {the description of items 0 to 1 of csv}"
+(-- expect
+Items 0 to 1: ["Alice", "Bob"]
+--)
+
+-- Custom delimiter
+set pipe to "foo|bar|baz"
+set pipeDelim to "|"
+print "Pipe string: {pipe}"
+(-- expect
+Pipe string: foo|bar|baz
+--)
+
+set item0 to item 0 of pipe using delimiter pipeDelim
+print "Item 0 using |: {item0}"
+(-- expect
+Item 0 using |: foo
+--)
+
+set item2 to item 2 of pipe using delimiter pipeDelim
+print "Item 2 using |: {item2}"
+(-- expect
+Item 2 using |: baz
+--)
+
+set allPipe to the description of items of pipe using delimiter pipeDelim
+print "All items using |: {allPipe}"
+(-- expect
+All items using |: ["foo", "bar", "baz"]
+--)
+
+-- Multi-character delimiter
+set data to "one::two::three"
+set colonDelim to "::"
+print "Data: {data}"
+(-- expect
+Data: one::two::three
+--)
+
+set item1 to item 1 of data using delimiter colonDelim
+print "Item 1 using double-colon: {item1}"
+(-- expect
+Item 1 using double-colon: two
+--)
+
+-- Edge cases
+set emptyStr to ""
+set emptyItems to the description of items of emptyStr
+print "Items of empty string: {emptyItems}"
+(-- expect
+Items of empty string: []
+--)
+
+set single to "alone"
+set singleItems to the description of items of single
+print "Items of single item: {singleItems}"
+(-- expect
+Items of single item: ["alone"]
+--)
+
+set trailing to "a,b,c,"
+set trailingItems to the description of items of trailing
+print "Items with trailing delimiter: {trailingItems}"
+(-- expect
+Items with trailing delimiter: ["a", "b", "c", ""]
+--)

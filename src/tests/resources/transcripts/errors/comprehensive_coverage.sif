@@ -64,8 +64,8 @@ print error (the error)
 expected an integer
 --)
 
-try item 1 in "not indexable"
+try item 1 in 42
 print error (the error)
 (-- error
-expected a list or dictionary
+expected a list, dictionary or string
 --)

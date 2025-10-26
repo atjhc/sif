@@ -25,14 +25,21 @@ SIF_NAMESPACE_BEGIN
 
 struct chunk {
     enum type { character, word, item, line };
-    static const unsigned char default_item_delimiter = ',';
 
     chunk(type type, const std::string &source)
-        : _type(type), _begin(source.cbegin()), _end(source.cend()) {}
+        : _type(type), _begin(source.cbegin()), _end(source.cend()), _delimiter(",") {}
+
+    chunk(type type, const std::string &source, const std::string &delimiter)
+        : _type(type), _begin(source.cbegin()), _end(source.cend()), _delimiter(delimiter) {}
+
     chunk(const chunk &) = default;
 
     template <class T>
-    chunk(type type, T source) : _type(type), _begin(source.begin()), _end(source.end()) {}
+    chunk(type type, T source) : _type(type), _begin(source.begin()), _end(source.end()), _delimiter(",") {}
+
+    template <class T>
+    chunk(type type, T source, const std::string &delimiter)
+        : _type(type), _begin(source.begin()), _end(source.end()), _delimiter(delimiter) {}
 
     chunk &operator=(const chunk &) = default;
 
@@ -49,10 +56,16 @@ struct chunk {
 
     type _type;
     std::string::const_iterator _begin, _end;
+    std::string _delimiter;
 };
 
 struct index_chunk : public chunk {
     index_chunk(type type, size_t location, const std::string &source) : chunk(type, source) {
+        _seek(location);
+    }
+
+    index_chunk(type type, size_t location, const std::string &source, const std::string &delimiter)
+        : chunk(type, source, delimiter) {
         _seek(location);
     }
 
@@ -70,6 +83,12 @@ struct index_chunk : public chunk {
 struct range_chunk : public chunk {
     range_chunk(type type, size_t begin, size_t end, const std::string &source)
         : chunk(type, source) {
+        _seek(begin, end);
+    }
+
+    range_chunk(type type, size_t begin, size_t end, const std::string &source,
+                const std::string &delimiter)
+        : chunk(type, source, delimiter) {
         _seek(begin, end);
     }
 
