@@ -1,0 +1,43 @@
+(--
+Solution to part 1 of https://adventofcode.com/2024/day/11
+--)
+
+set content to the contents of file "input.txt"
+set words to the list of words in content
+set stones to []
+repeat for word in words
+  insert word as an integer at the end of stones
+end repeat
+
+function step {stones}
+  set result to []
+  repeat for stone in stones
+    if stone = 0 then
+      insert 1 at the end of result
+    else
+      set digits to stone as a string
+      set digitCount to the size of digits
+      if digitCount / 2 * 2 = digitCount then
+        -- Even number of digits - split in half
+        set halfLen to digitCount / 2
+        set leftStr to digits[0..< halfLen]
+        set rightStr to digits[halfLen...digitCount - 1]
+        insert leftStr as an integer at the end of result
+        insert rightStr as an integer at the end of result
+      else
+        insert (stone * 2024) at the end of result
+      end if
+    end if
+  end repeat
+  return result
+end function
+
+set blinks to 25
+repeat for i in 0 ..< blinks
+  set stones to step(stones)
+end repeat
+
+print the size of stones
+(-- expect
+203228
+--)

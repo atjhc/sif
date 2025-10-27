@@ -1,0 +1,51 @@
+(--
+Solution to part 1 of https://adventofcode.com/2024/day/7
+--)
+
+set equations to []
+
+set lines to the list of lines in the contents of file "input.txt"
+repeat for line in lines
+  set parts to items of line using delimiter ":"
+  set total to (item 0 in parts) as an integer
+  set termStrings to the list of words in item 1 in parts
+  set terms to []
+  repeat for termStr in termStrings
+    insert termStr as an integer at the end of terms
+  end repeat
+  insert ["total": total, "terms": terms] at the end of equations
+end repeat
+
+function possible values of {list}
+  if the size of list = 1 then
+    return [item 0 in list]
+  end if
+
+  set first to list[0..< (the size of list) - 1]
+  set last to item ((the size of list) - 1) in list
+
+  set totals to []
+  set candidates to possible values of first
+  repeat for candidate in candidates
+    insert (candidate + last) at the end of totals
+    insert (candidate * last) at the end of totals
+  end repeat
+  return totals
+end function
+
+set finalSum to 0
+repeat for equation in equations
+  set candidates to possible values of equation["terms"]
+  set target to equation["total"]
+  repeat for candidate in candidates
+    if candidate = target then
+      set finalSum to finalSum + target
+      exit repeat
+    end if
+  end repeat
+end repeat
+
+print finalSum
+(-- expect
+1038838357795
+--)

@@ -1,0 +1,83 @@
+(--
+Solution to part 2 of https://adventofcode.com/2024/day/5
+--)
+
+set rules to [:]
+set total to 0
+
+set lines to the list of lines in the contents of file "input.txt"
+set readingRules to yes
+
+repeat for line in lines
+  if line = "" then
+    set readingRules to no
+    next repeat
+  end if
+
+  if readingRules then
+    set before to (item 0 of line using delimiter "|") as an integer
+    set after to (item 1 of line using delimiter "|") as an integer
+
+    if rules contains before then
+      insert after at the end of rules[before]
+    else
+      set rules[before] to [after]
+    end if
+  else
+    set pageStrings to items of line
+    set pages to []
+    repeat for pageStr in pageStrings
+      insert pageStr as an integer at the end of pages
+    end repeat
+
+    function {pages} is sorted
+      repeat for i in 0 ..< the size of pages
+        set page to pages[i]
+        if rules contains page = no then next repeat
+
+        set rule to rules[page]
+        repeat for j in (i + 1) ..< the size of pages
+          set followingPage to pages[j]
+          if followingPage is in rule = no then
+            return no
+          end if
+        end repeat
+      end repeat
+      return yes
+    end function
+
+    if pages is sorted then next repeat
+
+    -- Bubble sort with custom comparison
+    set n to the size of pages
+    repeat for i in 0 ..< n - 1
+      repeat for j in 0 ..< n - i - 1
+        set lhs to pages[j]
+        set rhs to pages[j + 1]
+
+        -- Compare: lhs should come before rhs if rhs is in rules[lhs]
+        set shouldSwap to no
+        if rules contains lhs then
+          if rhs is in rules[lhs] = no then
+            set shouldSwap to yes
+          end if
+        end if
+
+        if shouldSwap then
+          set temp to pages[j]
+          set pages[j] to pages[j + 1]
+          set pages[j + 1] to temp
+        end if
+      end repeat
+    end repeat
+
+    set middleIndex to (the size of pages) / 2
+    set middlePage to pages[middleIndex]
+    set total to total + middlePage
+  end if
+end repeat
+
+print total
+(-- expect
+5466
+--)

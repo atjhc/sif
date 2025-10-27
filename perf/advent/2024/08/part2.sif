@@ -1,0 +1,75 @@
+set board to []
+repeat for line in the list of lines in the contents of file "input.txt"
+  insert the list of characters in line at the end of board
+end repeat
+set height to the size of board
+set width to the size of board[0]
+
+set antennas to [:]
+repeat for y in 0 ..< height
+  repeat for x in 0 ..< width
+    set value to board[y][x]
+    if value != "." then
+      if antennas contains value = no then
+        set antennas[value] to []
+      end if
+      insert ["x": x, "y": y] at the end of antennas[value]
+    end if
+  end repeat
+end repeat
+
+function within bounds {x, y}
+  return x >= 0 and x < width and y >= 0 and y < height
+end function
+
+repeat for antennaType in the keys of antennas
+  set locations to antennas[antennaType]
+  if the size of locations = 1 then next repeat
+
+  repeat for i in 0 ..< (the size of locations) - 1
+    set first to locations[i]
+    set firstX to first["x"]
+    set firstY to first["y"]
+    
+    repeat for j in (i + 1) ..< the size of locations
+      set second to locations[j]
+      set secondX to second["x"]
+      set secondY to second["y"]
+      
+      set deltaX to firstX - secondX
+      set deltaY to firstY - secondY
+      
+      -- Go forward from first
+      set ax to firstX
+      set ay to firstY
+      repeat while within bounds(ax, ay)
+        set board[ay][ax] to "#"
+        set ax to ax + deltaX
+        set ay to ay + deltaY
+      end repeat
+      
+      -- Go backward from first
+      set ax to firstX
+      set ay to firstY
+      repeat while within bounds(ax, ay)
+        set board[ay][ax] to "#"
+        set ax to ax - deltaX
+        set ay to ay - deltaY
+      end repeat
+    end repeat
+  end repeat
+end repeat
+
+set count to 0
+repeat for row in board
+  repeat for value in row
+    if value != "." then
+      set count to count + 1
+    end if
+  end repeat
+end repeat
+
+print count
+(-- expect
+861
+--)

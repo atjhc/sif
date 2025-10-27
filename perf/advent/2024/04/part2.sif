@@ -1,0 +1,52 @@
+(--
+Solution to part 2 of https://adventofcode.com/2024/day/4
+--)
+
+set board to []
+repeat for line in the list of lines in the contents of file "input.txt"
+  insert the list of characters in line at the end of board
+end repeat
+set height to the size of board
+set width to the size of board[0]
+
+function checkPattern {x, y}
+  set topLeft to board[y][x]
+  set topRight to board[y][x + 2]
+  set center to board[y + 1][x + 1]
+  set bottomLeft to board[y + 2][x]
+  set bottomRight to board[y + 2][x + 2]
+
+  if center != "A" then return false
+
+  -- Pattern: M.S / .A. / M.S
+  if topLeft = "M" and topRight = "S" and bottomLeft = "M" and bottomRight = "S" then
+    return true
+  end if
+  -- Pattern: S.S / .A. / M.M
+  if topLeft = "S" and topRight = "S" and bottomLeft = "M" and bottomRight = "M" then
+    return true
+  end if
+  -- Pattern: M.M / .A. / S.S
+  if topLeft = "M" and topRight = "M" and bottomLeft = "S" and bottomRight = "S" then
+    return true
+  end if
+  -- Pattern: S.M / .A. / S.M
+  if topLeft = "S" and topRight = "M" and bottomLeft = "S" and bottomRight = "M" then
+    return true
+  end if
+
+  return false
+end function
+
+set matches to 0
+repeat for y in 0 ..< height - 2
+  repeat for x in 0 ..< width - 2
+    if checkPattern(x, y) then
+      set matches to matches + 1
+    end if
+  end repeat
+end repeat
+print matches
+(-- expect
+1807
+--)
