@@ -76,6 +76,37 @@ print list
 2
 --)
 
+set stack to []
+push 1 onto stack
+push 2 onto stack
+push 3 onto stack
+print stack
+(-- expect
+1 2 3
+--)
+
+print pop from stack
+print pop from stack
+print stack
+(-- expect
+3
+2
+1
+--)
+
+print pop from stack
+print stack
+(-- expect
+1
+empty
+--)
+
+set empty_stack to []
+print pop from empty_stack
+(-- expect
+empty
+--)
+
 print replace all 2 with 3 in [1, 2, 2, 3, 4]
 print replace first 2 with 1 in [1, 2, 2, 3, 4]
 print replace last 2 with 3 in [1, 2, 2, 3, 4]

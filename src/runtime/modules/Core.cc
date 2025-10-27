@@ -479,6 +479,28 @@ static auto _insert_T_at_the_end_of_T(const NativeCallContext &context) -> Resul
     return context.arguments[1];
 }
 
+static auto _push_T_onto_T(const NativeCallContext &context) -> Result<Value, Error> {
+    if (auto list = context.arguments[1].as<List>()) {
+        list->values().push_back(context.arguments[0]);
+        context.vm.notifyContainerMutation(list.get());
+        return list;
+    }
+    return Fail(context.argumentError(1, Errors::ExpectedAList));
+}
+
+static auto _pop_from_T(const NativeCallContext &context) -> Result<Value, Error> {
+    if (auto list = context.arguments[0].as<List>()) {
+        if (list->size() == 0) {
+            return Value();
+        }
+        auto value = list->values().back();
+        list->values().pop_back();
+        context.vm.notifyContainerMutation(list.get());
+        return value;
+    }
+    return Fail(context.argumentError(0, Errors::ExpectedAList));
+}
+
 static auto _remove_the_first_item_from_T(const NativeCallContext &context)
     -> Result<Value, Error> {
     if (auto list = context.arguments[0].as<List>()) {
@@ -1364,6 +1386,8 @@ static void _common(ModuleMap &natives) {
     natives[S("items {} to {} in/of {} using delimiter {}")] = N(_items_T_to_T_in_T_using_delimiter_T);
     natives[S("insert {} at (the) beginning of {}")] = N(_insert_T_at_the_beginning_of_T);
     natives[S("insert {} at (the) end of {}")] = N(_insert_T_at_the_end_of_T);
+    natives[S("push {} onto {}")] = N(_push_T_onto_T);
+    natives[S("pop from {}")] = N(_pop_from_T);
     natives[S("remove (the) first item from {}")] = N(_remove_the_first_item_from_T);
     natives[S("remove (the) last item from {}")] = N(_remove_the_last_item_from_T);
     natives[S("remove item {} from {}")] = N(_remove_item_T_from_T);
