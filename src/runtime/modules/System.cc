@@ -44,7 +44,11 @@ static auto _write_T(std::ostream &out)
     -> std::function<Result<Value, Error>(const NativeCallContext &)> {
     return [&out](const NativeCallContext &context) -> Result<Value, Error> {
         if (const auto &list = context.arguments[0].as<List>()) {
-            out << Join(list->values(), " ");
+            if (list->values().empty()) {
+                out << "empty";
+            } else {
+                out << Join(list->values(), " ");
+            }
         } else {
             out << context.arguments[0];
         }
@@ -56,7 +60,11 @@ static auto _write_error_T(std::ostream &err)
     -> std::function<Result<Value, Error>(const NativeCallContext &)> {
     return [&err](const NativeCallContext &context) -> Result<Value, Error> {
         if (const auto &list = context.arguments[0].as<List>()) {
-            err << Join(list->values(), " ");
+            if (list->values().empty()) {
+                err << "empty";
+            } else {
+                err << Join(list->values(), " ");
+            }
         } else {
             err << context.arguments[0];
         }
@@ -68,7 +76,11 @@ static auto _print_T(std::ostream &out)
     -> std::function<Result<Value, Error>(const NativeCallContext &)> {
     return [&out](const NativeCallContext &context) -> Result<Value, Error> {
         if (const auto &list = context.arguments[0].as<List>()) {
-            out << Join(list->values(), " ");
+            if (list->values().empty()) {
+                out << "empty";
+            } else {
+                out << Join(list->values(), " ");
+            }
         } else {
             out << context.arguments[0];
         }
@@ -81,8 +93,12 @@ static auto _print_error_T(std::ostream &err)
     -> std::function<Result<Value, Error>(const NativeCallContext &)> {
     return [&err](const NativeCallContext &context) -> Result<Value, Error> {
         if (const auto &list = context.arguments[0].as<List>()) {
-            for (const auto &item : list->values()) {
-                err << item;
+            if (list->values().empty()) {
+                err << "empty";
+            } else {
+                for (const auto &item : list->values()) {
+                    err << item;
+                }
             }
         } else {
             err << context.arguments[0];
