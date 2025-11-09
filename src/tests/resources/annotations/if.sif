@@ -1,46 +1,46 @@
 
 if
 (-- annotations
-control if
+keyword if
 --)
 
 if true
 (-- annotations
-control if
+keyword if
 number true
 --)
 
 if true then
 (-- annotations
-control if
+keyword if
 number true
-control then
+keyword then
 --)
 
 if true then 0
 (-- annotations
-control if
+keyword if
 number true
-control then
+keyword then
 number 0
 --)
 
 if true then 0 else
 (-- annotations
-control if
+keyword if
 number true
-control then
+keyword then
 number 0
-control else
+keyword else
 --)
 
 if true then 0 else 1
 (-- annotations
-control if
+keyword if
 number true
-control then
+keyword then
 number 0
-control else
+keyword else
 number 1
 --)
 
@@ -50,12 +50,12 @@ else
   1
 end if
 (-- annotations
-control if
+keyword if
 number true
-control then
+keyword then
 number 0
-control else
+keyword else
 number 1
-control end
-control if
+keyword end
+keyword if
 --)

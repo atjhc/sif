@@ -510,6 +510,32 @@ Strong<Statement> Parser::parseFunction() {
     }
 
     decl->signature = signature;
+
+    // Extract ranges from signature for semantic tokens
+    for (const auto &term : signature.terms) {
+        if (std::holds_alternative<Token>(term)) {
+            auto token = std::get<Token>(term);
+            decl->ranges.words.push_back(token.range);
+        } else if (std::holds_alternative<Signature::Choice>(term)) {
+            auto choice = std::get<Signature::Choice>(term);
+            for (const auto &token : choice.tokens) {
+                decl->ranges.words.push_back(token.range);
+            }
+        } else if (std::holds_alternative<Signature::Option>(term)) {
+            auto option = std::get<Signature::Option>(term);
+            for (const auto &token : option.choice.tokens) {
+                decl->ranges.words.push_back(token.range);
+            }
+        } else if (std::holds_alternative<Signature::Argument>(term)) {
+            auto argument = std::get<Signature::Argument>(term);
+            for (const auto &target : argument.targets) {
+                if (target.name) {
+                    decl->ranges.variables.push_back(target.name->range);
+                }
+            }
+        }
+    }
+
     _scopes.back().signatures.push_back(signature);
     if (_scopes.size() == 1) {
         _exportedDeclarations.push_back(signature);
@@ -1414,7 +1440,6 @@ Strong<Expression> Parser::parseCall(bool prefix) {
             }
             arguments.push_back(argument);
             matchingSignature.terms.emplace_back(Signature::Argument());
-            ranges.push_back(token.range);
             grammar = grammar->argument;
             continue;
         }
@@ -1497,18 +1522,12 @@ Strong<Expression> Parser::parsePrimary() {
     }
 
     if (match({Token::Type::OpenInterpolation})) {
-        auto interpolating = _config.scanner.interpolating;
-        auto stringTerminal = _config.scanner.stringTerminal;
         auto ignoreNewLines = _config.scanner.ignoreNewLines;
-        _config.scanner.interpolating = true;
         _config.scanner.ignoreNewLines = true;
-        _config.scanner.stringTerminal = previous().openingStringTerminal();
 
         auto interpolation = parseInterpolation();
 
-        _config.scanner.interpolating = interpolating;
         _config.scanner.ignoreNewLines = ignoreNewLines;
-        _config.scanner.stringTerminal = stringTerminal;
         return interpolation;
     }
 
@@ -1552,7 +1571,7 @@ Strong<Expression> Parser::parseInterpolation() {
     interpolation->range.start = interpolation->left.range.start;
 
     if (match({Token::Type::ClosedInterpolation})) {
-        emitError(Error(peek().range, Errors::EmptyInterpolation));
+        emitError(Error(previous().range, Errors::EmptyInterpolation));
         return interpolation;
     }
 

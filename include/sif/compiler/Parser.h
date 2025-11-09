@@ -86,6 +86,11 @@ class Parser {
     /// @return Returns the list of ranges where comments were detected.
     const std::vector<SourceRange> &commentRanges() const;
 
+    /// @brief Parse a block of statements until one of the end types is encountered.
+    /// @param endTypes Token types that mark the end of the block (e.g., Token::Type::EndOfFile)
+    /// @return Returns a Block statement containing all parsed statements.
+    Strong<Statement> parseBlock(const std::initializer_list<Token::Type> &endTypes = {});
+
   private:
     using TokenTypes = std::initializer_list<Token::Type>;
 
@@ -127,7 +132,6 @@ class Parser {
 
     Signature parseSignature();
 
-    Strong<Statement> parseBlock(const TokenTypes &endTypes = {});
     Strong<Statement> parseStatement();
     Strong<Statement> parseFunction();
     Strong<Statement> parseIf();

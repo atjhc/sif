@@ -50,3 +50,40 @@ TEST_CASE(ScannerTests, All) {
         i++;
     }
 }
+
+TEST_CASE(ScannerTests, InterpolatedString) {
+    std::string source = R"(print "Hello, {name}!")";
+
+    Scanner scanner;
+    scanner.reset(source);
+
+    // Expected tokens:
+    // 1. print (Word)
+    // 2. "Hello, { (OpenInterpolation) - includes both delimiters
+    // 3. name (Word)
+    // 4. }!" (ClosedInterpolation) - includes both delimiters: } and "
+    // 5. EOF
+
+    auto token = scanner.scan();
+    ASSERT_EQ(token.type, Token::Type::Word);
+    ASSERT_EQ(token.text, "print");
+
+    token = scanner.scan();
+    ASSERT_EQ(token.type, Token::Type::OpenInterpolation);
+    ASSERT_EQ(token.text, "\"Hello, {");
+
+    token = scanner.scan();
+    ASSERT_EQ(token.type, Token::Type::Word);
+    ASSERT_EQ(token.text, "name");
+
+    // After OpenInterpolation, the } should trigger scanString and return ClosedInterpolation
+    // ClosedInterpolation includes both delimiters (} and "), consistent with OpenInterpolation
+    token = scanner.scan();
+    ASSERT_EQ(token.type, Token::Type::ClosedInterpolation)
+        << "Expected ClosedInterpolation but got " << token.type
+        << " with text '" << token.text << "'";
+    ASSERT_EQ(token.text, "}!\"");
+
+    token = scanner.scan();
+    ASSERT_EQ(token.type, Token::Type::EndOfFile);
+}

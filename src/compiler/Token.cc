@@ -86,6 +86,15 @@ bool Token::isEndOfStatement() const { return type == Type::NewLine || type == T
 std::string Token::encodedString() const {
     assert(type == Type::StringLiteral || type == Type::OpenInterpolation ||
            type == Type::Interpolation || type == Type::ClosedInterpolation);
+
+    // All interpolation tokens include both delimiters: strip first and last character
+    // OpenInterpolation: "content{ (strip " and {)
+    // Interpolation: }content{ (strip } and {)
+    // ClosedInterpolation: }content" (strip } and ")
+    // StringLiteral: "content" (strip " and ")
+    if (text.length() < 2) {
+        return "";
+    }
     return string_from_escaped_string(std::string(text.begin() + 1, text.end() - 1));
 }
 

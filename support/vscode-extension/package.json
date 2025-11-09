@@ -1,25 +1,75 @@
 {
-  "name": "sif-syntax-highlighting",
-  "displayName": "Sif Syntax Highlighting",
-  "description": "This extension provides syntax highlighting support for the Sif programming language.",
-  "version": "0.0.0",
+  "name": "sif-language",
+  "displayName": "Sif Language Support",
+  "description": "Language support for Sif programming language",
+  "version": "0.1.0",
+  "publisher": "sif",
   "engines": {
-    "vscode": "^1.72.0"
+    "vscode": "^1.75.0"
   },
   "categories": [
     "Programming Languages"
   ],
+  "main": "./out/extension.js",
   "contributes": {
-    "languages": [{
-      "id": "sif",
-      "aliases": ["Sif", "sif"],
-      "extensions": [".sif"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "sif",
-      "scopeName": "source.sif",
-      "path": "./syntaxes/Sif.tmLanguage"
-    }]
+    "languages": [
+      {
+        "id": "sif",
+        "aliases": [
+          "Sif",
+          "sif"
+        ],
+        "extensions": [
+          ".sif"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Sif",
+      "properties": {
+        "sif.languageServer.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the sif_lsp language server executable"
+        }
+      }
+    },
+    "configurationDefaults": {
+      "editor.semanticHighlighting.enabled": true,
+      "[sif]": {
+        "editor.semanticHighlighting.enabled": true
+      }
+    },
+    "semanticTokenScopes": [
+      {
+        "language": "sif",
+        "scopes": {
+          "keyword": ["keyword.control.sif"],
+          "function": ["entity.name.function.sif"],
+          "string": ["string.quoted.double.sif"],
+          "number": ["constant.numeric.sif"],
+          "comment": ["comment.line.sif"],
+          "operator": ["keyword.operator.sif"],
+          "variable": ["variable.other.sif"]
+        }
+      }
+    ]
+  },
+  "activationEvents": [
+    "onLanguage:sif"
+  ],
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
   }
 }

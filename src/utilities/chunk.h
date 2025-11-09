@@ -35,7 +35,8 @@ struct chunk {
     chunk(const chunk &) = default;
 
     template <class T>
-    chunk(type type, T source) : _type(type), _begin(source.begin()), _end(source.end()), _delimiter(",") {}
+    chunk(type type, T source)
+        : _type(type), _begin(source.begin()), _end(source.end()), _delimiter(",") {}
 
     template <class T>
     chunk(type type, T source, const std::string &delimiter)

@@ -1,76 +1,76 @@
 repeat
 (-- annotations
-control repeat
+keyword repeat
 --)
 
 repeat while
 (-- annotations
-control repeat
-control while
+keyword repeat
+keyword while
 --)
 
 repeat until
 (-- annotations
-control repeat
-control until
+keyword repeat
+keyword until
 --)
 
 repeat
 end repeat
 (-- annotations
-control repeat
-control end
-control repeat
+keyword repeat
+keyword end
+keyword repeat
 --)
 
 repeat while true
 end repeat
 (-- annotations
-control repeat
-control while
+keyword repeat
+keyword while
 number true
-control end
-control repeat
+keyword end
+keyword repeat
 --)
 
 repeat until true
 end repeat
 (-- annotations
-control repeat
-control until
+keyword repeat
+keyword until
 number true
-control end
-control repeat
+keyword end
+keyword repeat
 --)
 
 repeat for
 (-- annotations
-control repeat
-control for
+keyword repeat
+keyword for
 --)
 
 repeat for i
 (-- annotations
-control repeat
-control for
+keyword repeat
+keyword for
 variable i
 --)
 
 repeat for i in
 (-- annotations
-control repeat
-control for
+keyword repeat
+keyword for
 variable i
-control in
+keyword in
 --)
 
 repeat for i in (1, 2, 3)
 end repeat
 (-- annotations
-control repeat
-control for
+keyword repeat
+keyword for
 variable i
-control in
+keyword in
 operator (
 number 1
 operator ,
@@ -78,8 +78,8 @@ number 2
 operator ,
 number 3
 operator )
-control end
-control repeat
+keyword end
+keyword repeat
 --)
 
 repeat
@@ -87,11 +87,11 @@ repeat
   exit repeat
 end repeat
 (-- annotations
-control repeat
-control next
-control repeat
-control exit
-control repeat
-control end
-control repeat
+keyword repeat
+keyword next
+keyword repeat
+keyword exit
+keyword repeat
+keyword end
+keyword repeat
 --)

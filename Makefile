@@ -8,8 +8,13 @@ debug: build/debug
 	cmake -DCMAKE_BUILD_TYPE=Debug -S . -B ${DSTROOT}/debug
 	cmake --build ${DSTROOT}/debug
 
-test: debug
+test: test_debug
+
+test_debug: debug
 	cd ${DSTROOT}/debug && ctest --progress --output-on-failure
+
+test_release: release
+	cd ${DSTROOT}/release && ctest --progress --output-on-failure
 
 format:
 	find src -type f -name '*.cc' -not -path 'src/tests/*' -not -path 'src/extern/*' -exec clang-format -i --style=file {} \;

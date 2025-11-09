@@ -928,5 +928,4 @@ void VirtualMachine::runPendingGarbageCollection() {
     cleanupExpiredContainers();
 }
 
-
 SIF_NAMESPACE_END

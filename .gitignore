@@ -2,3 +2,8 @@
 .vscode/
 build/
 fuzzer/
+
+# VS Code extension build artifacts
+support/vscode-extension/node_modules/
+support/vscode-extension/out/
+support/vscode-extension/*.vsix

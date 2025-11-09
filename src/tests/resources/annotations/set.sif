@@ -1,26 +1,26 @@
 set
 (-- annotations
-control set
+keyword set
 --)
 
 set a
 (-- annotations
-control set
+keyword set
 variable a
 --)
 
 set a to
 (-- annotations
-control set
+keyword set
 variable a
-control to
+keyword to
 --)
 
 set a to 10
 (-- annotations
-control set
+keyword set
 variable a
-control to
+keyword to
 number 10
 --)
 

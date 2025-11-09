@@ -1,0 +1,42 @@
+-- Test Sif file for language server
+
+function greet {name}
+    print "Hello, {name}!"
+end function
+
+function the fact of {n}
+    if n <= 1 then
+        return 1
+    else
+        return n * (the fact of n - 1)
+    end if
+end function
+
+-- Test variables
+set message to "Welcome to Sif"
+set count to 42
+set items to [1, 2, 3, 4, 5]
+
+-- Call functions
+greet "World"
+print the fact of 5
+
+-- Test loops
+repeat for i in 1...10
+    print "Number: {i}"
+end repeat
+
+repeat for item in items
+    print "Item: {item}"
+end repeat
+
+-- Test conditionals
+if count > 40 then
+    print "Count is greater than 40"
+else
+    print "Count is 40 or less"
+end if
+
+-- Test "end" in function calls (should not be highlighted as keyword)
+insert 10 at the end of items
+print "Added to the end of the list"

@@ -1,57 +1,57 @@
 function foo
 end
 (-- annotations
-control function
-call foo
-control end
+keyword function
+function foo
+keyword end
 --)
 
 function foo bar baz
 end function
 (-- annotations
-control function
-call foo
-call bar
-call baz
-control end
-control function
+keyword function
+function foo
+function bar
+function baz
+keyword end
+keyword function
 --)
 
 foo bar baz
 (-- annotations
-call foo
-call bar
-call baz
+function foo
+function bar
+function baz
 --)
 
 function foo {x}
 end
 (-- annotations
-control function
-call foo
+keyword function
+function foo
 variable x
-control end
+keyword end
 --)
 
 function
 (-- annotations
-control function
+keyword function
 --)
 
 function foo/
 (-- annotations
-control function
-call foo
+keyword function
+function foo
 --)
 
 function {foo:
 (-- annotations
-control function
+keyword function
 variable foo
 --)
 
 function (foo
 (-- annotations
-control function
-call foo
+keyword function
+function foo
 --)

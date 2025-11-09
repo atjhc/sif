@@ -11,8 +11,8 @@
 //  limitations under the License.
 //
 
-#include "sif/runtime/VirtualMachine.h"
 #include "sif/runtime/objects/Dictionary.h"
+#include "sif/runtime/VirtualMachine.h"
 #include "sif/runtime/objects/List.h"
 #include "utilities/hasher.h"
 

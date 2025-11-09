@@ -27,14 +27,14 @@ using namespace sif;
 
 static std::string stringForAnnotationKind(Annotation::Kind kind) {
 switch (kind) {
-    case Annotation::Kind::Control: return "control";
-    case Annotation::Kind::Comment: return "comment";
-    case Annotation::Kind::StringLiteral: return "string";
-    case Annotation::Kind::NumberLiteral: return "number";
-    case Annotation::Kind::Call: return "call";
-    case Annotation::Kind::Operator: return "operator";
+    case Annotation::Kind::Keyword: return "keyword";
+    case Annotation::Kind::Function: return "function";
     case Annotation::Kind::Variable: return "variable";
-    case Annotation::Kind::Module: return "module";
+    case Annotation::Kind::Operator: return "operator";
+    case Annotation::Kind::String: return "string";
+    case Annotation::Kind::Number: return "number";
+    case Annotation::Kind::Comment: return "comment";
+    case Annotation::Kind::Namespace: return "namespace";
     }
 }
 

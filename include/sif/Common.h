@@ -25,9 +25,9 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
-#include <utility>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "extern/expected.hpp"
@@ -101,7 +101,8 @@ template <class T, class U> Strong<T> Cast(const Strong<U> &arg) {
     return std::dynamic_pointer_cast<T>(arg);
 }
 
-template <class T> inline constexpr bool IsTrackedContainer = std::is_same_v<T, List> || std::is_same_v<T, Dictionary>;
+template <class T>
+inline constexpr bool IsTrackedContainer = std::is_same_v<T, List> || std::is_same_v<T, Dictionary>;
 
 template <typename Container> void Append(Container &target, const Container &source) {
     std::copy(source.begin(), source.end(), std::back_inserter(target));

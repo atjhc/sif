@@ -60,7 +60,8 @@ inline constexpr std::string_view ExpectedARange = "expected a range";
 inline constexpr std::string_view ExpectedIntegerOrRange = "expected an integer or range";
 inline constexpr std::string_view ExpectedListOrDictionary = "expected a list or dictionary";
 inline constexpr std::string_view ExpectedStringOrList = "expected a string or list";
-inline constexpr std::string_view ExpectedListDictOrString = "expected a list, dictionary or string";
+inline constexpr std::string_view ExpectedListDictOrString =
+    "expected a list, dictionary or string";
 inline constexpr std::string_view FormatOutOfRange = "format index out of range";
 inline constexpr std::string_view InvalidFormatIndex = "invalid format index";
 inline constexpr std::string_view InvalidUnicodeCodePoint = "invalid unicode codepoint";
@@ -402,7 +403,7 @@ static auto _items_T_to_T_in_T(const NativeCallContext &context) -> Result<Value
         auto index1 = context.arguments[0].asInteger();
         auto index2 = context.arguments[1].asInteger();
         auto result = context.vm.make<List>(list->values().begin() + index1,
-                                           list->values().begin() + index2 + 1);
+                                            list->values().begin() + index2 + 1);
         context.vm.notifyContainerMutation(result.get());
         return result;
     } else if (auto string = context.arguments[2].as<String>()) {
@@ -1383,7 +1384,8 @@ static void _common(ModuleMap &natives) {
     natives[S("(all) items in/of {}")] = N(_items_of_T);
     natives[S("(all) items in/of {} using delimiter {}")] = N(_items_of_T_using_delimiter_T);
     natives[S("items {} to {} in/of {}")] = N(_items_T_to_T_in_T);
-    natives[S("items {} to {} in/of {} using delimiter {}")] = N(_items_T_to_T_in_T_using_delimiter_T);
+    natives[S("items {} to {} in/of {} using delimiter {}")] =
+        N(_items_T_to_T_in_T_using_delimiter_T);
     natives[S("insert {} at (the) beginning of {}")] = N(_insert_T_at_the_beginning_of_T);
     natives[S("insert {} at (the) end of {}")] = N(_insert_T_at_the_end_of_T);
     natives[S("push {} onto {}")] = N(_push_T_onto_T);

@@ -47,6 +47,10 @@ file(GLOB_RECURSE SIF_SOURCES "src/*.cc")
 list(FILTER SIF_SOURCES EXCLUDE REGEX "src/tools/.*")
 list(FILTER SIF_SOURCES EXCLUDE REGEX "src/tests/.*")
 list(FILTER SIF_SOURCES EXCLUDE REGEX "src/extern/.*")
+list(FILTER SIF_SOURCES EXCLUDE REGEX "src/lsp/.*")
+
+# Collect LSP source files separately
+file(GLOB_RECURSE LSP_SOURCES "src/lsp/*.cc")
 
 # Create a static library
 add_library(sif STATIC ${SIF_SOURCES})
@@ -60,6 +64,12 @@ add_executable(sif_tool "src/tools/sif.cc")
 target_link_libraries(sif_tool PRIVATE sif)
 target_include_directories(sif_tool PRIVATE "src")
 target_include_directories(sif_tool PUBLIC "include")
+
+# Define executable for the language server
+add_executable(sif_lsp "src/tools/sif_lsp.cc" ${LSP_SOURCES})
+target_link_libraries(sif_lsp PRIVATE sif)
+target_include_directories(sif_lsp PRIVATE "src")
+target_include_directories(sif_lsp PUBLIC "include")
 
 # Define executable for fuzzing
 if(CMAKE_BUILD_TYPE STREQUAL "Fuzz")
@@ -83,7 +93,7 @@ enable_testing()
 
 # Find test files
 file(GLOB_RECURSE TEST_SOURCES "src/tests/*.cc")
-add_executable(sif_tests ${TEST_SOURCES} src/tools/tests.cc)
+add_executable(sif_tests ${TEST_SOURCES} ${LSP_SOURCES} src/tools/tests.cc)
 target_link_libraries(sif_tests PRIVATE sif)
 target_include_directories(sif_tests PRIVATE "src")
 file(COPY src/tests/resources DESTINATION ${CMAKE_BINARY_DIR})
@@ -98,5 +108,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
     target_compile_definitions(sif PRIVATE DEBUG=1)
     target_compile_definitions(sif_tool PRIVATE DEBUG=1)
+    target_compile_definitions(sif_lsp PRIVATE DEBUG=1)
     target_compile_definitions(sif_tests PRIVATE DEBUG=1)
 endif()

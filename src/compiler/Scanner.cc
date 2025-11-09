@@ -28,6 +28,8 @@ void Scanner::reset(const std::string &contents) {
     _start = _current = contents.begin();
     _end = contents.end();
     _currentLocation = {0, 0, 0};
+    interpolating = false;
+    stringTerminal = 0;
 }
 
 Token Scanner::scan() {
@@ -291,6 +293,10 @@ Token::Type Scanner::checkKeyword(int offset, int length, const char *name, Toke
 }
 
 Token Scanner::scanString(char startingQuote, char terminalQuote) {
+    // Save interpolation state for nested strings
+    bool savedInterpolating = interpolating;
+    char savedStringTerminal = stringTerminal;
+
     bool hasInterpolation = false;
     bool escaped = false;
 
@@ -318,18 +324,33 @@ Token Scanner::scanString(char startingQuote, char terminalQuote) {
         return makeError(std::string(Errors::UnterminatedString));
     }
 
-    advance(); // consume the closing terminal
+    // Advance to include the terminal character ({ or quote) in the token
+    advance();
+
     if (hasInterpolation) {
         if (startingQuote == '}') {
             return make(Token::Type::Interpolation);
         } else {
+            // Set interpolation state so the Scanner knows to handle the closing part
+            interpolating = true;
+            stringTerminal = terminalQuote;
             return make(Token::Type::OpenInterpolation);
         }
     }
 
     if (startingQuote == '}') {
+        // Restore interpolation state after closing a nested interpolation
+        interpolating = savedInterpolating;
+        stringTerminal = savedStringTerminal;
         return make(Token::Type::ClosedInterpolation);
     }
+
+    // Restore interpolation state for nested strings that don't have interpolation
+    if (startingQuote != '}' && !hasInterpolation) {
+        interpolating = savedInterpolating;
+        stringTerminal = savedStringTerminal;
+    }
+
     return make(Token::Type::StringLiteral);
 }
 
