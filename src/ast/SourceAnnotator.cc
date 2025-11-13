@@ -21,7 +21,7 @@ SIF_NAMESPACE_BEGIN
 SourceAnnotator::SourceAnnotator() {}
 
 std::vector<Annotation> SourceAnnotator::annotate(const Statement &statement,
-                                                   const std::vector<SourceRange> &commentRanges) {
+                                                  const std::vector<SourceRange> &commentRanges) {
     _annotations.clear();
 
     // Add comments collected during parsing

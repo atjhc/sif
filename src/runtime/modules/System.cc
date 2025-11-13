@@ -248,22 +248,22 @@ static auto _copy_T_to_T(const NativeCallContext &context) -> Result<Value, Erro
 }
 
 static void _io(ModuleMap &natives, std::ostream &out, std::istream &in, std::ostream &err) {
-    natives[S("write {}")] = N(_write_T(out));
-    natives[S("write error {}")] = N(_write_error_T(err));
-    natives[S("print {}")] = N(_print_T(out));
-    natives[S("print error {}")] = N(_print_error_T(err));
+    natives[S("write {value}")] = N(_write_T(out));
+    natives[S("write error {message}")] = N(_write_error_T(err));
+    natives[S("print {value}")] = N(_print_T(out));
+    natives[S("print error {message}")] = N(_print_error_T(err));
     natives[S("read (a) word")] = N(_read_a_word(in));
     natives[S("read (a) line")] = N(_read_a_line(in));
     natives[S("read (a) character")] = N(_read_a_character(in));
 }
 
 static void _files(ModuleMap &natives) {
-    natives[S("(the) contents of file {}")] = N(_the_contents_of_file_T);
-    natives[S("(the) contents of directory {}")] = N(_the_contents_of_directory_T);
-    natives[S("remove file {}")] = N(_remove_file_T);
-    natives[S("remove directory {}")] = N(_remove_directory_T);
-    natives[S("move file/directory {} to {}")] = N(_move_T_to_T);
-    natives[S("copy file/directory {} to {}")] = N(_copy_T_to_T);
+    natives[S("(the) contents of file {path}")] = N(_the_contents_of_file_T);
+    natives[S("(the) contents of directory {path}")] = N(_the_contents_of_directory_T);
+    natives[S("remove file {path}")] = N(_remove_file_T);
+    natives[S("remove directory {path}")] = N(_remove_directory_T);
+    natives[S("move file/directory {source} to {destination}")] = N(_move_T_to_T);
+    natives[S("copy file/directory {source} to {destination}")] = N(_copy_T_to_T);
 }
 
 System::System(const SystemConfig &config) {

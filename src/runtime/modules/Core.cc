@@ -1360,186 +1360,204 @@ static void _core(ModuleMap &natives) {
     natives[S("the language minor version")] = N(_the_language_minor_version);
     natives[S("the language patch version")] = N(_the_language_patch_version);
     natives[S("the error")] = N(_the_error);
-    natives[S("error with {}")] = N(_error_with_T);
+    natives[S("error with {message}")] = N(_error_with_T);
     natives[S("quit")] = N(_quit);
-    natives[S("quit with {}")] = N(_quit_with_T);
-    natives[S("get {}")] = N(_get_T);
-    natives[S("(the) description (of) {}")] = N(_the_description_of_T);
-    natives[S("(the) debug description (of) {}")] = N(_the_debug_description_of_T);
-    natives[S("(the) hash value (of) {}")] = N(_the_hash_value_of_T);
-    natives[S("(the) type name (of) {}")] = N(_the_type_name_of_T);
-    natives[S("(a) copy (of) {}")] = N(_a_copy_of_T);
+    natives[S("quit with {code}")] = N(_quit_with_T);
+    natives[S("get {value}")] = N(_get_T);
+    natives[S("(the) description (of) {value}")] = N(_the_description_of_T);
+    natives[S("(the) debug description (of) {value}")] = N(_the_debug_description_of_T);
+    natives[S("(the) hash value (of) {value}")] = N(_the_hash_value_of_T);
+    natives[S("(the) type name (of) {value}")] = N(_the_type_name_of_T);
+    natives[S("(a) copy (of) {value}")] = N(_a_copy_of_T);
 }
 
 static void _common(ModuleMap &natives) {
-    natives[S("(the) size of {}")] = N(_the_size_of_T);
-    natives[S("{} is {}")] = N(_T_is_T);
-    natives[S("{} is not {}")] = N(_T_is_not_T);
-    natives[S("{} contains {}")] = N(_T_contains_T);
-    natives[S("{} is in {}")] = N(_T_is_in_T);
-    natives[S("{} starts with {}")] = N(_T_starts_with_T);
-    natives[S("{} ends with {}")] = N(_T_ends_with_T);
-    natives[S("item {} in/of {}")] = N(_item_T_in_T);
-    natives[S("item {} in/of {} using delimiter {}")] = N(_item_T_of_T_using_delimiter_T);
-    natives[S("(all) items in/of {}")] = N(_items_of_T);
-    natives[S("(all) items in/of {} using delimiter {}")] = N(_items_of_T_using_delimiter_T);
-    natives[S("items {} to {} in/of {}")] = N(_items_T_to_T_in_T);
-    natives[S("items {} to {} in/of {} using delimiter {}")] =
+    natives[S("(the) size of {collection}")] = N(_the_size_of_T);
+    natives[S("{value} is {other}")] = N(_T_is_T);
+    natives[S("{value} is not {other}")] = N(_T_is_not_T);
+    natives[S("{container} contains {value}")] = N(_T_contains_T);
+    natives[S("{value} is in {container}")] = N(_T_is_in_T);
+    natives[S("{collection} starts with {value}")] = N(_T_starts_with_T);
+    natives[S("{collection} ends with {value}")] = N(_T_ends_with_T);
+    natives[S("item {index} in/of {collection}")] = N(_item_T_in_T);
+    natives[S("item {index} in/of {string} using delimiter {delimiter}")] =
+        N(_item_T_of_T_using_delimiter_T);
+    natives[S("(all) items in/of {string}")] = N(_items_of_T);
+    natives[S("(all) items in/of {string} using delimiter {delimiter}")] =
+        N(_items_of_T_using_delimiter_T);
+    natives[S("items {start} to {end} in/of {collection}")] = N(_items_T_to_T_in_T);
+    natives[S("items {start} to {end} in/of {string} using delimiter {delimiter}")] =
         N(_items_T_to_T_in_T_using_delimiter_T);
-    natives[S("insert {} at (the) beginning of {}")] = N(_insert_T_at_the_beginning_of_T);
-    natives[S("insert {} at (the) end of {}")] = N(_insert_T_at_the_end_of_T);
-    natives[S("push {} onto {}")] = N(_push_T_onto_T);
-    natives[S("pop from {}")] = N(_pop_from_T);
-    natives[S("remove (the) first item from {}")] = N(_remove_the_first_item_from_T);
-    natives[S("remove (the) last item from {}")] = N(_remove_the_last_item_from_T);
-    natives[S("remove item {} from {}")] = N(_remove_item_T_from_T);
-    natives[S("(the) (first) offset of {} in {}")] = N(_the_first_offset_of_T_in_T);
-    natives[S("(the) last offset of {} in {}")] = N(_the_last_offset_of_T_in_T);
-    natives[S("replace all {} with {} in {}")] = N(_replace_all_T_with_T_in_T);
-    natives[S("replace first {} with {} in {}")] = N(_replace_first_T_with_T_in_T);
-    natives[S("replace last {} with {} in {}")] = N(_replace_last_T_with_T_in_T);
-    natives[S("sort {}")] = N(_sort_T);
+    natives[S("insert {value} at (the) beginning of {collection}")] =
+        N(_insert_T_at_the_beginning_of_T);
+    natives[S("insert {value} at (the) end of {collection}")] = N(_insert_T_at_the_end_of_T);
+    natives[S("push {value} onto {list}")] = N(_push_T_onto_T);
+    natives[S("pop from {list}")] = N(_pop_from_T);
+    natives[S("remove (the) first item from {list}")] = N(_remove_the_first_item_from_T);
+    natives[S("remove (the) last item from {list}")] = N(_remove_the_last_item_from_T);
+    natives[S("remove item {index} from {collection}")] = N(_remove_item_T_from_T);
+    natives[S("(the) (first) offset of {value} in {collection}")] = N(_the_first_offset_of_T_in_T);
+    natives[S("(the) last offset of {value} in {collection}")] = N(_the_last_offset_of_T_in_T);
+    natives[S("replace all {search} with {replacement} in {collection}")] =
+        N(_replace_all_T_with_T_in_T);
+    natives[S("replace first {search} with {replacement} in {collection}")] =
+        N(_replace_first_T_with_T_in_T);
+    natives[S("replace last {search} with {replacement} in {collection}")] =
+        N(_replace_last_T_with_T_in_T);
+    natives[S("sort {collection}")] = N(_sort_T);
 }
 
 static void _types(ModuleMap &natives) {
-    natives[S("{} as (a/an) int/integer")] = N(_T_as_an_integer);
-    natives[S("{} as (a/an) num/number")] = N(_T_as_a_number);
-    natives[S("{} as (a/an) str/string")] = N(_T_as_a_string);
-    natives[S("{} is (a/an) int/integer")] = N(_T_is_a_integer);
-    natives[S("{} is (a/an) num/number")] = N(_T_is_a_number);
-    natives[S("{} is (a/an) str/string")] = N(_T_is_a_string);
-    natives[S("{} is (a/an) list")] = N(_T_is_a_list);
-    natives[S("{} is (a/an) dict/dictionary")] = N(_T_is_a_dictionary);
+    natives[S("{value} as (a/an) int/integer")] = N(_T_as_an_integer);
+    natives[S("{value} as (a/an) num/number")] = N(_T_as_a_number);
+    natives[S("{value} as (a/an) str/string")] = N(_T_as_a_string);
+    natives[S("{value} is (a/an) int/integer")] = N(_T_is_a_integer);
+    natives[S("{value} is (a/an) num/number")] = N(_T_is_a_number);
+    natives[S("{value} is (a/an) str/string")] = N(_T_is_a_string);
+    natives[S("{value} is (a/an) list")] = N(_T_is_a_list);
+    natives[S("{value} is (a/an) dict/dictionary")] = N(_T_is_a_dictionary);
     natives[S("an empty str/string")] = N(_an_empty_string);
     natives[S("an empty list")] = N(_an_empty_list);
     natives[S("an empty dict/dictionary")] = N(_an_empty_dictionary);
 }
 
 static void _dictionary(ModuleMap &natives) {
-    natives[S("(the) keys (of) {}")] = N(_the_keys_of_T);
-    natives[S("(the) values (of) {}")] = N(_the_values_of_T);
-    natives[S("insert item {} with key {} into {}")] = N(_insert_item_T_with_key_T_into_T);
+    natives[S("(the) keys (of) {dictionary}")] = N(_the_keys_of_T);
+    natives[S("(the) values (of) {dictionary}")] = N(_the_values_of_T);
+    natives[S("insert item {value} with key {key} into {dictionary}")] =
+        N(_insert_item_T_with_key_T_into_T);
 }
 
 static void _list(ModuleMap &natives, std::mt19937_64 &engine,
                   std::function<Integer(Integer)> randomInteger) {
-    natives[S("(the) first item (in/of) {}")] = N(_the_first_item_in_T);
-    natives[S("(the) mid/middle item (in/of) {}")] = N(_the_middle_item_in_T);
-    natives[S("(the) last item (in/of) {}")] = N(_the_last_item_in_T);
-    natives[S("(the) number of items (in/of) {}")] = N(_the_number_of_items_in_T);
-    natives[S("remove items {} to {} from {}")] = N(_remove_items_T_to_T_from_T);
-    natives[S("insert {} at index {} into {}")] = N(_insert_T_at_index_T_into_T);
-    natives[S("reverse {}")] = N(_reverse_T);
-    natives[S("reversed {}")] = N(_reversed_T);
-    natives[S("join {}")] = N(_join_T);
-    natives[S("join {} using {}")] = N(_join_T_using_T);
-    natives[S("any item (in/of) {}")] = N(_any_item_in_T(randomInteger));
-    natives[S("shuffle {}")] = N(_shuffle_T(engine));
-    natives[S("shuffled {}")] = N(_shuffled_T(engine));
+    natives[S("(the) first item (in/of) {list}")] = N(_the_first_item_in_T);
+    natives[S("(the) mid/middle item (in/of) {list}")] = N(_the_middle_item_in_T);
+    natives[S("(the) last item (in/of) {list}")] = N(_the_last_item_in_T);
+    natives[S("(the) number of items (in/of) {list}")] = N(_the_number_of_items_in_T);
+    natives[S("remove items {start} to {end} from {list}")] = N(_remove_items_T_to_T_from_T);
+    natives[S("insert {value} at index {index} into {list}")] = N(_insert_T_at_index_T_into_T);
+    natives[S("reverse {list}")] = N(_reverse_T);
+    natives[S("reversed {list}")] = N(_reversed_T);
+    natives[S("join {list}")] = N(_join_T);
+    natives[S("join {list} using {separator}")] = N(_join_T_using_T);
+    natives[S("any item (in/of) {list}")] = N(_any_item_in_T(randomInteger));
+    natives[S("shuffle {list}")] = N(_shuffle_T(engine));
+    natives[S("shuffled {list}")] = N(_shuffled_T(engine));
 }
 
 static void _string(ModuleMap &natives, std::mt19937_64 &engine,
                     std::function<Integer(Integer)> randomInteger) {
-    natives[S("insert {} at char/character {} in {}")] = N(_insert_T_at_character_T_in_T);
-    natives[S("remove all {} from {}")] = N(_remove_all_T_from_T);
-    natives[S("remove first {} from {}")] = N(_remove_first_T_from_T);
-    natives[S("remove last {} from {}")] = N(_remove_last_T_from_T);
+    natives[S("insert {text} at char/character {index} in {string}")] =
+        N(_insert_T_at_character_T_in_T);
+    natives[S("remove all {search} from {string}")] = N(_remove_all_T_from_T);
+    natives[S("remove first {search} from {string}")] = N(_remove_first_T_from_T);
+    natives[S("remove last {search} from {string}")] = N(_remove_last_T_from_T);
 
-    natives[S("replace char/character {} with {} in {}")] =
+    natives[S("replace char/character {index} with {text} in {string}")] =
         N(_replace_chunk_T_with_T_in_T(chunk::character));
-    natives[S("replace word {} with {} in {}")] = N(_replace_chunk_T_with_T_in_T(chunk::word));
-    natives[S("replace line {} with {} in {}")] = N(_replace_chunk_T_with_T_in_T(chunk::line));
+    natives[S("replace word {index} with {text} in {string}")] =
+        N(_replace_chunk_T_with_T_in_T(chunk::word));
+    natives[S("replace line {index} with {text} in {string}")] =
+        N(_replace_chunk_T_with_T_in_T(chunk::line));
 
-    natives[S("replace chars/characters {} to {} with {} in {}")] =
+    natives[S("replace chars/characters {start} to {end} with {text} in {string}")] =
         N(_replace_chunks_T_to_T_with_T_in_T(chunk::character));
-    natives[S("replace words {} to {} with {} in {}")] =
+    natives[S("replace words {start} to {end} with {text} in {string}")] =
         N(_replace_chunks_T_to_T_with_T_in_T(chunk::word));
-    natives[S("replace lines {} to {} with {} in {}")] =
+    natives[S("replace lines {start} to {end} with {text} in {string}")] =
         N(_replace_chunks_T_to_T_with_T_in_T(chunk::line));
 
-    natives[S("remove char/character {} from {}")] = N(_remove_chunk_T_from_T(chunk::character));
-    natives[S("remove word {} from {}")] = N(_remove_chunk_T_from_T(chunk::word));
-    natives[S("remove line {} from {}")] = N(_remove_chunk_T_from_T(chunk::line));
+    natives[S("remove char/character {index} from {string}")] =
+        N(_remove_chunk_T_from_T(chunk::character));
+    natives[S("remove word {index} from {string}")] = N(_remove_chunk_T_from_T(chunk::word));
+    natives[S("remove line {index} from {string}")] = N(_remove_chunk_T_from_T(chunk::line));
 
-    natives[S("remove chars/characters {} to {} from {}")] =
+    natives[S("remove chars/characters {start} to {end} from {string}")] =
         N(_remove_chunks_T_to_T_from_T(chunk::character));
-    natives[S("remove words {} to {} from {}")] = N(_remove_chunks_T_to_T_from_T(chunk::word));
-    natives[S("remove lines {} to {} from {}")] = N(_remove_chunks_T_to_T_from_T(chunk::line));
+    natives[S("remove words {start} to {end} from {string}")] =
+        N(_remove_chunks_T_to_T_from_T(chunk::word));
+    natives[S("remove lines {start} to {end} from {string}")] =
+        N(_remove_chunks_T_to_T_from_T(chunk::line));
 
-    natives[S("(the) list of chars/characters (in/of) {}")] =
+    natives[S("(the) list of chars/characters (in/of) {string}")] =
         N(_the_list_of_chunks_in_T(chunk::character));
-    natives[S("(the) list of words (in/of) {}")] = N(_the_list_of_chunks_in_T(chunk::word));
-    natives[S("(the) list of lines (in/of) {}")] = N(_the_list_of_chunks_in_T(chunk::line));
+    natives[S("(the) list of words (in/of) {string}")] = N(_the_list_of_chunks_in_T(chunk::word));
+    natives[S("(the) list of lines (in/of) {string}")] = N(_the_list_of_chunks_in_T(chunk::line));
 
-    natives[S("char/character {} in/of {}")] = N(_chunk_T_in_T(chunk::character));
-    natives[S("word {} in/of {}")] = N(_chunk_T_in_T(chunk::word));
-    natives[S("line {} in/of {}")] = N(_chunk_T_in_T(chunk::line));
+    natives[S("char/character {index} in/of {string}")] = N(_chunk_T_in_T(chunk::character));
+    natives[S("word {index} in/of {string}")] = N(_chunk_T_in_T(chunk::word));
+    natives[S("line {index} in/of {string}")] = N(_chunk_T_in_T(chunk::line));
 
-    natives[S("chars/characters {} to {} in/of {}")] = N(_chunks_T_to_T_in_T(chunk::character));
-    natives[S("words {} to {} in/of {}")] = N(_chunks_T_to_T_in_T(chunk::word));
-    natives[S("lines {} to {} in/of {}")] = N(_chunks_T_to_T_in_T(chunk::line));
+    natives[S("chars/characters {start} to {end} in/of {string}")] =
+        N(_chunks_T_to_T_in_T(chunk::character));
+    natives[S("words {start} to {end} in/of {string}")] = N(_chunks_T_to_T_in_T(chunk::word));
+    natives[S("lines {start} to {end} in/of {string}")] = N(_chunks_T_to_T_in_T(chunk::line));
 
-    natives[S("any char/character in/of {}")] = N(_any_chunk_in_T(chunk::character, randomInteger));
-    natives[S("any word in/of {}")] = N(_any_chunk_in_T(chunk::word, randomInteger));
-    natives[S("any line in/of {}")] = N(_any_chunk_in_T(chunk::line, randomInteger));
+    natives[S("any char/character in/of {string}")] =
+        N(_any_chunk_in_T(chunk::character, randomInteger));
+    natives[S("any word in/of {string}")] = N(_any_chunk_in_T(chunk::word, randomInteger));
+    natives[S("any line in/of {string}")] = N(_any_chunk_in_T(chunk::line, randomInteger));
 
-    natives[S("(the) mid/middle char/character in/of {}")] =
+    natives[S("(the) mid/middle char/character in/of {string}")] =
         N(_the_middle_chunk_in_T(chunk::character));
-    natives[S("(the) mid/middle word in/of {}")] = N(_the_middle_chunk_in_T(chunk::word));
-    natives[S("(the) mid/middle line in/of {}")] = N(_the_middle_chunk_in_T(chunk::line));
+    natives[S("(the) mid/middle word in/of {string}")] = N(_the_middle_chunk_in_T(chunk::word));
+    natives[S("(the) mid/middle line in/of {string}")] = N(_the_middle_chunk_in_T(chunk::line));
 
-    natives[S("(the) last char/character in/of {}")] = N(_the_last_chunk_in_T(chunk::character));
-    natives[S("(the) last word in/of {}")] = N(_the_last_chunk_in_T(chunk::word));
-    natives[S("(the) last line in/of {}")] = N(_the_last_chunk_in_T(chunk::line));
+    natives[S("(the) last char/character in/of {string}")] =
+        N(_the_last_chunk_in_T(chunk::character));
+    natives[S("(the) last word in/of {string}")] = N(_the_last_chunk_in_T(chunk::word));
+    natives[S("(the) last line in/of {string}")] = N(_the_last_chunk_in_T(chunk::line));
 
-    natives[S("(the) number of chars/characters (in/of) {}")] =
+    natives[S("(the) number of chars/characters (in/of) {string}")] =
         N(_the_number_of_chunks_in_T(chunk::character));
-    natives[S("(the) number of words (in/of) {}")] = N(_the_number_of_chunks_in_T(chunk::word));
-    natives[S("(the) number of lines (in/of) {}")] = N(_the_number_of_chunks_in_T(chunk::line));
+    natives[S("(the) number of words (in/of) {string}")] =
+        N(_the_number_of_chunks_in_T(chunk::word));
+    natives[S("(the) number of lines (in/of) {string}")] =
+        N(_the_number_of_chunks_in_T(chunk::line));
 
-    natives[S("format string {} with {}")] = N(_format_string_T_with_T);
+    natives[S("format string {format} with {arguments}")] = N(_format_string_T_with_T);
 
-    natives[S("(the) char/character (of) {}")] = N(_character_of_T);
-    natives[S("(the) numToChar (of) {}")] = N(_character_of_T);
+    natives[S("(the) char/character (of) {code}")] = N(_character_of_T);
+    natives[S("(the) numToChar (of) {code}")] = N(_character_of_T);
 
-    natives[S("(the) ord/ordinal (of) {}")] = N(_ordinal_of_T);
-    natives[S("(the) charToNum (of) {}")] = N(_ordinal_of_T);
+    natives[S("(the) ord/ordinal (of) {character}")] = N(_ordinal_of_T);
+    natives[S("(the) charToNum (of) {character}")] = N(_ordinal_of_T);
 }
 
 static void _range(ModuleMap &natives, std::mt19937_64 &engine,
                    std::function<Integer(Integer)> randomInteger) {
-    natives[S("{} up to {}")] = N(_T_up_to_T);
-    natives[S("(the) lower bound (in/of) {}")] = N(_the_lower_bound_of_T);
-    natives[S("(the) upper bound (in/of) {}")] = N(_the_upper_bound_of_T);
-    natives[S("{} is closed")] = N(_T_is_closed);
-    natives[S("{} overlaps (with) {}")] = N(_T_overlaps_with_T);
-    natives[S("(a) random number (in/of) {}")] = N(_a_random_number_in_T(randomInteger));
+    natives[S("{start} up to {end}")] = N(_T_up_to_T);
+    natives[S("(the) lower bound (in/of) {range}")] = N(_the_lower_bound_of_T);
+    natives[S("(the) upper bound (in/of) {range}")] = N(_the_upper_bound_of_T);
+    natives[S("{range} is closed")] = N(_T_is_closed);
+    natives[S("{range} overlaps (with) {other}")] = N(_T_overlaps_with_T);
+    natives[S("(a) random number (in/of) {range}")] = N(_a_random_number_in_T(randomInteger));
 }
 
 static void _math(ModuleMap &natives) {
-    natives[S("(the) abs (of) {}")] = N(_the_abs_of_T);
-    natives[S("(the) sin (of) {}")] = N(_the_func_of_T(sin));
-    natives[S("(the) asin (of) {}")] = N(_the_func_of_T(asin));
-    natives[S("(the) cos (of) {}")] = N(_the_func_of_T(cos));
-    natives[S("(the) acos (of) {}")] = N(_the_func_of_T(acos));
-    natives[S("(the) tan (of) {}")] = N(_the_func_of_T(tan));
-    natives[S("(the) atan (of) {}")] = N(_the_func_of_T(atan));
-    natives[S("(the) exp (of) {}")] = N(_the_func_of_T(exp));
-    natives[S("(the) exp2 (of) {}")] = N(_the_func_of_T(exp2));
-    natives[S("(the) expm1 (of) {}")] = N(_the_func_of_T(expm1));
-    natives[S("(the) log2 (of) {}")] = N(_the_func_of_T(log2));
-    natives[S("(the) log10 (of) {}")] = N(_the_func_of_T(log10));
-    natives[S("(the) log (of) {}")] = N(_the_func_of_T(log));
-    natives[S("(the) sqrt (of) {}")] = N(_the_func_of_T(sqrt));
-    natives[S("(the) square root (of) {}")] = N(_the_func_of_T(sqrt));
-    natives[S("(the) ceil (of) {}")] = N(_the_func_of_T(ceil));
-    natives[S("(the) floor (of) {}")] = N(_the_func_of_T(floor));
-    natives[S("round {}")] = N(_the_func_of_T(round));
-    natives[S("trunc/truncate {}")] = N(_the_func_of_T(trunc));
+    natives[S("(the) abs (of) {number}")] = N(_the_abs_of_T);
+    natives[S("(the) sin (of) {angle}")] = N(_the_func_of_T(sin));
+    natives[S("(the) asin (of) {value}")] = N(_the_func_of_T(asin));
+    natives[S("(the) cos (of) {angle}")] = N(_the_func_of_T(cos));
+    natives[S("(the) acos (of) {value}")] = N(_the_func_of_T(acos));
+    natives[S("(the) tan (of) {angle}")] = N(_the_func_of_T(tan));
+    natives[S("(the) atan (of) {value}")] = N(_the_func_of_T(atan));
+    natives[S("(the) exp (of) {exponent}")] = N(_the_func_of_T(exp));
+    natives[S("(the) exp2 (of) {exponent}")] = N(_the_func_of_T(exp2));
+    natives[S("(the) expm1 (of) {exponent}")] = N(_the_func_of_T(expm1));
+    natives[S("(the) log2 (of) {number}")] = N(_the_func_of_T(log2));
+    natives[S("(the) log10 (of) {number}")] = N(_the_func_of_T(log10));
+    natives[S("(the) log (of) {number}")] = N(_the_func_of_T(log));
+    natives[S("(the) sqrt (of) {number}")] = N(_the_func_of_T(sqrt));
+    natives[S("(the) square root (of) {number}")] = N(_the_func_of_T(sqrt));
+    natives[S("(the) ceil (of) {number}")] = N(_the_func_of_T(ceil));
+    natives[S("(the) floor (of) {number}")] = N(_the_func_of_T(floor));
+    natives[S("round {number}")] = N(_the_func_of_T(round));
+    natives[S("trunc/truncate {number}")] = N(_the_func_of_T(trunc));
 
-    natives[S("(the) max/maximum (value) (of) {}")] = N(_the_maximum_value_of_T);
-    natives[S("(the) min/minimum (value) (of) {}")] = N(_the_minimum_value_of_T);
-    natives[S("(the) avg/average (value) (of) {}")] = N(_the_average_of_T);
+    natives[S("(the) max/maximum (value) (of) {list}")] = N(_the_maximum_value_of_T);
+    natives[S("(the) min/minimum (value) (of) {list}")] = N(_the_minimum_value_of_T);
+    natives[S("(the) avg/average (value) (of) {list}")] = N(_the_average_of_T);
 }
 
 Core::Core(const CoreConfig &config) : _config(config) {

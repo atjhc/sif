@@ -235,3 +235,250 @@ TEST_CASE(LSPTests, MultipleDocuments) {
 
     ASSERT_EQ(manager.documents().size(), 2u);
 }
+
+TEST_CASE(LSPTests, CompletionVariables) {
+    DocumentManager manager;
+
+    std::string content = R"(
+set firstName to "Alice"
+set lastName to "Smith"
+set age to 30
+)";
+
+    manager.openDocument("file:///test.sif", content, 1);
+    auto doc = manager.getDocument("file:///test.sif");
+
+    ASSERT_TRUE(doc != nullptr);
+    ASSERT_TRUE(doc->variables.count("firstname") > 0);
+    ASSERT_TRUE(doc->variables.count("lastname") > 0);
+    ASSERT_TRUE(doc->variables.count("age") > 0);
+    ASSERT_EQ(doc->variables.size(), 3u);
+}
+
+TEST_CASE(LSPTests, CompletionFunctions) {
+    DocumentManager manager;
+
+    std::string content = R"(
+function greet {name}
+    print "Hello, {name}!"
+end function
+
+function the square of {n}
+    return n * n
+end function
+)";
+
+    manager.openDocument("file:///test.sif", content, 1);
+    auto doc = manager.getDocument("file:///test.sif");
+
+    ASSERT_TRUE(doc != nullptr);
+    ASSERT_TRUE(doc->signatures.size() > 0);
+
+    bool foundGreet = false;
+    bool foundSquare = false;
+
+    for (const auto &sig : doc->signatures) {
+        std::string desc = sig.description();
+        if (desc.find("greet") != std::string::npos &&
+            desc.find("{name:}") != std::string::npos) {
+            foundGreet = true;
+        }
+        if (desc.find("square") != std::string::npos &&
+            desc.find("{n:}") != std::string::npos) {
+            foundSquare = true;
+        }
+    }
+
+    ASSERT_TRUE(foundGreet) << "Should find 'greet' function signature";
+    ASSERT_TRUE(foundSquare) << "Should find 'square' function signature";
+}
+
+TEST_CASE(LSPTests, CompletionBuiltinFunctions) {
+    DocumentManager manager;
+
+    std::string content = "set x to 42";
+    manager.openDocument("file:///test.sif", content, 1);
+    auto doc = manager.getDocument("file:///test.sif");
+
+    ASSERT_TRUE(doc != nullptr);
+    ASSERT_TRUE(doc->signatures.size() > 0) << "Should have built-in function signatures";
+
+    bool foundPrint = false;
+    bool foundTypeOf = false;
+
+    for (const auto &sig : doc->signatures) {
+        std::string desc = sig.description();
+        if (desc.find("print") != std::string::npos) foundPrint = true;
+        if (desc.find("type name") != std::string::npos) foundTypeOf = true;
+    }
+
+    ASSERT_TRUE(foundPrint) << "Should find 'print' built-in function";
+    ASSERT_TRUE(foundTypeOf) << "Should find 'type name' built-in function";
+}
+
+TEST_CASE(LSPTests, CompletionSnippets) {
+    DocumentManager manager;
+
+    std::string content = R"(
+function greet {name}
+    print "Hello, {name}!"
+end function
+
+function the square of {n}
+    return n * n
+end function
+)";
+
+    manager.openDocument("file:///test.sif", content, 1);
+    auto doc = manager.getDocument("file:///test.sif");
+
+    ASSERT_TRUE(doc != nullptr);
+    ASSERT_TRUE(doc->signatures.size() > 0);
+
+    // Verify that user-defined signatures have argument placeholders
+    bool foundGreet = false;
+    bool foundSquare = false;
+
+    for (const auto &sig : doc->signatures) {
+        std::string desc = sig.description();
+        if (desc.find("greet") != std::string::npos &&
+            desc.find("{name:}") != std::string::npos) {
+            foundGreet = true;
+        }
+        if (desc.find("square") != std::string::npos &&
+            desc.find("{n:}") != std::string::npos) {
+            foundSquare = true;
+        }
+    }
+
+    ASSERT_TRUE(foundGreet) << "Should find greet with {name:} parameter";
+    ASSERT_TRUE(foundSquare) << "Should find square with {n:} parameter";
+}
+
+TEST_CASE(LSPTests, CompletionVariations) {
+    DocumentManager manager;
+
+    // Create a document that will load builtin signatures with optionals and choices
+    std::string content = "set x to 42";
+    manager.openDocument("file:///test.sif", content, 1);
+
+    auto doc = manager.getDocument("file:///test.sif");
+    ASSERT_TRUE(doc != nullptr);
+
+    // Find a signature with an optional term, like "(the) sin of {angle}"
+    bool foundSinWithThe = false;
+
+    for (const auto &sig : doc->signatures) {
+        std::string desc = sig.description();
+        if (desc.find("sin") != std::string::npos &&
+            desc.find("{angle") != std::string::npos) {
+            // This signature has an optional "the"
+            // We should find it generates both variations
+            foundSinWithThe = true; // Signature exists
+        }
+    }
+
+    ASSERT_TRUE(foundSinWithThe) << "Should find sin signature with optional 'the'";
+
+    // The actual variation testing will happen in completion handling
+    // For now, just verify the signatures exist
+}
+
+TEST_CASE(LSPTests, ModuleImports) {
+    DocumentManager manager;
+
+    // Set workspace root to the transcripts/modules directory
+    std::string workspaceRoot = "file:///Users/james/Documents/code/sif/build/debug/resources/transcripts/modules";
+    manager.setWorkspaceRoot(workspaceRoot);
+
+    // Open a document that imports module1.sif
+    std::string content = R"(use "module1.sif"
+set x to 42)";
+
+    manager.openDocument("file:///Users/james/Documents/code/sif/build/debug/resources/transcripts/modules/test_use.sif", content, 1);
+    auto doc = manager.getDocument("file:///Users/james/Documents/code/sif/build/debug/resources/transcripts/modules/test_use.sif");
+
+    ASSERT_TRUE(doc != nullptr);
+
+    // Check that imported function "say hello" is in signatures
+    bool foundSayHello = false;
+    for (const auto &sig : doc->signatures) {
+        std::string desc = sig.description();
+        if (desc.find("say hello") != std::string::npos) {
+            foundSayHello = true;
+            break;
+        }
+    }
+
+    ASSERT_TRUE(foundSayHello) << "Should find 'say hello' from imported module1.sif";
+}
+
+TEST_CASE(LSPTests, UnicodeSemanticTokens) {
+    DocumentManager manager;
+
+    // Test with multi-byte UTF-8 characters
+    // Chinese character 母 (mother) is 3 bytes in UTF-8
+    // Line: "set 母 to 42"
+    //       012345678901  (character positions, not bytes)
+    std::string content = "set 母 to 42";
+    manager.openDocument("file:///test.sif", content, 1);
+
+    auto doc = manager.getDocument("file:///test.sif");
+    ASSERT_TRUE(doc != nullptr);
+
+    auto tokens = SemanticTokensProvider::encodeTokens(*doc);
+
+    // Tokens should be encoded as:
+    // [deltaLine, deltaChar, length, tokenType, tokenModifiers]
+    ASSERT_TRUE(tokens.size() >= 15) << "Should have at least 3 tokens (set, 母, 42)";
+
+    // In "set 母 to 42", the variable 母 is at character position 4 (after "set ")
+    // Token 0: "set" at position 0
+    // Token 1: "母" at position 4 (delta from position 0)
+    size_t varTokenIndex = 5; // Second token in the array (first is "set")
+    uint32_t deltaChar = tokens[varTokenIndex + 1];
+    uint32_t length = tokens[varTokenIndex + 2];
+
+    ASSERT_EQ(deltaChar, 4u) << "Variable should be at character position 4 (after 'set ')";
+    ASSERT_EQ(length, 1u) << "Variable 母 should have length 1 (character count, not bytes)";
+}
+
+TEST_CASE(LSPTests, UnicodeMultilineSemanticTokens) {
+    DocumentManager manager;
+
+    // Test with unicode on multiple lines
+    // Each line has unicode characters
+    std::string content = R"(set 母 to "mother"
+set мати to "mother"
+set mère to "mother")";
+
+    manager.openDocument("file:///test.sif", content, 1);
+
+    auto doc = manager.getDocument("file:///test.sif");
+    ASSERT_TRUE(doc != nullptr);
+
+    auto tokens = SemanticTokensProvider::encodeTokens(*doc);
+
+    // Should have tokens for all three lines
+    ASSERT_TRUE(tokens.size() > 0);
+    ASSERT_TRUE(tokens.size() % 5 == 0) << "Token data must be multiple of 5";
+
+    // Verify we can decode without crashes (positions are reasonable)
+    uint32_t prevLine = 0;
+    uint32_t prevChar = 0;
+
+    for (size_t i = 0; i < tokens.size(); i += 5) {
+        uint32_t deltaLine = tokens[i];
+        uint32_t deltaChar = tokens[i + 1];
+        uint32_t length = tokens[i + 2];
+
+        uint32_t line = prevLine + deltaLine;
+        uint32_t character = (deltaLine == 0) ? (prevChar + deltaChar) : deltaChar;
+
+        ASSERT_TRUE(length > 0) << "Token length must be positive";
+        ASSERT_TRUE(character < 1000) << "Character position seems unreasonable";
+
+        prevLine = line;
+        prevChar = character;
+    }
+}

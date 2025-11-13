@@ -72,6 +72,10 @@ TEST_CASE(ScannerTests, InterpolatedString) {
     ASSERT_EQ(token.type, Token::Type::OpenInterpolation);
     ASSERT_EQ(token.text, "\"Hello, {");
 
+    // Simulate what the Parser does after seeing OpenInterpolation
+    scanner.interpolating = true;
+    scanner.stringTerminal = '"';
+
     token = scanner.scan();
     ASSERT_EQ(token.type, Token::Type::Word);
     ASSERT_EQ(token.text, "name");

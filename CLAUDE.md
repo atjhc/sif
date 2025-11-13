@@ -88,6 +88,86 @@ Sif is a natural language-like scripting language with a three-stage execution p
 
 @docs/introduction.md
 
+## C++ Style Guidelines
+
+### Naming Conventions
+
+**Functions:**
+- **Free functions/utilities**: PascalCase (e.g., `Format()`, `MakeStrong()`, `GenerateSignatureVariations()`)
+- **Member functions**: camelCase (e.g., `handleInitialize()`, `openDocument()`, `getDocument()`)
+- **External library compatibility**: Follow library conventions (e.g., `to_json()`, `from_json()` for nlohmann::json)
+
+**Variables:**
+- **Local/member variables**: camelCase with underscore prefix for members (e.g., `_documentManager`, `_rpc`)
+- **Parameters**: camelCase (e.g., `textBeforeCursor`, `completionText`)
+
+**Types:**
+- **Classes/structs**: PascalCase (e.g., `DocumentManager`, `CompletionItem`, `SourceRange`)
+- **Type aliases**: PascalCase (e.g., `Strong<T>`, `Result<T, E>`)
+
+**Constants:**
+- **Macros**: SCREAMING_SNAKE_CASE (e.g., `MAJOR_VERSION`, `SIF_NAMESPACE_BEGIN`)
+- **Static constants**: PascalCase (e.g., `MajorVersion`, `Version`)
+
+### Code Style
+
+**Control Flow:**
+- Prefer guard clauses over nested conditionals
+- Early returns for error conditions
+```cpp
+// Good
+if (terms.empty()) {
+    return {{}};
+}
+// ... rest of logic
+
+// Avoid
+if (!terms.empty()) {
+    // ... lots of nested logic
+}
+```
+
+**Comments:**
+- Use sparingly; prefer self-documenting code
+- When needed, explain _why_ not _what_
+- Use `//` for single-line comments
+```cpp
+// Good: Explains reasoning
+// Parser manages interpolation state through its call stack to maintain proper nesting
+
+// Avoid: States the obvious
+// Set result to empty vector
+```
+
+**Includes:**
+- Order: System headers, then external libraries, then project headers
+- Use `#pragma once` for header guards
+```cpp
+#include <iostream>
+#include <vector>
+
+#include "sif/Common.h"
+#include "sif/lsp/Protocol.h"
+```
+
+**Formatting:**
+- Opening braces on same line for functions and control structures
+- Spaces around operators
+- No spaces inside parentheses
+- Use clang-format via `make format`
+
+### Code Organization
+
+**Files:**
+- Header files in `include/sif/`
+- Implementation files in `src/`
+- One class per file (generally)
+- Utility functions grouped by purpose (e.g., `CompletionUtils`, `strings`)
+
+**Namespaces:**
+- Use `SIF_NAMESPACE_BEGIN` and `SIF_NAMESPACE_END` macros
+- Sub-namespaces for modules (e.g., `namespace lsp`)
+
 ## Important File Locations
 
 - Main entry point: `src/tools/sif.cc`

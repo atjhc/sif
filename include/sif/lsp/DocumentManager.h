@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <map>
 #include <sif/Common.h>
 #include <sif/ast/Statement.h>
@@ -41,27 +42,40 @@ struct Document {
     std::vector<Signature> signatures;
     Set<std::string> variables;
     std::vector<SourceRange> commentRanges;
+    std::vector<std::string> imports;
 };
 
 class DocumentManager {
   public:
     DocumentManager() {}
 
+    void setWorkspaceRoot(const std::string &rootUri);
+
     void openDocument(const std::string &uri, const std::string &content, int version);
-    void updateDocument(const std::string &uri, const std::string &content, int version);
+    std::vector<std::string> updateDocument(const std::string &uri, const std::string &content,
+                                            int version);
     void closeDocument(const std::string &uri);
     Strong<Document> getDocument(const std::string &uri);
     const std::map<std::string, Strong<Document>> &documents() const;
 
   private:
+    std::string _workspaceRoot;
     std::map<std::string, Strong<Document>> _documents;
+    std::map<std::string, std::set<std::string>> _dependents; // module URI → dependent URIs
 
-    class NoopModuleProvider : public ModuleProvider {
+    class LSPModuleProvider : public ModuleProvider {
       public:
+        LSPModuleProvider(DocumentManager &manager, const std::string &currentDocUri);
         Result<Strong<Module>, Error> module(const std::string &name) override;
+
+      private:
+        DocumentManager &_manager;
+        std::string _currentDocUri;
     };
 
     void parseDocument(Document &doc);
+
+    friend class LSPModuleProvider;
 };
 
 } // namespace lsp

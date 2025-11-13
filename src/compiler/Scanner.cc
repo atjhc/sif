@@ -28,8 +28,6 @@ void Scanner::reset(const std::string &contents) {
     _start = _current = contents.begin();
     _end = contents.end();
     _currentLocation = {0, 0, 0};
-    interpolating = false;
-    stringTerminal = 0;
 }
 
 Token Scanner::scan() {
@@ -293,10 +291,6 @@ Token::Type Scanner::checkKeyword(int offset, int length, const char *name, Toke
 }
 
 Token Scanner::scanString(char startingQuote, char terminalQuote) {
-    // Save interpolation state for nested strings
-    bool savedInterpolating = interpolating;
-    char savedStringTerminal = stringTerminal;
-
     bool hasInterpolation = false;
     bool escaped = false;
 
@@ -324,33 +318,18 @@ Token Scanner::scanString(char startingQuote, char terminalQuote) {
         return makeError(std::string(Errors::UnterminatedString));
     }
 
-    // Advance to include the terminal character ({ or quote) in the token
-    advance();
-
+    advance(); // consume the closing terminal
     if (hasInterpolation) {
         if (startingQuote == '}') {
             return make(Token::Type::Interpolation);
         } else {
-            // Set interpolation state so the Scanner knows to handle the closing part
-            interpolating = true;
-            stringTerminal = terminalQuote;
             return make(Token::Type::OpenInterpolation);
         }
     }
 
     if (startingQuote == '}') {
-        // Restore interpolation state after closing a nested interpolation
-        interpolating = savedInterpolating;
-        stringTerminal = savedStringTerminal;
         return make(Token::Type::ClosedInterpolation);
     }
-
-    // Restore interpolation state for nested strings that don't have interpolation
-    if (startingQuote != '}' && !hasInterpolation) {
-        interpolating = savedInterpolating;
-        stringTerminal = savedStringTerminal;
-    }
-
     return make(Token::Type::StringLiteral);
 }
 
@@ -391,9 +370,11 @@ char Scanner::advance(int count) {
 
 wchar_t Scanner::advanceCharacter(int count) {
     auto character = utf8::peek_next(_current, _end);
+    auto before = _current;
     utf8::advance(_current, count, _end);
+    size_t bytesMoved = std::distance(before, _current);
     _currentLocation.position += count;
-    _currentLocation.offset += count;
+    _currentLocation.offset += bytesMoved;
     return character;
 }
 

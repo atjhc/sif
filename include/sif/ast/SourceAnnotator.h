@@ -27,19 +27,19 @@ SIF_NAMESPACE_BEGIN
 
 struct Annotation {
     enum class Kind {
-        Keyword,        // Control flow keywords (if, then, else, repeat, function, etc.)
-        Function,       // Function names in calls and declarations
-        Variable,       // Variable names
-        Operator,       // Operators (binary, unary, grouping, etc.)
-        String,         // String literals
-        Number,         // Number literals (int, float, bool)
-        Comment,        // Comments
-        Namespace,      // Module/namespace names
+        Keyword,   // Control flow keywords (if, then, else, repeat, function, etc.)
+        Function,  // Function names in calls and declarations
+        Variable,  // Variable names
+        Operator,  // Operators (binary, unary, grouping, etc.)
+        String,    // String literals
+        Number,    // Number literals (int, float, bool)
+        Comment,   // Comments
+        Namespace, // Module/namespace names
     };
 
     SourceRange range;
     Kind kind;
-    uint32_t modifiers = 0;  // Bit flags for modifiers (declaration, readonly, etc.)
+    uint32_t modifiers = 0; // Bit flags for modifiers (declaration, readonly, etc.)
 };
 
 class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
@@ -47,7 +47,7 @@ class SourceAnnotator : public Statement::Visitor, public Expression::Visitor {
     SourceAnnotator();
 
     std::vector<Annotation> annotate(const Statement &,
-                                      const std::vector<SourceRange> &commentRanges = {});
+                                     const std::vector<SourceRange> &commentRanges = {});
 
 #pragma mark - Statement::Visitor
 

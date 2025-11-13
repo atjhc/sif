@@ -1522,11 +1522,17 @@ Strong<Expression> Parser::parsePrimary() {
     }
 
     if (match({Token::Type::OpenInterpolation})) {
+        auto interpolating = _config.scanner.interpolating;
+        auto stringTerminal = _config.scanner.stringTerminal;
         auto ignoreNewLines = _config.scanner.ignoreNewLines;
+        _config.scanner.interpolating = true;
+        _config.scanner.stringTerminal = previous().openingStringTerminal();
         _config.scanner.ignoreNewLines = true;
 
         auto interpolation = parseInterpolation();
 
+        _config.scanner.interpolating = interpolating;
+        _config.scanner.stringTerminal = stringTerminal;
         _config.scanner.ignoreNewLines = ignoreNewLines;
         return interpolation;
     }

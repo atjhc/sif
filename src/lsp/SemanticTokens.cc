@@ -17,9 +17,20 @@
 #include "sif/lsp/SemanticTokens.h"
 
 #include <algorithm>
+#include "extern/utf8.h"
 
 SIF_NAMESPACE_BEGIN
 namespace lsp {
+
+// Convert byte offset to character count in a UTF-8 string
+static size_t ByteOffsetToCharCount(const std::string &str, size_t byteStart, size_t byteEnd) {
+    if (byteStart >= str.size() || byteEnd > str.size() || byteStart > byteEnd) {
+        return 0;
+    }
+    auto start = str.begin() + byteStart;
+    auto end = str.begin() + byteEnd;
+    return utf8::unchecked::distance(start, end);
+}
 
 bool SemanticTokensProvider::SemanticToken::operator<(const SemanticToken &other) const {
     if (range.start.offset != other.range.start.offset) {
@@ -63,20 +74,24 @@ std::vector<uint32_t> SemanticTokensProvider::encodeTokens(const Document &doc) 
                                         : doc.content.size();
 
                 if (currentLine == startLine) {
-                    character = static_cast<uint32_t>(tokenFilePos - lineStartPos);
+                    character =
+                        static_cast<uint32_t>(ByteOffsetToCharCount(doc.content, lineStartPos, tokenFilePos));
                     if (currentLine == endLine) {
-                        length = static_cast<uint32_t>(token.range.end.offset -
-                                                       token.range.start.offset);
+                        length = static_cast<uint32_t>(ByteOffsetToCharCount(
+                            doc.content, token.range.start.offset, token.range.end.offset));
                     } else {
-                        length = static_cast<uint32_t>(lineEndPos - tokenFilePos);
+                        length = static_cast<uint32_t>(
+                            ByteOffsetToCharCount(doc.content, tokenFilePos, lineEndPos));
                     }
                 } else if (currentLine == endLine) {
                     character = 0;
                     size_t tokenEndPos = token.range.end.offset;
-                    length = static_cast<uint32_t>(tokenEndPos - lineStartPos);
+                    length = static_cast<uint32_t>(
+                        ByteOffsetToCharCount(doc.content, lineStartPos, tokenEndPos));
                 } else {
                     character = 0;
-                    length = static_cast<uint32_t>(lineEndPos - lineStartPos);
+                    length = static_cast<uint32_t>(
+                        ByteOffsetToCharCount(doc.content, lineStartPos, lineEndPos));
                 }
             }
 
@@ -115,8 +130,8 @@ void SemanticTokensProvider::collectFromAnnotations(std::vector<SemanticToken> &
     }
 }
 
-SemanticTokensProvider::TokenType SemanticTokensProvider::annotationKindToTokenType(
-    Annotation::Kind kind) {
+SemanticTokensProvider::TokenType
+SemanticTokensProvider::annotationKindToTokenType(Annotation::Kind kind) {
     switch (kind) {
     case Annotation::Kind::Keyword:
         return TokenType::Keyword;

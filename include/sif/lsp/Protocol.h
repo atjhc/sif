@@ -29,54 +29,62 @@ using json = nlohmann::json;
 
 // JSON property name constants
 namespace JsonKeys {
-    // Common properties
-    constexpr const char* text = "text";
-    constexpr const char* range = "range";
-    constexpr const char* rangeLength = "rangeLength";
-    constexpr const char* line = "line";
-    constexpr const char* character = "character";
-    constexpr const char* uri = "uri";
-    constexpr const char* start = "start";
-    constexpr const char* end = "end";
+// Common properties
+constexpr const char *text = "text";
+constexpr const char *range = "range";
+constexpr const char *rangeLength = "rangeLength";
+constexpr const char *line = "line";
+constexpr const char *character = "character";
+constexpr const char *uri = "uri";
+constexpr const char *start = "start";
+constexpr const char *end = "end";
 
-    // Diagnostic properties
-    constexpr const char* severity = "severity";
-    constexpr const char* message = "message";
-    constexpr const char* code = "code";
-    constexpr const char* source = "source";
+// Diagnostic properties
+constexpr const char *severity = "severity";
+constexpr const char *message = "message";
+constexpr const char *code = "code";
+constexpr const char *source = "source";
 
-    // Completion properties
-    constexpr const char* label = "label";
-    constexpr const char* kind = "kind";
-    constexpr const char* detail = "detail";
-    constexpr const char* documentation = "documentation";
-    constexpr const char* insertText = "insertText";
+// Completion properties
+constexpr const char *label = "label";
+constexpr const char *kind = "kind";
+constexpr const char *detail = "detail";
+constexpr const char *documentation = "documentation";
+constexpr const char *insertText = "insertText";
+constexpr const char *insertTextFormat = "insertTextFormat";
+constexpr const char *textEdit = "textEdit";
+constexpr const char *newText = "newText";
 
-    // Server capabilities
-    constexpr const char* textDocumentSync = "textDocumentSync";
-    constexpr const char* completionProvider = "completionProvider";
-    constexpr const char* semanticTokensProvider = "semanticTokensProvider";
-    constexpr const char* capabilities = "capabilities";
+// Server capabilities
+constexpr const char *textDocumentSync = "textDocumentSync";
+constexpr const char *completionProvider = "completionProvider";
+constexpr const char *semanticTokensProvider = "semanticTokensProvider";
+constexpr const char *capabilities = "capabilities";
+constexpr const char *openClose = "openClose";
+constexpr const char *change = "change";
+constexpr const char *triggerCharacters = "triggerCharacters";
+constexpr const char *legend = "legend";
+constexpr const char *full = "full";
 
-    // Initialize properties
-    constexpr const char* processId = "processId";
-    constexpr const char* rootUri = "rootUri";
+// Initialize properties
+constexpr const char *processId = "processId";
+constexpr const char *rootUri = "rootUri";
 
-    // Request/Response properties
-    constexpr const char* textDocument = "textDocument";
-    constexpr const char* contentChanges = "contentChanges";
-    constexpr const char* position = "position";
-    constexpr const char* data = "data";
-    constexpr const char* diagnostics = "diagnostics";
+// Request/Response properties
+constexpr const char *textDocument = "textDocument";
+constexpr const char *contentChanges = "contentChanges";
+constexpr const char *position = "position";
+constexpr const char *data = "data";
+constexpr const char *diagnostics = "diagnostics";
 
-    // JSON-RPC properties
-    constexpr const char* jsonrpc = "jsonrpc";
-    constexpr const char* id = "id";
-    constexpr const char* method = "method";
-    constexpr const char* params = "params";
-    constexpr const char* result = "result";
-    constexpr const char* error = "error";
-}
+// JSON-RPC properties
+constexpr const char *jsonrpc = "jsonrpc";
+constexpr const char *id = "id";
+constexpr const char *method = "method";
+constexpr const char *params = "params";
+constexpr const char *result = "result";
+constexpr const char *error = "error";
+} // namespace JsonKeys
 
 struct Position {
     int line = 0;
@@ -208,12 +216,25 @@ enum class CompletionItemKind {
     TypeParameter = 25
 };
 
+enum class InsertTextFormat { PlainText = 1, Snippet = 2 };
+
+struct TextEdit {
+    Range range;
+    std::string newText;
+};
+
+inline void to_json(json &j, const TextEdit &edit) {
+    j = json{{JsonKeys::range, edit.range}, {JsonKeys::newText, edit.newText}};
+}
+
 struct CompletionItem {
     std::string label;
     std::optional<CompletionItemKind> kind;
     std::optional<std::string> detail;
     std::optional<std::string> documentation;
     std::optional<std::string> insertText;
+    std::optional<InsertTextFormat> insertTextFormat;
+    std::optional<TextEdit> textEdit;
 };
 
 inline void to_json(json &j, const CompletionItem &item) {
@@ -229,6 +250,12 @@ inline void to_json(json &j, const CompletionItem &item) {
     }
     if (item.insertText) {
         j[JsonKeys::insertText] = *item.insertText;
+    }
+    if (item.insertTextFormat) {
+        j[JsonKeys::insertTextFormat] = static_cast<int>(*item.insertTextFormat);
+    }
+    if (item.textEdit) {
+        j[JsonKeys::textEdit] = *item.textEdit;
     }
 }
 
