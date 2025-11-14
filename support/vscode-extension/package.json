@@ -25,6 +25,12 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "commands": [
+      {
+        "command": "sif.runFile",
+        "title": "Run Sif File"
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "Sif",
@@ -33,6 +39,11 @@
           "type": "string",
           "default": "",
           "description": "Path to the sif_lsp language server executable"
+        },
+        "sif.interpreter.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the sif_tool interpreter executable"
         }
       }
     },
@@ -46,13 +57,27 @@
       {
         "language": "sif",
         "scopes": {
-          "keyword": ["keyword.control.sif"],
-          "function": ["entity.name.function.sif"],
-          "string": ["string.quoted.double.sif"],
-          "number": ["constant.numeric.sif"],
-          "comment": ["comment.line.sif"],
-          "operator": ["keyword.operator.sif"],
-          "variable": ["variable.other.sif"]
+          "keyword": [
+            "keyword.control.sif"
+          ],
+          "function": [
+            "entity.name.function.sif"
+          ],
+          "string": [
+            "string.quoted.double.sif"
+          ],
+          "number": [
+            "constant.numeric.sif"
+          ],
+          "comment": [
+            "comment.line.sif"
+          ],
+          "operator": [
+            "keyword.operator.sif"
+          ],
+          "variable": [
+            "variable.other.sif"
+          ]
         }
       }
     ]
@@ -66,10 +91,14 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.75.0",
+    "@vscode/vsce": "^2.32.0",
     "typescript": "^5.0.0"
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package",
+    "publish": "vsce publish"
   }
 }

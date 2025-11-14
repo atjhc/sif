@@ -1,3 +1,13 @@
 .vscode/**
 .vscode-test/**
-5vsc-extension-quickstart.md
+.gitignore
+.vscodeignore
+src/**
+tsconfig.json
+node_modules/**
+!node_modules/vscode-languageclient/**
+*.ts
+*.map
+test.sif
+CHANGELOG.md
+INSTALL.md
