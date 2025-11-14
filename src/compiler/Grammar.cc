@@ -15,7 +15,7 @@
 //
 
 #include "sif/compiler/Grammar.h"
-#include "Utilities.h"
+#include <sif/Utilities.h>
 
 #include <set>
 #include <vector>

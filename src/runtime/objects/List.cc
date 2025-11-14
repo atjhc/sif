@@ -13,6 +13,8 @@
 
 #include "sif/runtime/objects/List.h"
 #include "sif/runtime/VirtualMachine.h"
+
+#include <sif/Utilities.h>
 #include "utilities/hasher.h"
 
 SIF_NAMESPACE_BEGIN

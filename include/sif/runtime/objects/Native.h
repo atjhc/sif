@@ -17,6 +17,7 @@
 #pragma once
 
 #include <sif/Common.h>
+#include <sif/Utilities.h>
 #include <sif/compiler/Signature.h>
 #include <sif/runtime/Object.h>
 #include <sif/runtime/Value.h>

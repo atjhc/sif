@@ -18,6 +18,8 @@
 #include "sif/runtime/modules/Core.h"
 #include "sif/runtime/modules/System.h"
 
+#include <sif/Utilities.h>
+
 SIF_NAMESPACE_BEGIN
 namespace lsp {
 

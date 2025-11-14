@@ -15,6 +15,7 @@
 //
 
 #include <sif/compiler/Scanner.h>
+#include <sif/Utilities.h>
 #include "tests/TestSuite.h"
 
 #include <filesystem>

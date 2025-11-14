@@ -15,6 +15,7 @@
 #include "sif/runtime/objects/String.h"
 #include "sif/runtime/VirtualMachine.h"
 
+#include <sif/Utilities.h>
 #include "extern/utf8.h"
 #include "utilities/strings.h"
 

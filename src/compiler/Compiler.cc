@@ -15,7 +15,7 @@
 //
 
 #include "sif/compiler/Compiler.h"
-#include "Utilities.h"
+#include <sif/Utilities.h>
 #include "sif/runtime/objects/Function.h"
 #include "sif/runtime/objects/String.h"
 #include "utilities/strings.h"

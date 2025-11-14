@@ -17,6 +17,8 @@
 #include "sif/runtime/objects/Function.h"
 #include <sif/compiler/Bytecode.h>
 
+#include <sif/Utilities.h>
+
 #include <climits>
 #include <cmath>
 #include <iomanip>

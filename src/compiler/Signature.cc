@@ -15,7 +15,7 @@
 //
 
 #include "sif/compiler/Signature.h"
-#include "Utilities.h"
+#include <sif/Utilities.h>
 #include "sif/compiler/Parser.h"
 #include "sif/compiler/Scanner.h"
 #include "sif/runtime/ModuleLoader.h"

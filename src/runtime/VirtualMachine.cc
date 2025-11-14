@@ -23,6 +23,8 @@
 #include "sif/runtime/objects/String.h"
 #include "sif/runtime/protocols/Enumerable.h"
 
+#include <sif/Utilities.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>

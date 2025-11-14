@@ -14,7 +14,7 @@
 //  limitations under the License.
 //
 
-#include "Utilities.h"
+#include <sif/Utilities.h>
 #include "sif/Error.h"
 
 #include "extern/utf8.h"

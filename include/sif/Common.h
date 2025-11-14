@@ -16,13 +16,9 @@
 
 #pragma once
 
-#include <algorithm>
-#include <cstdlib>
-#include <format>
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -84,10 +80,6 @@ inline constexpr NoneType None = std::nullopt;
 
 template <class E> tl::unexpected<E> Fail(const E &error) { return tl::unexpected(error); }
 
-template <class... Args> std::string Format(std::format_string<Args...> fmt, Args &&...args) {
-    return std::format(fmt, std::forward<Args>(args)...);
-}
-
 template <class T, class... Args>
 std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T>> MakeOwned(Args &&...args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
@@ -104,98 +96,8 @@ template <class T, class U> Strong<T> Cast(const Strong<U> &arg) {
 template <class T>
 inline constexpr bool IsTrackedContainer = std::is_same_v<T, List> || std::is_same_v<T, Dictionary>;
 
-template <typename Container> void Append(Container &target, const Container &source) {
-    std::copy(source.begin(), source.end(), std::back_inserter(target));
-}
-
-template <typename Fn> class DeferGuard {
-  public:
-    explicit DeferGuard(Fn fn) : _fn(std::move(fn)) {}
-    DeferGuard(const DeferGuard &) = delete;
-    DeferGuard &operator=(const DeferGuard &) = delete;
-    DeferGuard(DeferGuard &&other) noexcept : _fn(std::move(other._fn)), _active(other._active) {
-        other._active = false;
-    }
-    ~DeferGuard() {
-        if (_active) {
-            _fn();
-        }
-    }
-
-  private:
-    Fn _fn;
-    bool _active = true;
-};
-
-template <typename Fn> auto Defer(Fn &&fn) {
-    return DeferGuard<std::decay_t<Fn>>(std::forward<Fn>(fn));
-}
-
-static inline std::string Concat() { return std::string(); }
-
-template <typename... Args> static inline std::string Concat(Args &&...args) {
-    std::ostringstream ss;
-    (ss << ... << args);
-    return ss.str();
-}
-
-static inline std::string Quoted(const std::string &str) { return "\"" + str + "\""; }
-
-template <typename Iterable>
-static inline std::string Join(const Iterable &v, const std::string &sep) {
-    std::ostringstream ss;
-    auto it = v.begin();
-    while (it != v.end()) {
-        ss << *it;
-        it++;
-        if (it != v.end()) {
-            ss << sep;
-        }
-    }
-    return ss.str();
-}
-
-template <typename Iterable, typename Functor>
-static inline std::string Join(const Iterable &v, const std::string &sep, Functor f) {
-    std::ostringstream ss;
-    auto it = v.begin();
-    while (it != v.end()) {
-        ss << f(*it);
-        it++;
-        if (it != v.end()) {
-            ss << sep;
-        }
-    }
-    return ss.str();
-}
-
-template <typename... Args> [[noreturn]] static inline void Abort(Args... args) {
-    std::cerr << Concat(args...) << std::endl;
-    std::abort();
-}
-
-template <typename T> constexpr typename std::underlying_type<T>::type RawValue(T e) {
-    return static_cast<typename std::underlying_type<T>::type>(e);
-}
-
 template <typename Iterable>
 using ValueType = typename std::iterator_traits<typename Iterable::iterator>::value_type;
-
-template <typename Iterable, typename Functor>
-std::vector<ValueType<Iterable>> Filter(const Iterable &container, Functor f) {
-    Iterable result;
-    result.reserve(std::distance(container.begin(), container.end()));
-    std::copy_if(container.begin(), container.end(), std::back_inserter(result), f);
-    return result;
-}
-
-template <typename Iterable, typename Functor>
-std::vector<ValueType<Iterable>> Filter(Iterable &container, Functor f) {
-    Iterable result;
-    result.reserve(std::distance(container.begin(), container.end()));
-    std::copy_if(container.begin(), container.end(), std::back_inserter(result), f);
-    return result;
-}
 
 struct SourceLocation {
     unsigned int position = 0;
@@ -224,12 +126,12 @@ struct SourceRange {
     }
 };
 
-static inline std::ostream &operator<<(std::ostream &out, const SourceRange &range) {
-    return out << Concat(range.start, "-", range.end);
+static inline std::ostream &operator<<(std::ostream &out, const SourceLocation &location) {
+    return out << (location.lineNumber + 1) << ":" << (location.position + 1);
 }
 
-static inline std::ostream &operator<<(std::ostream &out, const SourceLocation &location) {
-    return out << Concat(location.lineNumber + 1, ":", location.position + 1);
+static inline std::ostream &operator<<(std::ostream &out, const SourceRange &range) {
+    return out << range.start << "-" << range.end;
 }
 
 template <class... Ts> struct Overload : Ts... { using Ts::operator()...; };

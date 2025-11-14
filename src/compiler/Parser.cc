@@ -15,7 +15,7 @@
 //
 
 #include "sif/compiler/Parser.h"
-#include "Utilities.h"
+#include <sif/Utilities.h>
 #include "sif/Error.h"
 #include "sif/ast/Repeat.h"
 #include "utilities/strings.h"

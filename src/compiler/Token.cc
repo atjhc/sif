@@ -15,7 +15,10 @@
 //
 
 #include "sif/compiler/Token.h"
+
+#include <sif/Utilities.h>
 #include "utilities/strings.h"
+
 #include <cassert>
 
 SIF_NAMESPACE_BEGIN

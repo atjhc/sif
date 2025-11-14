@@ -12,6 +12,8 @@
 //
 
 #include "sif/runtime/objects/Range.h"
+
+#include <sif/Utilities.h>
 #include "utilities/hasher.h"
 
 SIF_NAMESPACE_BEGIN
