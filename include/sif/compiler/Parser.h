@@ -145,6 +145,7 @@ class Parser {
 
     Result<Strong<Statement>, Error> parseSimpleStatement();
     Result<Strong<Statement>, Error> parseAssignment();
+    Result<Strong<AssignmentTarget>, Error> parseAssignmentTarget();
     Result<Strong<Statement>, Error> parseExit();
     Result<Strong<Statement>, Error> parseNext();
     Result<Strong<Statement>, Error> parseReturn();
@@ -188,6 +189,7 @@ class Parser {
     int _parsingDepth;
 
     bool _failed;
+    bool _didSynchronize;
 };
 
 SIF_NAMESPACE_END

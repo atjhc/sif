@@ -29,3 +29,4 @@ ${DSTROOT}/debug:
 
 clean:
 	rm -rf ${DSTROOT}
+	rm -rf tmp

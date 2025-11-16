@@ -44,6 +44,7 @@ Parser::Parser(const ParserConfig &config) : _config(config) {
     _failed = false;
     _index = 0;
     _parsingDepth = 0;
+    _didSynchronize = false;
     _scopes.push_back(Scope());
     _grammar = MakeStrong<Grammar>();
     _grammar->argument = MakeStrong<Grammar>();
@@ -260,6 +261,7 @@ Token Parser::synchronize(const Parser::TokenTypes &tokenTypes) {
 Token Parser::synchronizeTo(const Parser::TokenTypes &tokenTypes) {
     trace("Synchronizing");
     _recording = false;
+    _didSynchronize = true;
     while (!isAtEnd()) {
         if (check(tokenTypes)) {
             break;
@@ -546,6 +548,31 @@ Strong<Statement> Parser::parseFunction() {
     auto name = signature.name();
     _variables.erase(name);
     _scopes.back().variables.erase(name);
+
+    // Convert signature arguments to AssignmentTargets for the compiler
+    for (auto &&argument : signature.arguments()) {
+        std::vector<Strong<AssignmentTarget>> targets;
+        for (auto &&target : argument.targets) {
+            if (target.name) {
+                auto variable = MakeStrong<Variable>(target.name.value(), None);
+                variable->range = target.name->range;
+                auto variableTarget =
+                    MakeStrong<VariableTarget>(variable, target.typeName, std::vector<Strong<Expression>>{});
+                variableTarget->range = target.name->range;
+                targets.push_back(variableTarget);
+            }
+        }
+
+        // Each argument is a single AssignmentTarget
+        if (targets.size() == 1) {
+            decl->targets.push_back(targets[0]);
+        } else if (targets.size() > 1) {
+            // Multiple targets in one argument -> StructuredTarget
+            auto structuredTarget = MakeStrong<StructuredTarget>(targets);
+            structuredTarget->range = SourceRange{targets.front()->range.start, targets.back()->range.end};
+            decl->targets.push_back(structuredTarget);
+        }
+    }
 
     beginScope();
     for (auto &&argument : signature.arguments()) {
@@ -907,7 +934,7 @@ Strong<RepeatFor> Parser::parseRepeatFor() {
         if (auto token = consumeWord()) {
             auto variable = MakeStrong<Variable>(token.value());
             variable->range = SourceRange{token.value().range.start, token.value().range.end};
-            auto name = lowercase(variable->name.text);
+            auto name = lowercase(variable->name->text);
             declare(name);
             repeat->variables.push_back(variable);
         } else {
@@ -963,72 +990,122 @@ Result<Strong<Statement>, Error> Parser::parseSimpleStatement() {
     return parseExpressionStatement();
 }
 
+Result<Strong<AssignmentTarget>, Error> Parser::parseAssignmentTarget() {
+    if (match({Token::Type::LeftParen})) {
+        std::vector<Strong<AssignmentTarget>> nestedTargets;
+        do {
+            auto target = parseAssignmentTarget();
+            if (!target) {
+                return target;
+            }
+            nestedTargets.push_back(target.value());
+        } while (match({Token::Type::Comma}));
+
+        if (!consume(Token::Type::RightParen)) {
+            emitError(Error(peek().range, Errors::ExpectedRightParens));
+            synchronizeTo({Token::Type::To, Token::Type::Comma, Token::Type::RightParen, Token::Type::NewLine});
+        }
+
+        return MakeStrong<StructuredTarget>(nestedTargets);
+    }
+
+    Optional<Variable::Scope> scope = None;
+    Optional<SourceRange> scopeRange = None;
+    Optional<Token> typeName = None;
+    std::vector<Strong<Expression>> subscripts;
+
+    if (match({Token::Type::Global})) {
+        scope = Variable::Scope::Global;
+        scopeRange = previous().range;
+    } else if (match({Token::Type::Local})) {
+        scope = Variable::Scope::Local;
+        scopeRange = previous().range;
+    }
+
+    auto token = consumeWord();
+    if (!token) {
+        emitError(Error(peek().range, Errors::ExpectedAVariableName));
+        synchronizeTo({Token::Type::To, Token::Type::Comma, Token::Type::RightParen, Token::Type::NewLine});
+    }
+
+    if (match({Token::Type::Colon})) {
+        if (auto word = consumeWord()) {
+            typeName = word.value();
+        } else {
+            emitError(Error(peek().range, Errors::ExpectedATypeName));
+            synchronizeTo({Token::Type::To, Token::Type::Comma, Token::Type::RightParen, Token::Type::NewLine});
+        }
+    } else if (token) {
+        while (match({Token::Type::LeftBracket})) {
+            if (match({Token::Type::RightBracket})) {
+                emitError(Error(previous().range, Errors::ExpectedAnExpression));
+                break;
+            }
+            auto subscript = parseExpression();
+            if (!subscript) {
+                synchronizeTo({Token::Type::RightBracket, Token::Type::To, Token::Type::Comma, Token::Type::NewLine});
+                if (match({Token::Type::RightBracket})) {
+                    // Consumed the closing bracket
+                }
+                break;
+            }
+            subscripts.push_back(subscript);
+            if (!consume(Token::Type::RightBracket)) {
+                emitError(Error(peek().range, Errors::ExpectedRightBracket));
+                synchronizeTo({Token::Type::RightBracket, Token::Type::To, Token::Type::Comma, Token::Type::NewLine});
+                if (match({Token::Type::RightBracket})) {
+                    continue;
+                }
+                break;
+            }
+        }
+    }
+
+    if (subscripts.size() == 0 && token && !token.value().text.empty()) {
+        auto name = lowercase(token.value().text);
+        declare(name);
+    }
+
+    auto variable = MakeStrong<Variable>(token, scope);
+    variable->ranges.scope = scopeRange;
+    if (token) {
+        variable->range = SourceRange{token.value().range.start, token.value().range.end};
+    } else {
+        variable->range = peek().range;
+    }
+    return MakeStrong<VariableTarget>(variable, typeName, subscripts);
+}
+
 Result<Strong<Statement>, Error> Parser::parseAssignment() {
     auto assignment = MakeStrong<Assignment>();
     assignment->ranges.set = previous().range;
     assignment->range.start = previous().range.start;
 
     std::vector<Strong<AssignmentTarget>> variableDecls;
+    _didSynchronize = false;
     do {
-        Optional<Variable::Scope> scope = None;
-        Optional<Token> typeName = None;
-        std::vector<Strong<Expression>> subscripts;
-
-        if (match({Token::Type::Global})) {
-            scope = Variable::Scope::Global;
-        } else if (match({Token::Type::Local})) {
-            scope = Variable::Scope::Local;
-        }
-
-        auto token = consumeWord();
-        if (!token) {
-            emitError(Error(peek().range, Errors::ExpectedAVariableName));
+        auto target = parseAssignmentTarget();
+        if (!target) {
             synchronize();
             return assignment;
         }
-        if (match({Token::Type::Colon})) {
-            if (auto word = consumeWord()) {
-                typeName = word.value();
-            } else {
-                emitError(Error(peek().range, Errors::ExpectedATypeName));
-                synchronize();
-                return assignment;
-            }
-        } else {
-            while (match({Token::Type::LeftBracket})) {
-                if (match({Token::Type::RightBracket})) {
-                    emitError(Error(previous().range, Errors::ExpectedAnExpression));
-                    break;
-                }
-                auto subscript = parseExpression();
-                if (!subscript) {
-                    synchronize();
-                    return assignment;
-                }
-                subscripts.push_back(subscript);
-                if (!consume(Token::Type::RightBracket)) {
-                    emitError(Error(peek().range, Errors::ExpectedRightBracket));
-                    return assignment;
-                }
-            }
-        }
-        if (subscripts.size() == 0) {
-            auto name = lowercase(token.value().text);
-            declare(name);
-        }
-        auto variable = MakeStrong<Variable>(token.value(), scope);
-        variable->range = SourceRange{token.value().range.start, token.value().range.end};
-        auto assignmentTarget = MakeStrong<AssignmentTarget>(variable, typeName, subscripts);
-        assignmentTarget->range =
-            SourceRange{assignmentTarget->variable->range.start, previous().range.end};
-        variableDecls.push_back(assignmentTarget);
+        variableDecls.push_back(target.value());
     } while (match({Token::Type::Comma}));
 
-    if (variableDecls.size() == 1 && variableDecls[0]->variable->name.text == "_") {
-        emitError(Error(variableDecls[0]->range, Errors::UnderscoreNotAllowed));
+    if (variableDecls.size() == 1) {
+        if (auto varTarget = dynamic_cast<VariableTarget *>(variableDecls[0].get())) {
+            if (varTarget->variable->name && varTarget->variable->name->text == "_") {
+                emitError(Error(variableDecls[0]->range, Errors::UnderscoreNotAllowed));
+            }
+        }
     }
 
     assignment->targets = variableDecls;
+
+    if (_didSynchronize) {
+        synchronize();
+        return assignment;
+    }
 
     if (!consume(Token::Type::To)) {
         emitError(Error(peek().range, Errors::ExpectedTo));

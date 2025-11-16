@@ -55,9 +55,13 @@ void Bytecode::addRepeat(SourceLocation location, uint16_t argument) {
 }
 
 uint16_t Bytecode::addLocal(std::string local) {
-    for (int i = 0; i < _locals.size(); i++) {
-        if (_locals[i] == local) {
-            return i;
+    // Never reuse unnamed ("") or underscore ("_") locals
+    // Each should get its own slot
+    if (local != "" && local != "_") {
+        for (int i = 0; i < _locals.size(); i++) {
+            if (_locals[i] == local) {
+                return i;
+            }
         }
     }
     _locals.push_back(local);

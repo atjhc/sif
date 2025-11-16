@@ -93,19 +93,36 @@ void PrettyPrinter::visit(const Return &statement) {
     }
 }
 
+void PrettyPrinter::visit(const VariableTarget &target) {
+    target.variable->accept(*this);
+    if (auto typeName = target.typeName) {
+        out << ": " << typeName.value().text;
+    }
+    for (auto &&subscript : target.subscripts) {
+        out << "[";
+        subscript->accept(*this);
+        out << "]";
+    }
+}
+
+void PrettyPrinter::visit(const StructuredTarget &target) {
+    out << "(";
+    auto it = target.targets.begin();
+    while (it != target.targets.end()) {
+        (*it)->accept(*this);
+        it++;
+        if (it != target.targets.end()) {
+            out << ", ";
+        }
+    }
+    out << ")";
+}
+
 void PrettyPrinter::visit(const Assignment &set) {
     out << "set ";
     auto it = set.targets.begin();
     while (it != set.targets.end()) {
-        (*it)->variable->accept(*this);
-        if (auto typeName = (*it)->typeName) {
-            out << ": " << typeName.value().text;
-        }
-        for (auto &&subscript : (*it)->subscripts) {
-            out << "[";
-            subscript->accept(*this);
-            out << "]";
-        }
+        (*it)->accept(*this);
         it++;
         if (it != set.targets.end()) {
             out << ", ";
@@ -195,7 +212,9 @@ void PrettyPrinter::visit(const Variable &variable) {
             out << "local ";
         }
     }
-    out << variable.name.text;
+    if (variable.name) {
+        out << variable.name->text;
+    }
 }
 
 void PrettyPrinter::visit(const Binary &binary) {

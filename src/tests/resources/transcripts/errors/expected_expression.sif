@@ -56,6 +56,11 @@ expected an expression
 expected an expression
 --)
 
+set local
+(-- error
+expected a variable name
+--)
+
 if
 (-- error
 expected an expression

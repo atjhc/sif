@@ -40,6 +40,8 @@ struct ExitRepeat;
 struct NextRepeat;
 struct Return;
 struct ExpressionStatement;
+struct VariableTarget;
+struct StructuredTarget;
 
 struct Statement : Node {
     struct Visitor {
@@ -72,8 +74,39 @@ struct Block : Statement {
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
 };
 
+struct AssignmentTarget : Node {
+    struct Visitor {
+        virtual void visit(const VariableTarget &) = 0;
+        virtual void visit(const StructuredTarget &) = 0;
+        virtual ~Visitor() = default;
+    };
+
+    virtual void accept(Visitor &visitor) const = 0;
+    virtual ~AssignmentTarget() = default;
+};
+
+struct VariableTarget : AssignmentTarget {
+    Strong<Variable> variable;
+    Optional<Token> typeName;
+    std::vector<Strong<Expression>> subscripts;
+
+    VariableTarget(Strong<Variable> variable, Optional<Token> typeName = None,
+                   std::vector<Strong<Expression>> subscripts = {});
+
+    void accept(Visitor &visitor) const override;
+};
+
+struct StructuredTarget : AssignmentTarget {
+    std::vector<Strong<AssignmentTarget>> targets;
+
+    StructuredTarget(std::vector<Strong<AssignmentTarget>> targets);
+
+    void accept(Visitor &visitor) const override;
+};
+
 struct FunctionDecl : Statement {
     Optional<Signature> signature;
+    std::vector<Strong<AssignmentTarget>> targets;
     Strong<Statement> statement;
 
     struct {
@@ -88,15 +121,6 @@ struct FunctionDecl : Statement {
     FunctionDecl(const Signature &signature, Strong<Statement> statement);
 
     void accept(Statement::Visitor &v) const override { v.visit(*this); }
-};
-
-struct AssignmentTarget : Node {
-    Strong<Variable> variable;
-    Optional<Token> typeName;
-    std::vector<Strong<Expression>> subscripts;
-
-    AssignmentTarget(Strong<Variable> variable, Optional<Token> typeName = None,
-                     std::vector<Strong<Expression>> subscripts = {});
 };
 
 struct Assignment : Statement {

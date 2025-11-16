@@ -178,7 +178,7 @@ struct DictionaryLiteral : Expression {
 struct Variable : Expression {
     enum Scope { Local, Global };
 
-    Token name;
+    Optional<Token> name;
     Optional<Scope> scope;
 
     struct {
@@ -186,7 +186,7 @@ struct Variable : Expression {
     } ranges;
 
     Variable() {}
-    Variable(const Token &name, Optional<Scope> scope = None);
+    Variable(const Optional<Token> &name, Optional<Scope> scope = None);
 
     void accept(Expression::Visitor &v) const override { return v.visit(*this); }
 };

@@ -251,18 +251,36 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
     auto functionBytecode = MakeStrong<Bytecode>();
     _frames.push_back({functionBytecode, {}, {}});
 
-    // Add function name and arguments to locals list.
+    // Add function name to locals list.
     addLocal(functionDecl.signature.value().name());
-    for (const auto &term : functionDecl.signature.value().terms) {
-        if (auto &&arg = std::get_if<Signature::Argument>(&term); arg) {
-            for (auto &&target : arg->targets) {
-                if (target.name.has_value()) {
-                    addLocal(lowercase(target.name.value().text));
+
+    // Visitor to add locals from AssignmentTargets
+    struct LocalAdder : AssignmentTarget::Visitor {
+        Compiler &compiler;
+        LocalAdder(Compiler &c) : compiler(c) {}
+
+        void visit(const VariableTarget &target) override {
+            if (target.variable->name) {
+                auto name = lowercase(target.variable->name->text);
+                if (name == "_") {
+                    compiler.addLocal();
                 } else {
-                    addLocal();
+                    compiler.addLocal(name);
                 }
             }
         }
+
+        void visit(const StructuredTarget &target) override {
+            for (const auto &nestedTarget : target.targets) {
+                nestedTarget->accept(*this);
+            }
+        }
+    };
+
+    // Add all parameter variables to locals
+    LocalAdder adder(*this);
+    for (const auto &target : functionDecl.targets) {
+        target->accept(adder);
     }
 
     // Compile the body of the function.
@@ -360,23 +378,39 @@ void Compiler::visit(const Assignment &assignment) {
         bytecode().add(assignment.expression->range.start, Opcode::UnpackList, count);
     }
 
-    for (auto &&variable : std::views::reverse(assignment.targets)) {
-        if (variable->subscripts.size() > 0) {
-            variable->variable->accept(*this);
-            for (int i = 0; i < variable->subscripts.size() - 1; i++) {
-                variable->subscripts[i]->accept(*this);
-                bytecode().add(variable->subscripts[i]->range.start, Opcode::Subscript);
-            }
-            variable->subscripts.back()->accept(*this);
-            bytecode().add(assignment.range.start, Opcode::SetSubscript);
-        } else {
-            auto name = lowercase(variable->variable->name.text);
-            if (name == "it") {
-                bytecode().add(assignment.range.start, Opcode::SetIt);
-            } else {
-                assignVariable(assignment.range.start, name, variable->variable->scope);
-            }
+    for (auto &&target : std::views::reverse(assignment.targets)) {
+        target->accept(*this);
+    }
+}
+
+void Compiler::visit(const VariableTarget &target) {
+    if (!target.variable->name) {
+        return;
+    }
+
+    if (target.subscripts.size() > 0) {
+        target.variable->accept(*this);
+        for (int i = 0; i < target.subscripts.size() - 1; i++) {
+            target.subscripts[i]->accept(*this);
+            bytecode().add(target.subscripts[i]->range.start, Opcode::Subscript);
         }
+        target.subscripts.back()->accept(*this);
+        bytecode().add(target.variable->range.start, Opcode::SetSubscript);
+    } else {
+        auto name = lowercase(target.variable->name->text);
+        if (name == "it") {
+            bytecode().add(target.variable->range.start, Opcode::SetIt);
+        } else {
+            assignVariable(target.variable->range.start, name, target.variable->scope);
+        }
+    }
+}
+
+void Compiler::visit(const StructuredTarget &target) {
+    uint16_t count = target.targets.size();
+    bytecode().add(target.range.start, Opcode::UnpackList, count);
+    for (auto &&nestedTarget : std::views::reverse(target.targets)) {
+        nestedTarget->accept(*this);
     }
 }
 
@@ -439,8 +473,10 @@ void Compiler::visit(const RepeatFor &foreach) {
                        foreach.variables.size());
     }
     for (auto &&variable : std::views::reverse(foreach.variables)) {
-        assignVariable(foreach.expression->range.start, lowercase(variable->name.text),
-                       variable->scope);
+        if (variable->name) {
+            assignVariable(foreach.expression->range.start, lowercase(variable->name->text),
+                           variable->scope);
+        }
     }
 
     foreach.statement->accept(*this);
@@ -496,7 +532,11 @@ void Compiler::visit(const Call &call) {
 void Compiler::visit(const Grouping &grouping) { grouping.expression->accept(*this); }
 
 void Compiler::visit(const Variable &variable) {
-    auto name = lowercase(variable.name.text);
+    if (!variable.name) {
+        return;
+    }
+
+    auto name = lowercase(variable.name->text);
     if (name == "it") {
         bytecode().add(variable.range.start, Opcode::GetIt);
     } else {

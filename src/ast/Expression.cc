@@ -31,7 +31,7 @@ Unary::Unary(Operator unaryOperator, Strong<Expression> expression)
 
 Grouping::Grouping(Strong<Expression> expression) : expression(expression) {}
 
-Variable::Variable(const Token &name, Optional<Scope> scope) : name(name), scope(scope) {}
+Variable::Variable(const Optional<Token> &name, Optional<Scope> scope) : name(name), scope(scope) {}
 
 RangeLiteral::RangeLiteral(Strong<Expression> start, Strong<Expression> end, bool closed)
     : start(start), end(end), closed(closed) {}

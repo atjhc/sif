@@ -2,6 +2,7 @@
 .vscode/
 build/
 fuzzer/
+tmp/
 
 # VS Code extension build artifacts
 support/vscode-extension/node_modules/

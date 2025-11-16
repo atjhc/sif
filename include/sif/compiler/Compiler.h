@@ -35,7 +35,9 @@ struct CompilerConfig {
     bool enableDebugInfo = true;
 };
 
-class Compiler : public Statement::Visitor, public Expression::Visitor {
+class Compiler : public Statement::Visitor,
+                 public Expression::Visitor,
+                 public AssignmentTarget::Visitor {
   public:
     Compiler(const CompilerConfig &config);
 
@@ -114,6 +116,11 @@ class Compiler : public Statement::Visitor, public Expression::Visitor {
     void visit(const DictionaryLiteral &) override;
     void visit(const Literal &) override;
     void visit(const StringInterpolation &) override;
+
+#pragma mark - AssignmentTarget::Visitor
+
+    void visit(const VariableTarget &) override;
+    void visit(const StructuredTarget &) override;
 
     CompilerConfig _config;
 

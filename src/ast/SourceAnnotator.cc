@@ -147,16 +147,31 @@ void SourceAnnotator::visit(const Return &statement) {
 void SourceAnnotator::visit(const Assignment &set) {
     _annotations.emplace_back(set.ranges.set, Annotation::Kind::Keyword);
     for (const auto &target : set.targets) {
-        _annotations.emplace_back(target->variable->range, Annotation::Kind::Variable);
-        for (const auto &subscript : target->subscripts) {
-            subscript->accept(*this);
-        }
+        target->accept(*this);
     }
     if (set.ranges.to) {
         _annotations.emplace_back(set.ranges.to.value(), Annotation::Kind::Keyword);
     }
     if (set.expression) {
         set.expression->accept(*this);
+    }
+}
+
+void SourceAnnotator::visit(const VariableTarget &target) {
+    if (target.variable->ranges.scope) {
+        _annotations.emplace_back(target.variable->ranges.scope.value(), Annotation::Kind::Keyword);
+    }
+    if (target.variable->name) {
+        _annotations.emplace_back(target.variable->range, Annotation::Kind::Variable);
+    }
+    for (const auto &subscript : target.subscripts) {
+        subscript->accept(*this);
+    }
+}
+
+void SourceAnnotator::visit(const StructuredTarget &target) {
+    for (const auto &nestedTarget : target.targets) {
+        nestedTarget->accept(*this);
     }
 }
 

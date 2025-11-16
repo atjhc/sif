@@ -23,9 +23,21 @@ Block::Block(std::vector<Strong<Statement>> statements) : statements(statements)
 FunctionDecl::FunctionDecl(const Signature &signature, Strong<Statement> statement)
     : signature(signature), statement(statement) {}
 
-AssignmentTarget::AssignmentTarget(Strong<Variable> variable, Optional<Token> typeName,
-                                   std::vector<Strong<Expression>> subscripts)
-    : variable(variable), typeName(typeName), subscripts(subscripts) {}
+VariableTarget::VariableTarget(Strong<Variable> variable, Optional<Token> typeName,
+                               std::vector<Strong<Expression>> subscripts)
+    : variable(variable), typeName(typeName), subscripts(subscripts) {
+    range = variable->range;
+}
+
+void VariableTarget::accept(Visitor &visitor) const { visitor.visit(*this); }
+
+StructuredTarget::StructuredTarget(std::vector<Strong<AssignmentTarget>> targets) : targets(targets) {
+    if (!targets.empty()) {
+        range = SourceRange{targets.front()->range.start, targets.back()->range.end};
+    }
+}
+
+void StructuredTarget::accept(Visitor &visitor) const { visitor.visit(*this); }
 
 Assignment::Assignment(std::vector<Strong<AssignmentTarget>> targets, Strong<Expression> expression)
     : targets(targets), expression(expression) {}
