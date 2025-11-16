@@ -161,7 +161,7 @@ void Compiler::resolve(const Call &call, const std::string &name) {
 
 void Compiler::resolve(const Variable &variable, const std::string &name) {
     uint16_t index = 0;
-    Opcode opcode;
+    Opcode opcode = Opcode::GetGlobal;  // initialized to suppress GCC warning
 
     if (!_config.interactive || _scopeDepth > 0) {
         if (variable.scope) {

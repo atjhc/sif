@@ -820,7 +820,15 @@ static auto _reverse_T(const NativeCallContext &context) -> Result<Value, Error>
     if (!list) {
         return Fail(context.argumentError(0, Errors::ExpectedAList));
     }
+    // GCC 13 false positive with std::variant<...std::shared_ptr...> in std::reverse
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
     std::reverse(list->values().begin(), list->values().end());
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
     return list;
 }
 
