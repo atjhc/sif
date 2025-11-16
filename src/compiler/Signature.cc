@@ -142,21 +142,29 @@ bool Signature::operator<(const Signature &signature) const {
     int i = 0;
     while (i < terms.size() || i < signature.terms.size()) {
         if (i == terms.size())
-            return false;
+            return true;  // this is shorter, so it's "less than"
         if (i == signature.terms.size())
-            return true;
-        if (terms[i].index() < signature.terms[i].index()) {
-            return true;
+            return false;  // other is shorter, so this is "greater than"
+
+        // Compare indices first
+        if (terms[i].index() != signature.terms[i].index()) {
+            return terms[i].index() < signature.terms[i].index();
         }
+
+        // Indices are equal, compare token text if both are tokens
         if (std::holds_alternative<Token>(terms[i]) &&
             std::holds_alternative<Token>(signature.terms[i])) {
-            if (std::get<Token>(terms[i]).text < std::get<Token>(signature.terms[i]).text) {
-                return true;
+            const auto &thisText = std::get<Token>(terms[i]).text;
+            const auto &otherText = std::get<Token>(signature.terms[i]).text;
+            if (thisText != otherText) {
+                return thisText < otherText;
             }
         }
+
+        // Everything equal so far, continue to next term
         i++;
     }
-    return false;
+    return false;  // all terms are equal
 }
 
 bool Signature::operator==(const Signature &signature) const { return name() == signature.name(); }

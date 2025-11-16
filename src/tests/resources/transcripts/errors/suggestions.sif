@@ -2,11 +2,11 @@ insert
 (-- error
 no matching function "insert"
 Possible matches:
+  insert item {} with key {} into {}
   insert {} at index {} into {}
+  insert {} at char/character {} in {}
   insert {} at (the) beginning of {}
   insert {} at (the) end of {}
-  insert {} at char/character {} in {}
-  insert item {} with key {} into {}
 
 --)
 

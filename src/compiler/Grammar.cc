@@ -17,7 +17,9 @@
 #include "sif/compiler/Grammar.h"
 #include <sif/Utilities.h>
 
+#include <algorithm>
 #include <set>
+#include <stack>
 #include <vector>
 
 SIF_NAMESPACE_BEGIN
@@ -86,8 +88,15 @@ std::vector<Signature> Grammar::allSignatures() const {
         if (grammar->argument) {
             grammars.push(grammar->argument.get());
         }
-        for (auto &&pair : grammar->terms) {
-            grammars.push(pair.second.get());
+        // Sort keys to ensure deterministic iteration order across different STL implementations
+        const auto &terms = grammar->terms;
+        std::vector<std::string> sortedKeys;
+        for (auto &&pair : terms) {
+            sortedKeys.push_back(pair.first);
+        }
+        std::sort(sortedKeys.begin(), sortedKeys.end());
+        for (auto &&key : sortedKeys) {
+            grammars.push(terms.at(key).get());
         }
         grammar = nullptr;
         if (grammars.size() > 0) {

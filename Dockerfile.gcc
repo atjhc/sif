@@ -1,0 +1,22 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies and GCC-13 (needed for C++20 <format> support)
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:ubuntu-toolchain-r/test \
+    && apt-get update && apt-get install -y \
+    gcc-13 \
+    g++-13 \
+    cmake \
+    make \
+    && apt-get clean
+
+# Set GCC-13 as default
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100
+
+# Set up a non-root user (optional for security)
+# RUN useradd -ms /bin/bash developer
+# USER developer

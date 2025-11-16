@@ -36,6 +36,8 @@ switch (kind) {
     case Annotation::Kind::Comment: return "comment";
     case Annotation::Kind::Namespace: return "namespace";
     }
+    // Unreachable, but GCC requires a return statement
+    return "unknown";
 }
 
 static std::string gather(const std::string &source, const std::string &context) {

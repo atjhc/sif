@@ -1265,7 +1265,7 @@ static auto _the_func_of_T(double (*func)(double))
         }
         auto argument = context.arguments[0].castFloat();
         auto result = func(argument);
-        if (isnan(result)) {
+        if (std::isnan(result)) {
             return Fail(context.argumentError(0, Errors::DomainError));
         }
         return result;

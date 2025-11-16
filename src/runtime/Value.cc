@@ -41,6 +41,8 @@ std::string Value::typeName() const {
     case Value::Type::Object:
         return asObject()->typeName();
     }
+    // Unreachable, but GCC requires a return statement
+    return "unknown";
 }
 
 bool Value::isEmpty() const { return type() == Value::Type::Empty; }

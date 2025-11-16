@@ -1,4 +1,4 @@
-name: Test Release (Clang)
+name: Test Release (GCC)
 
 on:
   push:
@@ -11,13 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Build the Docker image from the Clang Dockerfile
+      # Build the Docker image from the GCC Dockerfile
       - name: Build Docker Image
-        run: docker build -f Dockerfile.clang -t clang-image:latest .
+        run: docker build -f Dockerfile.gcc -t gcc-image:latest .
 
       # Run the tests inside the Docker container
       - name: Run Tests in Docker
         run: |
           docker run --rm -v ${{ github.workspace }}:/mnt/build \
-            -w /mnt/build -u $(id -u):$(id -g) clang-image:latest \
+            -w /mnt/build -u $(id -u):$(id -g) gcc-image:latest \
             bash -c "make release && cd build/release && ctest --output-on-failure"

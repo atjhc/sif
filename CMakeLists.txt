@@ -7,12 +7,19 @@ project(Sif
 # Enable all warnings, and treat warnings as errors.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 
-# Allow selection of standard library.
+# GCC doesn't support #pragma mark, so disable the warning
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas -Wno-sign-compare")
+endif()
+
+# Allow selection of standard library (Clang only).
 option(USE_LIBCXX "Use libc++ instead of GNU libstdc++" ON)
-if(USE_LIBCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    if(USE_LIBCXX)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+    endif()
 endif()
 
 # Set build directories

@@ -1,4 +1,4 @@
-name: Test Debug
+name: Test Debug (Clang)
 
 on:
   push:
@@ -11,9 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Build the Docker image from your Dockerfile
+      # Build the Docker image from the Clang Dockerfile
       - name: Build Docker Image
-        run: docker build -t clang-image:latest .
+        run: docker build -f Dockerfile.clang -t clang-image:latest .
 
       # Run the tests inside the Docker container
       - name: Run Tests in Docker

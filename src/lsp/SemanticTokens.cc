@@ -150,6 +150,7 @@ SemanticTokensProvider::annotationKindToTokenType(Annotation::Kind kind) {
     case Annotation::Kind::Namespace:
         return TokenType::Namespace;
     }
+    return TokenType::Keyword; // unreachable
 }
 
 } // namespace lsp

@@ -339,6 +339,8 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
         out << "ToString";
         return position + 1;
     }
+    // Unreachable, but GCC requires a return statement
+    return position;
 }
 
 struct BytecodePrinter {

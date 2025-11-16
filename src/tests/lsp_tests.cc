@@ -18,6 +18,8 @@
 #include <sif/lsp/SemanticTokens.h>
 #include "tests/TestSuite.h"
 
+#include <filesystem>
+
 using namespace sif;
 using namespace sif::lsp;
 
@@ -388,15 +390,17 @@ TEST_CASE(LSPTests, ModuleImports) {
     DocumentManager manager;
 
     // Set workspace root to the transcripts/modules directory
-    std::string workspaceRoot = "file:///Users/james/Documents/code/sif/build/debug/resources/transcripts/modules";
+    std::filesystem::path modulesPath = std::filesystem::path(suite.config.resourcesPath) / "transcripts" / "modules";
+    std::string workspaceRoot = "file://" + std::filesystem::absolute(modulesPath).string();
     manager.setWorkspaceRoot(workspaceRoot);
 
     // Open a document that imports module1.sif
     std::string content = R"(use "module1.sif"
 set x to 42)";
 
-    manager.openDocument("file:///Users/james/Documents/code/sif/build/debug/resources/transcripts/modules/test_use.sif", content, 1);
-    auto doc = manager.getDocument("file:///Users/james/Documents/code/sif/build/debug/resources/transcripts/modules/test_use.sif");
+    std::string docUri = "file://" + (std::filesystem::absolute(modulesPath) / "test_use.sif").string();
+    manager.openDocument(docUri, content, 1);
+    auto doc = manager.getDocument(docUri);
 
     ASSERT_TRUE(doc != nullptr);
 
