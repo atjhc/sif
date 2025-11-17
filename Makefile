@@ -8,6 +8,10 @@ debug: build/debug
 	cmake -DCMAKE_BUILD_TYPE=Debug -S . -B ${DSTROOT}/debug
 	cmake --build ${DSTROOT}/debug
 
+fuzz: build/fuzz
+	cmake -DCMAKE_BUILD_TYPE=Fuzz -S . -B ${DSTROOT}/fuzz
+	cmake --build ${DSTROOT}/fuzz
+
 test: test_debug
 
 test_debug: debug
@@ -26,6 +30,9 @@ ${DSTROOT}/release:
 
 ${DSTROOT}/debug:
 	mkdir -p ${DSTROOT}/debug
+
+${DSTROOT}/fuzz:
+	mkdir -p ${DSTROOT}/fuzz
 
 clean:
 	rm -rf ${DSTROOT}

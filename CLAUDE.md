@@ -35,6 +35,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `print` statements print to stdout, so use `(-- expect --)`
 - Expected output blocks should immediately follow each test case (no blank line between)
 
+#### Fuzz Testing
+
+Fuzz testing uses LibFuzzer with AddressSanitizer to find bugs by feeding random/mutated inputs to the Sif interpreter.
+
+**Building the fuzzer:**
+- `make fuzz` - Build fuzzer binary in `build/fuzz/sif_fuzz`
+- Requires Homebrew LLVM on macOS (automatically detected)
+
+**Running the fuzzer:**
+```bash
+# Run for 60 seconds, pipe output to file to avoid token usage
+ASAN_OPTIONS=detect_container_overflow=0 ./build/fuzz/sif_fuzz -max_total_time=60 -artifact_prefix=build/fuzz/fuzz/ build/fuzz/fuzz/corpus > tmp/fuzz_output.txt 2>&1
+tail -100 tmp/fuzz_output.txt  # Review results
+
+# Run with custom corpus directory
+./build/fuzz/sif_fuzz -max_total_time=30 /path/to/corpus > tmp/fuzz_output.txt 2>&1
+
+# Test a specific input
+./build/fuzz/sif_fuzz /path/to/input/file
+```
+
+**Verifying crashes (efficient workflow):**
+1. After fuzzer run, check for crash files: `ls -lh build/fuzz/fuzz/crash-* 2>/dev/null | wc -l`
+2. For each crash file, test if it reproduces: `./build/fuzz/sif_fuzz path/to/crash-file 2>&1 | grep -i "aborting\|summary"`
+3. If no "ABORTING" or "SUMMARY" in output, the crash is NOT reproducible (fuzzer artifact)
+4. Only investigate crashes that consistently reproduce
+
+**Understanding results:**
+- Crash files are saved to `build/fuzz/fuzz/crash-*`
+- **Most fuzzer crashes are NOT reproducible** - they occur due to memory state from previous iterations
+- Only crashes that reproduce when run in isolation are real bugs worth investigating
+- The fuzzer mutates test files from `src/tests/resources/transcripts/` as the initial corpus
+- AddressSanitizer detects memory safety issues (buffer overflows, use-after-free, etc.)
+
+**Notes:**
+- The fuzzer catches UTF-8 decoding exceptions and reports them as compiler errors (no crashes)
+- Container overflow detection is disabled (`detect_container_overflow=0`) to reduce false positives
+- The fuzzer is built with both fuzzer and address sanitizer instrumentation (`-fsanitize=fuzzer,address`)
+
 ### Testing with Temporary Files
 
 When testing or experimenting with Sif code:

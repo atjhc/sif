@@ -68,30 +68,80 @@ target_compile_features(sif PUBLIC cxx_std_20)
 
 # Define executable for the main tool
 add_executable(sif_tool "src/tools/sif.cc")
-target_link_libraries(sif_tool PRIVATE sif)
 target_include_directories(sif_tool PRIVATE "src")
 target_include_directories(sif_tool PUBLIC "include")
 
 # Define executable for the language server
 add_executable(sif_lsp "src/tools/sif_lsp.cc" ${LSP_SOURCES})
-target_link_libraries(sif_lsp PRIVATE sif)
 target_include_directories(sif_lsp PRIVATE "src")
 target_include_directories(sif_lsp PUBLIC "include")
+
+# Handle Homebrew LLVM linking for Fuzz build
+if(CMAKE_BUILD_TYPE STREQUAL "Fuzz" AND APPLE)
+    execute_process(
+        COMMAND brew --prefix llvm
+        OUTPUT_VARIABLE LLVM_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(LLVM_PREFIX)
+        target_link_libraries(sif_tool PRIVATE sif
+            ${LLVM_PREFIX}/lib/c++/libc++.dylib
+            ${LLVM_PREFIX}/lib/c++/libc++abi.dylib)
+        target_link_options(sif_tool PRIVATE -Wl,-rpath,${LLVM_PREFIX}/lib/c++)
+
+        target_link_libraries(sif_lsp PRIVATE sif
+            ${LLVM_PREFIX}/lib/c++/libc++.dylib
+            ${LLVM_PREFIX}/lib/c++/libc++abi.dylib)
+        target_link_options(sif_lsp PRIVATE -Wl,-rpath,${LLVM_PREFIX}/lib/c++)
+    else()
+        target_link_libraries(sif_tool PRIVATE sif)
+        target_link_libraries(sif_lsp PRIVATE sif)
+    endif()
+else()
+    target_link_libraries(sif_tool PRIVATE sif)
+    target_link_libraries(sif_lsp PRIVATE sif)
+endif()
 
 # Define executable for fuzzing
 if(CMAKE_BUILD_TYPE STREQUAL "Fuzz")
     add_executable(sif_fuzz src/tools/sif.cc)
-    target_link_libraries(sif_fuzz PRIVATE sif)
-    target_link_options(sif_fuzz PRIVATE -fsanitize=fuzzer,address)
+
+    # Platform-specific LLVM linking
+    if(APPLE)
+        execute_process(
+            COMMAND brew --prefix llvm
+            OUTPUT_VARIABLE LLVM_PREFIX
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+        if(LLVM_PREFIX)
+            target_link_libraries(sif_fuzz PRIVATE sif
+                ${LLVM_PREFIX}/lib/c++/libc++.dylib
+                ${LLVM_PREFIX}/lib/c++/libc++abi.dylib)
+            target_link_options(sif_fuzz PRIVATE
+                -fsanitize=fuzzer,address
+                -Wl,-rpath,${LLVM_PREFIX}/lib/c++)
+        else()
+            target_link_libraries(sif_fuzz PRIVATE sif)
+            target_link_options(sif_fuzz PRIVATE -fsanitize=fuzzer,address)
+        endif()
+    else()
+        # Linux doesn't need explicit libc++ linking
+        target_link_libraries(sif_fuzz PRIVATE sif)
+        target_link_options(sif_fuzz PRIVATE -fsanitize=fuzzer,address)
+    endif()
+
     target_include_directories(sif_fuzz PRIVATE src)
-    target_compile_options(sif_fuzz PRIVATE -g -fsanitize=fuzzer,address -DFUZZER -Wno-unused-function -Wno-unused-variable)
+    target_compile_options(sif_fuzz PRIVATE -fsanitize=fuzzer,address -Wno-unused-function -Wno-unused-variable)
+    target_compile_definitions(sif_fuzz PRIVATE DEBUG=1 FUZZER=1)
 
     set(FUZZROOT "${CMAKE_BINARY_DIR}/fuzz")
     add_custom_command(TARGET sif_fuzz POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${FUZZROOT}
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/tests/resources/transcripts ${FUZZROOT}/corpus
-        COMMAND ASAN_OPTIONS=detect_container_overflow=0 LLVMFuzzer_DATA_PATH=${FUZZROOT} ${CMAKE_BINARY_DIR}/sif_fuzz -artifact_prefix=${FUZZROOT}/ ${FUZZROOT}/corpus
     )
+    # To run the fuzzer manually: ASAN_OPTIONS=detect_container_overflow=0 LLVMFuzzer_DATA_PATH=${FUZZROOT} ${CMAKE_BINARY_DIR}/sif_fuzz -artifact_prefix=${FUZZROOT}/ ${FUZZROOT}/corpus
 endif()
 
 # Enable testing
@@ -101,8 +151,17 @@ enable_testing()
 # Find test files
 file(GLOB_RECURSE TEST_SOURCES "src/tests/*.cc")
 add_executable(sif_tests ${TEST_SOURCES} ${LSP_SOURCES} src/tools/tests.cc)
-target_link_libraries(sif_tests PRIVATE sif)
 target_include_directories(sif_tests PRIVATE "src")
+
+# Apply Homebrew LLVM linking for Fuzz build on macOS
+if(CMAKE_BUILD_TYPE STREQUAL "Fuzz" AND APPLE AND LLVM_PREFIX)
+    target_link_libraries(sif_tests PRIVATE sif
+        ${LLVM_PREFIX}/lib/c++/libc++.dylib
+        ${LLVM_PREFIX}/lib/c++/libc++abi.dylib)
+    target_link_options(sif_tests PRIVATE -Wl,-rpath,${LLVM_PREFIX}/lib/c++)
+else()
+    target_link_libraries(sif_tests PRIVATE sif)
+endif()
 file(COPY src/tests/resources DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY src/tests/repl_tests.sh DESTINATION ${CMAKE_BINARY_DIR})
 
@@ -111,7 +170,7 @@ add_test(NAME SifUnitTests COMMAND sif_tests resources)
 add_test(NAME SifREPLTests COMMAND repl_tests.sh "${CMAKE_BINARY_DIR}/sif_tool")
 
 # Set debug macro for Debug builds
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if((CMAKE_BUILD_TYPE STREQUAL "Debug") OR (CMAKE_BUILD_TYPE STREQUAL "Fuzz"))
     message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
     target_compile_definitions(sif PRIVATE DEBUG=1)
     target_compile_definitions(sif_tool PRIVATE DEBUG=1)
