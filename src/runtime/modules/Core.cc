@@ -816,28 +816,61 @@ static auto _insert_T_at_index_T_into_T(const NativeCallContext &context) -> Res
 }
 
 static auto _reverse_T(const NativeCallContext &context) -> Result<Value, Error> {
-    auto list = context.arguments[0].as<List>();
-    if (!list) {
-        return Fail(context.argumentError(0, Errors::ExpectedAList));
-    }
-    // GCC 13 false positive with std::variant<...std::shared_ptr...> in std::reverse
+    if (auto list = context.arguments[0].as<List>()) {
+        // GCC 13 false positive with std::variant<...std::shared_ptr...> in std::reverse
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
-    std::reverse(list->values().begin(), list->values().end());
+        std::reverse(list->values().begin(), list->values().end());
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-    return list;
+        return list;
+    } else if (auto string = context.arguments[0].as<String>()) {
+        // Extract UTF-8 characters
+        std::vector<std::string> characters;
+        size_t index = 0;
+        auto chunk = index_chunk(chunk::type::character, index++, string->string());
+        while (chunk.begin() < string->string().end()) {
+            characters.push_back(chunk.get());
+            chunk = index_chunk(chunk::type::character, index++, string->string());
+        }
+        // Reverse and reconstruct
+        std::reverse(characters.begin(), characters.end());
+        std::string result;
+        for (const auto &ch : characters) {
+            result += ch;
+        }
+        string->string() = std::move(result);
+        return string;
+    } else {
+        return Fail(context.argumentError(0, Errors::ExpectedStringOrList));
+    }
 }
 
 static auto _reversed_T(const NativeCallContext &context) -> Result<Value, Error> {
-    auto list = context.arguments[0].as<List>();
-    if (!list) {
-        return Fail(context.argumentError(0, Errors::ExpectedAList));
+    if (auto list = context.arguments[0].as<List>()) {
+        return context.vm.make<List>(list->values().rbegin(), list->values().rend());
+    } else if (auto string = context.arguments[0].as<String>()) {
+        // Extract UTF-8 characters
+        std::vector<std::string> characters;
+        size_t index = 0;
+        auto chunk = index_chunk(chunk::type::character, index++, string->string());
+        while (chunk.begin() < string->string().end()) {
+            characters.push_back(chunk.get());
+            chunk = index_chunk(chunk::type::character, index++, string->string());
+        }
+        // Reverse and reconstruct
+        std::reverse(characters.begin(), characters.end());
+        std::string result;
+        for (const auto &ch : characters) {
+            result += ch;
+        }
+        return context.vm.make<String>(result);
+    } else {
+        return Fail(context.argumentError(0, Errors::ExpectedStringOrList));
     }
-    return context.vm.make<List>(list->values().rbegin(), list->values().rend());
 }
 
 static auto _shuffle_T(std::mt19937_64 &engine)

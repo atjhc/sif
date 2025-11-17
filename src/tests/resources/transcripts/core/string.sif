@@ -194,3 +194,24 @@ print ord of "𐀀"
 𐀀
 65536
 --)
+
+set text to "Hello World"
+reverse text
+print text
+(-- expect
+dlroW olleH
+--)
+
+print reversed "Sif Language"
+(-- expect
+egaugnaL fiS
+--)
+
+set original to "私の声"
+set rev to reversed original
+print original
+print rev
+(-- expect
+私の声
+声の私
+--)
