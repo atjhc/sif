@@ -32,112 +32,124 @@ void Scanner::reset(const std::string &contents) {
 }
 
 Token Scanner::scan() {
-    skipWhitespace();
+    try {
+        skipWhitespace();
 
-    _start = _current;
-    _startLocation = _currentLocation;
+        _start = _current;
+        _startLocation = _currentLocation;
 
-    if (isAtEnd()) {
-        return make(Token::Type::EndOfFile);
-    }
+        if (isAtEnd()) {
+            return make(Token::Type::EndOfFile);
+        }
 
-    int depth = 0;
-    do {
-        if (_current + 1 < _end && _current[0] == '(' && _current[1] == '-' && _current[2] == '-') {
-            advance(3);
-            depth++;
-        } else if (depth > 0) {
-            if (_current + 1 < _end && _current[0] == '-' && _current[1] == '-' &&
-                _current[2] == ')') {
+        int depth = 0;
+        do {
+            if (_current + 1 < _end && _current[0] == '(' && _current[1] == '-' && _current[2] == '-') {
                 advance(3);
-                depth--;
-            } else {
-                if (advance() == '\n') {
-                    _currentLocation.lineNumber++;
-                    _currentLocation.position = 0;
+                depth++;
+            } else if (depth > 0) {
+                if (_current + 1 < _end && _current[0] == '-' && _current[1] == '-' &&
+                    _current[2] == ')') {
+                    advance(3);
+                    depth--;
+                } else {
+                    if (advance() == '\n') {
+                        _currentLocation.lineNumber++;
+                        _currentLocation.position = 0;
+                    }
+                }
+            }
+        } while (depth > 0 && !isAtEnd());
+        if (_current > _start) {
+            return make(Token::Type::Comment);
+        }
+
+        auto c = advanceCharacter();
+
+        if (isdigit(c))
+            return scanNumber();
+        if (isCharacter(c) || c == '_')
+            return scanWord();
+
+        switch (c) {
+        case '#':
+            skipLine();
+            return make(Token::Type::Comment);
+        case '\n': {
+            _currentLocation.lineNumber++;
+            _currentLocation.position = 0;
+            return make(Token::Type::NewLine);
+        }
+        case ';':
+            return make(Token::Type::NewLine);
+        case '(':
+            return make(Token::Type::LeftParen);
+        case ')':
+            return make(Token::Type::RightParen);
+        case '[':
+            return make(Token::Type::LeftBracket);
+        case ']':
+            return make(Token::Type::RightBracket);
+        case '{':
+            return make(Token::Type::LeftBrace);
+        case '}':
+            if (interpolating) {
+                return scanString('}', stringTerminal);
+            }
+            return make(Token::Type::RightBrace);
+        case '+':
+            return make(Token::Type::Plus);
+        case '-':
+            if (_current < _end && match('-')) {
+                skipLine();
+                return make(Token::Type::Comment);
+            }
+            return make(match('>') ? Token::Type::Arrow : Token::Type::Minus);
+        case '*':
+            return make(Token::Type::Star);
+        case '/':
+            return make(Token::Type::Slash);
+        case ':':
+            return make(Token::Type::Colon);
+        case ',':
+            return make(Token::Type::Comma);
+        case '=':
+            return make(Token::Type::Equal);
+        case '%':
+            return make(Token::Type::Percent);
+        case '^':
+            return make(Token::Type::Carrot);
+        case '!':
+            return make(match('=') ? Token::Type::NotEqual : Token::Type::Bang);
+        case '<':
+            return make(match('=') ? Token::Type::LessThanOrEqual : Token::Type::LessThan);
+        case '>':
+            return make(match('=') ? Token::Type::GreaterThanOrEqual : Token::Type::GreaterThan);
+        case '"':
+            return scanString('"', '"');
+        case '\'':
+            return scanString('\'', '\'');
+        case '.':
+            if (match('.')) {
+                if (match('.')) {
+                    return make(Token::Type::ThreeDots);
+                } else if (match('<')) {
+                    return make(Token::Type::ClosedRange);
                 }
             }
         }
-    } while (depth > 0 && !isAtEnd());
-    if (_current > _start) {
-        return make(Token::Type::Comment);
-    }
-
-    auto c = advanceCharacter();
-
-    if (isdigit(c))
-        return scanNumber();
-    if (isCharacter(c) || c == '_')
-        return scanWord();
-
-    switch (c) {
-    case '#':
-        skipLine();
-        return make(Token::Type::Comment);
-    case '\n': {
-        _currentLocation.lineNumber++;
-        _currentLocation.position = 0;
-        return make(Token::Type::NewLine);
-    }
-    case ';':
-        return make(Token::Type::NewLine);
-    case '(':
-        return make(Token::Type::LeftParen);
-    case ')':
-        return make(Token::Type::RightParen);
-    case '[':
-        return make(Token::Type::LeftBracket);
-    case ']':
-        return make(Token::Type::RightBracket);
-    case '{':
-        return make(Token::Type::LeftBrace);
-    case '}':
-        if (interpolating) {
-            return scanString('}', stringTerminal);
+        return makeError(Format(Errors::UnknownCharacter, int(c)));
+    } catch (const utf8::exception &e) {
+        if (!isAtEnd()) {
+            advance();
         }
-        return make(Token::Type::RightBrace);
-    case '+':
-        return make(Token::Type::Plus);
-    case '-':
-        if (_current < _end && match('-')) {
-            skipLine();
-            return make(Token::Type::Comment);
+        return makeError("Invalid UTF-8 encoding");
+    } catch (const std::out_of_range &e) {
+        if (!isAtEnd()) {
+            advance();
         }
-        return make(match('>') ? Token::Type::Arrow : Token::Type::Minus);
-    case '*':
-        return make(Token::Type::Star);
-    case '/':
-        return make(Token::Type::Slash);
-    case ':':
-        return make(Token::Type::Colon);
-    case ',':
-        return make(Token::Type::Comma);
-    case '=':
-        return make(Token::Type::Equal);
-    case '%':
-        return make(Token::Type::Percent);
-    case '^':
-        return make(Token::Type::Carrot);
-    case '!':
-        return make(match('=') ? Token::Type::NotEqual : Token::Type::Bang);
-    case '<':
-        return make(match('=') ? Token::Type::LessThanOrEqual : Token::Type::LessThan);
-    case '>':
-        return make(match('=') ? Token::Type::GreaterThanOrEqual : Token::Type::GreaterThan);
-    case '"':
-        return scanString('"', '"');
-    case '\'':
-        return scanString('\'', '\'');
-    case '.':
-        if (match('.')) {
-            if (match('.')) {
-                return make(Token::Type::ThreeDots);
-            } else if (match('<')) {
-                return make(Token::Type::ClosedRange);
-            }
-        }
+        return makeError("Invalid UTF-8 encoding");
     }
-    return makeError(Format(Errors::UnknownCharacter, int(c)));
 }
 
 Token Scanner::scanWord() {
