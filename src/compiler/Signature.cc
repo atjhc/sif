@@ -60,9 +60,8 @@ static inline std::ostream &operator<<(std::ostream &out, const Signature::Argum
         if (it->name.has_value()) {
             out << it->name.value();
         }
-        out << ":";
         if (it->typeName.has_value()) {
-            out << " " << it->typeName.value();
+            out << ": " << it->typeName.value();
         }
 
         it++;

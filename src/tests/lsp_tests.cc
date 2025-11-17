@@ -282,11 +282,11 @@ end function
     for (const auto &sig : doc->signatures) {
         std::string desc = sig.description();
         if (desc.find("greet") != std::string::npos &&
-            desc.find("{name:}") != std::string::npos) {
+            desc.find("{name}") != std::string::npos) {
             foundGreet = true;
         }
         if (desc.find("square") != std::string::npos &&
-            desc.find("{n:}") != std::string::npos) {
+            desc.find("{n}") != std::string::npos) {
             foundSquare = true;
         }
     }
@@ -344,17 +344,17 @@ end function
     for (const auto &sig : doc->signatures) {
         std::string desc = sig.description();
         if (desc.find("greet") != std::string::npos &&
-            desc.find("{name:}") != std::string::npos) {
+            desc.find("{name}") != std::string::npos) {
             foundGreet = true;
         }
         if (desc.find("square") != std::string::npos &&
-            desc.find("{n:}") != std::string::npos) {
+            desc.find("{n}") != std::string::npos) {
             foundSquare = true;
         }
     }
 
-    ASSERT_TRUE(foundGreet) << "Should find greet with {name:} parameter";
-    ASSERT_TRUE(foundSquare) << "Should find square with {n:} parameter";
+    ASSERT_TRUE(foundGreet) << "Should find greet with {name} parameter";
+    ASSERT_TRUE(foundSquare) << "Should find square with {n} parameter";
 }
 
 TEST_CASE(LSPTests, CompletionVariations) {

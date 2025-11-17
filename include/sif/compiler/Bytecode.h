@@ -100,6 +100,8 @@ class Bytecode {
     std::vector<SourceRange> argumentRanges(size_t callLocation) const;
     SourceLocation location(Iterator it) const;
 
+    void printWithoutSourceLocations(std::ostream &out) const;
+
     friend std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode);
 
   private:

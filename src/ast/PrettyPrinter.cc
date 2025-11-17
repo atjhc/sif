@@ -96,7 +96,9 @@ void PrettyPrinter::visit(const Return &statement) {
 void PrettyPrinter::visit(const VariableTarget &target) {
     target.variable->accept(*this);
     if (auto typeName = target.typeName) {
-        out << ": " << typeName.value().text;
+        if (!typeName->text.empty()) {
+            out << ": " << typeName->text;
+        }
     }
     for (auto &&subscript : target.subscripts) {
         out << "[";
@@ -294,6 +296,7 @@ void PrettyPrinter::visit(const RangeLiteral &range) {
 }
 
 void PrettyPrinter::visit(const ListLiteral &list) {
+    out << "[";
     auto it = list.expressions.begin();
     while (it != list.expressions.end()) {
         (*it)->accept(*this);
@@ -302,35 +305,38 @@ void PrettyPrinter::visit(const ListLiteral &list) {
             out << ", ";
         }
     }
+    out << "]";
 }
 
 void PrettyPrinter::visit(const DictionaryLiteral &dictionary) {
-    out << "{";
-    auto it = dictionary.values.begin();
-    while (it != dictionary.values.end()) {
-        it->first->accept(*this);
-        out << ": ";
-        it->second->accept(*this);
-        it++;
-        if (it != dictionary.values.end()) {
-            out << ", ";
+    out << "[";
+    if (dictionary.values.empty()) {
+        out << ":";
+    } else {
+        auto it = dictionary.values.begin();
+        while (it != dictionary.values.end()) {
+            it->first->accept(*this);
+            out << ": ";
+            it->second->accept(*this);
+            it++;
+            if (it != dictionary.values.end()) {
+                out << ", ";
+            }
         }
     }
-    out << "}";
+    out << "]";
 }
 
 void PrettyPrinter::visit(const Literal &literal) { out << literal.token.text; }
 
 void PrettyPrinter::visit(const StringInterpolation &interpolation) {
-    out << interpolation.left.text.substr(0, interpolation.left.text.size());
-    // out << "{";
+    out << interpolation.left.text;
     interpolation.expression->accept(*this);
-    // out << "}";
 
     if (interpolation.right) {
         interpolation.right->accept(*this);
     } else {
-        out << "\"";
+        out << "}\"";
     }
 }
 

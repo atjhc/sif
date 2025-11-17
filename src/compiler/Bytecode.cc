@@ -345,6 +345,10 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
 
 struct BytecodePrinter {
     int depth;
+    bool includeSourceLocations;
+
+    static constexpr int LINE_NUMBER_WIDTH = 3;
+    static constexpr int COLUMN_NUMBER_WIDTH = 3;
 
     void print(std::ostream &out, const Bytecode &bytecode) const {
         auto indent = std::string(depth * 2, ' ');
@@ -352,7 +356,7 @@ struct BytecodePrinter {
             const auto &constant = bytecode.constants()[i];
             out << indent << "[" << i << "] " << constant.debugDescription() << std::endl;
             if (const auto &function = constant.as<Function>()) {
-                BytecodePrinter printer{depth + 1};
+                BytecodePrinter printer{depth + 1, includeSourceLocations};
                 printer.print(out, *function->bytecode());
             }
         }
@@ -367,15 +371,23 @@ struct BytecodePrinter {
         while (position < bytecode.code().end()) {
             out << indent << bytecode.decodePosition(position);
 
-            auto location = bytecode.location(position);
-            if (!previousLocation.has_value() || previousLocation.value() != location) {
-                out << std::setfill(' ') << std::setw(8) << std::right
-                    << bytecode.location(position) << " ";
+            if (includeSourceLocations) {
+                auto location = bytecode.location(position);
+                if (!previousLocation.has_value() || previousLocation.value() != location) {
+                    // Format as: "   1:1     " with : always in column 4
+                    out << " " << std::setfill(' ') << std::setw(LINE_NUMBER_WIDTH) << std::right
+                        << (location.lineNumber + 1) << ":" << std::setw(COLUMN_NUMBER_WIDTH) << std::left
+                        << (location.position + 1) << " ";
+                } else {
+                    // | lines up with the : character
+                    std::string padding(1 + LINE_NUMBER_WIDTH + 1 + COLUMN_NUMBER_WIDTH + 1, ' ');
+                    padding[1 + LINE_NUMBER_WIDTH] = '|';
+                    out << padding;
+                }
+                previousLocation = location;
             } else {
-                out << std::setfill(' ') << std::setw(8) << std::right << "|"
-                    << " ";
+                out << " ";
             }
-            previousLocation = location;
 
             position = bytecode.disassemble(out, position);
             out << std::endl;
@@ -384,9 +396,14 @@ struct BytecodePrinter {
 };
 
 std::ostream &operator<<(std::ostream &out, const Bytecode &bytecode) {
-    BytecodePrinter printer{0};
+    BytecodePrinter printer{0, true};
     printer.print(out, bytecode);
     return out;
+}
+
+void Bytecode::printWithoutSourceLocations(std::ostream &out) const {
+    BytecodePrinter printer{0, false};
+    printer.print(out, *this);
 }
 
 SIF_NAMESPACE_END
