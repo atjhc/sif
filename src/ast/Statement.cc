@@ -31,7 +31,8 @@ VariableTarget::VariableTarget(Strong<Variable> variable, Optional<Token> typeNa
 
 void VariableTarget::accept(Visitor &visitor) const { visitor.visit(*this); }
 
-StructuredTarget::StructuredTarget(std::vector<Strong<AssignmentTarget>> targets) : targets(targets) {
+StructuredTarget::StructuredTarget(std::vector<Strong<AssignmentTarget>> targets)
+    : targets(targets) {
     if (!targets.empty()) {
         range = SourceRange{targets.front()->range.start, targets.back()->range.end};
     }

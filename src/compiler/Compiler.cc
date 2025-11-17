@@ -15,10 +15,10 @@
 //
 
 #include "sif/compiler/Compiler.h"
-#include <sif/Utilities.h>
 #include "sif/runtime/objects/Function.h"
 #include "sif/runtime/objects/String.h"
 #include "utilities/strings.h"
+#include <sif/Utilities.h>
 
 #include <climits>
 #include <ranges>
@@ -161,7 +161,7 @@ void Compiler::resolve(const Call &call, const std::string &name) {
 
 void Compiler::resolve(const Variable &variable, const std::string &name) {
     uint16_t index = 0;
-    Opcode opcode = Opcode::GetGlobal;  // initialized to suppress GCC warning
+    Opcode opcode = Opcode::GetGlobal; // initialized to suppress GCC warning
 
     if (!_config.interactive || _scopeDepth > 0) {
         if (variable.scope) {

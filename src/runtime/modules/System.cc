@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include <sif/Utilities.h>
 #include "sif/Error.h"
+#include <sif/Utilities.h>
 
 #include "extern/utf8.h"
 #include "sif/runtime/VirtualMachine.h"

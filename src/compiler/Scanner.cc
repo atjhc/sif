@@ -16,8 +16,8 @@
 
 #include "sif/compiler/Scanner.h"
 
-#include <sif/Utilities.h>
 #include "extern/utf8.h"
+#include <sif/Utilities.h>
 
 #include <iostream>
 

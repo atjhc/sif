@@ -62,112 +62,120 @@ Core
 44. [(the) number of items (in/of) {}](#the-number-of-items-in-)
 45. [items {} to {} (in/of) {}](#items--to--in-)
 
+## String Parsing & Item Operations
+46. [item {} in/of {} using delimiter {}](#item--inof--using-delimiter-)
+47. [(all) items in/of {}](#all-items-inof-)
+48. [(all) items in/of {} using delimiter {}](#all-items-inof--using-delimiter-)
+49. [items {} to {} in/of {} using delimiter {}](#items--to--inof--using-delimiter-)
+
 ## List Operations
-46. [insert {} at (the) beginning of {}](#insert--at-the-beginning-of-)
-47. [insert {} at (the) end of {}](#insert--at-the-end-of-)
-48. [insert {} at index {} into {}](#insert--at-index--into-)
-49. [remove (the) first item from {}](#remove-the-first-item-from-)
-50. [remove (the) last item from {}](#remove-the-last-item-from-)
-51. [remove item {} from {}](#remove-item--from-)
-52. [remove items {} to {} from {}](#remove-items--to--from-)
-53. [sort {}](#sort-)
-54. [reverse {}](#reverse-)
-55. [reversed {}](#reversed-)
-56. [shuffle {}](#shuffle-)
-57. [shuffled {}](#shuffled-)
-58. [any item (in/of) {}](#any-item-in-)
+50. [insert {} at (the) beginning of {}](#insert--at-the-beginning-of-)
+51. [insert {} at (the) end of {}](#insert--at-the-end-of-)
+52. [insert {} at index {} into {}](#insert--at-index--into-)
+53. [push {} onto {}](#push--onto-)
+54. [pop from {}](#pop-from-)
+55. [remove (the) first item from {}](#remove-the-first-item-from-)
+56. [remove (the) last item from {}](#remove-the-last-item-from-)
+57. [remove item {} from {}](#remove-item--from-)
+58. [remove items {} to {} from {}](#remove-items--to--from-)
+59. [sort {}](#sort-)
+60. [reverse {}](#reverse-)
+61. [reversed {}](#reversed-)
+62. [shuffle {}](#shuffle-)
+63. [shuffled {}](#shuffled-)
+64. [any item (in/of) {}](#any-item-in-)
 
 ## Dictionary Operations
-59. [(the) keys (of) {}](#the-keys-of-)
-60. [(the) values (of) {}](#the-values-of-)
-61. [insert item {} with key {} into {}](#insert-item--with-key--into-)
+65. [(the) keys (of) {}](#the-keys-of-)
+66. [(the) values (of) {}](#the-values-of-)
+67. [insert item {} with key {} into {}](#insert-item--with-key--into-)
 
 ## String Operations
-62. [(the) (first) offset of {} in {}](#the-first-offset-of--in-)
-63. [(the) last offset of {} in {}](#the-last-offset-of--in-)
-64. [replace all {} with {} in {}](#replace-all--with--in-)
-65. [replace first {} with {} in {}](#replace-first--with--in-)
-66. [replace last {} with {} in {}](#replace-last--with--in-)
-67. [remove all {} from {}](#remove-all--from-)
-68. [remove first {} from {}](#remove-first--from-)
-69. [remove last {} from {}](#remove-last--from-)
-70. [join {}](#join-)
-71. [join {} using {}](#join--using-)
-72. [format string {} with {}](#format-string--with-)
+68. [(the) (first) offset of {} in {}](#the-first-offset-of--in-)
+69. [(the) last offset of {} in {}](#the-last-offset-of--in-)
+70. [replace all {} with {} in {}](#replace-all--with--in-)
+71. [replace first {} with {} in {}](#replace-first--with--in-)
+72. [replace last {} with {} in {}](#replace-last--with--in-)
+73. [remove all {} from {}](#remove-all--from-)
+74. [remove first {} from {}](#remove-first--from-)
+75. [remove last {} from {}](#remove-last--from-)
+76. [join {}](#join-)
+77. [join {} using {}](#join--using-)
+78. [format string {} with {}](#format-string--with-)
 
 ## Character/Word/Line Operations
-73. [char/character {} in/of {}](#character--in-)
-74. [word {} in/of {}](#word--in-)
-75. [line {} in/of {}](#line--in-)
-76. [chars/characters {} to {} in/of {}](#characters--to--in-)
-77. [words {} to {} in/of {}](#words--to--in-)
-78. [lines {} to {} in/of {}](#lines--to--in-)
-79. [(the) list of chars/characters (in/of) {}](#the-list-of-characters-in-)
-80. [(the) list of words (in/of) {}](#the-list-of-words-in-)
-81. [(the) list of lines (in/of) {}](#the-list-of-lines-in-)
-82. [(the) number of chars/characters (in/of) {}](#the-number-of-characters-in-)
-83. [(the) number of words (in/of) {}](#the-number-of-words-in-)
-84. [(the) number of lines (in/of) {}](#the-number-of-lines-in-)
-85. [insert {} at char/character {} in {}](#insert--at-character--in-)
-86. [replace char/character {} with {} in {}](#replace-character--with--in-)
-87. [replace word {} with {} in {}](#replace-word--with--in-)
-88. [replace line {} with {} in {}](#replace-line--with--in-)
-89. [replace chars/characters {} to {} with {} in {}](#replace-charscharacters--to--with--in-)
-90. [replace words {} to {} with {} in {}](#replace-words--to--with--in-)
-91. [replace lines {} to {} with {} in {}](#replace-lines--to--with--in-)
-92. [remove char/character {} from {}](#remove-character--from-)
-93. [remove word {} from {}](#remove-word--from-)
-94. [remove line {} from {}](#remove-line--from-)
-95. [remove chars/characters {} to {} from {}](#remove-characters--to--from-)
-96. [remove words {} to {} from {}](#remove-words--to--from-)
-97. [remove lines {} to {} from {}](#remove-lines--to--from-)
-98. [any char/character in/of {}](#any-character-in-)
-99. [any word in/of {}](#any-word-in-)
-100. [any line in/of {}](#any-line-in-)
-101. [(the) mid/middle char/character in/of {}](#the-middle-character-in-)
-102. [(the) mid/middle word in/of {}](#the-middle-word-in-)
-103. [(the) mid/middle line in/of {}](#the-middle-line-in-)
-104. [(the) last char/character in/of {}](#the-last-character-in-)
-105. [(the) last word in/of {}](#the-last-word-in-)
-106. [(the) last line in/of {}](#the-last-line-in-)
+79. [char/character {} in/of {}](#character--in-)
+80. [word {} in/of {}](#word--in-)
+81. [line {} in/of {}](#line--in-)
+82. [chars/characters {} to {} in/of {}](#characters--to--in-)
+83. [words {} to {} in/of {}](#words--to--in-)
+84. [lines {} to {} in/of {}](#lines--to--in-)
+85. [(the) list of chars/characters (in/of) {}](#the-list-of-characters-in-)
+86. [(the) list of words (in/of) {}](#the-list-of-words-in-)
+87. [(the) list of lines (in/of) {}](#the-list-of-lines-in-)
+88. [(the) number of chars/characters (in/of) {}](#the-number-of-characters-in-)
+89. [(the) number of words (in/of) {}](#the-number-of-words-in-)
+90. [(the) number of lines (in/of) {}](#the-number-of-lines-in-)
+91. [insert {} at char/character {} in {}](#insert--at-character--in-)
+92. [replace char/character {} with {} in {}](#replace-character--with--in-)
+93. [replace word {} with {} in {}](#replace-word--with--in-)
+94. [replace line {} with {} in {}](#replace-line--with--in-)
+95. [replace chars/characters {} to {} with {} in {}](#replace-charscharacters--to--with--in-)
+96. [replace words {} to {} with {} in {}](#replace-words--to--with--in-)
+97. [replace lines {} to {} with {} in {}](#replace-lines--to--with--in-)
+98. [remove char/character {} from {}](#remove-character--from-)
+99. [remove word {} from {}](#remove-word--from-)
+100. [remove line {} from {}](#remove-line--from-)
+101. [remove chars/characters {} to {} from {}](#remove-characters--to--from-)
+102. [remove words {} to {} from {}](#remove-words--to--from-)
+103. [remove lines {} to {} from {}](#remove-lines--to--from-)
+104. [any char/character in/of {}](#any-character-in-)
+105. [any word in/of {}](#any-word-in-)
+106. [any line in/of {}](#any-line-in-)
+107. [(the) mid/middle char/character in/of {}](#the-middle-character-in-)
+108. [(the) mid/middle word in/of {}](#the-middle-word-in-)
+109. [(the) mid/middle line in/of {}](#the-middle-line-in-)
+110. [(the) last char/character in/of {}](#the-last-character-in-)
+111. [(the) last word in/of {}](#the-last-word-in-)
+112. [(the) last line in/of {}](#the-last-line-in-)
 
 ## Character Encoding
-107. [(the) char/character (of) {}](#the-charcharacter-of-)
-108. [(the) numToChar (of) {}](#the-numtochar-of-)
-109. [(the) ord/ordinal (of) {}](#the-ordinal-of-)
-110. [(the) charToNum (of) {}](#the-chartonum-of-)
+113. [(the) char/character (of) {}](#the-charcharacter-of-)
+114. [(the) numToChar (of) {}](#the-numtochar-of-)
+115. [(the) ord/ordinal (of) {}](#the-ordinal-of-)
+116. [(the) charToNum (of) {}](#the-chartonum-of-)
 
 ## Range Operations
-111. [{} up to {}](#-up-to-)
-112. [(the) lower bound (in/of) {}](#the-lower-bound-of-)
-113. [(the) upper bound (in/of) {}](#the-upper-bound-of-)
-114. [{} is closed](#-is-closed)
-115. [{} overlaps (with) {}](#-overlaps-with-)
-116. [(a) random number (in/of) {}](#a-random-number-in-)
+117. [{} up to {}](#-up-to-)
+118. [(the) lower bound (in/of) {}](#the-lower-bound-of-)
+119. [(the) upper bound (in/of) {}](#the-upper-bound-of-)
+120. [{} is closed](#-is-closed)
+121. [{} overlaps (with) {}](#-overlaps-with-)
+122. [(a) random number (in/of) {}](#a-random-number-in-)
 
 ## Mathematical Functions
-117. [(the) abs (of) {}](#the-abs-of-)
-118. [(the) sin (of) {}](#the-sin-of-)
-119. [(the) asin (of) {}](#the-asin-of-)
-120. [(the) cos (of) {}](#the-cos-of-)
-121. [(the) acos (of) {}](#the-acos-of-)
-122. [(the) tan (of) {}](#the-tan-of-)
-123. [(the) atan (of) {}](#the-atan-of-)
-124. [(the) exp (of) {}](#the-exp-of-)
-125. [(the) exp2 (of) {}](#the-exp2-of-)
-126. [(the) expm1 (of) {}](#the-expm1-of-)
-127. [(the) log2 (of) {}](#the-log2-of-)
-128. [(the) log10 (of) {}](#the-log10-of-)
-129. [(the) log (of) {}](#the-log-of-)
-130. [(the) sqrt (of) {}](#the-sqrt-of-)
-131. [(the) square root (of) {}](#the-square-root-of-)
-132. [(the) ceil (of) {}](#the-ceil-of-)
-133. [(the) floor (of) {}](#the-floor-of-)
-134. [round {}](#round-)
-135. [trunc/truncate {}](#truncate-)
-136. [(the) max/maximum (value) (of) {}](#the-maximum-value-of-)
-137. [(the) min/minimum (value) (of) {}](#the-minimum-value-of-)
-138. [(the) avg/average (value) (of) {}](#the-average-value-of-)
+123. [(the) abs (of) {}](#the-abs-of-)
+124. [(the) sin (of) {}](#the-sin-of-)
+125. [(the) asin (of) {}](#the-asin-of-)
+126. [(the) cos (of) {}](#the-cos-of-)
+127. [(the) acos (of) {}](#the-acos-of-)
+128. [(the) tan (of) {}](#the-tan-of-)
+129. [(the) atan (of) {}](#the-atan-of-)
+130. [(the) exp (of) {}](#the-exp-of-)
+131. [(the) exp2 (of) {}](#the-exp2-of-)
+132. [(the) expm1 (of) {}](#the-expm1-of-)
+133. [(the) log2 (of) {}](#the-log2-of-)
+134. [(the) log10 (of) {}](#the-log10-of-)
+135. [(the) log (of) {}](#the-log-of-)
+136. [(the) sqrt (of) {}](#the-sqrt-of-)
+137. [(the) square root (of) {}](#the-square-root-of-)
+138. [(the) ceil (of) {}](#the-ceil-of-)
+139. [(the) floor (of) {}](#the-floor-of-)
+140. [round {}](#round-)
+141. [trunc/truncate {}](#truncate-)
+142. [(the) max/maximum (value) (of) {}](#the-maximum-value-of-)
+143. [(the) min/minimum (value) (of) {}](#the-minimum-value-of-)
+144. [(the) avg/average (value) (of) {}](#the-average-value-of-)
 
 ---
 
@@ -725,6 +733,63 @@ items {} to {} (in/of) {}
 Returns a slice of **container** from **start** to **end** (inclusive).
 
 
+item {} in/of {} using delimiter {}
+------------------------------------
+
+### Usage
+
+    item index in/of string using delimiter delimiter
+
+**index** must be an integer.
+**string** must be a string.
+**delimiter** must be a string.
+
+### Description
+Returns the item at **index** when **string** is split by **delimiter**. Similar to `item {} in {}` but uses a custom delimiter instead of the default comma.
+
+
+(all) items in/of {}
+--------------------
+
+### Usage
+
+    items in/of string
+
+**string** must be a string.
+
+### Description
+Splits **string** by commas and returns a list of all items. This is the string parsing operation inspired by HyperTalk. Empty strings return an empty list, and trailing delimiters create an empty string item at the end.
+
+
+(all) items in/of {} using delimiter {}
+----------------------------------------
+
+### Usage
+
+    items in/of string using delimiter delimiter
+
+**string** must be a string.
+**delimiter** must be a string.
+
+### Description
+Splits **string** by **delimiter** and returns a list of all items. Supports multi-character delimiters. Empty strings return an empty list, and trailing delimiters create an empty string item at the end.
+
+
+items {} to {} in/of {} using delimiter {}
+-------------------------------------------
+
+### Usage
+
+    items start to end in/of string using delimiter delimiter
+
+**start** and **end** must be integers.
+**string** must be a string.
+**delimiter** must be a string.
+
+### Description
+Returns a list of items from **start** to **end** (inclusive) when **string** is split by **delimiter**.
+
+
 insert {} at (the) beginning of {}
 ----------------------------------
 
@@ -766,6 +831,33 @@ insert {} at index {} into {}
 
 ### Description
 Inserts **item** at **position** in **list**. Modifies the list in place.
+
+
+push {} onto {}
+---------------
+
+### Usage
+
+    push item onto list
+
+**item** may be anything.
+**list** must be a list.
+
+### Description
+Pushes **item** onto the end of **list**. Modifies the list in place and returns the list. This is a stack operation equivalent to `insert {} at (the) end of {}`.
+
+
+pop from {}
+-----------
+
+### Usage
+
+    pop from list
+
+**list** must be a list.
+
+### Description
+Pops and returns the last item from **list**. The list must not be empty. This is a stack operation that removes and returns the last element. Returns empty if the list is empty.
 
 
 remove (the) first item from {}

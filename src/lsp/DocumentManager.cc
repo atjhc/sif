@@ -68,7 +68,8 @@ static std::string PathToUri(const std::string &path) {
 }
 
 // Resolve module path relative to importing document
-static std::string ResolveModulePath(const std::string &importingDocUri, const std::string &moduleName,
+static std::string ResolveModulePath(const std::string &importingDocUri,
+                                     const std::string &moduleName,
                                      const std::string &workspaceRoot) {
     std::filesystem::path importingPath = UriToPath(importingDocUri);
     std::filesystem::path moduleNamePath(moduleName);

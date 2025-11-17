@@ -15,9 +15,9 @@
 //
 
 #include "sif/lsp/CompletionUtils.h"
+#include "extern/utf8.h"
 #include <sstream>
 #include <variant>
-#include "extern/utf8.h"
 
 SIF_NAMESPACE_BEGIN
 namespace lsp {

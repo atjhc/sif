@@ -14,8 +14,8 @@
 //  limitations under the License.
 //
 
-#include <sif/Utilities.h>
 #include "sif/Error.h"
+#include <sif/Utilities.h>
 
 #include "sif/runtime/modules/Core.h"
 #include "sif/runtime/objects/Dictionary.h"

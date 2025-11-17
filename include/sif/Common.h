@@ -47,7 +47,8 @@ static const int MajorVersion = MAJOR_VERSION;
 static const int MinorVersion = MINOR_VERSION;
 static const int PatchVersion = PATCH_VERSION;
 
-[[maybe_unused]] static const char *Version = XSTR(MAJOR_VERSION) "." XSTR(MINOR_VERSION) "." XSTR(PATCH_VERSION);
+[[maybe_unused]] static const char *Version =
+    XSTR(MAJOR_VERSION) "." XSTR(MINOR_VERSION) "." XSTR(PATCH_VERSION);
 
 #undef STR
 #undef XSTR

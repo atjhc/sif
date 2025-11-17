@@ -15,10 +15,10 @@
 //
 
 #include "sif/compiler/Parser.h"
-#include <sif/Utilities.h>
 #include "sif/Error.h"
 #include "sif/ast/Repeat.h"
 #include "utilities/strings.h"
+#include <sif/Utilities.h>
 
 #include <vector>
 
@@ -556,8 +556,8 @@ Strong<Statement> Parser::parseFunction() {
             if (target.name) {
                 auto variable = MakeStrong<Variable>(target.name.value(), None);
                 variable->range = target.name->range;
-                auto variableTarget =
-                    MakeStrong<VariableTarget>(variable, target.typeName, std::vector<Strong<Expression>>{});
+                auto variableTarget = MakeStrong<VariableTarget>(variable, target.typeName,
+                                                                 std::vector<Strong<Expression>>{});
                 variableTarget->range = target.name->range;
                 targets.push_back(variableTarget);
             }
@@ -569,7 +569,8 @@ Strong<Statement> Parser::parseFunction() {
         } else if (targets.size() > 1) {
             // Multiple targets in one argument -> StructuredTarget
             auto structuredTarget = MakeStrong<StructuredTarget>(targets);
-            structuredTarget->range = SourceRange{targets.front()->range.start, targets.back()->range.end};
+            structuredTarget->range =
+                SourceRange{targets.front()->range.start, targets.back()->range.end};
             decl->targets.push_back(structuredTarget);
         }
     }
@@ -1003,7 +1004,8 @@ Result<Strong<AssignmentTarget>, Error> Parser::parseAssignmentTarget() {
 
         if (!consume(Token::Type::RightParen)) {
             emitError(Error(peek().range, Errors::ExpectedRightParens));
-            synchronizeTo({Token::Type::To, Token::Type::Comma, Token::Type::RightParen, Token::Type::NewLine});
+            synchronizeTo({Token::Type::To, Token::Type::Comma, Token::Type::RightParen,
+                           Token::Type::NewLine});
         }
 
         return MakeStrong<StructuredTarget>(nestedTargets);
@@ -1025,7 +1027,8 @@ Result<Strong<AssignmentTarget>, Error> Parser::parseAssignmentTarget() {
     auto token = consumeWord();
     if (!token) {
         emitError(Error(peek().range, Errors::ExpectedAVariableName));
-        synchronizeTo({Token::Type::To, Token::Type::Comma, Token::Type::RightParen, Token::Type::NewLine});
+        synchronizeTo(
+            {Token::Type::To, Token::Type::Comma, Token::Type::RightParen, Token::Type::NewLine});
     }
 
     if (match({Token::Type::Colon})) {
@@ -1033,7 +1036,8 @@ Result<Strong<AssignmentTarget>, Error> Parser::parseAssignmentTarget() {
             typeName = word.value();
         } else {
             emitError(Error(peek().range, Errors::ExpectedATypeName));
-            synchronizeTo({Token::Type::To, Token::Type::Comma, Token::Type::RightParen, Token::Type::NewLine});
+            synchronizeTo({Token::Type::To, Token::Type::Comma, Token::Type::RightParen,
+                           Token::Type::NewLine});
         }
     } else if (token) {
         while (match({Token::Type::LeftBracket})) {
@@ -1043,7 +1047,8 @@ Result<Strong<AssignmentTarget>, Error> Parser::parseAssignmentTarget() {
             }
             auto subscript = parseExpression();
             if (!subscript) {
-                synchronizeTo({Token::Type::RightBracket, Token::Type::To, Token::Type::Comma, Token::Type::NewLine});
+                synchronizeTo({Token::Type::RightBracket, Token::Type::To, Token::Type::Comma,
+                               Token::Type::NewLine});
                 if (match({Token::Type::RightBracket})) {
                     // Consumed the closing bracket
                 }
@@ -1052,7 +1057,8 @@ Result<Strong<AssignmentTarget>, Error> Parser::parseAssignmentTarget() {
             subscripts.push_back(subscript);
             if (!consume(Token::Type::RightBracket)) {
                 emitError(Error(peek().range, Errors::ExpectedRightBracket));
-                synchronizeTo({Token::Type::RightBracket, Token::Type::To, Token::Type::Comma, Token::Type::NewLine});
+                synchronizeTo({Token::Type::RightBracket, Token::Type::To, Token::Type::Comma,
+                               Token::Type::NewLine});
                 if (match({Token::Type::RightBracket})) {
                     continue;
                 }

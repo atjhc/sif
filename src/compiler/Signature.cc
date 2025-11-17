@@ -15,10 +15,10 @@
 //
 
 #include "sif/compiler/Signature.h"
-#include <sif/Utilities.h>
 #include "sif/compiler/Parser.h"
 #include "sif/compiler/Scanner.h"
 #include "sif/runtime/ModuleLoader.h"
+#include <sif/Utilities.h>
 
 SIF_NAMESPACE_BEGIN
 
@@ -142,9 +142,9 @@ bool Signature::operator<(const Signature &signature) const {
     int i = 0;
     while (i < terms.size() || i < signature.terms.size()) {
         if (i == terms.size())
-            return true;  // this is shorter, so it's "less than"
+            return true; // this is shorter, so it's "less than"
         if (i == signature.terms.size())
-            return false;  // other is shorter, so this is "greater than"
+            return false; // other is shorter, so this is "greater than"
 
         // Compare indices first
         if (terms[i].index() != signature.terms[i].index()) {
@@ -164,7 +164,7 @@ bool Signature::operator<(const Signature &signature) const {
         // Everything equal so far, continue to next term
         i++;
     }
-    return false;  // all terms are equal
+    return false; // all terms are equal
 }
 
 bool Signature::operator==(const Signature &signature) const { return name() == signature.name(); }

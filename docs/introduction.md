@@ -35,6 +35,43 @@ Notice how:
 - String interpolation uses `{variable}` syntax
 - Boolean values can be `yes`/`no`, `true`/`false`, or `True`/`False`
 
+### Structured Binding
+
+Sif supports destructuring assignment, allowing you to unpack lists into multiple variables:
+
+```sif
+-- Unpack a list into separate variables
+set x, y to [1, 2]
+print "x: {x}, y: {y}"        -- x: 1, y: 2
+
+-- Works with any list
+set first, second, third to [10, 20, 30]
+print first                   -- 10
+print third                   -- 30
+
+-- Useful for function return values
+function get coordinates
+    return [100, 200]
+end function
+
+set x, y to get coordinates
+print "Position: ({x}, {y})" -- Position: (100, 200)
+
+-- Nested destructuring
+set a, (b, c) to [1, [2, 3]]
+print "a: {a}, b: {b}, c: {c}" -- a: 1, b: 2, c: 3
+```
+
+**Ignoring Values:**
+```sif
+-- Use underscores to ignore values you don't need
+set x, _, z to [1, 2, 3]
+print "x: {x}, z: {z}"        -- x: 1, z: 3
+
+set first, _ to [10, 20]
+print first                   -- 10
+```
+
 ## Data Types
 
 ### Basic Types
@@ -212,6 +249,59 @@ end function
 -- Both of these work:
 print factorial of 5            -- 120
 print the factorial of 5        -- 120
+```
+
+**Parameter Destructuring:**
+
+Function parameters can destructure list arguments, allowing you to unpack values directly in the parameter list:
+
+```sif
+-- Destructure a single list parameter
+function scale {x, y} by {factor}
+    return [x * factor, y * factor]
+end function
+
+set point to [10, 20]
+set scaled to scale point by 2
+print scaled                    -- [20, 40]
+
+-- You can also pass lists directly
+print scale [3, 4] by 10        -- [30, 40]
+
+-- Nested destructuring in parameters
+function distance from {x1, y1} to {x2, y2}
+    set dx to x2 - x1
+    set dy to y2 - y1
+    return the sqrt of (dx * dx + dy * dy)
+end function
+
+set dist to distance from [0, 0] to [3, 4]
+print dist                      -- 5.0
+
+-- Mix regular and destructured parameters
+function translate {point} by {dx, dy}
+    set x, y to point
+    return [x + dx, y + dy]
+end function
+
+set moved to translate [10, 20] by [5, -3]
+print moved                     -- [15, 17]
+```
+
+**Ignoring Parameters:**
+```sif
+-- Use underscores to ignore values in destructured parameters
+function get x from {x, _}
+    return x
+end function
+
+print get x from [10, 20]       -- 10
+
+function sum first two of {a, b, _}
+    return a + b
+end function
+
+print sum first two of [1, 2, 3] -- 3
 ```
 
 ## The Special `it` Variable
@@ -473,14 +563,66 @@ print list[0...2]             -- [10, 20, 30]
 print list[0..<3]             -- [10, 20, 30]
 ```
 
+### Subscript Assignment
+
+You can modify lists and dictionaries using subscript assignment syntax:
+
+**List Assignment:**
+```sif
+set numbers to [10, 20, 30, 40, 50]
+
+-- Update individual elements
+set numbers[0] to 15
+set numbers[2] to 35
+print numbers                 -- [15, 20, 35, 40, 50]
+
+-- Works with any valid index
+set numbers[4] to 100
+print numbers[4]              -- 100
+```
+
+**Dictionary Assignment:**
+```sif
+set person to ["name": "Alice", "age": 30]
+
+-- Update existing keys
+set person["age"] to 31
+print person["age"]           -- 31
+
+-- Add new keys
+set person["city"] to "Portland"
+print person["city"]          -- "Portland"
+
+-- Works with any hashable value as a key
+set config to [:]
+set config["debug"] to yes
+set config[42] to "answer"
+print config[42]              -- "answer"
+```
+
+**Combining with Expressions:**
+```sif
+set scores to [85, 90, 78, 92, 88]
+
+-- Increment a value
+set scores[2] to scores[2] + 10
+print scores[2]               -- 88
+
+-- Use in calculations
+set total to 0
+set total to total + scores[0]
+set total to total + scores[1]
+print total                   -- 175
+```
+
 ## Debugging and Development
 
 ### The REPL
 
-Sif includes an interactive Read-Eval-Print Loop for experimentation and debugging. Launch it by running `sif_tool` without any arguments:
+Sif includes an interactive Read-Eval-Print Loop for experimentation and debugging. Launch it by running `sif` without any arguments:
 
 ```bash
-$ sif_tool
+$ sif
 >
 ```
 
@@ -537,13 +679,13 @@ end if
 Stream redirection:
 ```bash
 # Save only results to a file
-sif_tool myprogram.sif 2>/dev/null > results.txt
+sif myprogram.sif 2>/dev/null > results.txt
 
 # Save only errors to a log file
-sif_tool myprogram.sif 2>errors.log
+sif myprogram.sif 2>errors.log
 
 # Redirect both streams separately
-sif_tool myprogram.sif 1>output.txt 2>errors.log
+sif myprogram.sif 1>output.txt 2>errors.log
 ```
 
 ## Type System and Conversion

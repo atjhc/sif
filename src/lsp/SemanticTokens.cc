@@ -16,8 +16,8 @@
 
 #include "sif/lsp/SemanticTokens.h"
 
-#include <algorithm>
 #include "extern/utf8.h"
+#include <algorithm>
 
 SIF_NAMESPACE_BEGIN
 namespace lsp {
@@ -74,8 +74,8 @@ std::vector<uint32_t> SemanticTokensProvider::encodeTokens(const Document &doc) 
                                         : doc.content.size();
 
                 if (currentLine == startLine) {
-                    character =
-                        static_cast<uint32_t>(ByteOffsetToCharCount(doc.content, lineStartPos, tokenFilePos));
+                    character = static_cast<uint32_t>(
+                        ByteOffsetToCharCount(doc.content, lineStartPos, tokenFilePos));
                     if (currentLine == endLine) {
                         length = static_cast<uint32_t>(ByteOffsetToCharCount(
                             doc.content, token.range.start.offset, token.range.end.offset));
