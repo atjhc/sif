@@ -1,0 +1,4 @@
+print _
+(-- error
+unknown expression “_”
+--)

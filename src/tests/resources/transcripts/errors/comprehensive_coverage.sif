@@ -1,0 +1,71 @@
+# Math operations
+try the abs of "not a number"
+print error (the error)
+(-- error
+expected a number
+--)
+
+# String operations
+try replace all 123 with "text" in "hello"
+print error (the error)
+(-- error
+expected a string
+--)
+
+try replace all "old" with 456 in "hello"
+print error (the error)
+(-- error
+expected a string
+--)
+
+try replace all "old" with "new" in 789
+print error (the error)
+(-- error
+expected a string or list
+--)
+
+# List operations
+try the first item in "not a list"
+print error (the error)
+(-- error
+expected a list
+--)
+
+try the last item in 123
+print error (the error)
+(-- error
+expected a list
+--)
+
+# Range operations
+try the lower bound of "not a range"
+print error (the error)
+(-- error
+expected a range
+--)
+
+try the upper bound of []
+print error (the error)
+(-- error
+expected a range
+--)
+
+# Type conversion operations
+try "text" as an integer
+print error (the error)
+(-- error
+can't convert value to number
+--)
+
+# Container subscript operations
+try item "bad index" in [1, 2, 3]
+print error (the error)
+(-- error
+expected an integer
+--)
+
+try item 1 in 42
+print error (the error)
+(-- error
+expected a list, dictionary or string
+--)

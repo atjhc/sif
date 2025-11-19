@@ -1,0 +1,31 @@
+# DEBUG_INFO: false
+
+try quit with "invalid"
+print error (the error)
+(-- error
+argument 1: expected an integer
+--)
+
+try insert 42 at the beginning of 123
+print error (the error)
+(-- error
+argument 2: expected a string or list
+--)
+
+try replace all 123 with "text" in "hello"
+print error (the error)
+(-- error
+argument 1: expected a string
+--)
+
+try the abs of "not a number"
+print error (the error)
+(-- error
+argument 1: expected a number
+--)
+
+try the first item in "not a list"
+print error (the error)
+(-- error
+argument 1: expected a list
+--)

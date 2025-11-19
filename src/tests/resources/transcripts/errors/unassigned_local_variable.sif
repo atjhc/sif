@@ -1,0 +1,4 @@
+print local x
+(-- error
+unused local variable “x” will always be empty
+--)

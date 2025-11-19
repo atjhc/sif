@@ -1,0 +1,33 @@
+repeat while false
+  function a
+    next repeat
+(-- error
+unexpected “next” outside repeat block
+--)
+  end function
+end repeat
+
+repeat while false
+  function a
+    exit repeat
+(-- error
+unexpected “exit” outside repeat block
+--)
+  end function
+end repeat
+
+repeat while false
+  function a
+    repeat while false
+      next repeat
+    end repeat
+  end function
+end repeat
+
+repeat while false
+  function a
+    repeat while false
+      exit repeat
+    end repeat
+  end function
+end repeat

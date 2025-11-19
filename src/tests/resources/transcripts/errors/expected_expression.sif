@@ -1,0 +1,80 @@
+1 +
+(-- error
+expected an expression
+--)
+
+1 *
+(-- error
+expected an expression
+--)
+
+1 /
+(-- error
+expected an expression
+--)
+
+1 ^
+(-- error
+expected an expression
+--)
+
+-
+(-- error
+expected an expression
+--)
+
+()
+(-- error
+expected an expression
+--)
+
+set foo to empty
+foo[]
+(-- error
+expected an expression
+--)
+
+set a to
+(-- error
+expected an expression
+--)
+
+set a[
+(-- error
+expected an expression
+--)
+
+set a[]
+(-- error
+expected an expression
+expected “to”
+--)
+
+set a[] to
+(-- error
+expected an expression
+expected an expression
+--)
+
+set local
+(-- error
+expected a variable name
+--)
+
+if
+(-- error
+expected an expression
+expected “then”
+--)
+
+repeat while
+end
+(-- error
+expected an expression
+--)
+
+repeat until
+end
+(-- error
+expected an expression
+--)

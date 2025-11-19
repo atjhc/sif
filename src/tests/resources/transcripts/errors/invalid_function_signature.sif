@@ -1,0 +1,5 @@
+function {}
+end function
+(-- error
+invalid function signature
+--)

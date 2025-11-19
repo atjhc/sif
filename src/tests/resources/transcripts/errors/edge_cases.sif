@@ -1,0 +1,29 @@
+try insert (the first item in "not a list") at the beginning of []
+print error (the error)
+(-- error
+expected a list
+--)
+
+try replace all 123 with 456 in 789
+print error (the error)
+(-- error
+expected a string or list
+--)
+
+try item (the abs of "invalid") in [1, 2, 3]
+print error (the error)
+(-- error
+expected a number
+--)
+
+try insert (item "bad index" in [1, 2, 3]) at the beginning of "not a list"
+print error (the error)
+(-- error
+expected an integer
+--)
+
+try (the first item in "bad") + (the abs of "also bad")
+print error (the error)
+(-- error
+expected a list
+--)

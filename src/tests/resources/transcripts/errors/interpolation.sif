@@ -1,0 +1,4 @@
+print "This has an {} empty interpolation"
+(-- error
+empty interpolation
+--)
