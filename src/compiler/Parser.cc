@@ -580,7 +580,7 @@ Strong<Statement> Parser::parseFunction() {
         for (auto &&target : argument.targets) {
             auto token = target.name;
             if (token) {
-                auto name = lowercase(token->text);
+                auto name = NormalizeIdentifier(token->text);
                 declare(name);
             }
         }
@@ -935,7 +935,7 @@ Strong<RepeatFor> Parser::parseRepeatFor() {
         if (auto token = consumeWord()) {
             auto variable = MakeStrong<Variable>(token.value());
             variable->range = SourceRange{token.value().range.start, token.value().range.end};
-            auto name = lowercase(variable->name->text);
+            auto name = NormalizeIdentifier(variable->name->text);
             declare(name);
             repeat->variables.push_back(variable);
         } else {
@@ -1068,7 +1068,7 @@ Result<Strong<AssignmentTarget>, Error> Parser::parseAssignmentTarget() {
     }
 
     if (subscripts.size() == 0 && token && !token.value().text.empty()) {
-        auto name = lowercase(token.value().text);
+        auto name = NormalizeIdentifier(token.value().text);
         declare(name);
     }
 

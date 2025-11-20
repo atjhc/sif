@@ -1,0 +1,11 @@
+-- Test that invalid UTF-8 produces an error
+
+-- This contains invalid UTF-8 byte sequence
+set ÿþýinvalid to 20
+
+(-- error
+Invalid UTF-8 encoding
+expected a variable name
+Invalid UTF-8 encoding
+Invalid UTF-8 encoding
+--)

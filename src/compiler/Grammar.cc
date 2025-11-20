@@ -36,7 +36,7 @@ bool Grammar::insert(const Signature &signature,
 
     bool result = true;
     auto insertToken = [&](Token token) {
-        auto word = lowercase(token.text);
+        auto word = NormalizeIdentifier(token.text);
         auto it = terms.find(word);
         if (it == terms.end()) {
             auto grammar = MakeStrong<Grammar>();

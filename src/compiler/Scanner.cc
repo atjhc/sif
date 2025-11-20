@@ -21,6 +21,10 @@
 
 #include <iostream>
 
+extern "C" {
+#include <utf8proc.h>
+}
+
 SIF_NAMESPACE_BEGIN
 
 Scanner::Scanner() : _currentLocation{0, 0, 0} {}
@@ -153,6 +157,29 @@ Token Scanner::scan() {
 }
 
 Token Scanner::scanWord() {
+    // Validate first character using Julia-style rules
+    if (_current < _end) {
+        wchar_t firstChar = utf8::peek_next(_current, _end);
+        auto category = utf8proc_category(firstChar);
+
+        // Check if first character is valid
+        bool validFirst = firstChar == '_' ||
+                         category == UTF8PROC_CATEGORY_LU ||
+                         category == UTF8PROC_CATEGORY_LL ||
+                         category == UTF8PROC_CATEGORY_LT ||
+                         category == UTF8PROC_CATEGORY_LM ||
+                         category == UTF8PROC_CATEGORY_LO ||
+                         category == UTF8PROC_CATEGORY_NL ||
+                         category == UTF8PROC_CATEGORY_SC ||
+                         category == UTF8PROC_CATEGORY_SO;
+
+        if (!validFirst && firstChar >= 128) {
+            // Invalid Unicode first character - consume it and return error
+            advanceCharacter();
+            return makeError("invalid first character in identifier");
+        }
+    }
+
     while (!isAtEnd()) {
         wchar_t c = utf8::peek_next(_current, _end);
         if (!isCharacter(c) && !isdigit(c) && c != '_') {

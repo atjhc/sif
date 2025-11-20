@@ -52,12 +52,12 @@ run_tests() {
   ctest_args+=(-C "$cmake_type")
 
   local start end duration
-  start=$(date +%s)
+  start=$(python3 -c 'import time; print(time.time())')
   (cd "$build_dir" && ctest "${ctest_args[@]}")
-  end=$(date +%s)
-  duration=$(( end - start ))
+  end=$(python3 -c 'import time; print(time.time())')
+  duration=$(python3 -c "print(f'{$end - $start:.2f}')")
 
-  printf '%s,%s,%d\n' "$(date -Iseconds)" "$cmake_type" "$duration" >> "$RESULT_FILE"
+  printf '%s,%s,%s\n' "$(date -Iseconds)" "$cmake_type" "$duration" >> "$RESULT_FILE"
   echo "Recorded $cmake_type tests in ${duration}s"
 }
 

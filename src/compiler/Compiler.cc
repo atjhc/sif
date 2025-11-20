@@ -261,7 +261,7 @@ void Compiler::visit(const FunctionDecl &functionDecl) {
 
         void visit(const VariableTarget &target) override {
             if (target.variable->name) {
-                auto name = lowercase(target.variable->name->text);
+                auto name = NormalizeIdentifier(target.variable->name->text);
                 if (name == "_") {
                     compiler.addLocal();
                 } else {
@@ -397,7 +397,7 @@ void Compiler::visit(const VariableTarget &target) {
         target.subscripts.back()->accept(*this);
         bytecode().add(target.variable->range.start, Opcode::SetSubscript);
     } else {
-        auto name = lowercase(target.variable->name->text);
+        auto name = NormalizeIdentifier(target.variable->name->text);
         if (name == "it") {
             bytecode().add(target.variable->range.start, Opcode::SetIt);
         } else {
@@ -474,7 +474,7 @@ void Compiler::visit(const RepeatFor &foreach) {
     }
     for (auto &&variable : std::views::reverse(foreach.variables)) {
         if (variable->name) {
-            assignVariable(foreach.expression->range.start, lowercase(variable->name->text),
+            assignVariable(foreach.expression->range.start, NormalizeIdentifier(variable->name->text),
                            variable->scope);
         }
     }
@@ -536,7 +536,7 @@ void Compiler::visit(const Variable &variable) {
         return;
     }
 
-    auto name = lowercase(variable.name->text);
+    auto name = NormalizeIdentifier(variable.name->text);
     if (name == "it") {
         bytecode().add(variable.range.start, Opcode::GetIt);
     } else {

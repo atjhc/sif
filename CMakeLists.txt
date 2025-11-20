@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(Sif
-    LANGUAGES CXX
+    LANGUAGES CXX C
     HOMEPAGE_URL https://github.com/atjhc/sif
 )
 
@@ -60,9 +60,10 @@ list(FILTER SIF_SOURCES EXCLUDE REGEX "src/lsp/.*")
 file(GLOB_RECURSE LSP_SOURCES "src/lsp/*.cc")
 
 # Create a static library
-add_library(sif STATIC ${SIF_SOURCES})
+add_library(sif STATIC ${SIF_SOURCES} "src/extern/utf8proc/utf8proc.c")
 target_include_directories(sif PRIVATE "src")
 target_include_directories(sif PUBLIC "include")
+target_include_directories(sif PRIVATE "src/extern/utf8proc")
 
 target_compile_features(sif PUBLIC cxx_std_20)
 
@@ -70,11 +71,13 @@ target_compile_features(sif PUBLIC cxx_std_20)
 add_executable(sif_tool "src/tools/sif.cc")
 target_include_directories(sif_tool PRIVATE "src")
 target_include_directories(sif_tool PUBLIC "include")
+target_include_directories(sif_tool PRIVATE "src/extern/utf8proc")
 
 # Define executable for the language server
 add_executable(sif_lsp "src/tools/sif_lsp.cc" ${LSP_SOURCES})
 target_include_directories(sif_lsp PRIVATE "src")
 target_include_directories(sif_lsp PUBLIC "include")
+target_include_directories(sif_lsp PRIVATE "src/extern/utf8proc")
 
 # Handle Homebrew LLVM linking for Fuzz build
 if(CMAKE_BUILD_TYPE STREQUAL "Fuzz" AND APPLE)
@@ -133,6 +136,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Fuzz")
     endif()
 
     target_include_directories(sif_fuzz PRIVATE src)
+    target_include_directories(sif_fuzz PRIVATE "src/extern/utf8proc")
     target_compile_options(sif_fuzz PRIVATE -fsanitize=fuzzer,address -Wno-unused-function -Wno-unused-variable)
     target_compile_definitions(sif_fuzz PRIVATE DEBUG=1 FUZZER=1)
 
@@ -152,6 +156,7 @@ enable_testing()
 file(GLOB_RECURSE TEST_SOURCES "src/tests/*.cc")
 add_executable(sif_tests ${TEST_SOURCES} ${LSP_SOURCES} src/tools/tests.cc)
 target_include_directories(sif_tests PRIVATE "src")
+target_include_directories(sif_tests PRIVATE "src/extern/utf8proc")
 
 # Apply Homebrew LLVM linking for Fuzz build on macOS
 if(CMAKE_BUILD_TYPE STREQUAL "Fuzz" AND APPLE AND LLVM_PREFIX)

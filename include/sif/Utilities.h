@@ -26,7 +26,12 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <vector>
+
+extern "C" {
+#include <utf8proc.h>
+}
 
 SIF_NAMESPACE_BEGIN
 
@@ -125,10 +130,106 @@ static inline std::string lowercase(const std::string &string) {
     return result;
 }
 
-// Error handling
+// Error handling (forward declaration needed by normalizeIdentifier)
 template <typename... Args> [[noreturn]] static inline void Abort(Args... args) {
     std::cerr << Concat(args...) << std::endl;
     std::abort();
+}
+
+static inline bool IsValidIdentifierFirstChar(utf8proc_int32_t codepoint) {
+    if (codepoint == '_') {
+        return true;
+    }
+
+    auto category = utf8proc_category(codepoint);
+
+    // Julia allows: Lu, Ll, Lt, Lm, Lo, Nl, Sc, So for first character
+    return category == UTF8PROC_CATEGORY_LU || // Letter, uppercase
+           category == UTF8PROC_CATEGORY_LL || // Letter, lowercase
+           category == UTF8PROC_CATEGORY_LT || // Letter, titlecase
+           category == UTF8PROC_CATEGORY_LM || // Letter, modifier
+           category == UTF8PROC_CATEGORY_LO || // Letter, other
+           category == UTF8PROC_CATEGORY_NL || // Number, letter
+           category == UTF8PROC_CATEGORY_SC || // Symbol, currency
+           category == UTF8PROC_CATEGORY_SO;   // Symbol, other
+}
+
+static inline bool IsValidIdentifierSubsequentChar(utf8proc_int32_t codepoint) {
+    if (codepoint == '_' || codepoint == '!') {
+        return true;
+    }
+
+    auto category = utf8proc_category(codepoint);
+
+    // Julia allows all first-char categories plus: Nd, No, Mn, Mc, Me, Sk, Pc
+    return category == UTF8PROC_CATEGORY_LU || // Letter, uppercase
+           category == UTF8PROC_CATEGORY_LL || // Letter, lowercase
+           category == UTF8PROC_CATEGORY_LT || // Letter, titlecase
+           category == UTF8PROC_CATEGORY_LM || // Letter, modifier
+           category == UTF8PROC_CATEGORY_LO || // Letter, other
+           category == UTF8PROC_CATEGORY_NL || // Number, letter
+           category == UTF8PROC_CATEGORY_SC || // Symbol, currency
+           category == UTF8PROC_CATEGORY_SO || // Symbol, other
+           category == UTF8PROC_CATEGORY_ND || // Number, decimal
+           category == UTF8PROC_CATEGORY_NO || // Number, other
+           category == UTF8PROC_CATEGORY_MN || // Mark, nonspacing
+           category == UTF8PROC_CATEGORY_MC || // Mark, spacing
+           category == UTF8PROC_CATEGORY_ME || // Mark, enclosing
+           category == UTF8PROC_CATEGORY_SK || // Symbol, modifier
+           category == UTF8PROC_CATEGORY_PC;   // Punctuation, connector
+}
+
+static inline std::string NormalizeIdentifier(const std::string &identifier) {
+    if (identifier.empty()) {
+        return identifier;
+    }
+
+    // Cache for normalized identifiers
+    static std::unordered_map<std::string, std::string> cache;
+
+    auto it = cache.find(identifier);
+    if (it != cache.end()) {
+        return it->second;
+    }
+
+    // Fast path for ASCII-only identifiers (most common case)
+    bool isAsciiOnly = true;
+    for (unsigned char c : identifier) {
+        if (c >= 128) {
+            isAsciiOnly = false;
+            break;
+        }
+    }
+
+    if (isAsciiOnly) {
+        // Just lowercase it - no Unicode processing needed
+        std::string result = lowercase(identifier);
+        cache[identifier] = result;
+        return result;
+    }
+
+    // Slow path: Unicode normalization
+    const utf8proc_uint8_t *str = reinterpret_cast<const utf8proc_uint8_t*>(identifier.c_str());
+    utf8proc_ssize_t len = identifier.length();
+
+    // Apply NFC normalization and case folding
+    utf8proc_uint8_t *normalized = nullptr;
+    utf8proc_ssize_t result = utf8proc_map(
+        str, len, &normalized,
+        static_cast<utf8proc_option_t>(UTF8PROC_NULLTERM | UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_CASEFOLD)
+    );
+
+    if (result < 0) {
+        // Normalization failed: return original to avoid crashes
+        cache[identifier] = identifier;
+        return identifier;
+    }
+
+    std::string normalizedStr(reinterpret_cast<char*>(normalized));
+    free(normalized);
+
+    cache[identifier] = normalizedStr;
+    return normalizedStr;
 }
 
 // Enum utilities

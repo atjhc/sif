@@ -1,0 +1,74 @@
+-- Test 1: NFC normalization - composed vs decomposed characters
+-- Both should normalize to the same identifier
+
+-- Set using composed form (U+00E9)
+set café to 42
+print café
+
+(-- expect
+42
+--)
+
+-- Overwrite using decomposed form (e + U+0301)
+set café to 100
+
+-- Access using composed form - should get new value
+print café
+
+(-- expect
+100
+--)
+
+-- Test 2: Case folding - uppercase/lowercase should be equivalent
+set MyVariable to 10
+set myvariable to 20
+print MyVariable
+
+(-- expect
+20
+--)
+
+-- Test 3: Case folding with Unicode (Café vs café)
+set Café to 200
+print café
+
+(-- expect
+200
+--)
+
+-- Test 4: Unicode identifier with various scripts
+set 変数 to "Japanese"
+set переменная to "Russian"
+set μέτρο to "Greek"
+
+print 変数
+print переменная
+print μέτρο
+
+(-- expect
+Japanese
+Russian
+Greek
+--)
+
+-- Test 5: Function signatures with Unicode
+function greet {名前}
+    print "Hello, {名前}!"
+end function
+
+greet "世界"
+
+(-- expect
+Hello, 世界!
+--)
+
+-- Test 6: Case-insensitive function calls
+function The Square Of {N}
+    return n * n
+end function
+
+print the square of 5
+
+(-- expect
+25
+--)

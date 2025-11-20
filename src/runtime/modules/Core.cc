@@ -122,7 +122,7 @@ static auto _the_hash_value_of_T(const NativeCallContext &context) -> Result<Val
 }
 
 static auto _the_type_name_of_T(const NativeCallContext &context) -> Result<Value, Error> {
-    return lowercase(context.arguments[0].typeName());
+    return NormalizeIdentifier(context.arguments[0].typeName());
 }
 
 static auto _a_copy_of_T(const NativeCallContext &context) -> Result<Value, Error> {

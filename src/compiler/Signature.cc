@@ -24,7 +24,7 @@ SIF_NAMESPACE_BEGIN
 
 // The purpose of Name() is to return a normalized version of the Signature that
 // may be compared for equality or used as a key.
-static inline std::string Name(const Token &token) { return lowercase(token.text); }
+static inline std::string Name(const Token &token) { return NormalizeIdentifier(token.text); }
 
 static inline std::string Name(const Signature::Choice &choice) {
     std::vector<Token> tokens = choice.tokens;
