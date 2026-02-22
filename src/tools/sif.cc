@@ -83,7 +83,11 @@ class REPLReader : public Reader {
     bool readable() const override { return !std::cin.eof(); }
 
     Optional<Error> read(int scopeDepth) override {
-        std::cout << std::string(scopeDepth + 1, '>') << " ";
+        if (scopeDepth == 0) {
+            std::cout << "⟩ ";
+        } else {
+            std::cout << "│ ";
+        }
         std::getline(std::cin, _contents);
         return None;
     }
@@ -116,6 +120,7 @@ int evaluate(const std::string &name, Reader &reader) {
     parser.declare(variables);
     parser.declare(signatures);
     parser.declare(Signature::Make("clear").value());
+    parser.declare(Signature::Make("help").value());
 
     vm.addGlobals(globals);
 
@@ -167,6 +172,10 @@ int evaluate(const std::string &name, Reader &reader) {
 }
 
 static int repl(const std::vector<std::string> &arguments) {
+    std::cout << "  ╳╳\n"
+                 " ╳╳╳╳  Sif v" << Version << "\n"
+                 " ╲╳╳╱  Type 'help' for more information\n\n";
+
     while (!std::cin.eof()) {
         auto reader = REPLReader();
         evaluate("<stdin>", reader);
@@ -304,6 +313,25 @@ int main(int argc, char *argv[]) {
     vm.addGlobal("clear",
                  MakeStrong<Native>([](const NativeCallContext &context) -> Result<Value, Error> {
                      std::cout << ANSI_CLEAR_SCREEN << ANSI_RESET_CURSOR;
+                     return Value();
+                 }));
+
+    vm.addGlobal("help",
+                 MakeStrong<Native>([](const NativeCallContext &context) -> Result<Value, Error> {
+                     std::cout << "\nSif is a natural language-like scripting language.\n\n"
+                               << "REPL Commands:\n"
+                               << "  help   - Show this help message\n"
+                               << "  clear  - Clear the screen\n\n"
+                               << "Special Variables:\n"
+                               << "  it     - Contains the result of the last expression\n\n"
+                               << "Exit:\n"
+                               << "  Press Ctrl+D to exit the REPL\n\n"
+                               << "Examples:\n"
+                               << "  set x to 42\n"
+                               << "  print \"Hello, World!\"\n"
+                               << "  function greet {name}\n"
+                               << "    print \"Hello, {name}!\"\n"
+                               << "  end function\n\n";
                      return Value();
                  }));
 
