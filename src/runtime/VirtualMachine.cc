@@ -78,12 +78,12 @@ static inline uint16_t ReadJump(Bytecode::Iterator &it) {
 }
 
 template <typename Stack> static inline typename Stack::value_type Pop(Stack &stack) {
-    auto value = stack.back();
+    auto value = std::move(stack.back());
     stack.pop_back();
     return value;
 }
 
-static inline Value Peek(std::vector<Value> &stack) { return stack.back(); }
+static inline const Value &Peek(std::vector<Value> &stack) { return stack.back(); }
 
 static inline void Push(std::vector<Value> &stack, const Value &value) { stack.push_back(value); }
 
