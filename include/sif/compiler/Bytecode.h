@@ -85,7 +85,7 @@ class Bytecode {
     size_t add(SourceLocation location, Opcode opcode, uint16_t argument);
     void addRepeat(SourceLocation location, uint16_t argument);
     uint16_t addLocal(std::string local);
-    uint16_t addConstant(Value constant);
+    uint16_t addConstant(const Value &constant);
     void addArgumentRanges(size_t callLocation, const std::vector<SourceRange> &ranges);
 
     void patchRelativeJump(size_t location);

@@ -71,7 +71,7 @@ uint16_t Bytecode::addLocal(std::string local) {
     return _locals.size() - 1;
 }
 
-uint16_t Bytecode::addConstant(Value constant) {
+uint16_t Bytecode::addConstant(const Value &constant) {
     for (int i = 0; i < _constants.size(); i++) {
         if (_constants[i] == constant) {
             return i;

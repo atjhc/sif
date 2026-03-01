@@ -48,7 +48,7 @@ VirtualMachine::~VirtualMachine() {
     runPendingGarbageCollection();
 }
 
-void VirtualMachine::addGlobal(const std::string &name, const Value global) {
+void VirtualMachine::addGlobal(const std::string &name, const Value &global) {
     _globals[name] = global;
 }
 
@@ -58,8 +58,8 @@ void VirtualMachine::addGlobals(const Mapping<std::string, Value> &globals) {
     }
 }
 
-const Mapping<std::string, Value> VirtualMachine::globals() const { return _globals; }
-const Mapping<std::string, Value> VirtualMachine::exports() const { return _exports; }
+const Mapping<std::string, Value> &VirtualMachine::globals() const { return _globals; }
+const Mapping<std::string, Value> &VirtualMachine::exports() const { return _exports; }
 
 CallFrame &VirtualMachine::frame() { return _frames.back(); }
 
@@ -209,7 +209,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         }
         case Opcode::Constant: {
             auto index = ReadConstant(frame().ip);
-            auto constant = frame().bytecode->constants()[index];
+            const auto &constant = frame().bytecode->constants()[index];
             if (auto copyable = constant.as<Copyable>()) {
                 Push(_stack, copyable->copy(*this));
             } else {
@@ -238,13 +238,13 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         }
         case Opcode::SetGlobal: {
             auto index = ReadConstant(frame().ip);
-            auto name = frame().bytecode->constants()[index];
+            const auto &name = frame().bytecode->constants()[index];
             _exports[name.as<String>()->string()] = Pop(_stack);
             break;
         }
         case Opcode::GetGlobal: {
             auto index = ReadConstant(frame().ip);
-            auto nameValue = frame().bytecode->constants()[index];
+            const auto &nameValue = frame().bytecode->constants()[index];
             auto name = nameValue.as<String>()->string();
 
             auto it = _exports.find(name);
