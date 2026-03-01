@@ -3,13 +3,13 @@ set myList to [1, 2, 3]
 try set myList[10] to 99
 print error (the error)
 (-- error
-array index out of bounds
+list index out of bounds
 --)
 
 try set myList[-10] to 99
 print error (the error)
 (-- error
-array index out of bounds
+list index out of bounds
 --)
 
 -- Test: Modulo by zero (integer)

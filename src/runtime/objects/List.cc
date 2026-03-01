@@ -11,6 +11,7 @@
 //  limitations under the License.
 //
 
+#include "sif/Error.h"
 #include "sif/runtime/objects/List.h"
 #include "sif/runtime/VirtualMachine.h"
 
@@ -150,7 +151,7 @@ Result<Value, Error> List::subscript(VirtualMachine &vm, SourceLocation location
         auto index = value.asInteger();
         if (index >= static_cast<int>(_values.size()) ||
             static_cast<int>(_values.size()) + index < 0) {
-            return Fail(Error(location, "array index out of bounds"));
+            return Fail(Error(location, Errors::ListIndexOutOfBounds));
         }
         return Value(_values[index < 0 ? _values.size() + index : index]);
     }
@@ -172,7 +173,7 @@ Result<Value, Error> List::setSubscript(VirtualMachine &vm, SourceLocation locat
         auto index = key.asInteger();
         if (index >= static_cast<Integer>(_values.size()) ||
             static_cast<Integer>(_values.size()) + index < 0) {
-            return Fail(Error(location, "array index out of bounds"));
+            return Fail(Error(location, Errors::ListIndexOutOfBounds));
         }
         _values[index < 0 ? _values.size() + index : index] = value;
     }

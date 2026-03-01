@@ -32,6 +32,7 @@ inline constexpr std::string_view BoundsMismatch =
     "lower bound must be less than or equal to the upper bound";
 inline constexpr std::string_view CantOpenFile = "can't open file {}";
 inline constexpr std::string_view CircularModuleImport = "circular module import";
+inline constexpr std::string_view CantRepresentAsInteger = "value cannot be represented as an integer";
 inline constexpr std::string_view DivideByZero = "divide by zero";
 inline constexpr std::string_view DuplicateArgumentNames =
     "duplicate argument names in function declaration";
@@ -67,6 +68,7 @@ inline constexpr std::string_view ExpectedTrueOrFalse = "expected true or false"
 inline constexpr std::string_view ExpectedWord = "expected a word";
 inline constexpr std::string_view ExpectedWordParenOrCurly = "expected a word, “(”, or “{”";
 inline constexpr std::string_view InvalidFunctionSignature = "invalid function signature";
+inline constexpr std::string_view ListIndexOutOfBounds = "list index out of bounds";
 inline constexpr std::string_view MismatchedTypes = "mismatched types: {} {} {}";
 inline constexpr std::string_view ModuleNotFound = "module “{}” not found";
 inline constexpr std::string_view ProgramHalted = "program halted";

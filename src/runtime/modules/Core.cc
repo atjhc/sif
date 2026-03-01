@@ -646,7 +646,7 @@ static auto _T_as_an_integer(const NativeCallContext &context) -> Result<Value, 
             auto f = context.arguments[0].asFloat();
             if (f > static_cast<Float>(std::numeric_limits<Integer>::max()) ||
                 f < static_cast<Float>(std::numeric_limits<Integer>::min()) || std::isnan(f)) {
-                return Fail(context.argumentError(0, "value cannot be represented as an integer"));
+                return Fail(context.argumentError(0, Errors::CantRepresentAsInteger));
             }
         }
         return Value(context.arguments[0].castInteger());
