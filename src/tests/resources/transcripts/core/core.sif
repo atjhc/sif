@@ -3,9 +3,9 @@ print the language major version
 print the language minor version
 print the language patch version
 (-- expect
-0.0.0
+0.1.0
 0
-0
+1
 0
 --)
 
