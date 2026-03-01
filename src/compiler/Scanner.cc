@@ -141,6 +141,7 @@ Token Scanner::scan() {
                     return make(Token::Type::ClosedRange);
                 }
             }
+            break;
         }
         return makeError(Format(Errors::UnknownCharacter, int(c)));
     } catch (const utf8::exception &e) {
@@ -282,6 +283,7 @@ Token::Type Scanner::wordType() {
                 return checkKeyword(2, 5, "rever", Token::Type::Forever);
             }
         }
+        break;
     case 'l':
         return checkKeyword(1, 4, "ocal", Token::Type::Local);
     case 'n':
