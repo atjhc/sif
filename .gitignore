@@ -2,6 +2,7 @@
 .vscode/
 build/
 fuzzer/
+plans/
 tmp/
 
 # VS Code extension build artifacts

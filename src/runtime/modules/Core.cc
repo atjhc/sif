@@ -28,7 +28,9 @@
 #include "utilities/strings.h"
 
 #include <charconv>
+#include <cmath>
 #include <format>
+#include <limits>
 #include <random>
 #include <utility>
 
@@ -640,6 +642,13 @@ static auto _replace_last_T_with_T_in_T(const NativeCallContext &context) -> Res
 
 static auto _T_as_an_integer(const NativeCallContext &context) -> Result<Value, Error> {
     if (context.arguments[0].isNumber()) {
+        if (context.arguments[0].isFloat()) {
+            auto f = context.arguments[0].asFloat();
+            if (f > static_cast<Float>(std::numeric_limits<Integer>::max()) ||
+                f < static_cast<Float>(std::numeric_limits<Integer>::min()) || std::isnan(f)) {
+                return Fail(context.argumentError(0, "value cannot be represented as an integer"));
+            }
+        }
         return Value(context.arguments[0].castInteger());
     }
     if (auto castable = context.arguments[0].as<NumberCastable>()) {

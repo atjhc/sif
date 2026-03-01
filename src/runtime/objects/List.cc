@@ -169,7 +169,12 @@ Result<Value, Error> List::setSubscript(VirtualMachine &vm, SourceLocation locat
         }
     }
     if (key.isInteger()) {
-        _values[key.asInteger()] = value;
+        auto index = key.asInteger();
+        if (index >= static_cast<Integer>(_values.size()) ||
+            static_cast<Integer>(_values.size()) + index < 0) {
+            return Fail(Error(location, "array index out of bounds"));
+        }
+        _values[index < 0 ? _values.size() + index : index] = value;
     }
     vm.notifyContainerMutation(this);
     return Value();

@@ -1,0 +1,40 @@
+-- Test: List setSubscript bounds checking
+set myList to [1, 2, 3]
+try set myList[10] to 99
+print error (the error)
+(-- error
+array index out of bounds
+--)
+
+try set myList[-10] to 99
+print error (the error)
+(-- error
+array index out of bounds
+--)
+
+-- Test: Modulo by zero (integer)
+try 10 % 0
+print error (the error)
+(-- error
+divide by zero
+--)
+
+-- Test: Modulo by zero (float)
+try 10.0 % 0.0
+print error (the error)
+(-- error
+divide by zero
+--)
+
+-- Test: Float-to-int overflow
+try 9999999999999999999999999.0 as an integer
+print error (the error)
+(-- error
+value cannot be represented as an integer
+--)
+
+try -9999999999999999999999999.0 as an integer
+print error (the error)
+(-- error
+value cannot be represented as an integer
+--)
