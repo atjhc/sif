@@ -98,7 +98,7 @@ void Compiler::assignLocal(const SourceLocation &location, const std::string &na
         opcode = Opcode::SetCapture;
     } else {
         addLocal(name);
-        if (i > UINT16_MAX) {
+        if (locals().size() - 1 > UINT16_MAX) {
             error(location, Format(Errors::TooManyLocalVariables));
             return;
         }

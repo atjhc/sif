@@ -65,7 +65,7 @@ uint16_t Bytecode::addLocal(std::string local) {
         }
     }
     _locals.push_back(local);
-    if (_constants.size() > USHRT_MAX) {
+    if (_locals.size() > USHRT_MAX) {
         throw std::out_of_range(Concat("too many locals (", USHRT_MAX, ")"));
     }
     return _locals.size() - 1;
