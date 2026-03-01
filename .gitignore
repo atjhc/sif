@@ -4,6 +4,7 @@ build/
 fuzzer/
 plans/
 tmp/
+.beads/
 
 # VS Code extension build artifacts
 support/vscode-extension/node_modules/
