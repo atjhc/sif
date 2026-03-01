@@ -131,9 +131,7 @@ void Dictionary::trace(const std::function<void(Strong<Object> &)> &visitor) {
 DictionaryEnumerator::DictionaryEnumerator(Strong<Dictionary> dictionary)
     : _dictionary(dictionary), _it(dictionary->values().begin()) {}
 
-Dictionary *DictionaryEnumerator::ptr() const {
-    return static_cast<Dictionary *>(_dictionary.get());
-}
+Dictionary *DictionaryEnumerator::ptr() const { return static_cast<Dictionary *>(_dictionary.get()); }
 
 Value DictionaryEnumerator::enumerate() {
     auto &&pair = *_it;

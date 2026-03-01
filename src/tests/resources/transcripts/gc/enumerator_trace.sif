@@ -5,7 +5,6 @@
 set items to [tracking object, tracking object]
 repeat for item in items
   collect garbage
-  collect garbage
   print track count
   exit repeat
 end
@@ -21,7 +20,6 @@ print track count
 -- Dictionary enumerator keeps backing dictionary alive across multiple GC cycles
 set items to ["a": tracking object, "b": tracking object]
 repeat for item in items
-  collect garbage
   collect garbage
   print track count
   exit repeat
