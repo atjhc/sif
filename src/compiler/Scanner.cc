@@ -70,7 +70,7 @@ Token Scanner::scan() {
 
         auto c = advanceCharacter();
 
-        if (isdigit(c))
+        if (c < 128 && isdigit(c))
             return scanNumber();
         if (isCharacter(c) || c == '_')
             return scanWord();
@@ -376,7 +376,7 @@ Token Scanner::scanString(char startingQuote, char terminalQuote) {
 }
 
 Token Scanner::scanNumber() {
-    while (!isAtEnd() && isdigit(_current[0])) {
+    while (!isAtEnd() && isdigit(static_cast<unsigned char>(_current[0]))) {
         advance();
     }
 
@@ -385,7 +385,7 @@ Token Scanner::scanNumber() {
             return make(Token::Type::IntLiteral);
         }
         advance();
-        while (!isAtEnd() && isdigit(_current[0])) {
+        while (!isAtEnd() && isdigit(static_cast<unsigned char>(_current[0]))) {
             advance();
         }
         return make(Token::Type::FloatLiteral);
