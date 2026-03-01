@@ -120,6 +120,8 @@ const std::vector<std::string> &Bytecode::locals() const { return _locals; }
 
 const std::vector<Value> &Bytecode::constants() const { return _constants; }
 
+std::vector<Value> &Bytecode::constants() { return _constants; }
+
 SourceLocation Bytecode::location(Iterator it) const { return _locations[it - _code.begin()]; }
 
 void Bytecode::addArgumentRanges(size_t callLocation, const std::vector<SourceRange> &ranges) {

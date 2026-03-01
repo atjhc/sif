@@ -96,6 +96,7 @@ class Bytecode {
     const std::vector<Opcode> &code() const;
     const std::vector<std::string> &locals() const;
     const std::vector<Value> &constants() const;
+    std::vector<Value> &constants();
 
     std::vector<SourceRange> argumentRanges(size_t callLocation) const;
     SourceLocation location(Iterator it) const;
