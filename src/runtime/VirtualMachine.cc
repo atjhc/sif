@@ -431,9 +431,18 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
             if (lhs.isInteger() && rhs.isInteger()) {
+                if (rhs.asInteger() == 0) {
+                    error = Error(frame().bytecode->location(frame().ip - 1), Errors::DivideByZero);
+                    break;
+                }
                 Push(_stack, lhs.asInteger() % rhs.asInteger());
             } else if (lhs.isNumber() && rhs.isNumber()) {
-                Push(_stack, std::fmod(lhs.castFloat(), rhs.castFloat()));
+                Float denom = rhs.castFloat();
+                if (denom == 0.0) {
+                    error = Error(frame().bytecode->location(frame().ip - 1), Errors::DivideByZero);
+                    break;
+                }
+                Push(_stack, std::fmod(lhs.castFloat(), denom));
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
                               lhs.typeName(), "%", rhs.typeName());
