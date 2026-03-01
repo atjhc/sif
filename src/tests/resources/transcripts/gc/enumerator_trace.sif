@@ -1,0 +1,36 @@
+-- Test that enumerator trace propagates correctly to backing container.
+-- The enumerator must keep its backing list/dictionary alive through GC cycles.
+
+-- List enumerator keeps backing list alive across multiple GC cycles
+set items to [tracking object, tracking object]
+repeat for item in items
+  collect garbage
+  collect garbage
+  print track count
+  exit repeat
+end
+set item to empty
+set items to empty
+collect garbage
+print track count
+(-- expect
+2
+0
+--)
+
+-- Dictionary enumerator keeps backing dictionary alive across multiple GC cycles
+set items to ["a": tracking object, "b": tracking object]
+repeat for item in items
+  collect garbage
+  collect garbage
+  print track count
+  exit repeat
+end
+set item to empty
+set items to empty
+collect garbage
+print track count
+(-- expect
+2
+0
+--)

@@ -131,23 +131,26 @@ void Dictionary::trace(const std::function<void(Strong<Object> &)> &visitor) {
 DictionaryEnumerator::DictionaryEnumerator(Strong<Dictionary> dictionary)
     : _dictionary(dictionary), _it(dictionary->values().begin()) {}
 
+Dictionary *DictionaryEnumerator::ptr() const {
+    return static_cast<Dictionary *>(_dictionary.get());
+}
+
 Value DictionaryEnumerator::enumerate() {
     auto &&pair = *_it;
     _it++;
     return MakeStrong<List>(std::vector{pair.first, pair.second});
 }
 
-bool DictionaryEnumerator::isAtEnd() { return _it == _dictionary->values().end(); }
+bool DictionaryEnumerator::isAtEnd() { return _it == ptr()->values().end(); }
 
 std::string DictionaryEnumerator::typeName() const { return "DictionaryEnumerator"; }
 
 std::string DictionaryEnumerator::description() const {
-    return Concat("E(", _dictionary->description(), ")");
+    return Concat("E(", ptr()->description(), ")");
 }
 
 void DictionaryEnumerator::trace(const std::function<void(Strong<Object> &)> &visitor) {
-    Strong<Object> obj = _dictionary;
-    visitor(obj);
+    visitor(_dictionary);
 }
 
 SIF_NAMESPACE_END

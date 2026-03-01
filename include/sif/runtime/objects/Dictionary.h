@@ -77,7 +77,9 @@ class DictionaryEnumerator : public Enumerator {
     void trace(const std::function<void(Strong<Object> &)> &visitor) override;
 
   private:
-    Strong<Dictionary> _dictionary;
+    Dictionary *ptr() const;
+
+    Strong<Object> _dictionary;
     ValueMap::iterator _it;
 };
 

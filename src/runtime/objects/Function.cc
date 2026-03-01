@@ -26,4 +26,12 @@ std::string Function::typeName() const { return "function"; }
 
 std::string Function::description() const { return _signature.name(); }
 
+void Function::trace(const std::function<void(Strong<Object> &)> &visitor) {
+    for (auto &constant : _bytecode->constants()) {
+        if (constant.isObject()) {
+            visitor(constant.reference());
+        }
+    }
+}
+
 SIF_NAMESPACE_END

@@ -39,6 +39,8 @@ class Function : public Object {
     std::string typeName() const override;
     std::string description() const override;
 
+    void trace(const std::function<void(Strong<Object> &)> &visitor) override;
+
   private:
     Signature _signature;
     Strong<Bytecode> _bytecode;

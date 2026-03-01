@@ -193,24 +193,25 @@ void List::trace(const std::function<void(Strong<Object> &)> &visitor) {
 
 ListEnumerator::ListEnumerator(Strong<List> list) : _list(list), _index(0) {}
 
+List *ListEnumerator::ptr() const { return static_cast<List *>(_list.get()); }
+
 Value ListEnumerator::enumerate() {
-    if (_index >= _list->values().size()) {
+    if (_index >= ptr()->values().size()) {
         return Value();
     }
-    auto value = _list->values()[_index];
+    auto value = ptr()->values()[_index];
     _index++;
     return value;
 }
 
-bool ListEnumerator::isAtEnd() { return _list->values().size() == _index; }
+bool ListEnumerator::isAtEnd() { return ptr()->values().size() == _index; }
 
 std::string ListEnumerator::typeName() const { return "ListEnumerator"; }
 
-std::string ListEnumerator::description() const { return Concat("E(", _list->description(), ")"); }
+std::string ListEnumerator::description() const { return Concat("E(", ptr()->description(), ")"); }
 
 void ListEnumerator::trace(const std::function<void(Strong<Object> &)> &visitor) {
-    Strong<Object> obj = _list;
-    visitor(obj);
+    visitor(_list);
 }
 
 SIF_NAMESPACE_END

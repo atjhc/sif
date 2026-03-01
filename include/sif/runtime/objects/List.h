@@ -90,7 +90,9 @@ class ListEnumerator : public Enumerator {
     void trace(const std::function<void(Strong<Object> &)> &visitor) override;
 
   private:
-    Strong<List> _list;
+    List *ptr() const;
+
+    Strong<Object> _list;
     size_t _index;
 };
 

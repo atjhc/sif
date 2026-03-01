@@ -1,0 +1,28 @@
+-- Test that function constants are traced during GC.
+-- Functions hold bytecode with constant values that may reference objects.
+
+-- Nested function survives GC when referenced through outer function
+function make greeter {name}
+  function greet
+    print "Hello, {name}!"
+  end function
+  return greet
+end function
+
+set greeter to make greeter "World"
+collect garbage
+greeter
+(-- expect
+Hello, World!
+--)
+
+-- Function with list constant survives GC
+function get items
+  return ["apple", "banana", "cherry"]
+end function
+
+collect garbage
+print the size of get items
+(-- expect
+3
+--)
