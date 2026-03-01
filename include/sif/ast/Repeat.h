@@ -37,7 +37,7 @@ struct Repeat : Statement {
     Repeat() {}
     Repeat(Strong<Statement> statement);
 
-    void accept(Visitor &v) const override { return v.visit(*this); }
+    void accept(Visitor &v) const override { v.visit(*this); }
 };
 
 struct RepeatCondition : Repeat {
@@ -52,7 +52,7 @@ struct RepeatCondition : Repeat {
     RepeatCondition(Strong<Statement> statement, Strong<Expression> condition,
                     Conjunction conjunction);
 
-    void accept(Visitor &v) const override { return v.visit(*this); }
+    void accept(Visitor &v) const override { v.visit(*this); }
 };
 
 struct RepeatFor : Repeat {
@@ -68,7 +68,7 @@ struct RepeatFor : Repeat {
     RepeatFor(Strong<Statement> statement, std::vector<Strong<Variable>> variables,
               Strong<Expression> expression);
 
-    void accept(Visitor &v) const override { return v.visit(*this); }
+    void accept(Visitor &v) const override { v.visit(*this); }
 };
 
 struct ExitRepeat : Statement {
@@ -77,7 +77,7 @@ struct ExitRepeat : Statement {
         Optional<SourceRange> repeat;
     } ranges;
 
-    void accept(Visitor &v) const override { return v.visit(*this); }
+    void accept(Visitor &v) const override { v.visit(*this); }
 };
 
 struct NextRepeat : Statement {
@@ -86,7 +86,7 @@ struct NextRepeat : Statement {
         Optional<SourceRange> repeat;
     } ranges;
 
-    void accept(Visitor &v) const override { return v.visit(*this); }
+    void accept(Visitor &v) const override { v.visit(*this); }
 };
 
 SIF_NAMESPACE_END

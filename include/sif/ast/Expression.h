@@ -64,7 +64,7 @@ struct Call : Expression {
 
     Call(const Signature &signature, std::vector<Strong<Expression>> arguments);
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Binary : Expression {
@@ -98,7 +98,7 @@ struct Binary : Expression {
     Binary(Strong<Expression> leftExpression, Operator binaryOperator,
            Strong<Expression> rightExpression);
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Unary : Expression {
@@ -114,7 +114,7 @@ struct Unary : Expression {
     Unary(Operator unaryOperator) : unaryOperator(unaryOperator) {}
     Unary(Operator unaryOperator, Strong<Expression> expression);
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Grouping : Expression {
@@ -128,7 +128,7 @@ struct Grouping : Expression {
     Grouping() {}
     Grouping(Strong<Expression> expression);
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct RangeLiteral : Expression {
@@ -143,7 +143,7 @@ struct RangeLiteral : Expression {
     RangeLiteral() {}
     RangeLiteral(Strong<Expression> start, Strong<Expression> end, bool closed);
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct ListLiteral : Expression {
@@ -157,7 +157,7 @@ struct ListLiteral : Expression {
 
     ListLiteral(std::vector<Strong<Expression>> expressions = {});
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct DictionaryLiteral : Expression {
@@ -172,7 +172,7 @@ struct DictionaryLiteral : Expression {
 
     DictionaryLiteral(std::vector<std::pair<Strong<Expression>, Strong<Expression>>> = {});
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Variable : Expression {
@@ -188,7 +188,7 @@ struct Variable : Expression {
     Variable() {}
     Variable(const Optional<Token> &name, Optional<Scope> scope = None);
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct Literal : Expression {
@@ -196,7 +196,7 @@ struct Literal : Expression {
 
     Literal(Token token);
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 struct StringInterpolation : Expression {
@@ -208,7 +208,7 @@ struct StringInterpolation : Expression {
     StringInterpolation(Token leftPart, Strong<Expression> expression,
                         Strong<Expression> rightPart = nullptr);
 
-    void accept(Expression::Visitor &v) const override { return v.visit(*this); }
+    void accept(Expression::Visitor &v) const override { v.visit(*this); }
 };
 
 SIF_NAMESPACE_END
