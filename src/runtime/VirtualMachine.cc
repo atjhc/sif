@@ -371,9 +371,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
 
             // Only allow string concatenation between strings
             if (lhs.isString() && rhs.isString()) {
-                std::ostringstream ss;
-                ss << lhs << rhs;
-                Push(_stack, ss.str());
+                Push(_stack, lhs.toString() + rhs.toString());
             } else if (lhs.isInteger() && rhs.isInteger()) {
                 Push(_stack, lhs.asInteger() + rhs.asInteger());
             } else if (lhs.isNumber() && rhs.isNumber()) {
@@ -553,9 +551,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         }
         case Opcode::ToString: {
             auto value = Pop(_stack);
-            std::ostringstream ss;
-            ss << value;
-            Push(_stack, ss.str());
+            Push(_stack, value.toString());
             break;
         }
         }
