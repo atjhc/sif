@@ -65,7 +65,7 @@ target_include_directories(sif PRIVATE "src")
 target_include_directories(sif PUBLIC "include")
 target_include_directories(sif PRIVATE "src/extern/utf8proc")
 
-target_compile_features(sif PUBLIC cxx_std_20)
+target_compile_features(sif PUBLIC cxx_std_23)
 
 # Define executable for the main tool
 add_executable(sif_tool "src/tools/sif.cc")

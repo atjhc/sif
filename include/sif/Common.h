@@ -26,7 +26,7 @@
 #include <utility>
 #include <vector>
 
-#include "extern/expected.hpp"
+#include <expected>
 
 #define SIF_NAMESPACE_BEGIN namespace sif {
 #define SIF_NAMESPACE_END }
@@ -60,7 +60,7 @@ using Integer = int64_t;
 using Bool = bool;
 using Float = double;
 
-template <class T, class E> using Result = tl::expected<T, E>;
+template <class T, class E> using Result = std::expected<T, E>;
 
 template <class T> using Strong = std::shared_ptr<T>;
 
@@ -79,7 +79,7 @@ template <class T> using Optional = std::optional<T>;
 using NoneType = std::nullopt_t;
 inline constexpr NoneType None = std::nullopt;
 
-template <class E> tl::unexpected<E> Fail(const E &error) { return tl::unexpected(error); }
+template <class E> std::unexpected<E> Fail(const E &error) { return std::unexpected(error); }
 
 template <class T, class... Args>
 std::enable_if_t<!std::is_array<T>::value, std::unique_ptr<T>> MakeOwned(Args &&...args) {
