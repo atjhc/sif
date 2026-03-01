@@ -54,9 +54,11 @@ two
 1...5
 --)
 
-print the hash value of one
+set intHash to the hash value of one
+set floatHash to the hash value of 1.0
+print intHash is floatHash
 (-- expect
-1
+yes
 --)
 
 print 1 is 1

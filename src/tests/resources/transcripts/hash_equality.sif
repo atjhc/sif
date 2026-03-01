@@ -1,0 +1,15 @@
+-- Empty string should match empty in dictionary context
+set d to [:]
+set d[""] to "found"
+print d[empty]
+(-- expect
+found
+--)
+
+-- Integer and float keys should agree
+set d2 to [:]
+set d2[3] to "three"
+print d2[3.0]
+(-- expect
+three
+--)

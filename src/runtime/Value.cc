@@ -182,7 +182,13 @@ size_t Value::Hash::operator()(const Value &value) const {
     if (value.isEmpty())
         return 0;
     if (value.isObject()) {
+        if (auto string = value.as<String>(); string && string->string().empty()) {
+            return 0;
+        }
         return value.asObject()->hash();
+    }
+    if (value.isInteger()) {
+        return std::hash<Float>{}(static_cast<Float>(value.asInteger()));
     }
     size_t hash;
     std::visit([&](auto arg) { hash = std::hash<decltype(arg)>{}(arg); }, value._value);
