@@ -1,0 +1,129 @@
+-- Addition overflow
+set x to 9223372036854775807
+print x + 1
+(-- expect
+9223372036854775808
+--)
+
+-- Auto-demotion: BigInt result that fits in int64_t becomes Integer
+set big to 9223372036854775807 + 1
+set result to big - 1
+print result
+(-- expect
+9223372036854775807
+--)
+
+print the type name of result
+(-- expect
+integer
+--)
+
+-- Subtraction underflow
+set y to -9223372036854775807 - 1
+print y - 1
+(-- expect
+-9223372036854775809
+--)
+
+-- Multiplication overflow
+print 9223372036854775807 * 2
+(-- expect
+18446744073709551614
+--)
+
+-- Negate INT64_MIN overflows
+set z to -9223372036854775807 - 1
+print -z
+(-- expect
+9223372036854775808
+--)
+
+-- BigInt division with auto-demotion
+set big to 9223372036854775807 * 2
+print big / 2
+(-- expect
+9223372036854775807
+--)
+
+-- BigInt modulo with auto-demotion
+set big to 9223372036854775807 + 10
+print big % 7
+(-- expect
+3
+--)
+
+-- BigInt comparisons
+set big to 9223372036854775807 + 1
+print (big > 9223372036854775807)
+(-- expect
+yes
+--)
+
+print (big < 9223372036854775807)
+(-- expect
+no
+--)
+
+-- BigInt equality
+set lhs to 9223372036854775807 + 1
+set rhs to 9223372036854775807 + 1
+print (lhs = rhs)
+(-- expect
+yes
+--)
+
+-- BigInt + Float promotes to Float
+set big to 9223372036854775807 + 1
+set result to big + 0.5
+print the type name of result
+(-- expect
+float
+--)
+
+-- Large integer literal
+print 99999999999999999999999999999
+(-- expect
+99999999999999999999999999999
+--)
+
+-- BigInt type checks
+set big to 9223372036854775807 + 1
+print big is an integer
+(-- expect
+yes
+--)
+
+print big is a number
+(-- expect
+yes
+--)
+
+print the type name of big
+(-- expect
+integer
+--)
+
+-- BigInt as an integer returns self
+set big to 9223372036854775807 + 1
+print big as an integer
+(-- expect
+9223372036854775808
+--)
+
+-- Factorial that overflows int64_t
+function (the) factorial of {n}
+    if n <= 1 then return 1
+    return n * (the factorial of n - 1)
+end function
+
+print the factorial of 25
+(-- expect
+15511210043330985984000000
+--)
+
+-- BigInt string interpolation
+set big to 9223372036854775807 + 1
+print "value is {big}"
+(-- expect
+value is 9223372036854775808
+--)

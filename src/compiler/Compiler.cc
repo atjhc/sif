@@ -15,6 +15,7 @@
 //
 
 #include "sif/compiler/Compiler.h"
+#include "sif/runtime/objects/BigInt.h"
 #include "sif/runtime/objects/Function.h"
 #include "sif/runtime/objects/String.h"
 #include "utilities/strings.h"
@@ -655,7 +656,11 @@ static inline Value valueOf(const Token &token) {
     case Token::Type::ClosedInterpolation:
         return token.encodedString();
     case Token::Type::IntLiteral:
-        return std::stoll(token.text);
+        try {
+            return std::stoll(token.text);
+        } catch (const std::out_of_range &) {
+            return Value(MakeStrong<BigInt>(token.text));
+        }
     case Token::Type::FloatLiteral:
         return std::stod(token.text);
     default:
@@ -673,12 +678,15 @@ void Compiler::visit(const Literal &literal) {
         return;
     }
 
-    // Special case generating inline shorts for smaller values.
     if (literal.token.type == Token::Type::IntLiteral) {
-        auto value = std::stoll(literal.token.text);
-        if (value <= USHRT_MAX) {
-            bytecode().add(literal.range.start, Opcode::Short, value);
-            return;
+        try {
+            auto value = std::stoll(literal.token.text);
+            if (value <= USHRT_MAX) {
+                bytecode().add(literal.range.start, Opcode::Short, value);
+                return;
+            }
+        } catch (const std::out_of_range &) {
+            // Falls through to constant path which creates a BigInt
         }
     }
 

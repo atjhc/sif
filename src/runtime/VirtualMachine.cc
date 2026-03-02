@@ -23,6 +23,8 @@
 #include "sif/runtime/objects/String.h"
 #include "sif/runtime/protocols/Enumerable.h"
 
+#include "runtime/BigIntArithmetic.h"
+
 #include <sif/Utilities.h>
 
 #include <algorithm>
@@ -87,18 +89,6 @@ static inline const Value &Peek(std::vector<Value> &stack) { return stack.back()
 
 static inline void Push(std::vector<Value> &stack, const Value &value) { stack.push_back(value); }
 
-#define BINARY(OP)                                                                         \
-    auto rhs = Pop(_stack);                                                                \
-    auto lhs = Pop(_stack);                                                                \
-    if (lhs.isInteger() && rhs.isInteger()) {                                              \
-        Push(_stack, lhs.asInteger() OP rhs.asInteger());                                  \
-    } else if (lhs.isNumber() && rhs.isNumber()) {                                         \
-        Push(_stack, lhs.castFloat() OP rhs.castFloat());                                  \
-    } else {                                                                               \
-        error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes, \
-                      lhs.typeName(), #OP, rhs.typeName());                                \
-        break;                                                                             \
-    }
 
 #if defined(DEBUG)
 std::ostream &operator<<(std::ostream &out, const CallFrame &f) { return out << f.sp; }
@@ -336,9 +326,11 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::Negate: {
             auto value = Pop(_stack);
             if (value.isInteger()) {
-                Push(_stack, -value.asInteger());
+                Push(_stack, CheckedNegate(value.asInteger()));
             } else if (value.isFloat()) {
                 Push(_stack, -value.asFloat());
+            } else if (value.isBigInt()) {
+                Push(_stack, FromBigInt(-ToBigInt(value)));
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1), Errors::ExpectedNumber,
                               value.typeName());
@@ -358,18 +350,32 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         }
         case Opcode::Increment: {
             auto value = Pop(_stack);
-            Push(_stack, value.asInteger() + 1);
+            if (value.isInteger()) {
+                Push(_stack, CheckedAdd(value.asInteger(), 1));
+            } else if (value.isBigInt()) {
+                Push(_stack, BigIntAdd(value, Value(Integer(1))));
+            } else {
+                Push(_stack, value.asInteger() + 1);
+            }
             break;
         }
         case Opcode::Add: {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
 
-            // Only allow string concatenation between strings
             if (lhs.isString() && rhs.isString()) {
                 Push(_stack, lhs.toString() + rhs.toString());
             } else if (lhs.isInteger() && rhs.isInteger()) {
-                Push(_stack, lhs.asInteger() + rhs.asInteger());
+                Push(_stack, CheckedAdd(lhs.asInteger(), rhs.asInteger()));
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Push(_stack, BigIntCastFloat(lhs) + BigIntCastFloat(rhs));
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntAdd(lhs, rhs));
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), "+", rhs.typeName());
+                }
             } else if (lhs.isNumber() && rhs.isNumber()) {
                 Push(_stack, lhs.castFloat() + rhs.castFloat());
             } else {
@@ -379,11 +385,47 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             break;
         }
         case Opcode::Subtract: {
-            BINARY(-);
+            auto rhs = Pop(_stack);
+            auto lhs = Pop(_stack);
+            if (lhs.isInteger() && rhs.isInteger()) {
+                Push(_stack, CheckedSubtract(lhs.asInteger(), rhs.asInteger()));
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Push(_stack, BigIntCastFloat(lhs) - BigIntCastFloat(rhs));
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntSubtract(lhs, rhs));
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), "-", rhs.typeName());
+                }
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                Push(_stack, lhs.castFloat() - rhs.castFloat());
+            } else {
+                error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
+                              lhs.typeName(), "-", rhs.typeName());
+            }
             break;
         }
         case Opcode::Multiply: {
-            BINARY(*);
+            auto rhs = Pop(_stack);
+            auto lhs = Pop(_stack);
+            if (lhs.isInteger() && rhs.isInteger()) {
+                Push(_stack, CheckedMultiply(lhs.asInteger(), rhs.asInteger()));
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Push(_stack, BigIntCastFloat(lhs) * BigIntCastFloat(rhs));
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntMultiply(lhs, rhs));
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), "*", rhs.typeName());
+                }
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                Push(_stack, lhs.castFloat() * rhs.castFloat());
+            } else {
+                error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
+                              lhs.typeName(), "*", rhs.typeName());
+            }
             break;
         }
         case Opcode::Divide: {
@@ -395,6 +437,22 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                     break;
                 }
                 Push(_stack, lhs.asInteger() / rhs.asInteger());
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Float denom = BigIntCastFloat(rhs);
+                    if (denom == 0.0) {
+                        error =
+                            Error(frame().bytecode->location(frame().ip - 1), Errors::DivideByZero);
+                        break;
+                    }
+                    Push(_stack, BigIntCastFloat(lhs) / denom);
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntDivide(lhs, rhs));
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), "/", rhs.typeName());
+                    break;
+                }
             } else if (lhs.isNumber() && rhs.isNumber()) {
                 Float denom = rhs.castFloat();
                 if (denom == 0.0) {
@@ -412,8 +470,8 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::Exponent: {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
-            if (lhs.isNumber() && rhs.isNumber()) {
-                Push(_stack, std::pow(lhs.castFloat(), rhs.castFloat()));
+            if (lhs.isNumeric() && rhs.isNumeric()) {
+                Push(_stack, std::pow(BigIntCastFloat(lhs), BigIntCastFloat(rhs)));
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
                               lhs.typeName(), "^", rhs.typeName());
@@ -430,6 +488,22 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                     break;
                 }
                 Push(_stack, lhs.asInteger() % rhs.asInteger());
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Float denom = BigIntCastFloat(rhs);
+                    if (denom == 0.0) {
+                        error =
+                            Error(frame().bytecode->location(frame().ip - 1), Errors::DivideByZero);
+                        break;
+                    }
+                    Push(_stack, std::fmod(BigIntCastFloat(lhs), denom));
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntModulo(lhs, rhs));
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), "%", rhs.typeName());
+                    break;
+                }
             } else if (lhs.isNumber() && rhs.isNumber()) {
                 Float denom = rhs.castFloat();
                 if (denom == 0.0) {
@@ -457,19 +531,91 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             break;
         }
         case Opcode::LessThan: {
-            BINARY(<);
+            auto rhs = Pop(_stack);
+            auto lhs = Pop(_stack);
+            if (lhs.isInteger() && rhs.isInteger()) {
+                Push(_stack, lhs.asInteger() < rhs.asInteger());
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Push(_stack, BigIntCastFloat(lhs) < BigIntCastFloat(rhs));
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntCompare(lhs, rhs) < 0);
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), "<", rhs.typeName());
+                }
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                Push(_stack, lhs.castFloat() < rhs.castFloat());
+            } else {
+                error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
+                              lhs.typeName(), "<", rhs.typeName());
+            }
             break;
         }
         case Opcode::GreaterThan: {
-            BINARY(>);
+            auto rhs = Pop(_stack);
+            auto lhs = Pop(_stack);
+            if (lhs.isInteger() && rhs.isInteger()) {
+                Push(_stack, lhs.asInteger() > rhs.asInteger());
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Push(_stack, BigIntCastFloat(lhs) > BigIntCastFloat(rhs));
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntCompare(lhs, rhs) > 0);
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), ">", rhs.typeName());
+                }
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                Push(_stack, lhs.castFloat() > rhs.castFloat());
+            } else {
+                error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
+                              lhs.typeName(), ">", rhs.typeName());
+            }
             break;
         }
         case Opcode::LessThanOrEqual: {
-            BINARY(<=);
+            auto rhs = Pop(_stack);
+            auto lhs = Pop(_stack);
+            if (lhs.isInteger() && rhs.isInteger()) {
+                Push(_stack, lhs.asInteger() <= rhs.asInteger());
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Push(_stack, BigIntCastFloat(lhs) <= BigIntCastFloat(rhs));
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntCompare(lhs, rhs) <= 0);
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), "<=", rhs.typeName());
+                }
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                Push(_stack, lhs.castFloat() <= rhs.castFloat());
+            } else {
+                error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
+                              lhs.typeName(), "<=", rhs.typeName());
+            }
             break;
         }
         case Opcode::GreaterThanOrEqual: {
-            BINARY(>=);
+            auto rhs = Pop(_stack);
+            auto lhs = Pop(_stack);
+            if (lhs.isInteger() && rhs.isInteger()) {
+                Push(_stack, lhs.asInteger() >= rhs.asInteger());
+            } else if (lhs.isBigInt() || rhs.isBigInt()) {
+                if (lhs.isFloat() || rhs.isFloat()) {
+                    Push(_stack, BigIntCastFloat(lhs) >= BigIntCastFloat(rhs));
+                } else if (lhs.isNumeric() && rhs.isNumeric()) {
+                    Push(_stack, BigIntCompare(lhs, rhs) >= 0);
+                } else {
+                    error = Error(frame().bytecode->location(frame().ip - 1),
+                                  Errors::MismatchedTypes, lhs.typeName(), ">=", rhs.typeName());
+                }
+            } else if (lhs.isNumber() && rhs.isNumber()) {
+                Push(_stack, lhs.castFloat() >= rhs.castFloat());
+            } else {
+                error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
+                              lhs.typeName(), ">=", rhs.typeName());
+            }
             break;
         }
         case Opcode::Subscript: {

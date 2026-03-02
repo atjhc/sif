@@ -64,6 +64,8 @@ class Value {
     bool isFloat() const;
     bool isObject() const;
     bool isString() const;
+    bool isBigInt() const;
+    bool isNumeric() const;
 
     Bool asBool() const;
     Integer asInteger() const;

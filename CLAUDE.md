@@ -111,7 +111,9 @@ Sif is a natural language-like scripting language with a three-stage execution p
 
 **Value** (`include/sif/runtime/Value.h`) - Variant type supporting:
 - Empty, Bool, Integer, Float, Object
-- Objects include String, List, Dictionary, Function, Native, Range
+- Objects include String, List, Dictionary, Function, Native, Range, BigInt
+- Integer overflow transparently promotes to BigInt (arbitrary precision)
+- BigInt results that fit in int64_t auto-demote back to Integer
 
 ### Module System
 

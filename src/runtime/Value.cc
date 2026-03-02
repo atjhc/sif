@@ -17,6 +17,7 @@
 #include "sif/runtime/Object.h"
 #include <sif/runtime/Value.h>
 
+#include "sif/runtime/objects/BigInt.h"
 #include "sif/runtime/objects/String.h"
 
 #include <format>
@@ -117,6 +118,10 @@ bool Value::isObject() const {
 }
 
 bool Value::isString() const { return isObject() && as<String>() != nullptr; }
+
+bool Value::isBigInt() const { return isObject() && as<BigInt>() != nullptr; }
+
+bool Value::isNumeric() const { return isNumber() || isBigInt(); }
 
 Strong<Object> Value::asObject() const {
     if (auto v = std::get_if<Strong<Object>>(&_value)) {
