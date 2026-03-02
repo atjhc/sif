@@ -48,11 +48,11 @@ Token Scanner::scan() {
 
         int depth = 0;
         do {
-            if (_current + 1 < _end && _current[0] == '(' && _current[1] == '-' && _current[2] == '-') {
+            if (_current + 2 < _end && _current[0] == '(' && _current[1] == '-' && _current[2] == '-') {
                 advance(3);
                 depth++;
             } else if (depth > 0) {
-                if (_current + 1 < _end && _current[0] == '-' && _current[1] == '-' &&
+                if (_current + 2 < _end && _current[0] == '-' && _current[1] == '-' &&
                     _current[2] == ')') {
                     advance(3);
                     depth--;

@@ -1,0 +1,34 @@
+-- Unary expressions produce correct results
+print -5
+(-- expect
+-5
+--)
+
+print -(3 + 2)
+(-- expect
+-5
+--)
+
+-- Block comments near end of input parse correctly
+(-- a block comment --)
+print "after block comment"
+(-- expect
+after block comment
+--)
+
+-- Integer literals beyond 32-bit range
+print 3000000000
+(-- expect
+3000000000
+--)
+
+print 3000000000 + 3000000000
+(-- expect
+6000000000
+--)
+
+set big to 9000000000
+print big / 3
+(-- expect
+3000000000
+--)

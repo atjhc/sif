@@ -655,7 +655,7 @@ static inline Value valueOf(const Token &token) {
     case Token::Type::ClosedInterpolation:
         return token.encodedString();
     case Token::Type::IntLiteral:
-        return std::stol(token.text);
+        return std::stoll(token.text);
     case Token::Type::FloatLiteral:
         return std::stod(token.text);
     default:
@@ -675,7 +675,7 @@ void Compiler::visit(const Literal &literal) {
 
     // Special case generating inline shorts for smaller values.
     if (literal.token.type == Token::Type::IntLiteral) {
-        auto value = std::stol(literal.token.text);
+        auto value = std::stoll(literal.token.text);
         if (value <= USHRT_MAX) {
             bytecode().add(literal.range.start, Opcode::Short, value);
             return;
