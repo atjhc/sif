@@ -283,17 +283,13 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::OpenRange: {
             auto end = Pop(_stack);
             auto start = Pop(_stack);
-            if (range(start, end, false)) {
-                break;
-            }
+            error = range(start, end, false);
             break;
         }
         case Opcode::ClosedRange: {
             auto end = Pop(_stack);
             auto start = Pop(_stack);
-            if (range(start, end, true)) {
-                break;
-            }
+            error = range(start, end, true);
             break;
         }
         case Opcode::List: {
@@ -400,7 +396,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 }
                 Push(_stack, lhs.asInteger() / rhs.asInteger());
             } else if (lhs.isNumber() && rhs.isNumber()) {
-                float denom = rhs.castFloat();
+                Float denom = rhs.castFloat();
                 if (denom == 0.0) {
                     error = Error(frame().bytecode->location(frame().ip - 1), Errors::DivideByZero);
                     break;
