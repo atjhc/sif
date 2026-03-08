@@ -97,16 +97,6 @@ class BigInt : public Object, public NumberCastable {
         return toValue(-_toBigInt(v));
     }
 
-    static inline Value increment(const Value &v) {
-        if (v.isInteger()) {
-            Integer result;
-            if (!__builtin_add_overflow(v.asInteger(), Integer(1), &result)) {
-                return Value(result);
-            }
-        }
-        return toValue(_toBigInt(v) + ::BigInt::bigint(1));
-    }
-
     static inline int compare(const Value &lhs, const Value &rhs) {
         auto a = _toBigInt(lhs);
         auto b = _toBigInt(rhs);

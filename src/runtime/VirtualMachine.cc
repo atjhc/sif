@@ -346,17 +346,6 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             Push(_stack, !value.asBool());
             break;
         }
-        case Opcode::Increment: {
-            auto value = Pop(_stack);
-            if (value.isNumeric()) {
-                Push(_stack, BigInt::increment(value));
-            } else {
-                error = Error(frame().bytecode->location(frame().ip - 1), Errors::ExpectedNumber,
-                              value.typeName());
-                break;
-            }
-            break;
-        }
         case Opcode::Add: {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);

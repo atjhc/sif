@@ -269,9 +269,6 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Enumerate:
         out << "Enumerate";
         return position + 1;
-    case Opcode::Increment:
-        out << "Increment";
-        return position + 1;
     case Opcode::Add:
         out << "Add";
         return position + 1;
