@@ -13,13 +13,34 @@
 
 #include "runtime/objects/BigInt.h"
 
+#include <limits>
+
 SIF_NAMESPACE_BEGIN
 
 BigInt::BigInt(const ::BigInt::bigint &value) : _value(value) {}
 
 BigInt::BigInt(const std::string &value) : _value(value) {}
 
+BigInt::BigInt(const Value &v) {
+    if (v.isInteger()) {
+        _value = ::BigInt::bigint(v.asInteger());
+    } else if (auto big = v.as<BigInt>()) {
+        _value = big->_value;
+    } else {
+        throw std::runtime_error("expected numeric value");
+    }
+}
+
 const ::BigInt::bigint &BigInt::value() const { return _value; }
+
+Value BigInt::toValue(const ::BigInt::bigint &result) {
+    static const ::BigInt::bigint maxInt(std::numeric_limits<long long>::max());
+    static const ::BigInt::bigint minInt(std::numeric_limits<long long>::min());
+    if (result >= minInt && result <= maxInt) {
+        return Value(static_cast<Integer>(std::stoll(std::string(result))));
+    }
+    return Value(MakeStrong<BigInt>(result));
+}
 
 std::string BigInt::typeName() const { return "integer"; }
 

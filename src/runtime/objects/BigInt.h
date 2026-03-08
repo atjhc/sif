@@ -30,8 +30,11 @@ class BigInt : public Object, public NumberCastable {
   public:
     BigInt(const ::BigInt::bigint &value);
     BigInt(const std::string &value);
+    BigInt(const Value &value);
 
     const ::BigInt::bigint &value() const;
+
+    static Value toValue(const ::BigInt::bigint &result);
 
     std::string typeName() const override;
     std::string description() const override;
