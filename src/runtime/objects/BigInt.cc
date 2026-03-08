@@ -69,8 +69,7 @@ Result<Value, Error> BigInt::castFloat() const {
 
 Result<Value, Error> BigInt::castInteger() const {
     try {
-        auto val = std::stoll(std::string(_value));
-        return Value(static_cast<Integer>(val));
+        return Value(static_cast<Integer>(static_cast<long long>(_value)));
     } catch (...) {
         return Fail(Error("value cannot be represented as an integer"));
     }
