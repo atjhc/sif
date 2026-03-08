@@ -13,6 +13,7 @@
 
 #include "runtime/objects/BigInt.h"
 
+#include <cmath>
 #include <limits>
 
 SIF_NAMESPACE_BEGIN
@@ -59,9 +60,25 @@ size_t BigInt::hash() const {
     return std::hash<::BigInt::bigint>{}(_value);
 }
 
+double BigInt::toDouble(const ::BigInt::bigint &value) {
+    static const ::BigInt::bigint maxLL(std::numeric_limits<long long>::max());
+    static const ::BigInt::bigint minLL(std::numeric_limits<long long>::min());
+    if (value >= minLL && value <= maxLL) {
+        return static_cast<double>(static_cast<long long>(value));
+    }
+    std::string s = std::string(value);
+    bool negative = s[0] == '-';
+    size_t start = negative ? 1 : 0;
+    size_t numDigits = s.size() - start;
+    // Parse leading significant digits and scale by remaining magnitude
+    double mantissa = std::stod(s.substr(start, 18));
+    double result = mantissa * std::pow(10.0, static_cast<double>(numDigits - 18));
+    return negative ? -result : result;
+}
+
 Result<Value, Error> BigInt::castFloat() const {
     try {
-        return Value(std::stod(std::string(_value)));
+        return Value(toDouble(_value));
     } catch (...) {
         return Fail(Error("value cannot be represented as a float"));
     }
