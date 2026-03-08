@@ -39,46 +39,33 @@ class BigInt : public Object, public NumberCastable {
     static Value toValue(const ::BigInt::bigint &result);
     static double toDouble(const ::BigInt::bigint &value);
 
-    static inline Value checkedAdd(Integer a, Integer b) {
-        Integer result;
-        if (__builtin_add_overflow(a, b, &result)) {
-            return toValue(::BigInt::bigint(a) + ::BigInt::bigint(b));
-        }
-        return Value(result);
-    }
-
-    static inline Value checkedSubtract(Integer a, Integer b) {
-        Integer result;
-        if (__builtin_sub_overflow(a, b, &result)) {
-            return toValue(::BigInt::bigint(a) - ::BigInt::bigint(b));
-        }
-        return Value(result);
-    }
-
-    static inline Value checkedMultiply(Integer a, Integer b) {
-        Integer result;
-        if (__builtin_mul_overflow(a, b, &result)) {
-            return toValue(::BigInt::bigint(a) * ::BigInt::bigint(b));
-        }
-        return Value(result);
-    }
-
-    static inline Value checkedNegate(Integer a) {
-        if (a == std::numeric_limits<Integer>::min()) {
-            return toValue(-::BigInt::bigint(a));
-        }
-        return Value(-a);
-    }
-
     static inline Value add(const Value &lhs, const Value &rhs) {
+        if (lhs.isInteger() && rhs.isInteger()) {
+            Integer result;
+            if (!__builtin_add_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
+                return Value(result);
+            }
+        }
         return toValue(_extract(lhs) + _extract(rhs));
     }
 
     static inline Value subtract(const Value &lhs, const Value &rhs) {
+        if (lhs.isInteger() && rhs.isInteger()) {
+            Integer result;
+            if (!__builtin_sub_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
+                return Value(result);
+            }
+        }
         return toValue(_extract(lhs) - _extract(rhs));
     }
 
     static inline Value multiply(const Value &lhs, const Value &rhs) {
+        if (lhs.isInteger() && rhs.isInteger()) {
+            Integer result;
+            if (!__builtin_mul_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
+                return Value(result);
+            }
+        }
         return toValue(_extract(lhs) * _extract(rhs));
     }
 
@@ -88,6 +75,27 @@ class BigInt : public Object, public NumberCastable {
 
     static inline Value modulo(const Value &lhs, const Value &rhs) {
         return toValue(_extract(lhs) % _extract(rhs));
+    }
+
+    static inline Value negate(const Value &v) {
+        if (v.isInteger()) {
+            auto a = v.asInteger();
+            if (a == std::numeric_limits<Integer>::min()) {
+                return toValue(-::BigInt::bigint(a));
+            }
+            return Value(-a);
+        }
+        return toValue(-_extract(v));
+    }
+
+    static inline Value increment(const Value &v) {
+        if (v.isInteger()) {
+            Integer result;
+            if (!__builtin_add_overflow(v.asInteger(), Integer(1), &result)) {
+                return Value(result);
+            }
+        }
+        return toValue(_extract(v) + ::BigInt::bigint(1));
     }
 
     static inline int compare(const Value &lhs, const Value &rhs) {
