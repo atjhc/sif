@@ -23,7 +23,7 @@
 #include "sif/runtime/objects/String.h"
 #include "sif/runtime/protocols/Enumerable.h"
 
-#include "runtime/BigIntArithmetic.h"
+#include "runtime/objects/BigInt.h"
 
 #include <sif/Utilities.h>
 
@@ -326,7 +326,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::Negate: {
             auto value = Pop(_stack);
             if (value.isInteger()) {
-                Push(_stack, CheckedNegate(value.asInteger()));
+                Push(_stack, BigInt::checkedNegate(value.asInteger()));
             } else if (value.isFloat()) {
                 Push(_stack, -value.asFloat());
             } else if (value.isBigInt()) {
@@ -351,9 +351,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
         case Opcode::Increment: {
             auto value = Pop(_stack);
             if (value.isInteger()) {
-                Push(_stack, CheckedAdd(value.asInteger(), 1));
+                Push(_stack, BigInt::checkedAdd(value.asInteger(), 1));
             } else if (value.isBigInt()) {
-                Push(_stack, BigIntAdd(value, Value(Integer(1))));
+                Push(_stack, BigInt::add(value, Value(Integer(1))));
             } else {
                 Push(_stack, value.asInteger() + 1);
             }
@@ -366,12 +366,12 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (lhs.isString() && rhs.isString()) {
                 Push(_stack, lhs.toString() + rhs.toString());
             } else if (lhs.isInteger() && rhs.isInteger()) {
-                Push(_stack, CheckedAdd(lhs.asInteger(), rhs.asInteger()));
+                Push(_stack, BigInt::checkedAdd(lhs.asInteger(), rhs.asInteger()));
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Push(_stack, BigIntCastFloat(lhs) + BigIntCastFloat(rhs));
+                    Push(_stack, BigInt::toFloat(lhs) + BigInt::toFloat(rhs));
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntAdd(lhs, rhs));
+                    Push(_stack, BigInt::add(lhs, rhs));
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), "+", rhs.typeName());
@@ -388,12 +388,12 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
             if (lhs.isInteger() && rhs.isInteger()) {
-                Push(_stack, CheckedSubtract(lhs.asInteger(), rhs.asInteger()));
+                Push(_stack, BigInt::checkedSubtract(lhs.asInteger(), rhs.asInteger()));
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Push(_stack, BigIntCastFloat(lhs) - BigIntCastFloat(rhs));
+                    Push(_stack, BigInt::toFloat(lhs) - BigInt::toFloat(rhs));
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntSubtract(lhs, rhs));
+                    Push(_stack, BigInt::subtract(lhs, rhs));
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), "-", rhs.typeName());
@@ -410,12 +410,12 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
             if (lhs.isInteger() && rhs.isInteger()) {
-                Push(_stack, CheckedMultiply(lhs.asInteger(), rhs.asInteger()));
+                Push(_stack, BigInt::checkedMultiply(lhs.asInteger(), rhs.asInteger()));
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Push(_stack, BigIntCastFloat(lhs) * BigIntCastFloat(rhs));
+                    Push(_stack, BigInt::toFloat(lhs) * BigInt::toFloat(rhs));
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntMultiply(lhs, rhs));
+                    Push(_stack, BigInt::multiply(lhs, rhs));
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), "*", rhs.typeName());
@@ -439,15 +439,15 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, lhs.asInteger() / rhs.asInteger());
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Float denom = BigIntCastFloat(rhs);
+                    Float denom = BigInt::toFloat(rhs);
                     if (denom == 0.0) {
                         error =
                             Error(frame().bytecode->location(frame().ip - 1), Errors::DivideByZero);
                         break;
                     }
-                    Push(_stack, BigIntCastFloat(lhs) / denom);
+                    Push(_stack, BigInt::toFloat(lhs) / denom);
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntDivide(lhs, rhs));
+                    Push(_stack, BigInt::divide(lhs, rhs));
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), "/", rhs.typeName());
@@ -471,7 +471,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
             if (lhs.isNumeric() && rhs.isNumeric()) {
-                Push(_stack, std::pow(BigIntCastFloat(lhs), BigIntCastFloat(rhs)));
+                Push(_stack, std::pow(BigInt::toFloat(lhs), BigInt::toFloat(rhs)));
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1), Errors::MismatchedTypes,
                               lhs.typeName(), "^", rhs.typeName());
@@ -490,15 +490,15 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, lhs.asInteger() % rhs.asInteger());
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Float denom = BigIntCastFloat(rhs);
+                    Float denom = BigInt::toFloat(rhs);
                     if (denom == 0.0) {
                         error =
                             Error(frame().bytecode->location(frame().ip - 1), Errors::DivideByZero);
                         break;
                     }
-                    Push(_stack, std::fmod(BigIntCastFloat(lhs), denom));
+                    Push(_stack, std::fmod(BigInt::toFloat(lhs), denom));
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntModulo(lhs, rhs));
+                    Push(_stack, BigInt::modulo(lhs, rhs));
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), "%", rhs.typeName());
@@ -537,9 +537,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, lhs.asInteger() < rhs.asInteger());
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Push(_stack, BigIntCastFloat(lhs) < BigIntCastFloat(rhs));
+                    Push(_stack, BigInt::toFloat(lhs) < BigInt::toFloat(rhs));
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntCompare(lhs, rhs) < 0);
+                    Push(_stack, BigInt::compare(lhs, rhs) < 0);
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), "<", rhs.typeName());
@@ -559,9 +559,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, lhs.asInteger() > rhs.asInteger());
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Push(_stack, BigIntCastFloat(lhs) > BigIntCastFloat(rhs));
+                    Push(_stack, BigInt::toFloat(lhs) > BigInt::toFloat(rhs));
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntCompare(lhs, rhs) > 0);
+                    Push(_stack, BigInt::compare(lhs, rhs) > 0);
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), ">", rhs.typeName());
@@ -581,9 +581,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, lhs.asInteger() <= rhs.asInteger());
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Push(_stack, BigIntCastFloat(lhs) <= BigIntCastFloat(rhs));
+                    Push(_stack, BigInt::toFloat(lhs) <= BigInt::toFloat(rhs));
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntCompare(lhs, rhs) <= 0);
+                    Push(_stack, BigInt::compare(lhs, rhs) <= 0);
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), "<=", rhs.typeName());
@@ -603,9 +603,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
                 Push(_stack, lhs.asInteger() >= rhs.asInteger());
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
-                    Push(_stack, BigIntCastFloat(lhs) >= BigIntCastFloat(rhs));
+                    Push(_stack, BigInt::toFloat(lhs) >= BigInt::toFloat(rhs));
                 } else if (lhs.isNumeric() && rhs.isNumeric()) {
-                    Push(_stack, BigIntCompare(lhs, rhs) >= 0);
+                    Push(_stack, BigInt::compare(lhs, rhs) >= 0);
                 } else {
                     error = Error(frame().bytecode->location(frame().ip - 1),
                                   Errors::MismatchedTypes, lhs.typeName(), ">=", rhs.typeName());

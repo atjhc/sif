@@ -121,6 +121,18 @@ print the factorial of 25
 15511210043330985984000000
 --)
 
+-- BigInt as a number (explicit cast to float)
+set big to 9223372036854775807 + 1
+set floatVal to big as a number
+print the type name of floatVal
+(-- expect
+float
+--)
+print floatVal
+(-- expect
+9223372036854775808
+--)
+
 -- BigInt string interpolation
 set big to 9223372036854775807 + 1
 print "value is {big}"

@@ -24,6 +24,8 @@
 
 #include "extern/bigint.h"
 
+#include <limits>
+
 SIF_NAMESPACE_BEGIN
 
 class BigInt : public Object, public NumberCastable {
@@ -36,6 +38,72 @@ class BigInt : public Object, public NumberCastable {
 
     static Value toValue(const ::BigInt::bigint &result);
     static double toDouble(const ::BigInt::bigint &value);
+
+    static inline Value checkedAdd(Integer a, Integer b) {
+        Integer result;
+        if (__builtin_add_overflow(a, b, &result)) {
+            return toValue(::BigInt::bigint(a) + ::BigInt::bigint(b));
+        }
+        return Value(result);
+    }
+
+    static inline Value checkedSubtract(Integer a, Integer b) {
+        Integer result;
+        if (__builtin_sub_overflow(a, b, &result)) {
+            return toValue(::BigInt::bigint(a) - ::BigInt::bigint(b));
+        }
+        return Value(result);
+    }
+
+    static inline Value checkedMultiply(Integer a, Integer b) {
+        Integer result;
+        if (__builtin_mul_overflow(a, b, &result)) {
+            return toValue(::BigInt::bigint(a) * ::BigInt::bigint(b));
+        }
+        return Value(result);
+    }
+
+    static inline Value checkedNegate(Integer a) {
+        if (a == std::numeric_limits<Integer>::min()) {
+            return toValue(-::BigInt::bigint(a));
+        }
+        return Value(-a);
+    }
+
+    static inline Value add(const Value &lhs, const Value &rhs) {
+        return toValue(BigInt(lhs)._value + BigInt(rhs)._value);
+    }
+
+    static inline Value subtract(const Value &lhs, const Value &rhs) {
+        return toValue(BigInt(lhs)._value - BigInt(rhs)._value);
+    }
+
+    static inline Value multiply(const Value &lhs, const Value &rhs) {
+        return toValue(BigInt(lhs)._value * BigInt(rhs)._value);
+    }
+
+    static inline Value divide(const Value &lhs, const Value &rhs) {
+        return toValue(BigInt(lhs)._value / BigInt(rhs)._value);
+    }
+
+    static inline Value modulo(const Value &lhs, const Value &rhs) {
+        return toValue(BigInt(lhs)._value % BigInt(rhs)._value);
+    }
+
+    static inline int compare(const Value &lhs, const Value &rhs) {
+        auto a = BigInt(lhs)._value;
+        auto b = BigInt(rhs)._value;
+        if (a < b) return -1;
+        if (a > b) return 1;
+        return 0;
+    }
+
+    static inline Float toFloat(const Value &v) {
+        if (v.isFloat()) return v.asFloat();
+        if (v.isInteger()) return static_cast<Float>(v.asInteger());
+        if (auto big = v.as<BigInt>()) return toDouble(big->_value);
+        throw std::runtime_error("can't convert to float");
+    }
 
     std::string typeName() const override;
     std::string description() const override;
