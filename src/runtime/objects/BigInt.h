@@ -22,6 +22,8 @@
 
 #include <sif/runtime/protocols/Castable.h>
 
+#include <cassert>
+
 #include "extern/bigint.h"
 
 #include <limits>
@@ -134,7 +136,9 @@ class BigInt : public Object, public NumberCastable {
     // BigInt. Only called on the overflow/BigInt path, never the integer fast path.
     static inline ::BigInt::bigint _toBigInt(const Value &v) {
         if (v.isInteger()) return ::BigInt::bigint(v.asInteger());
-        return v.as<BigInt>()->_value;
+        auto big = v.as<BigInt>();
+        assert(big && "expected integer or BigInt value");
+        return big->_value;
     }
 
     ::BigInt::bigint _value;

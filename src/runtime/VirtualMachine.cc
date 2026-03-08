@@ -351,7 +351,9 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (value.isNumeric()) {
                 Push(_stack, BigInt::increment(value));
             } else {
-                Push(_stack, value.asInteger() + 1);
+                error = Error(frame().bytecode->location(frame().ip - 1), Errors::ExpectedNumber,
+                              value.typeName());
+                break;
             }
             break;
         }

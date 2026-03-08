@@ -76,11 +76,12 @@ Result<Value, Error> BigInt::castFloat() const {
 }
 
 Result<Value, Error> BigInt::castInteger() const {
-    try {
-        return Value(static_cast<Integer>(static_cast<long long>(_value)));
-    } catch (...) {
+    static const ::BigInt::bigint maxInt(std::numeric_limits<long long>::max());
+    static const ::BigInt::bigint minInt(std::numeric_limits<long long>::min());
+    if (_value < minInt || _value > maxInt) {
         return Fail(Error("value cannot be represented as an integer"));
     }
+    return Value(static_cast<Integer>(static_cast<long long>(_value)));
 }
 
 SIF_NAMESPACE_END
