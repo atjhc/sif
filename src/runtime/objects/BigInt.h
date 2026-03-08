@@ -71,28 +71,28 @@ class BigInt : public Object, public NumberCastable {
     }
 
     static inline Value add(const Value &lhs, const Value &rhs) {
-        return toValue(BigInt(lhs)._value + BigInt(rhs)._value);
+        return toValue(_extract(lhs) + _extract(rhs));
     }
 
     static inline Value subtract(const Value &lhs, const Value &rhs) {
-        return toValue(BigInt(lhs)._value - BigInt(rhs)._value);
+        return toValue(_extract(lhs) - _extract(rhs));
     }
 
     static inline Value multiply(const Value &lhs, const Value &rhs) {
-        return toValue(BigInt(lhs)._value * BigInt(rhs)._value);
+        return toValue(_extract(lhs) * _extract(rhs));
     }
 
     static inline Value divide(const Value &lhs, const Value &rhs) {
-        return toValue(BigInt(lhs)._value / BigInt(rhs)._value);
+        return toValue(_extract(lhs) / _extract(rhs));
     }
 
     static inline Value modulo(const Value &lhs, const Value &rhs) {
-        return toValue(BigInt(lhs)._value % BigInt(rhs)._value);
+        return toValue(_extract(lhs) % _extract(rhs));
     }
 
     static inline int compare(const Value &lhs, const Value &rhs) {
-        auto a = BigInt(lhs)._value;
-        auto b = BigInt(rhs)._value;
+        auto a = _extract(lhs);
+        auto b = _extract(rhs);
         if (a < b) return -1;
         if (a > b) return 1;
         return 0;
@@ -115,6 +115,11 @@ class BigInt : public Object, public NumberCastable {
     Result<Value, Error> castInteger() const override;
 
   private:
+    static inline ::BigInt::bigint _extract(const Value &v) {
+        if (v.isInteger()) return ::BigInt::bigint(v.asInteger());
+        return v.as<BigInt>()->_value;
+    }
+
     ::BigInt::bigint _value;
 };
 
