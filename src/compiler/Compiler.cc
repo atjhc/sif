@@ -15,7 +15,7 @@
 //
 
 #include "sif/compiler/Compiler.h"
-#include "sif/runtime/objects/BigInt.h"
+#include "runtime/objects/BigInt.h"
 #include "sif/runtime/objects/Function.h"
 #include "sif/runtime/objects/String.h"
 #include "utilities/strings.h"
@@ -680,7 +680,7 @@ void Compiler::visit(const Literal &literal) {
 
     if (literal.token.type == Token::Type::IntLiteral) {
         try {
-            auto value = std::stoll(literal.token.text);
+            auto value = std::stol(literal.token.text);
             if (value <= USHRT_MAX) {
                 bytecode().add(literal.range.start, Opcode::Short, value);
                 return;

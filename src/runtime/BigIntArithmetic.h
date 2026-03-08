@@ -1,11 +1,11 @@
 #pragma once
 
 #include "extern/bigint.h"
-#include "sif/runtime/Value.h"
-#include "sif/runtime/objects/BigInt.h"
+#include "runtime/objects/BigInt.h"
+
+#include <sif/runtime/Value.h>
 
 #include <limits>
-#include <string>
 
 SIF_NAMESPACE_BEGIN
 
@@ -14,7 +14,7 @@ inline ::BigInt::bigint ToBigInt(const Value &v) {
         return ::BigInt::bigint(v.asInteger());
     }
     if (auto big = v.as<BigInt>()) {
-        return ::BigInt::bigint(big->str());
+        return big->value();
     }
     throw std::runtime_error("expected numeric value");
 }
@@ -25,7 +25,7 @@ inline Value FromBigInt(const ::BigInt::bigint &result) {
     if (result >= minInt && result <= maxInt) {
         return Value(static_cast<Integer>(std::stoll(std::string(result))));
     }
-    return Value(MakeStrong<BigInt>(std::string(result)));
+    return Value(MakeStrong<BigInt>(result));
 }
 
 inline Value CheckedAdd(Integer a, Integer b) {
@@ -90,7 +90,7 @@ inline int BigIntCompare(const Value &lhs, const Value &rhs) {
 inline Float BigIntCastFloat(const Value &v) {
     if (v.isFloat()) return v.asFloat();
     if (v.isInteger()) return static_cast<Float>(v.asInteger());
-    if (auto big = v.as<BigInt>()) return std::stod(big->str());
+    if (auto big = v.as<BigInt>()) return std::stod(std::string(big->value()));
     throw std::runtime_error("can't convert to float");
 }
 

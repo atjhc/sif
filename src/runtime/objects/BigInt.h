@@ -22,15 +22,16 @@
 
 #include <sif/runtime/protocols/Castable.h>
 
-#include <string>
+#include "extern/bigint.h"
 
 SIF_NAMESPACE_BEGIN
 
 class BigInt : public Object, public NumberCastable {
   public:
+    BigInt(const ::BigInt::bigint &value);
     BigInt(const std::string &value);
 
-    const std::string &str() const;
+    const ::BigInt::bigint &value() const;
 
     std::string typeName() const override;
     std::string description() const override;
@@ -42,7 +43,7 @@ class BigInt : public Object, public NumberCastable {
     Result<Value, Error> castInteger() const override;
 
   private:
-    std::string _value;
+    ::BigInt::bigint _value;
 };
 
 SIF_NAMESPACE_END

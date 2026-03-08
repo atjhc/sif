@@ -17,7 +17,7 @@
 #include "sif/runtime/Object.h"
 #include <sif/runtime/Value.h>
 
-#include "sif/runtime/objects/BigInt.h"
+#include "runtime/objects/BigInt.h"
 #include "sif/runtime/objects/String.h"
 
 #include <format>
