@@ -40,7 +40,7 @@ class BigInt : public Object, public NumberCastable {
         static const ::BigInt::bigint maxInt(std::numeric_limits<long long>::max());
         static const ::BigInt::bigint minInt(std::numeric_limits<long long>::min());
         if (result >= minInt && result <= maxInt) {
-            return Value(static_cast<Integer>(std::stoll(std::string(result))));
+            return Value(static_cast<Integer>(static_cast<long long>(result)));
         }
         return Value(MakeStrong<BigInt>(result));
     }

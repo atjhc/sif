@@ -129,11 +129,15 @@ namespace BigInt {
         }
 
         explicit operator int() const {
-            return static_cast<int>(vec.back());
+            return static_cast<int>(static_cast<long long>(*this));
         }
 
         explicit operator long long() const {
-            return vec.back();
+            long long result = 0;
+            for (auto chunk : vec) {
+                result = result * MAX_SIZE + chunk;
+            }
+            return is_neg ? -result : result;
         }
 
         explicit operator std::string() const {
