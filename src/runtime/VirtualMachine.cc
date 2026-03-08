@@ -330,7 +330,7 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             } else if (value.isFloat()) {
                 Push(_stack, -value.asFloat());
             } else if (value.isBigInt()) {
-                Push(_stack, BigInt::toValue(-BigInt(value).value()));
+                Push(_stack, BigInt::toValue(-BigInt(value).bigint()));
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1), Errors::ExpectedNumber,
                               value.typeName());

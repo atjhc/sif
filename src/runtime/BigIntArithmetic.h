@@ -41,28 +41,28 @@ inline Value CheckedNegate(Integer a) {
 }
 
 inline Value BigIntAdd(const Value &lhs, const Value &rhs) {
-    return BigInt::toValue(BigInt(lhs).value() + BigInt(rhs).value());
+    return BigInt::toValue(BigInt(lhs).bigint() + BigInt(rhs).bigint());
 }
 
 inline Value BigIntSubtract(const Value &lhs, const Value &rhs) {
-    return BigInt::toValue(BigInt(lhs).value() - BigInt(rhs).value());
+    return BigInt::toValue(BigInt(lhs).bigint() - BigInt(rhs).bigint());
 }
 
 inline Value BigIntMultiply(const Value &lhs, const Value &rhs) {
-    return BigInt::toValue(BigInt(lhs).value() * BigInt(rhs).value());
+    return BigInt::toValue(BigInt(lhs).bigint() * BigInt(rhs).bigint());
 }
 
 inline Value BigIntDivide(const Value &lhs, const Value &rhs) {
-    return BigInt::toValue(BigInt(lhs).value() / BigInt(rhs).value());
+    return BigInt::toValue(BigInt(lhs).bigint() / BigInt(rhs).bigint());
 }
 
 inline Value BigIntModulo(const Value &lhs, const Value &rhs) {
-    return BigInt::toValue(BigInt(lhs).value() % BigInt(rhs).value());
+    return BigInt::toValue(BigInt(lhs).bigint() % BigInt(rhs).bigint());
 }
 
 inline int BigIntCompare(const Value &lhs, const Value &rhs) {
-    auto a = BigInt(lhs).value();
-    auto b = BigInt(rhs).value();
+    auto a = BigInt(lhs).bigint();
+    auto b = BigInt(rhs).bigint();
     if (a < b) return -1;
     if (a > b) return 1;
     return 0;
@@ -71,7 +71,7 @@ inline int BigIntCompare(const Value &lhs, const Value &rhs) {
 inline Float BigIntCastFloat(const Value &v) {
     if (v.isFloat()) return v.asFloat();
     if (v.isInteger()) return static_cast<Float>(v.asInteger());
-    if (auto big = v.as<BigInt>()) return std::stod(std::string(big->value()));
+    if (auto big = v.as<BigInt>()) return std::stod(std::string(big->bigint()));
     throw std::runtime_error("can't convert to float");
 }
 

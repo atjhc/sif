@@ -32,7 +32,7 @@ class BigInt : public Object, public NumberCastable {
     BigInt(const std::string &value);
     BigInt(const Value &value);
 
-    const ::BigInt::bigint &value() const;
+    const ::BigInt::bigint &bigint() const;
 
     static Value toValue(const ::BigInt::bigint &result);
 

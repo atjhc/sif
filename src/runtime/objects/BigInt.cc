@@ -31,7 +31,7 @@ BigInt::BigInt(const Value &v) {
     }
 }
 
-const ::BigInt::bigint &BigInt::value() const { return _value; }
+const ::BigInt::bigint &BigInt::bigint() const { return _value; }
 
 Value BigInt::toValue(const ::BigInt::bigint &result) {
     static const ::BigInt::bigint maxInt(std::numeric_limits<long long>::max());
