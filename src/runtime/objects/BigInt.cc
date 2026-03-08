@@ -34,15 +34,6 @@ BigInt::BigInt(const Value &v) {
 
 const ::BigInt::bigint &BigInt::bigint() const { return _value; }
 
-Value BigInt::toValue(const ::BigInt::bigint &result) {
-    static const ::BigInt::bigint maxInt(std::numeric_limits<long long>::max());
-    static const ::BigInt::bigint minInt(std::numeric_limits<long long>::min());
-    if (result >= minInt && result <= maxInt) {
-        return Value(static_cast<Integer>(std::stoll(std::string(result))));
-    }
-    return Value(MakeStrong<BigInt>(result));
-}
-
 std::string BigInt::typeName() const { return "integer"; }
 
 std::string BigInt::description() const { return std::string(_value); }
@@ -64,7 +55,7 @@ double BigInt::toDouble(const ::BigInt::bigint &value) {
     static const ::BigInt::bigint maxLL(std::numeric_limits<long long>::max());
     static const ::BigInt::bigint minLL(std::numeric_limits<long long>::min());
     if (value >= minLL && value <= maxLL) {
-        return static_cast<double>(static_cast<long long>(value));
+        return std::stod(std::string(value));
     }
     std::string s = std::string(value);
     bool negative = s[0] == '-';
@@ -86,7 +77,7 @@ Result<Value, Error> BigInt::castFloat() const {
 
 Result<Value, Error> BigInt::castInteger() const {
     try {
-        return Value(static_cast<Integer>(static_cast<long long>(_value)));
+        return Value(static_cast<Integer>(std::stoll(std::string(_value))));
     } catch (...) {
         return Fail(Error("value cannot be represented as an integer"));
     }

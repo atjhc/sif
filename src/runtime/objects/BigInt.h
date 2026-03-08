@@ -36,7 +36,15 @@ class BigInt : public Object, public NumberCastable {
 
     const ::BigInt::bigint &bigint() const;
 
-    static Value toValue(const ::BigInt::bigint &result);
+    static inline Value toValue(const ::BigInt::bigint &result) {
+        static const ::BigInt::bigint maxInt(std::numeric_limits<long long>::max());
+        static const ::BigInt::bigint minInt(std::numeric_limits<long long>::min());
+        if (result >= minInt && result <= maxInt) {
+            return Value(static_cast<Integer>(std::stoll(std::string(result))));
+        }
+        return Value(MakeStrong<BigInt>(result));
+    }
+
     static double toDouble(const ::BigInt::bigint &value);
 
     static inline Value add(const Value &lhs, const Value &rhs) {
@@ -46,7 +54,7 @@ class BigInt : public Object, public NumberCastable {
                 return Value(result);
             }
         }
-        return toValue(_extract(lhs) + _extract(rhs));
+        return toValue(_toBigInt(lhs) + _toBigInt(rhs));
     }
 
     static inline Value subtract(const Value &lhs, const Value &rhs) {
@@ -56,7 +64,7 @@ class BigInt : public Object, public NumberCastable {
                 return Value(result);
             }
         }
-        return toValue(_extract(lhs) - _extract(rhs));
+        return toValue(_toBigInt(lhs) - _toBigInt(rhs));
     }
 
     static inline Value multiply(const Value &lhs, const Value &rhs) {
@@ -66,26 +74,25 @@ class BigInt : public Object, public NumberCastable {
                 return Value(result);
             }
         }
-        return toValue(_extract(lhs) * _extract(rhs));
+        return toValue(_toBigInt(lhs) * _toBigInt(rhs));
     }
 
     static inline Value divide(const Value &lhs, const Value &rhs) {
-        return toValue(_extract(lhs) / _extract(rhs));
+        return toValue(_toBigInt(lhs) / _toBigInt(rhs));
     }
 
     static inline Value modulo(const Value &lhs, const Value &rhs) {
-        return toValue(_extract(lhs) % _extract(rhs));
+        return toValue(_toBigInt(lhs) % _toBigInt(rhs));
     }
 
     static inline Value negate(const Value &v) {
         if (v.isInteger()) {
             auto a = v.asInteger();
-            if (a == std::numeric_limits<Integer>::min()) {
-                return toValue(-::BigInt::bigint(a));
+            if (a != std::numeric_limits<Integer>::min()) {
+                return Value(-a);
             }
-            return Value(-a);
         }
-        return toValue(-_extract(v));
+        return toValue(-_toBigInt(v));
     }
 
     static inline Value increment(const Value &v) {
@@ -95,12 +102,12 @@ class BigInt : public Object, public NumberCastable {
                 return Value(result);
             }
         }
-        return toValue(_extract(v) + ::BigInt::bigint(1));
+        return toValue(_toBigInt(v) + ::BigInt::bigint(1));
     }
 
     static inline int compare(const Value &lhs, const Value &rhs) {
-        auto a = _extract(lhs);
-        auto b = _extract(rhs);
+        auto a = _toBigInt(lhs);
+        auto b = _toBigInt(rhs);
         if (a < b) return -1;
         if (a > b) return 1;
         return 0;
@@ -123,7 +130,9 @@ class BigInt : public Object, public NumberCastable {
     Result<Value, Error> castInteger() const override;
 
   private:
-    static inline ::BigInt::bigint _extract(const Value &v) {
+    // Returns by value: constructs a new bigint from Integer, or copies from
+    // BigInt. Only called on the overflow/BigInt path, never the integer fast path.
+    static inline ::BigInt::bigint _toBigInt(const Value &v) {
         if (v.isInteger()) return ::BigInt::bigint(v.asInteger());
         return v.as<BigInt>()->_value;
     }
