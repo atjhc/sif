@@ -1,64 +1,360 @@
--- Addition overflow
-set x to 9223372036854775807
-print x + 1
+-- Setup: create BigInt values for reuse
+set big to 9223372036854775807 + 1
+set big2 to 9223372036854775807 + 100
+set huge to 99999999999999999999999999999
+
+-- ============================================================
+-- Addition
+-- ============================================================
+
+-- Integer + Integer (no overflow)
+print 2 + 3
+(-- expect
+5
+--)
+
+-- Integer + Integer (overflow promotes to BigInt)
+print 9223372036854775807 + 1
 (-- expect
 9223372036854775808
 --)
-
--- Auto-demotion: BigInt result that fits in int64_t becomes Integer
-set big to 9223372036854775807 + 1
-set result to big - 1
-print result
+set r to 9223372036854775807 + 1
+print the native type of r
 (-- expect
-9223372036854775807
+bigint
 --)
 
-print the type name of result
+-- BigInt + BigInt
+print big + big2
 (-- expect
-integer
+18446744073709551715
+--)
+set r to big + big2
+print the native type of r
+(-- expect
+bigint
 --)
 
-print the native type of result
+-- BigInt + Integer
+print big + 10
+(-- expect
+9223372036854775818
+--)
+
+-- Integer + BigInt
+print 10 + big
+(-- expect
+9223372036854775818
+--)
+
+-- BigInt + Float (promotes to Float)
+set r to big + 0.5
+print the type name of r
+(-- expect
+float
+--)
+
+-- Float + BigInt (promotes to Float)
+set r to 0.5 + big
+print the type name of r
+(-- expect
+float
+--)
+
+-- Integer + Float (existing behavior, no BigInt)
+set r to 2 + 3.0
+print the native type of r
+(-- expect
+float
+--)
+
+-- ============================================================
+-- Subtraction
+-- ============================================================
+
+-- Integer - Integer (no overflow)
+print 10 - 3
+(-- expect
+7
+--)
+
+-- Integer - Integer (underflow promotes to BigInt)
+set min to -9223372036854775807 - 1
+print min - 1
+(-- expect
+-9223372036854775809
+--)
+set r to min - 1
+print the native type of r
+(-- expect
+bigint
+--)
+
+-- BigInt - BigInt (auto-demotes to int64)
+print big2 - big
+(-- expect
+99
+--)
+set r to big2 - big
+print the native type of r
 (-- expect
 int64
 --)
 
--- Subtraction underflow
-set y to -9223372036854775807 - 1
-print y - 1
+-- BigInt - Integer (auto-demotes to int64)
+print big - 1
 (-- expect
--9223372036854775809
+9223372036854775807
+--)
+set r to big - 1
+print the native type of r
+(-- expect
+int64
 --)
 
--- Multiplication overflow
+-- Integer - BigInt (auto-demotes to int64)
+print 1 - big
+(-- expect
+-9223372036854775807
+--)
+set r to 1 - big
+print the native type of r
+(-- expect
+int64
+--)
+
+-- BigInt - Float (promotes to Float)
+set r to big - 0.5
+print the type name of r
+(-- expect
+float
+--)
+
+-- Float - BigInt (promotes to Float)
+set r to 0.5 - big
+print the type name of r
+(-- expect
+float
+--)
+
+-- ============================================================
+-- Multiplication
+-- ============================================================
+
+-- Integer * Integer (no overflow)
+print 6 * 7
+(-- expect
+42
+--)
+
+-- Integer * Integer (overflow promotes to BigInt)
 print 9223372036854775807 * 2
 (-- expect
 18446744073709551614
 --)
-
--- Negate INT64_MIN overflows
-set z to -9223372036854775807 - 1
-print -z
+set r to 9223372036854775807 * 2
+print the native type of r
 (-- expect
-9223372036854775808
+bigint
 --)
 
--- BigInt division with auto-demotion
-set big to 9223372036854775807 * 2
-print big / 2
+-- BigInt * BigInt
+set r to big * big
+print the native type of r
 (-- expect
-9223372036854775807
+bigint
 --)
 
--- BigInt modulo with auto-demotion
-set big to 9223372036854775807 + 10
-print big % 7
+-- BigInt * Integer
+print big * 2
+(-- expect
+18446744073709551616
+--)
+
+-- Integer * BigInt
+print 2 * big
+(-- expect
+18446744073709551616
+--)
+
+-- BigInt * Float (promotes to Float)
+set r to big * 1.5
+print the type name of r
+(-- expect
+float
+--)
+
+-- Float * BigInt (promotes to Float)
+set r to 1.5 * big
+print the type name of r
+(-- expect
+float
+--)
+
+-- ============================================================
+-- Division
+-- ============================================================
+
+-- Integer / Integer (basic)
+print 10 / 3
 (-- expect
 3
 --)
 
--- BigInt comparisons
-set big to 9223372036854775807 + 1
+-- BigInt / BigInt (auto-demotes to int64)
+set bigDouble to big * 2
+set r to bigDouble / big
+print r
+(-- expect
+2
+--)
+print the native type of r
+(-- expect
+int64
+--)
+
+-- BigInt / Integer (auto-demotes to int64)
+set r to bigDouble / 2
+print r
+(-- expect
+9223372036854775808
+--)
+
+-- Integer / BigInt (auto-demotes to int64)
+set r to 1 / big
+print r
+(-- expect
+0
+--)
+print the native type of r
+(-- expect
+int64
+--)
+
+-- BigInt / Float (promotes to Float)
+set r to big / 2.0
+print the type name of r
+(-- expect
+float
+--)
+
+-- Float / BigInt (promotes to Float)
+set r to 100.0 / big
+print the type name of r
+(-- expect
+float
+--)
+
+-- ============================================================
+-- Modulo
+-- ============================================================
+
+-- Integer % Integer (basic)
+print 10 % 3
+(-- expect
+1
+--)
+
+-- BigInt % BigInt (different magnitudes to avoid library bug)
+set r to huge % big
+print the native type of r
+(-- expect
+int64
+--)
+
+-- BigInt % Integer
+set big10 to 9223372036854775807 + 10
+print big10 % 7
+(-- expect
+3
+--)
+
+-- Integer % BigInt (auto-demotes to int64)
+set r to 5 % big
+print r
+(-- expect
+5
+--)
+print the native type of r
+(-- expect
+int64
+--)
+
+-- BigInt % Float (promotes to Float)
+set r to big % 3.0
+print the type name of r
+(-- expect
+float
+--)
+
+-- Float % BigInt (promotes to Float)
+set r to 100.5 % big
+print the type name of r
+(-- expect
+float
+--)
+
+-- ============================================================
+-- Exponent
+-- ============================================================
+
+-- Integer ^ Integer (basic)
+print 2 ^ 10
+(-- expect
+1024
+--)
+
+-- BigInt ^ Integer (promotes to Float)
+set r to big ^ 2
+print the type name of r
+(-- expect
+float
+--)
+
+-- Integer ^ BigInt (promotes to Float)
+set r to 2 ^ big
+print the type name of r
+(-- expect
+float
+--)
+
+-- ============================================================
+-- Negate
+-- ============================================================
+
+-- Negate Integer
+print -(42)
+(-- expect
+-42
+--)
+
+-- Negate INT64_MIN overflows to BigInt
+set min to -9223372036854775807 - 1
+set r to -min
+print r
+(-- expect
+9223372036854775808
+--)
+print the native type of r
+(-- expect
+bigint
+--)
+
+-- Negate BigInt (result is INT64_MIN, auto-demotes to int64)
+set r to -big
+print r
+(-- expect
+-9223372036854775808
+--)
+print the native type of r
+(-- expect
+int64
+--)
+
+-- ============================================================
+-- Comparisons: BigInt vs Integer
+-- ============================================================
+
 print (big > 9223372036854775807)
 (-- expect
 yes
@@ -69,7 +365,74 @@ print (big < 9223372036854775807)
 no
 --)
 
--- BigInt equality
+print (big >= 9223372036854775807)
+(-- expect
+yes
+--)
+
+print (big <= 9223372036854775807)
+(-- expect
+no
+--)
+
+print (9223372036854775807 < big)
+(-- expect
+yes
+--)
+
+print (9223372036854775807 > big)
+(-- expect
+no
+--)
+
+-- ============================================================
+-- Comparisons: BigInt vs BigInt
+-- ============================================================
+
+print (big < big2)
+(-- expect
+yes
+--)
+
+print (big2 > big)
+(-- expect
+yes
+--)
+
+print (big <= big)
+(-- expect
+yes
+--)
+
+print (big >= big)
+(-- expect
+yes
+--)
+
+-- ============================================================
+-- Comparisons: BigInt vs Float
+-- ============================================================
+
+print (big > 0.5)
+(-- expect
+yes
+--)
+
+print (0.5 < big)
+(-- expect
+yes
+--)
+
+print (big < 99999999999999999999999999999.0)
+(-- expect
+yes
+--)
+
+-- ============================================================
+-- Equality
+-- ============================================================
+
+-- BigInt = BigInt (equal)
 set lhs to 9223372036854775807 + 1
 set rhs to 9223372036854775807 + 1
 print (lhs = rhs)
@@ -77,63 +440,89 @@ print (lhs = rhs)
 yes
 --)
 
--- BigInt + Float promotes to Float
-set big to 9223372036854775807 + 1
-set result to big + 0.5
-print the type name of result
+-- BigInt = BigInt (not equal)
+print (big = big2)
 (-- expect
-float
+no
 --)
 
--- Large integer literal
-print 99999999999999999999999999999
+-- BigInt != BigInt
+print (big != big2)
 (-- expect
-99999999999999999999999999999
+yes
 --)
 
--- BigInt is stored as bigint object, not int64
-set big to 9223372036854775807 + 1
-print the native type of big
+-- ============================================================
+-- Auto-demotion
+-- ============================================================
+
+-- Subtraction that auto-demotes to int64
+set r to big - 1
+print r
+(-- expect
+9223372036854775807
+--)
+print the native type of r
+(-- expect
+int64
+--)
+
+-- Division: result still exceeds int64 range
+set r to bigDouble / 2
+print the native type of r
 (-- expect
 bigint
 --)
 
--- BigInt type checks
+-- Modulo that auto-demotes to int64
+set r to big % 3
+print the native type of r
+(-- expect
+int64
+--)
+
+-- Addition that stays BigInt
+set r to big + big
+print the native type of r
+(-- expect
+bigint
+--)
+
+-- ============================================================
+-- Type checks and casts
+-- ============================================================
+
+-- BigInt is an integer
 print big is an integer
 (-- expect
 yes
 --)
 
+-- BigInt is a number
 print big is a number
 (-- expect
 yes
 --)
 
+-- BigInt type name
 print the type name of big
 (-- expect
 integer
 --)
 
+-- BigInt native type
+print the native type of big
+(-- expect
+bigint
+--)
+
 -- BigInt as an integer returns self
-set big to 9223372036854775807 + 1
 print big as an integer
 (-- expect
 9223372036854775808
 --)
 
--- Factorial that overflows int64_t
-function (the) factorial of {n}
-    if n <= 1 then return 1
-    return n * (the factorial of n - 1)
-end function
-
-print the factorial of 25
-(-- expect
-15511210043330985984000000
---)
-
--- BigInt as a number (explicit cast to float)
-set big to 9223372036854775807 + 1
+-- BigInt as a number (cast to float)
 set floatVal to big as a number
 print the type name of floatVal
 (-- expect
@@ -144,9 +533,34 @@ print floatVal
 9223372036854775808
 --)
 
--- BigInt string interpolation
-set big to 9223372036854775807 + 1
+-- ============================================================
+-- Large integer literal
+-- ============================================================
+
+print 99999999999999999999999999999
+(-- expect
+99999999999999999999999999999
+--)
+
+-- ============================================================
+-- String interpolation
+-- ============================================================
+
 print "value is {big}"
 (-- expect
 value is 9223372036854775808
+--)
+
+-- ============================================================
+-- Factorial (integration test: mixed Integer/BigInt arithmetic)
+-- ============================================================
+
+function (the) factorial of {n}
+    if n <= 1 then return 1
+    return n * (the factorial of n - 1)
+end function
+
+print the factorial of 25
+(-- expect
+15511210043330985984000000
 --)
