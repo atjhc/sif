@@ -326,7 +326,14 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto value = Pop(_stack);
             if (value.isFloat()) {
                 Push(_stack, -value.asFloat());
-            } else if (value.isInteger() || value.isBigInt()) {
+            } else if (value.isInteger()) {
+                auto a = value.asInteger();
+                if (a != std::numeric_limits<Integer>::min()) {
+                    Push(_stack, -a);
+                } else {
+                    Push(_stack, BigInt::negate(value));
+                }
+            } else if (value.isBigInt()) {
                 Push(_stack, BigInt::negate(value));
             } else {
                 error = Error(frame().bytecode->location(frame().ip - 1), Errors::ExpectedNumber,
@@ -352,7 +359,12 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             if (lhs.isString() && rhs.isString()) {
                 Push(_stack, lhs.toString() + rhs.toString());
             } else if (lhs.isInteger() && rhs.isInteger()) {
-                Push(_stack, BigInt::add(lhs, rhs));
+                Integer result;
+                if (!__builtin_add_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
+                    Push(_stack, result);
+                } else {
+                    Push(_stack, BigInt::add(lhs, rhs));
+                }
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
                     Push(_stack, BigInt::toFloat(lhs) + BigInt::toFloat(rhs));
@@ -374,7 +386,12 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
             if (lhs.isInteger() && rhs.isInteger()) {
-                Push(_stack, BigInt::subtract(lhs, rhs));
+                Integer result;
+                if (!__builtin_sub_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
+                    Push(_stack, result);
+                } else {
+                    Push(_stack, BigInt::subtract(lhs, rhs));
+                }
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
                     Push(_stack, BigInt::toFloat(lhs) - BigInt::toFloat(rhs));
@@ -396,7 +413,12 @@ Result<Value, Error> VirtualMachine::execute(const Strong<Bytecode> &bytecode) {
             auto rhs = Pop(_stack);
             auto lhs = Pop(_stack);
             if (lhs.isInteger() && rhs.isInteger()) {
-                Push(_stack, BigInt::multiply(lhs, rhs));
+                Integer result;
+                if (!__builtin_mul_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
+                    Push(_stack, result);
+                } else {
+                    Push(_stack, BigInt::multiply(lhs, rhs));
+                }
             } else if (lhs.isBigInt() || rhs.isBigInt()) {
                 if (lhs.isFloat() || rhs.isFloat()) {
                     Push(_stack, BigInt::toFloat(lhs) * BigInt::toFloat(rhs));

@@ -18,6 +18,11 @@ print the type name of result
 integer
 --)
 
+print the native type of result
+(-- expect
+int64
+--)
+
 -- Subtraction underflow
 set y to -9223372036854775807 - 1
 print y - 1
@@ -86,8 +91,14 @@ print 99999999999999999999999999999
 99999999999999999999999999999
 --)
 
--- BigInt type checks
+-- BigInt is stored as bigint object, not int64
 set big to 9223372036854775807 + 1
+print the native type of big
+(-- expect
+bigint
+--)
+
+-- BigInt type checks
 print big is an integer
 (-- expect
 yes

@@ -50,32 +50,14 @@ class BigInt : public Object, public NumberCastable {
     static double toDouble(const ::BigInt::bigint &value);
 
     static inline Value add(const Value &lhs, const Value &rhs) {
-        if (lhs.isInteger() && rhs.isInteger()) {
-            Integer result;
-            if (!__builtin_add_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
-                return Value(result);
-            }
-        }
         return toValue(_toBigInt(lhs) + _toBigInt(rhs));
     }
 
     static inline Value subtract(const Value &lhs, const Value &rhs) {
-        if (lhs.isInteger() && rhs.isInteger()) {
-            Integer result;
-            if (!__builtin_sub_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
-                return Value(result);
-            }
-        }
         return toValue(_toBigInt(lhs) - _toBigInt(rhs));
     }
 
     static inline Value multiply(const Value &lhs, const Value &rhs) {
-        if (lhs.isInteger() && rhs.isInteger()) {
-            Integer result;
-            if (!__builtin_mul_overflow(lhs.asInteger(), rhs.asInteger(), &result)) {
-                return Value(result);
-            }
-        }
         return toValue(_toBigInt(lhs) * _toBigInt(rhs));
     }
 
@@ -87,15 +69,7 @@ class BigInt : public Object, public NumberCastable {
         return toValue(_toBigInt(lhs) % _toBigInt(rhs));
     }
 
-    static inline Value negate(const Value &v) {
-        if (v.isInteger()) {
-            auto a = v.asInteger();
-            if (a != std::numeric_limits<Integer>::min()) {
-                return Value(-a);
-            }
-        }
-        return toValue(-_toBigInt(v));
-    }
+    static inline Value negate(const Value &v) { return toValue(-_toBigInt(v)); }
 
     static inline int compare(const Value &lhs, const Value &rhs) {
         auto a = _toBigInt(lhs);
