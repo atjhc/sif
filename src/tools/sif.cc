@@ -173,7 +173,9 @@ int evaluate(const std::string &name, Reader &reader) {
 
 static int repl(const std::vector<std::string> &arguments) {
     std::cout << "  ╳╳\n"
-                 " ╳╳╳╳  Sif v" << Version << "\n"
+                 " ╳╳╳╳  Sif v"
+              << Version
+              << "\n"
                  " ╲╳╳╱  Type 'help' for more information\n\n";
 
     while (!std::cin.eof()) {

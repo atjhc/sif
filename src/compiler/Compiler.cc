@@ -475,8 +475,8 @@ void Compiler::visit(const RepeatFor &foreach) {
     }
     for (auto &&variable : std::views::reverse(foreach.variables)) {
         if (variable->name) {
-            assignVariable(foreach.expression->range.start, NormalizeIdentifier(variable->name->text),
-                           variable->scope);
+            assignVariable(foreach.expression->range.start,
+                           NormalizeIdentifier(variable->name->text), variable->scope);
         }
     }
 

@@ -100,15 +100,20 @@ class BigInt : public Object, public NumberCastable {
     static inline int compare(const Value &lhs, const Value &rhs) {
         auto a = _toBigInt(lhs);
         auto b = _toBigInt(rhs);
-        if (a < b) return -1;
-        if (a > b) return 1;
+        if (a < b)
+            return -1;
+        if (a > b)
+            return 1;
         return 0;
     }
 
     static inline Float toFloat(const Value &v) {
-        if (v.isFloat()) return v.asFloat();
-        if (v.isInteger()) return static_cast<Float>(v.asInteger());
-        if (auto big = v.as<BigInt>()) return toDouble(big->_value);
+        if (v.isFloat())
+            return v.asFloat();
+        if (v.isInteger())
+            return static_cast<Float>(v.asInteger());
+        if (auto big = v.as<BigInt>())
+            return toDouble(big->_value);
         throw std::runtime_error("can't convert to float");
     }
 
@@ -125,7 +130,8 @@ class BigInt : public Object, public NumberCastable {
     // Returns by value: constructs a new bigint from Integer, or copies from
     // BigInt. Only called on the overflow/BigInt path, never the integer fast path.
     static inline ::BigInt::bigint _toBigInt(const Value &v) {
-        if (v.isInteger()) return ::BigInt::bigint(v.asInteger());
+        if (v.isInteger())
+            return ::BigInt::bigint(v.asInteger());
         auto big = v.as<BigInt>();
         assert(big && "expected integer or BigInt value");
         return big->_value;

@@ -11,8 +11,8 @@
 //  limitations under the License.
 //
 
-#include "sif/Error.h"
 #include "sif/runtime/objects/List.h"
+#include "sif/Error.h"
 #include "sif/runtime/VirtualMachine.h"
 
 #include "utilities/hasher.h"
@@ -205,8 +205,6 @@ std::string ListEnumerator::typeName() const { return "ListEnumerator"; }
 
 std::string ListEnumerator::description() const { return Concat("E(", ptr()->description(), ")"); }
 
-void ListEnumerator::trace(const std::function<void(Strong<Object> &)> &visitor) {
-    visitor(_list);
-}
+void ListEnumerator::trace(const std::function<void(Strong<Object> &)> &visitor) { visitor(_list); }
 
 SIF_NAMESPACE_END

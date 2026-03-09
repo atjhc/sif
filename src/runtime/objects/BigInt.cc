@@ -47,9 +47,7 @@ bool BigInt::equals(Strong<Object> object) const {
     return false;
 }
 
-size_t BigInt::hash() const {
-    return std::hash<::BigInt::bigint>{}(_value);
-}
+size_t BigInt::hash() const { return std::hash<::BigInt::bigint>{}(_value); }
 
 double BigInt::toDouble(const ::BigInt::bigint &value) {
     static const ::BigInt::bigint maxLL(std::numeric_limits<long long>::max());

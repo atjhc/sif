@@ -89,7 +89,6 @@ static inline const Value &Peek(std::vector<Value> &stack) { return stack.back()
 
 static inline void Push(std::vector<Value> &stack, const Value &value) { stack.push_back(value); }
 
-
 #if defined(DEBUG)
 std::ostream &operator<<(std::ostream &out, const CallFrame &f) { return out << f.sp; }
 #endif

@@ -48,7 +48,8 @@ Token Scanner::scan() {
 
         int depth = 0;
         do {
-            if (_current + 2 < _end && _current[0] == '(' && _current[1] == '-' && _current[2] == '-') {
+            if (_current + 2 < _end && _current[0] == '(' && _current[1] == '-' &&
+                _current[2] == '-') {
                 advance(3);
                 depth++;
             } else if (depth > 0) {
@@ -164,15 +165,11 @@ Token Scanner::scanWord() {
         auto category = utf8proc_category(firstChar);
 
         // Check if first character is valid
-        bool validFirst = firstChar == '_' ||
-                         category == UTF8PROC_CATEGORY_LU ||
-                         category == UTF8PROC_CATEGORY_LL ||
-                         category == UTF8PROC_CATEGORY_LT ||
-                         category == UTF8PROC_CATEGORY_LM ||
-                         category == UTF8PROC_CATEGORY_LO ||
-                         category == UTF8PROC_CATEGORY_NL ||
-                         category == UTF8PROC_CATEGORY_SC ||
-                         category == UTF8PROC_CATEGORY_SO;
+        bool validFirst = firstChar == '_' || category == UTF8PROC_CATEGORY_LU ||
+                          category == UTF8PROC_CATEGORY_LL || category == UTF8PROC_CATEGORY_LT ||
+                          category == UTF8PROC_CATEGORY_LM || category == UTF8PROC_CATEGORY_LO ||
+                          category == UTF8PROC_CATEGORY_NL || category == UTF8PROC_CATEGORY_SC ||
+                          category == UTF8PROC_CATEGORY_SO;
 
         if (!validFirst && firstChar >= 128) {
             // Invalid Unicode first character - consume it and return error
