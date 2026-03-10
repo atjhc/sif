@@ -1,889 +1,375 @@
-/*
-    BigInt Library for C++
+// Minimal arbitrary-precision integer for sif.
+// Base 10^9 limbs in a vector<uint32_t>, least-significant first.
 
-    MIT License
-    
-    Copyright (c) 2024 Samuel Herts
-    
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-    
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-    
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-*/
+#pragma once
 
-#ifndef BIGINT_H_
-#define BIGINT_H_
-
-#include <string>
-#include <sstream>
-#include <utility>
-#include <vector>
-#include <cmath>
-#include <limits>
-#include <stdexcept>
-#include <iostream>
-#include <functional>
 #include <algorithm>
-#include <random>
-#include <iomanip>
-
-namespace BigInt {
-    class bigint
-    {
-    public:
-        //                   LLONG_MAX = 9'223'372'036'854'775'807
-        static constexpr auto MAX_SIZE = 1'000'000'000'000'000'000LL;
-
-        bigint() : vec({0}) {}
-
-        bigint(const std::string& s) {
-            if (!is_bigint(s)) { throw std::runtime_error("Invalid Big Integer."); }
-            if (s[0] == '-') {
-                *this = bigint(s.substr(1));
-                if (*this == 0)
-                    throw std::runtime_error("Invalid Big Integer.");
-                is_neg = true;
-            }
-            else {
-                is_neg = false;
-                vec = string_to_vector(s);
-            }
-        }
-
-        bigint(const char c) {
-            if (const int temp = static_cast<unsigned char>(c); isdigit(temp)) {
-                *this = bigint(char_to_int(c));
-            }
-            else {
-                throw std::runtime_error("Invalid Big Integer has been fed.");
-            }
-        }
-
-        bigint(const unsigned int n) : bigint(static_cast<long long>(n)) {}
-
-        bigint(const int n) : bigint(static_cast<long long>(n)) {}
-
-        bigint(const long n) : bigint(static_cast<long long>(n)) {}
-
-        bigint(const double n) : bigint(static_cast<long long>(n)) {}
-
-        bigint(const long long n): is_neg(n < 0) {
-            if (n == 0) {
-                is_neg = false;
-                vec.push_back(0);
-                return;
-            }
-            unsigned long long val = n;
-            if (is_neg) {
-                val = 0ULL - val;
-            }
-            vec.reserve(2);
-
-            while (val > 0) {
-                vec.emplace_back(val % MAX_SIZE);
-                val /= MAX_SIZE;
-            }
-            std::reverse(vec.begin(), vec.end());
-        }
-
-        bigint(unsigned long long n) {
-            if (n >= MAX_SIZE) {
-                vec.emplace_back(n / MAX_SIZE);
-                vec.emplace_back(n % MAX_SIZE);
-            }
-            else {
-                vec.emplace_back(n);
-            }
-        }
-
-        bigint(const bigint& n) = default;
-
-        bigint(const char* n) : bigint(std::string(n)) {}
-
-        /* If initializing from a vector that should be negative, the negative value must be set afterward.
-         * bigint alpha(std::vector(...));
-         * -alpha;
-         */
-        bigint(std::vector<long long> n) : vec(std::move(n)) {}
-
-        bigint& operator=(const bigint& other) {
-            if (this == &other)
-                return *this;
-            this->is_neg = other.is_neg;
-            this->vec = other.vec;
-
-            return *this;
-        }
-
-        explicit operator int() const {
-            return static_cast<int>(static_cast<long long>(*this));
-        }
-
-        explicit operator long long() const {
-            long long result = 0;
-            for (auto chunk : vec) {
-                result = result * MAX_SIZE + chunk;
-            }
-            return is_neg ? -result : result;
-        }
-
-        explicit operator std::string() const {
-            return (this->is_neg ? "-" : "") + vector_to_string(this->vec);
-        }
-
-        friend std::ostream& operator<<(std::ostream& stream, const bigint& n) {
-            stream << std::string(n);
-            return stream;
-        }
-
-        bigint operator+=(const bigint& rhs) {
-            if (*this == 0 && rhs == 0) return *this;
-            if (*this == 0) {
-                *this = rhs;
-                return *this;
-            }
-            if (rhs != 0) {
-                *this = add(*this, rhs);
-            }
-            return *this;
-        }
-
-        bigint operator+(const bigint& rhs) const {
-            bigint result = *this;
-            result += rhs;
-            return result;
-        }
-
-        bigint operator-=(const bigint& rhs) {
-            if (rhs == 0) { return *this; }
-            if (*this == rhs) {
-                *this = 0;
-                return *this;
-            }
-            *this = subtract(*this, rhs);
-            return *this;
-        }
-
-        bigint operator-(const bigint& rhs) const {
-            bigint result = *this;
-            result -= rhs;
-            return result;
-        }
-
-        bigint operator*=(const bigint& rhs) {
-            *this = multiply(*this, rhs);
-            return *this;
-        }
-
-        bigint operator*(const bigint& rhs) const {
-            bigint result = *this;
-            result *= rhs;
-            return result;
-        }
-
-        bigint& operator/=(const bigint& rhs) {
-            *this = divide(*this, rhs);
-            return *this;
-        }
-
-        bigint operator/(const bigint& rhs) const {
-            bigint result = *this;
-            result /= rhs;
-            return result;
-        }
-
-        bigint operator%=(const bigint& rhs) {
-            *this = mod(*this, rhs);
-            return *this;
-        }
-
-        bigint operator%(const bigint& rhs) const {
-            bigint result = *this;
-            result %= rhs;
-            return result;
-        }
-
-        bigint operator++() {
-            *this += 1;
-            return *this;
-        }
-
-        bigint operator++(int) {
-            bigint tmp(*this);
-            operator++();
-            return tmp;
-        }
-
-        bigint operator--() {
-            *this -= 1;
-            return *this;
-        }
-
-        bigint operator--(int) {
-            bigint tmp(*this);
-            operator--();
-            return tmp;
-        }
-
-        bigint operator-() const & {
-            bigint temp = *this;
-            if (temp == 0) return temp;
-            temp.is_neg = !this->is_neg;
-            return temp;
-        }
-
-        bigint operator-() && {
-            if (*this == 0) return *this;
-            this->is_neg = !this->is_neg;
-            return *this;
-        }
-
-        friend bool operator==(const bigint& l, const bigint& r) {
-            if (l.is_neg != r.is_neg) {
-                return false;
-            }
-            return l.vec == r.vec;
-        }
-
-        friend bool operator!=(const bigint& l, const bigint& r) {
-            return !(l == r);
-        }
-
-        friend bool operator<(const bigint& lhs, const bigint& rhs) {
-            return less_than(lhs, rhs);
-        }
-
-        friend bool operator>(const bigint& l, const bigint& r) {
-            return r < l;
-        }
-
-        friend bool operator<=(const bigint& l, const bigint& r) {
-            return r >= l;
-        }
-
-        friend bool operator>=(const bigint& l, const bigint& r) {
-            return !(l < r);
-        }
-
-        explicit operator bool() const {
-            return !(vec.size() == 1 && vec.front() == 0);
-        }
-
-        friend std::hash<bigint>;
-
-        static bigint pow(const bigint& base, const bigint& exponent) {
-            if (exponent == 0) return 1;
-            if (exponent == 1) return base;
-
-            const bigint tmp = pow(base, exponent / 2);
-            if (exponent % 2 == 0) { return tmp * tmp; }
-            return base * tmp * tmp;
-        }
-
-        static bigint maximum(const bigint& lhs, const bigint& rhs) {
-            return lhs > rhs ? lhs : rhs;
-        }
-
-        static bigint minimum(const bigint& lhs, const bigint& rhs) {
-            return lhs > rhs ? rhs : lhs;
-        }
-
-        static bigint abs(const bigint& s) {
-            if (!is_negative(s)) return s;
-
-            bigint temp = s;
-            temp.is_neg = false;
-
-            return temp;
-        }
-
-        static bigint abs(bigint&& s) {
-            s.is_neg = false;
-            return s;
-        }
-
-        static bigint sqrt(const bigint&);
-
-        static bigint log2(const bigint&);
-
-        static bigint log10(const bigint&);
-
-        static bigint logwithbase(const bigint&, const bigint&);
-
-        static bigint antilog2(const bigint&);
-
-        static bigint antilog10(const bigint&);
-
-        static void swap(bigint&, bigint&);
-
-        static bigint gcd(const bigint&, const bigint&);
-
-        static bigint lcm(const bigint& lhs, const bigint& rhs) {
-            return (lhs * rhs) / gcd(lhs, rhs);
-        }
-
-        static bigint factorial(const bigint&);
-
-        static bool is_even(const bigint& input) {
-            return !(input.vec.back() & 1);
-        }
-
-        static bool is_negative(const bigint& input) {
-            return input.is_neg;
-        }
-
-        static bool is_prime(const bigint&);
-
-        static bigint sum_of_digits(const bigint& input) {
-            bigint sum;
-            for (auto base : input.vec) {
-                for (sum = 0; base > 0; sum += base % 10, base /= 10);
-            }
-            return sum;
-        }
-
-        /**
-         * @brief Generates a random positive bigint of a specified length.
-         *
-         * This method ensures the resulting bigint is valid by using a random device
-         * and engine for non-deterministic seeding.
-         *
-         * @param length The number of digits the generated bigint should have.
-         * @return A bigint object representing the randomly generated number.
-         */
-        static bigint random(size_t length);
-
-    private:
-        bool is_neg{false};
-        std::vector<long long> vec;
-
-
-        // Function Definitions for Internal Uses
-
-        static bigint trim(bigint input) {
-            while (input.vec.size() > 1 && input.vec.front() == 0) {
-                input.vec.erase(input.vec.begin());
-            }
-            if (input.vec.empty()) {
-                input.vec.push_back(0);
-                input.is_neg = false;
-            }
-            return input;
-        }
-
-        static std::vector<long long> string_to_vector(std::string input);
-
-        static std::string vector_to_string(const std::vector<long long>& input);
-
-        static bigint add(const bigint&, const bigint&);
-
-        static bigint subtract(const bigint&, const bigint&);
-
-        static bigint multiply(const bigint&, const bigint&);
-
-        static bigint divide(const bigint&, const bigint&);
-
-        static bigint mod(const bigint& lhs, const bigint& rhs) {
-            if (rhs == 0) { throw std::domain_error("Attempted to modulo by zero."); }
-            if (lhs < rhs) {
-                return lhs;
-            }
-            if (lhs == rhs) {
-                return 0;
-            }
-
-            if (rhs == 2) {
-                return !is_even(lhs);
-            }
-
-            return lhs - ((lhs / rhs) * rhs);
-        }
-
-        static bool is_bigint(const std::string&);
-
-        static int count_digits(const bigint&);
-
-        static int char_to_int(const char input) {
-            return input - '0';
-        }
-
-        static int int_to_char(const int input) {
-            return input + '0';
-        }
-
-        static bigint negate(const bigint& input) {
-            bigint temp = input;
-            temp.is_neg = !temp.is_neg;
-            return temp;
-        }
-
-        static bigint negate(bigint&& input) {
-            input.is_neg = !input.is_neg;
-            return input;
-        }
-
-        static bool less_than(const bigint& lhs, const bigint& rhs) {
-            if (is_negative(lhs) && is_negative(rhs)) {
-                return less_than(abs(rhs), abs(lhs));
-            }
-
-            if (is_negative(lhs) || is_negative(rhs)) {
-                return is_negative(lhs);
-            }
-
-            if (lhs.vec.size() == rhs.vec.size()) {
-                return lhs.vec < rhs.vec;
-            }
-
-            return lhs.vec.size() < rhs.vec.size();
-        }
-    };
-
-
-    inline bool bigint::is_bigint(const std::string& s) {
-        if (s.empty() || (s.length() > 1 && s[0] == '0'))
-            return false;
-
-        if (s[0] == '-') {
-            return s.find_first_not_of("0123456789", 1) == std::string::npos;
-        }
-        return s.find_first_not_of("0123456789", 0) == std::string::npos;
+#include <cstdint>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+class BigInt {
+    static constexpr uint32_t BASE = 1'000'000'000;
+    static constexpr int DIGITS_PER_LIMB = 9;
+
+    std::vector<uint32_t> _limbs;
+    bool _negative = false;
+
+    void normalize() {
+        while (_limbs.size() > 1 && _limbs.back() == 0)
+            _limbs.pop_back();
+        if (_limbs.size() == 1 && _limbs[0] == 0)
+            _negative = false;
     }
 
-    inline bigint bigint::add(const bigint& lhs, const bigint& rhs) {
-        bool negate_answer = false;
-        // Ensure both are positive
-        if (is_negative(lhs) && is_negative(rhs)) negate_answer = true;
-        else if (is_negative(lhs)) return subtract(rhs, abs(lhs));
-        else if (is_negative(rhs)) return subtract(lhs, abs(rhs));
+    bool isZero() const { return _limbs.size() == 1 && _limbs[0] == 0; }
 
-        // Ensure LHS is larger than RHS
-        if (lhs.vec.size() < rhs.vec.size()) return add(rhs, lhs);
-
-        // Prepare result vector with enough space (max size + 1 for potential carry)
-        std::vector<long long> result;
-        result.reserve(lhs.vec.size() + 1);
-
-        long long carry = 0;
-        auto it_l = lhs.vec.rbegin();
-        auto it_r = rhs.vec.rbegin();
-
-        while (it_l != lhs.vec.rend()) {
-            long long sum = *it_l + carry;
-            if (it_r != rhs.vec.rend()) {
-                sum += *it_r;
-                ++it_r;
-            }
-
-            if (sum >= MAX_SIZE) {
-                sum -= MAX_SIZE;
-                carry = 1;
-            }
-            else {
-                carry = 0;
-            }
-
-            result.push_back(sum);
-            ++it_l;
+    static int compareMagnitude(const BigInt &a, const BigInt &b) {
+        if (a._limbs.size() != b._limbs.size())
+            return a._limbs.size() < b._limbs.size() ? -1 : 1;
+        for (int i = static_cast<int>(a._limbs.size()) - 1; i >= 0; i--) {
+            if (a._limbs[i] != b._limbs[i])
+                return a._limbs[i] < b._limbs[i] ? -1 : 1;
         }
-
-        if (carry > 0) {
-            result.push_back(carry);
-        }
-
-        std::reverse(result.begin(), result.end());
-        bigint result_bigint{std::move(result)};
-        return negate_answer ? negate(result_bigint) : result_bigint;
+        return 0;
     }
 
-    inline bigint bigint::subtract(const bigint& lhs, const bigint& rhs) {
-        // Ensure LHS is larger than RHS, and both are positive
-        // (-A) - (-B) == B - A
-        if (is_negative(lhs) && is_negative(rhs)) {
-            return subtract(abs(rhs), abs(lhs));
+    static BigInt addMagnitudes(const BigInt &a, const BigInt &b) {
+        BigInt result;
+        size_t n = std::max(a._limbs.size(), b._limbs.size());
+        result._limbs.resize(n);
+        uint64_t carry = 0;
+        for (size_t i = 0; i < n; i++) {
+            uint64_t sum = carry;
+            if (i < a._limbs.size()) sum += a._limbs[i];
+            if (i < b._limbs.size()) sum += b._limbs[i];
+            result._limbs[i] = static_cast<uint32_t>(sum % BASE);
+            carry = sum / BASE;
         }
-        // (A) - (-B) == A + B
-        if (is_negative(rhs)) {
-            return add(lhs, abs(rhs));
-        }
-        // (-A) - (B) == -(A + B)
-        if (is_negative(lhs)) {
-            return negate(add(abs(lhs), rhs));
-        }
-        if (lhs < rhs) {
-            return negate(subtract(rhs, lhs));
-        }
-
-        std::vector<long long> result;
-        result.reserve(lhs.vec.size());
-        long long borrow = 0;
-
-        auto it_l = lhs.vec.rbegin();
-        auto it_r = rhs.vec.rbegin();
-
-        while (it_l != lhs.vec.rend()) {
-            const long long l_val = *it_l;
-            const long long r_val = (it_r != rhs.vec.rend()) ? *it_r : 0;
-
-            long long diff = l_val - r_val - borrow;
-            if (diff < 0) {
-                diff += MAX_SIZE;
-                borrow = 1;
-            }
-            else {
-                borrow = 0;
-            }
-            result.push_back(diff);
-
-            ++it_l;
-            if (it_r != rhs.vec.rend()) ++it_r;
-        }
-        std::reverse(result.begin(), result.end());
-        return trim(bigint(std::move(result)));
-    }
-
-    inline bigint bigint::multiply(const bigint& lhs, const bigint& rhs) {
-        if (lhs == 0 || rhs == 0) return 0;
-        if (lhs == 1) return rhs;
-        if (rhs == 1) return lhs;
-
-        if (is_negative(lhs) && is_negative(rhs)) {
-            return (abs(lhs) * abs(rhs));
-        }
-        if (is_negative(lhs) || is_negative(rhs)) {
-            return negate(abs(lhs) * abs(rhs));
-        }
-        if (lhs < rhs) {
-            return multiply(rhs, lhs);
-        }
-
-        std::vector<long long> result(lhs.vec.size() + rhs.vec.size(), 0);
-
-        for (auto it_lhs = lhs.vec.rbegin(); it_lhs != lhs.vec.rend(); ++it_lhs) {
-            for (auto it_rhs = rhs.vec.rbegin(); it_rhs != rhs.vec.rend(); ++it_rhs) {
-                // Calculate the product and the corresponding indices in the result vector
-                // use 128 bits to carefully store overflow
-                __int128 mul = static_cast<__int128>(*it_lhs) * static_cast<__int128>(*it_rhs);
-                auto pos_low_it = result.rbegin() + (std::distance(lhs.vec.rbegin(), it_lhs) + std::distance(
-                                                         rhs.vec.rbegin(), it_rhs));
-                auto pos_high_it = pos_low_it + 1;
-
-                // Add the product to the result vector
-                *pos_low_it += mul % MAX_SIZE;
-                if (pos_high_it != result.rend()) {
-                    *pos_high_it += mul / MAX_SIZE;
-                }
-
-                // Handle carry
-                if (*pos_low_it >= MAX_SIZE) {
-                    if (pos_high_it != result.rend()) {
-                        *pos_high_it += *pos_low_it / MAX_SIZE;
-                    }
-                    *pos_low_it %= MAX_SIZE;
-                }
-            }
-        }
-
-        // Handle carries for remaining positions
-        for (auto r_iter = result.rbegin(); r_iter != result.rend() - 1; ++r_iter) {
-            if (*r_iter >= MAX_SIZE) {
-                *(r_iter + 1) += *r_iter / MAX_SIZE;
-                *r_iter %= MAX_SIZE;
-            }
-        }
-
-        return trim(result);
-    }
-
-
-    inline bigint bigint::divide(const bigint& numerator, const bigint& denominator) {
-        if (denominator == 0) {
-            throw std::domain_error("Attempted to divide by zero.");
-        }
-        if (numerator == denominator) return 1;
-        if (denominator == 1) return numerator;
-        if (numerator == 0) return 0;
-
-        if (is_negative(numerator) && is_negative(denominator)) {
-            return divide(abs(numerator), abs(denominator));
-        }
-        if (is_negative(numerator) || is_negative(denominator)) {
-            return negate(divide(abs(numerator), abs(denominator)));
-        }
-        if (numerator < denominator) {
-            return 0;
-        }
-        if (numerator.vec.size() <= 1) {
-            return numerator.vec.back() / denominator.vec.back();
-        }
-
-        bigint remainder = numerator;
-        bigint quotient = 0;
-
-        auto count = count_digits(remainder) - count_digits(denominator) - 1;
-
-        auto numerator_size = pow(10, count);
-
-        auto temp = denominator * numerator_size;
-
-        while (denominator * numerator_size < remainder) {
-            temp = denominator * numerator_size;
-            remainder -= temp;
-            quotient += numerator_size;
-            count = count_digits(remainder) - count_digits(denominator) - 1;
-
-
-            if (numerator_size <= 1) {
-                quotient += remainder / denominator;
-                break;
-            }
-            if (remainder.vec.size() <= 1) {
-                quotient += remainder.vec.back() / denominator.vec.back();
-                break;
-            }
-            numerator_size = pow(10, count);
-        }
-
-        return quotient;
-    }
-
-    inline bigint bigint::sqrt(const bigint& input) {
-        if (is_negative(input))
-            throw std::domain_error("Square root of a negative number is complex");
-
-        if (input == 0 || input == 1)
-            return input;
-
-        bigint oom = log10(input / 2);
-        oom /= 2;
-        bigint low_end = pow(10, (oom));
-        bigint high_end = pow(10, (oom) + 2);
-        bigint mid_point, square, answer;
-        while (low_end <= high_end) {
-            mid_point = (low_end + high_end) / 2;
-            square = mid_point * mid_point;
-            if (square == input)
-                return mid_point;
-
-            if (square < input) {
-                low_end = mid_point + 1;
-                answer = mid_point;
-            }
-            else {
-                high_end = mid_point - 1;
-            }
-        }
-        return answer;
-    }
-
-
-    inline bigint bigint::log2(const bigint& input) {
-        if (is_negative(input) || input == 0)
-            throw std::domain_error("Invalid input for natural log");
-
-        if (input == 1)
-            return 0;
-
-        if (input.vec.size() == 1) {
-            return std::log2(input.vec.back());
-        }
-
-        bigint exponent = 0;
-        while (pow(2, exponent) <= input) {
-            ++exponent;
-        }
-
-        return exponent;
-        // TODO: Convert to using division after checking bigO of division vs multiplication
-        //    std::string logVal = "-1";
-        //    while(s != "0") {
-        //        logVal = add(logVal, "1");
-        //        s = divide(s, "2");
-        //    }
-        //    return logVal;
-    }
-
-    inline bigint bigint::log10(const bigint& input) {
-        if (is_negative(input) || input == 0)
-            throw std::domain_error("Invalid input for log base 10");
-
-        if (input == 1)
-            return 0;
-
-        if (input.vec.size() == 1) {
-            return std::log10(input.vec.back());
-        }
-        int count = 0;
-        for (auto number : input.vec) {
-            count += count_digits(number);
-        }
-
-        return count - 1;
-    }
-
-    inline bigint bigint::logwithbase(const bigint& input, const bigint& base) {
-        auto top = log2(input);
-        auto bottom = log2(base);
-        auto answer = divide(top, bottom);
-        return answer;
-    }
-
-    inline bigint bigint::antilog2(const bigint& input) {
-        return pow(2, input);
-    }
-
-    inline bigint bigint::antilog10(const bigint& input) {
-        return pow(10, input);
-    }
-
-    inline void bigint::swap(bigint& lhs, bigint& rhs) {
-        const bigint temp = lhs;
-        lhs = rhs;
-        rhs = temp;
-    }
-
-    inline bigint bigint::gcd(const bigint& lhs, const bigint& rhs) {
-        bigint temp_l = lhs, temp_r = rhs, remainder;
-        if (rhs > lhs)
-            swap(temp_l, temp_r);
-
-        while (rhs > 0) {
-            remainder = temp_l % temp_r;
-            temp_l = temp_r;
-            temp_r = remainder;
-        }
-        return temp_l;
-    }
-
-    inline bigint bigint::factorial(const bigint& input) {
-        if (is_negative(input)) {
-            throw std::runtime_error("Factorial of Negative Integer is not defined.");
-        }
-        if (input == 0)
-            return 1;
-
-        bigint ans = 1;
-        bigint temp = input;
-        while (temp != 0) {
-            ans *= temp;
-            temp -= 1;
-        }
-        return ans;
-    }
-
-    /* Simplest form of prime checking, implement your own
-     */
-    inline bool bigint::is_prime(const bigint& s) {
-        if (is_negative(s) || s == 1)
-            return false;
-
-        if (s == 2 || s == 3 || s == 5)
-            return true;
-
-        if (is_even(s) || s % 5 == 0)
-            return false;
-
-        for (bigint i = 3; i * i <= s; i += 2) {
-            if ((s % i) == 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    inline bigint bigint::random(const size_t length) {
-        std::default_random_engine rng(std::random_device{}());
-
-        // Distribution for the first digit (1-9)
-        std::uniform_int_distribution<> first_dist(1, 9);
-        // Distribution for the other digits (0-9)
-        std::uniform_int_distribution<> dist(0, 9);
-
-        // Lambda to generate the first character
-        auto randchar_first = [&first_dist, &rng]() { return '0' + first_dist(rng); };
-        // Lambda to generate subsequent characters
-        auto randchar = [&dist, &rng]() { return '0' + dist(rng); };
-
-        // Create a string with the specified length
-        std::string str(length, 0);
-
-        // Generate the first character separately to ensure it's not '0'
-        str[0] = randchar_first();
-
-        // Generate the remaining characters
-        std::generate_n(str.begin() + 1, length - 1, randchar);
-
-        return {str};
-    }
-
-    inline std::vector<long long> bigint::string_to_vector(std::string input) {
-        // Break into chunks of 18 characters
-        std::vector<long long> result;
-        constexpr int chunk_size = 18;
-        const int size = input.size();
-
-        if (size > chunk_size) {
-            // Pad the length to get appropriate sized chunks
-            input.insert(0, chunk_size - (size % chunk_size), '0');
-        }
-        for (int i = 0; i < input.size(); i += chunk_size) {
-            std::string temp_str = input.substr(i, chunk_size);
-            result.emplace_back(stoll(temp_str));
-        }
-
+        if (carry)
+            result._limbs.push_back(static_cast<uint32_t>(carry));
         return result;
     }
 
-    inline std::string bigint::vector_to_string(const std::vector<long long>& input) {
-        std::stringstream ss;
-        bool first = true;
-        for (auto partial : input) {
-            if (first) {
-                ss << partial; // No padding for the first number
-                first = false;
+    // Caller must guarantee |a| >= |b|.
+    static BigInt subtractMagnitudes(const BigInt &a, const BigInt &b) {
+        BigInt result;
+        result._limbs.resize(a._limbs.size());
+        int64_t borrow = 0;
+        for (size_t i = 0; i < a._limbs.size(); i++) {
+            int64_t diff = static_cast<int64_t>(a._limbs[i]) - borrow;
+            if (i < b._limbs.size()) diff -= b._limbs[i];
+            if (diff < 0) {
+                diff += BASE;
+                borrow = 1;
+            } else {
+                borrow = 0;
             }
-            else {
-                ss << std::setw(18) << std::setfill('0') << partial; // Pad to 18 digits
-            }
+            result._limbs[i] = static_cast<uint32_t>(diff);
         }
-        return ss.str();
+        result.normalize();
+        return result;
     }
 
-    inline int bigint::count_digits(const bigint& input) {
-        std::string my_string = vector_to_string(input.vec);
-        return static_cast<int>(my_string.length()) - 1;
+    // Single-limb divisor fast path.
+    static std::pair<BigInt, BigInt> divmodSmall(const BigInt &num, uint32_t den) {
+        BigInt quotient;
+        quotient._limbs.resize(num._limbs.size());
+        uint64_t rem = 0;
+        for (int i = static_cast<int>(num._limbs.size()) - 1; i >= 0; i--) {
+            uint64_t cur = rem * BASE + num._limbs[i];
+            quotient._limbs[i] = static_cast<uint32_t>(cur / den);
+            rem = cur % den;
+        }
+        quotient.normalize();
+        BigInt remainder;
+        remainder._limbs = {static_cast<uint32_t>(rem)};
+        return {quotient, remainder};
     }
-} // namespace::BigInt
 
-template<>
-struct std::hash<BigInt::bigint>
-{
-    std::size_t operator()(const BigInt::bigint& input) const {
-        std::size_t seed = input.vec.size();
-        for (auto x : input.vec) {
-            x = ((x >> 16) ^ x) * 0x45d9f3b;
-            x = ((x >> 16) ^ x) * 0x45d9f3b;
-            x = (x >> 16) ^ x;
-            seed ^= x + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    // Multiply magnitude by a single limb (used by division).
+    static BigInt mulSmall(const BigInt &a, uint32_t b) {
+        BigInt result;
+        result._limbs.resize(a._limbs.size());
+        uint64_t carry = 0;
+        for (size_t i = 0; i < a._limbs.size(); i++) {
+            uint64_t prod = static_cast<uint64_t>(a._limbs[i]) * b + carry;
+            result._limbs[i] = static_cast<uint32_t>(prod % BASE);
+            carry = prod / BASE;
         }
-        if (input.is_neg) {
-            seed ^= 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        }
-        return seed;
+        if (carry)
+            result._limbs.push_back(static_cast<uint32_t>(carry));
+        result.normalize();
+        return result;
     }
+
+    // Multi-limb long division. Both operands must be positive.
+    static std::pair<BigInt, BigInt> divmodLarge(const BigInt &num, const BigInt &den) {
+        int cmp = compareMagnitude(num, den);
+        if (cmp < 0)
+            return {BigInt(0LL), num};
+        if (cmp == 0)
+            return {BigInt(1LL), BigInt(0LL)};
+
+        if (den._limbs.size() == 1)
+            return divmodSmall(num, den._limbs[0]);
+
+        // Knuth Algorithm D: normalize so leading limb of divisor >= BASE/2
+        uint32_t d = BASE / (den._limbs.back() + 1);
+        BigInt u = mulSmall(num, d);
+        BigInt v = mulSmall(den, d);
+
+        size_t n = v._limbs.size();
+        size_t m = u._limbs.size() - n;
+
+        // Ensure u has m+n+1 limbs
+        while (u._limbs.size() <= m + n)
+            u._limbs.push_back(0);
+
+        BigInt quotient;
+        quotient._limbs.resize(m + 1, 0);
+
+        for (int j = static_cast<int>(m); j >= 0; j--) {
+            // Trial quotient from top two limbs of current remainder
+            uint64_t top = static_cast<uint64_t>(u._limbs[j + n]) * BASE +
+                           u._limbs[j + n - 1];
+            uint64_t qhat = top / v._limbs[n - 1];
+            uint64_t rhat = top % v._limbs[n - 1];
+
+            // Refine estimate
+            while (qhat >= BASE ||
+                   (n >= 2 &&
+                    qhat * v._limbs[n - 2] >
+                        rhat * BASE + u._limbs[j + n - 2])) {
+                qhat--;
+                rhat += v._limbs[n - 1];
+                if (rhat >= BASE)
+                    break;
+            }
+
+            // Subtract qhat * v from u[j..j+n]
+            int64_t borrow = 0;
+            for (size_t i = 0; i < n; i++) {
+                int64_t prod = static_cast<int64_t>(qhat) *
+                               static_cast<int64_t>(v._limbs[i]);
+                int64_t diff = static_cast<int64_t>(u._limbs[j + i]) -
+                               borrow - (prod % static_cast<int64_t>(BASE));
+                borrow = prod / static_cast<int64_t>(BASE);
+                if (diff < 0) {
+                    diff += BASE;
+                    borrow++;
+                }
+                u._limbs[j + i] = static_cast<uint32_t>(diff);
+            }
+            int64_t diff = static_cast<int64_t>(u._limbs[j + n]) - borrow;
+            u._limbs[j + n] = static_cast<uint32_t>(diff < 0 ? diff + BASE : diff);
+
+            quotient._limbs[j] = static_cast<uint32_t>(qhat);
+
+            // If we subtracted too much, add back
+            if (diff < 0) {
+                quotient._limbs[j]--;
+                uint64_t carry = 0;
+                for (size_t i = 0; i < n; i++) {
+                    uint64_t sum = static_cast<uint64_t>(u._limbs[j + i]) +
+                                   v._limbs[i] + carry;
+                    u._limbs[j + i] = static_cast<uint32_t>(sum % BASE);
+                    carry = sum / BASE;
+                }
+                u._limbs[j + n] += static_cast<uint32_t>(carry);
+            }
+        }
+
+        quotient.normalize();
+
+        // Remainder is u / d (unnormalize)
+        auto [remainder, _] = divmodSmall(u, d);
+        remainder._limbs.resize(n);
+        remainder.normalize();
+        return {quotient, remainder};
+    }
+
+  public:
+    BigInt() : _limbs{0}, _negative(false) {}
+
+    BigInt(long long val) {
+        if (val == 0) {
+            _limbs = {0};
+            _negative = false;
+            return;
+        }
+        _negative = val < 0;
+        // Cast to uint64_t before negating to avoid UB on INT64_MIN
+        uint64_t abs_val;
+        if (val == std::numeric_limits<long long>::min()) {
+            abs_val = static_cast<uint64_t>(std::numeric_limits<long long>::max()) + 1;
+        } else {
+            abs_val = _negative ? static_cast<uint64_t>(-val)
+                                : static_cast<uint64_t>(val);
+        }
+        while (abs_val > 0) {
+            _limbs.push_back(static_cast<uint32_t>(abs_val % BASE));
+            abs_val /= BASE;
+        }
+    }
+
+    BigInt(const std::string &s) {
+        if (s.empty())
+            throw std::invalid_argument("empty string");
+
+        size_t start = 0;
+        _negative = false;
+        if (s[0] == '-') {
+            _negative = true;
+            start = 1;
+        } else if (s[0] == '+') {
+            start = 1;
+        }
+
+        if (start >= s.size())
+            throw std::invalid_argument("no digits in: " + s);
+
+        // Validate digits
+        for (size_t i = start; i < s.size(); i++) {
+            if (s[i] < '0' || s[i] > '9')
+                throw std::invalid_argument("invalid character in: " + s);
+        }
+
+        // Parse 9-digit groups from the right
+        _limbs.clear();
+        int pos = static_cast<int>(s.size());
+        while (pos > static_cast<int>(start)) {
+            int begin = std::max(pos - DIGITS_PER_LIMB, static_cast<int>(start));
+            uint32_t limb = 0;
+            for (int i = begin; i < pos; i++)
+                limb = limb * 10 + static_cast<uint32_t>(s[i] - '0');
+            _limbs.push_back(limb);
+            pos = begin;
+        }
+
+        if (_limbs.empty())
+            _limbs.push_back(0);
+
+        normalize();
+    }
+
+    BigInt operator-() const {
+        BigInt result = *this;
+        if (!isZero())
+            result._negative = !_negative;
+        return result;
+    }
+
+    BigInt operator+(const BigInt &rhs) const {
+        if (_negative == rhs._negative) {
+            BigInt result = addMagnitudes(*this, rhs);
+            result._negative = _negative;
+            result.normalize();
+            return result;
+        }
+        int cmp = compareMagnitude(*this, rhs);
+        if (cmp == 0)
+            return BigInt(0LL);
+        if (cmp > 0) {
+            BigInt result = subtractMagnitudes(*this, rhs);
+            result._negative = _negative;
+            return result;
+        }
+        BigInt result = subtractMagnitudes(rhs, *this);
+        result._negative = rhs._negative;
+        return result;
+    }
+
+    BigInt operator-(const BigInt &rhs) const { return *this + (-rhs); }
+
+    BigInt operator*(const BigInt &rhs) const {
+        if (isZero() || rhs.isZero())
+            return BigInt(0LL);
+
+        BigInt result;
+        size_t n = _limbs.size(), m = rhs._limbs.size();
+        result._limbs.resize(n + m, 0);
+
+        for (size_t i = 0; i < n; i++) {
+            uint64_t carry = 0;
+            for (size_t j = 0; j < m; j++) {
+                uint64_t prod = static_cast<uint64_t>(_limbs[i]) * rhs._limbs[j] +
+                                result._limbs[i + j] + carry;
+                result._limbs[i + j] = static_cast<uint32_t>(prod % BASE);
+                carry = prod / BASE;
+            }
+            if (carry)
+                result._limbs[i + m] += static_cast<uint32_t>(carry);
+        }
+
+        result._negative = _negative != rhs._negative;
+        result.normalize();
+        return result;
+    }
+
+    BigInt operator/(const BigInt &rhs) const {
+        if (rhs.isZero())
+            throw std::logic_error("division by zero");
+
+        // Work with magnitudes, apply sign after
+        BigInt absNum = *this;
+        absNum._negative = false;
+        BigInt absDen = rhs;
+        absDen._negative = false;
+
+        auto [q, r] = divmodLarge(absNum, absDen);
+        q._negative = (_negative != rhs._negative) && !q.isZero();
+        return q;
+    }
+
+    BigInt operator%(const BigInt &rhs) const {
+        if (rhs.isZero())
+            throw std::logic_error("division by zero");
+
+        BigInt absNum = *this;
+        absNum._negative = false;
+        BigInt absDen = rhs;
+        absDen._negative = false;
+
+        auto [q, r] = divmodLarge(absNum, absDen);
+        r._negative = _negative && !r.isZero();
+        return r;
+    }
+
+    bool operator==(const BigInt &rhs) const {
+        return _negative == rhs._negative && _limbs == rhs._limbs;
+    }
+
+    bool operator!=(const BigInt &rhs) const { return !(*this == rhs); }
+
+    bool operator<(const BigInt &rhs) const {
+        if (_negative != rhs._negative)
+            return _negative;
+        int cmp = compareMagnitude(*this, rhs);
+        return _negative ? cmp > 0 : cmp < 0;
+    }
+
+    bool operator>(const BigInt &rhs) const { return rhs < *this; }
+    bool operator<=(const BigInt &rhs) const { return !(rhs < *this); }
+    bool operator>=(const BigInt &rhs) const { return !(*this < rhs); }
+
+    std::string to_string() const {
+        std::string result;
+        if (_negative)
+            result += '-';
+
+        // Most significant limb without leading zeros
+        result += std::to_string(_limbs.back());
+
+        // Remaining limbs zero-padded to 9 digits
+        for (int i = static_cast<int>(_limbs.size()) - 2; i >= 0; i--) {
+            std::string limb = std::to_string(_limbs[i]);
+            result.append(DIGITS_PER_LIMB - limb.size(), '0');
+            result += limb;
+        }
+        return result;
+    }
+
+    long long to_long_long() const { return std::stoll(to_string()); }
 };
-
-#endif /* BIGINT_H_ */

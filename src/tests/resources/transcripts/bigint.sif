@@ -1,7 +1,6 @@
 -- Setup: create BigInt values for reuse
 set big to 9223372036854775807 + 1
 set big2 to 9223372036854775807 + 100
-set huge to 99999999999999999999999999999
 
 -- ============================================================
 -- Addition
@@ -213,6 +212,17 @@ print the native type of r
 int64
 --)
 
+-- BigInt / BigInt (similar magnitudes)
+set r to big2 / big
+print r
+(-- expect
+1
+--)
+print the native type of r
+(-- expect
+int64
+--)
+
 -- BigInt / Integer (auto-demotes to int64)
 set r to bigDouble / 2
 print r
@@ -255,8 +265,12 @@ print 10 % 3
 1
 --)
 
--- BigInt % BigInt (different magnitudes to avoid library bug)
-set r to huge % big
+-- BigInt % BigInt
+set r to big2 % big
+print r
+(-- expect
+99
+--)
 print the native type of r
 (-- expect
 int64
