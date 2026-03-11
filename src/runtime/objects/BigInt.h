@@ -22,13 +22,13 @@
 
 #include <sif/runtime/protocols/Castable.h>
 
-#include "extern/bigint.h"
+#include <sif/runtime/ArbitraryInt.h>
 
 SIF_NAMESPACE_BEGIN
 
 class BigInt : public Object, public NumberCastable {
   public:
-    BigInt(const ::BigInt &value);
+    BigInt(const ::ArbitraryInt &value);
     BigInt(const std::string &value);
     BigInt(const Value &value);
 
@@ -41,10 +41,10 @@ class BigInt : public Object, public NumberCastable {
     Result<Value, Error> castFloat() const override;
     Result<Value, Error> castInteger() const override;
 
-    const ::BigInt &value() const;
+    const ::ArbitraryInt &value() const;
 
-    static Value toValue(const ::BigInt &result);
-    static double toDouble(const ::BigInt &value);
+    static Value toValue(const ::ArbitraryInt &result);
+    static double toDouble(const ::ArbitraryInt &value);
     static Float toFloat(const Value &v);
 
     static Value add(const Value &lhs, const Value &rhs);
@@ -56,7 +56,7 @@ class BigInt : public Object, public NumberCastable {
     static int compare(const Value &lhs, const Value &rhs);
 
   private:
-    ::BigInt _value;
+    ::ArbitraryInt _value;
 };
 
 SIF_NAMESPACE_END

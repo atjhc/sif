@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-class BigInt {
+class ArbitraryInt {
     static constexpr uint32_t BASE = 1'000'000'000;
     static constexpr int DIGITS_PER_LIMB = 9;
 
@@ -25,7 +25,7 @@ class BigInt {
 
     bool isZero() const { return _limbs.size() == 1 && _limbs[0] == 0; }
 
-    static int compareMagnitude(const BigInt &a, const BigInt &b) {
+    static int compareMagnitude(const ArbitraryInt &a, const ArbitraryInt &b) {
         if (a._limbs.size() != b._limbs.size())
             return a._limbs.size() < b._limbs.size() ? -1 : 1;
         for (int i = static_cast<int>(a._limbs.size()) - 1; i >= 0; i--) {
@@ -35,15 +35,17 @@ class BigInt {
         return 0;
     }
 
-    static BigInt addMagnitudes(const BigInt &a, const BigInt &b) {
-        BigInt result;
+    static ArbitraryInt addMagnitudes(const ArbitraryInt &a, const ArbitraryInt &b) {
+        ArbitraryInt result;
         size_t n = std::max(a._limbs.size(), b._limbs.size());
         result._limbs.resize(n);
         uint64_t carry = 0;
         for (size_t i = 0; i < n; i++) {
             uint64_t sum = carry;
-            if (i < a._limbs.size()) sum += a._limbs[i];
-            if (i < b._limbs.size()) sum += b._limbs[i];
+            if (i < a._limbs.size())
+                sum += a._limbs[i];
+            if (i < b._limbs.size())
+                sum += b._limbs[i];
             result._limbs[i] = static_cast<uint32_t>(sum % BASE);
             carry = sum / BASE;
         }
@@ -53,13 +55,14 @@ class BigInt {
     }
 
     // Caller must guarantee |a| >= |b|.
-    static BigInt subtractMagnitudes(const BigInt &a, const BigInt &b) {
-        BigInt result;
+    static ArbitraryInt subtractMagnitudes(const ArbitraryInt &a, const ArbitraryInt &b) {
+        ArbitraryInt result;
         result._limbs.resize(a._limbs.size());
         int64_t borrow = 0;
         for (size_t i = 0; i < a._limbs.size(); i++) {
             int64_t diff = static_cast<int64_t>(a._limbs[i]) - borrow;
-            if (i < b._limbs.size()) diff -= b._limbs[i];
+            if (i < b._limbs.size())
+                diff -= b._limbs[i];
             if (diff < 0) {
                 diff += BASE;
                 borrow = 1;
@@ -73,8 +76,9 @@ class BigInt {
     }
 
     // Single-limb divisor fast path.
-    static std::pair<BigInt, BigInt> divmodSmall(const BigInt &num, uint32_t den) {
-        BigInt quotient;
+    static std::pair<ArbitraryInt, ArbitraryInt> divmodSmall(const ArbitraryInt &num,
+                                                             uint32_t den) {
+        ArbitraryInt quotient;
         quotient._limbs.resize(num._limbs.size());
         uint64_t rem = 0;
         for (int i = static_cast<int>(num._limbs.size()) - 1; i >= 0; i--) {
@@ -83,14 +87,14 @@ class BigInt {
             rem = cur % den;
         }
         quotient.normalize();
-        BigInt remainder;
+        ArbitraryInt remainder;
         remainder._limbs = {static_cast<uint32_t>(rem)};
         return {quotient, remainder};
     }
 
     // Multiply magnitude by a single limb (used by division).
-    static BigInt mulSmall(const BigInt &a, uint32_t b) {
-        BigInt result;
+    static ArbitraryInt mulSmall(const ArbitraryInt &a, uint32_t b) {
+        ArbitraryInt result;
         result._limbs.resize(a._limbs.size());
         uint64_t carry = 0;
         for (size_t i = 0; i < a._limbs.size(); i++) {
@@ -105,20 +109,21 @@ class BigInt {
     }
 
     // Multi-limb long division. Both operands must be positive.
-    static std::pair<BigInt, BigInt> divmodLarge(const BigInt &num, const BigInt &den) {
+    static std::pair<ArbitraryInt, ArbitraryInt> divmodLarge(const ArbitraryInt &num,
+                                                             const ArbitraryInt &den) {
         int cmp = compareMagnitude(num, den);
         if (cmp < 0)
-            return {BigInt(0LL), num};
+            return {ArbitraryInt(0LL), num};
         if (cmp == 0)
-            return {BigInt(1LL), BigInt(0LL)};
+            return {ArbitraryInt(1LL), ArbitraryInt(0LL)};
 
         if (den._limbs.size() == 1)
             return divmodSmall(num, den._limbs[0]);
 
         // Knuth Algorithm D: normalize so leading limb of divisor >= BASE/2
         uint32_t d = BASE / (den._limbs.back() + 1);
-        BigInt u = mulSmall(num, d);
-        BigInt v = mulSmall(den, d);
+        ArbitraryInt u = mulSmall(num, d);
+        ArbitraryInt v = mulSmall(den, d);
 
         size_t n = v._limbs.size();
         size_t m = u._limbs.size() - n;
@@ -127,21 +132,18 @@ class BigInt {
         while (u._limbs.size() <= m + n)
             u._limbs.push_back(0);
 
-        BigInt quotient;
+        ArbitraryInt quotient;
         quotient._limbs.resize(m + 1, 0);
 
         for (int j = static_cast<int>(m); j >= 0; j--) {
             // Trial quotient from top two limbs of current remainder
-            uint64_t top = static_cast<uint64_t>(u._limbs[j + n]) * BASE +
-                           u._limbs[j + n - 1];
+            uint64_t top = static_cast<uint64_t>(u._limbs[j + n]) * BASE + u._limbs[j + n - 1];
             uint64_t qhat = top / v._limbs[n - 1];
             uint64_t rhat = top % v._limbs[n - 1];
 
             // Refine estimate
             while (qhat >= BASE ||
-                   (n >= 2 &&
-                    qhat * v._limbs[n - 2] >
-                        rhat * BASE + u._limbs[j + n - 2])) {
+                   (n >= 2 && qhat * v._limbs[n - 2] > rhat * BASE + u._limbs[j + n - 2])) {
                 qhat--;
                 rhat += v._limbs[n - 1];
                 if (rhat >= BASE)
@@ -151,10 +153,9 @@ class BigInt {
             // Subtract qhat * v from u[j..j+n]
             int64_t borrow = 0;
             for (size_t i = 0; i < n; i++) {
-                int64_t prod = static_cast<int64_t>(qhat) *
-                               static_cast<int64_t>(v._limbs[i]);
-                int64_t diff = static_cast<int64_t>(u._limbs[j + i]) -
-                               borrow - (prod % static_cast<int64_t>(BASE));
+                int64_t prod = static_cast<int64_t>(qhat) * static_cast<int64_t>(v._limbs[i]);
+                int64_t diff = static_cast<int64_t>(u._limbs[j + i]) - borrow -
+                               (prod % static_cast<int64_t>(BASE));
                 borrow = prod / static_cast<int64_t>(BASE);
                 if (diff < 0) {
                     diff += BASE;
@@ -172,8 +173,7 @@ class BigInt {
                 quotient._limbs[j]--;
                 uint64_t carry = 0;
                 for (size_t i = 0; i < n; i++) {
-                    uint64_t sum = static_cast<uint64_t>(u._limbs[j + i]) +
-                                   v._limbs[i] + carry;
+                    uint64_t sum = static_cast<uint64_t>(u._limbs[j + i]) + v._limbs[i] + carry;
                     u._limbs[j + i] = static_cast<uint32_t>(sum % BASE);
                     carry = sum / BASE;
                 }
@@ -191,9 +191,9 @@ class BigInt {
     }
 
   public:
-    BigInt() : _limbs{0}, _negative(false) {}
+    ArbitraryInt() : _limbs{0}, _negative(false) {}
 
-    BigInt(long long val) {
+    ArbitraryInt(long long val) {
         if (val == 0) {
             _limbs = {0};
             _negative = false;
@@ -205,8 +205,7 @@ class BigInt {
         if (val == std::numeric_limits<long long>::min()) {
             abs_val = static_cast<uint64_t>(std::numeric_limits<long long>::max()) + 1;
         } else {
-            abs_val = _negative ? static_cast<uint64_t>(-val)
-                                : static_cast<uint64_t>(val);
+            abs_val = _negative ? static_cast<uint64_t>(-val) : static_cast<uint64_t>(val);
         }
         while (abs_val > 0) {
             _limbs.push_back(static_cast<uint32_t>(abs_val % BASE));
@@ -214,7 +213,7 @@ class BigInt {
         }
     }
 
-    BigInt(const std::string &s) {
+    ArbitraryInt(const std::string &s) {
         if (s.empty())
             throw std::invalid_argument("empty string");
 
@@ -254,48 +253,48 @@ class BigInt {
         normalize();
     }
 
-    BigInt operator-() const {
-        BigInt result = *this;
+    ArbitraryInt operator-() const {
+        ArbitraryInt result = *this;
         if (!isZero())
             result._negative = !_negative;
         return result;
     }
 
-    BigInt operator+(const BigInt &rhs) const {
+    ArbitraryInt operator+(const ArbitraryInt &rhs) const {
         if (_negative == rhs._negative) {
-            BigInt result = addMagnitudes(*this, rhs);
+            ArbitraryInt result = addMagnitudes(*this, rhs);
             result._negative = _negative;
             result.normalize();
             return result;
         }
         int cmp = compareMagnitude(*this, rhs);
         if (cmp == 0)
-            return BigInt(0LL);
+            return ArbitraryInt(0LL);
         if (cmp > 0) {
-            BigInt result = subtractMagnitudes(*this, rhs);
+            ArbitraryInt result = subtractMagnitudes(*this, rhs);
             result._negative = _negative;
             return result;
         }
-        BigInt result = subtractMagnitudes(rhs, *this);
+        ArbitraryInt result = subtractMagnitudes(rhs, *this);
         result._negative = rhs._negative;
         return result;
     }
 
-    BigInt operator-(const BigInt &rhs) const { return *this + (-rhs); }
+    ArbitraryInt operator-(const ArbitraryInt &rhs) const { return *this + (-rhs); }
 
-    BigInt operator*(const BigInt &rhs) const {
+    ArbitraryInt operator*(const ArbitraryInt &rhs) const {
         if (isZero() || rhs.isZero())
-            return BigInt(0LL);
+            return ArbitraryInt(0LL);
 
-        BigInt result;
+        ArbitraryInt result;
         size_t n = _limbs.size(), m = rhs._limbs.size();
         result._limbs.resize(n + m, 0);
 
         for (size_t i = 0; i < n; i++) {
             uint64_t carry = 0;
             for (size_t j = 0; j < m; j++) {
-                uint64_t prod = static_cast<uint64_t>(_limbs[i]) * rhs._limbs[j] +
-                                result._limbs[i + j] + carry;
+                uint64_t prod =
+                    static_cast<uint64_t>(_limbs[i]) * rhs._limbs[j] + result._limbs[i + j] + carry;
                 result._limbs[i + j] = static_cast<uint32_t>(prod % BASE);
                 carry = prod / BASE;
             }
@@ -308,14 +307,14 @@ class BigInt {
         return result;
     }
 
-    BigInt operator/(const BigInt &rhs) const {
+    ArbitraryInt operator/(const ArbitraryInt &rhs) const {
         if (rhs.isZero())
             throw std::logic_error("division by zero");
 
         // Work with magnitudes, apply sign after
-        BigInt absNum = *this;
+        ArbitraryInt absNum = *this;
         absNum._negative = false;
-        BigInt absDen = rhs;
+        ArbitraryInt absDen = rhs;
         absDen._negative = false;
 
         auto [q, r] = divmodLarge(absNum, absDen);
@@ -323,13 +322,13 @@ class BigInt {
         return q;
     }
 
-    BigInt operator%(const BigInt &rhs) const {
+    ArbitraryInt operator%(const ArbitraryInt &rhs) const {
         if (rhs.isZero())
             throw std::logic_error("division by zero");
 
-        BigInt absNum = *this;
+        ArbitraryInt absNum = *this;
         absNum._negative = false;
-        BigInt absDen = rhs;
+        ArbitraryInt absDen = rhs;
         absDen._negative = false;
 
         auto [q, r] = divmodLarge(absNum, absDen);
@@ -337,22 +336,22 @@ class BigInt {
         return r;
     }
 
-    bool operator==(const BigInt &rhs) const {
+    bool operator==(const ArbitraryInt &rhs) const {
         return _negative == rhs._negative && _limbs == rhs._limbs;
     }
 
-    bool operator!=(const BigInt &rhs) const { return !(*this == rhs); }
+    bool operator!=(const ArbitraryInt &rhs) const { return !(*this == rhs); }
 
-    bool operator<(const BigInt &rhs) const {
+    bool operator<(const ArbitraryInt &rhs) const {
         if (_negative != rhs._negative)
             return _negative;
         int cmp = compareMagnitude(*this, rhs);
         return _negative ? cmp > 0 : cmp < 0;
     }
 
-    bool operator>(const BigInt &rhs) const { return rhs < *this; }
-    bool operator<=(const BigInt &rhs) const { return !(rhs < *this); }
-    bool operator>=(const BigInt &rhs) const { return !(*this < rhs); }
+    bool operator>(const ArbitraryInt &rhs) const { return rhs < *this; }
+    bool operator<=(const ArbitraryInt &rhs) const { return !(rhs < *this); }
+    bool operator>=(const ArbitraryInt &rhs) const { return !(*this < rhs); }
 
     std::string to_string() const {
         std::string result;

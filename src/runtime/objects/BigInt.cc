@@ -19,21 +19,21 @@
 
 SIF_NAMESPACE_BEGIN
 
-static ::BigInt toBigInt(const Value &v) {
+static ::ArbitraryInt toArbitraryInt(const Value &v) {
     if (v.isInteger())
-        return ::BigInt(v.asInteger());
+        return ::ArbitraryInt(v.asInteger());
     auto big = v.as<BigInt>();
     assert(big && "expected integer or BigInt value");
     return big->value();
 }
 
-BigInt::BigInt(const ::BigInt &value) : _value(value) {}
+BigInt::BigInt(const ::ArbitraryInt &value) : _value(value) {}
 
 BigInt::BigInt(const std::string &value) : _value(value) {}
 
 BigInt::BigInt(const Value &v) {
     if (v.isInteger()) {
-        _value = ::BigInt(v.asInteger());
+        _value = ::ArbitraryInt(v.asInteger());
     } else if (auto big = v.as<BigInt>()) {
         _value = big->_value;
     } else {
@@ -56,20 +56,20 @@ bool BigInt::equals(Strong<Object> object) const {
 
 size_t BigInt::hash() const { return std::hash<std::string>{}(_value.to_string()); }
 
-const ::BigInt &BigInt::value() const { return _value; }
+const ::ArbitraryInt &BigInt::value() const { return _value; }
 
-Value BigInt::toValue(const ::BigInt &result) {
-    static const ::BigInt maxInt(std::numeric_limits<long long>::max());
-    static const ::BigInt minInt(std::numeric_limits<long long>::min());
+Value BigInt::toValue(const ::ArbitraryInt &result) {
+    static const ::ArbitraryInt maxInt(std::numeric_limits<long long>::max());
+    static const ::ArbitraryInt minInt(std::numeric_limits<long long>::min());
     if (result >= minInt && result <= maxInt) {
         return Value(static_cast<Integer>(result.to_long_long()));
     }
     return Value(MakeStrong<BigInt>(result));
 }
 
-double BigInt::toDouble(const ::BigInt &val) {
-    static const ::BigInt maxLL(std::numeric_limits<long long>::max());
-    static const ::BigInt minLL(std::numeric_limits<long long>::min());
+double BigInt::toDouble(const ::ArbitraryInt &val) {
+    static const ::ArbitraryInt maxLL(std::numeric_limits<long long>::max());
+    static const ::ArbitraryInt minLL(std::numeric_limits<long long>::min());
     if (val >= minLL && val <= maxLL) {
         return static_cast<double>(val.to_long_long());
     }
@@ -102,8 +102,8 @@ Result<Value, Error> BigInt::castFloat() const {
 }
 
 Result<Value, Error> BigInt::castInteger() const {
-    static const ::BigInt maxInt(std::numeric_limits<long long>::max());
-    static const ::BigInt minInt(std::numeric_limits<long long>::min());
+    static const ::ArbitraryInt maxInt(std::numeric_limits<long long>::max());
+    static const ::ArbitraryInt minInt(std::numeric_limits<long long>::min());
     if (_value < minInt || _value > maxInt) {
         return Fail(Error("value cannot be represented as an integer"));
     }
@@ -111,30 +111,30 @@ Result<Value, Error> BigInt::castInteger() const {
 }
 
 Value BigInt::add(const Value &lhs, const Value &rhs) {
-    return toValue(toBigInt(lhs) + toBigInt(rhs));
+    return toValue(toArbitraryInt(lhs) + toArbitraryInt(rhs));
 }
 
 Value BigInt::subtract(const Value &lhs, const Value &rhs) {
-    return toValue(toBigInt(lhs) - toBigInt(rhs));
+    return toValue(toArbitraryInt(lhs) - toArbitraryInt(rhs));
 }
 
 Value BigInt::multiply(const Value &lhs, const Value &rhs) {
-    return toValue(toBigInt(lhs) * toBigInt(rhs));
+    return toValue(toArbitraryInt(lhs) * toArbitraryInt(rhs));
 }
 
 Value BigInt::divide(const Value &lhs, const Value &rhs) {
-    return toValue(toBigInt(lhs) / toBigInt(rhs));
+    return toValue(toArbitraryInt(lhs) / toArbitraryInt(rhs));
 }
 
 Value BigInt::modulo(const Value &lhs, const Value &rhs) {
-    return toValue(toBigInt(lhs) % toBigInt(rhs));
+    return toValue(toArbitraryInt(lhs) % toArbitraryInt(rhs));
 }
 
-Value BigInt::negate(const Value &v) { return toValue(-toBigInt(v)); }
+Value BigInt::negate(const Value &v) { return toValue(-toArbitraryInt(v)); }
 
 int BigInt::compare(const Value &lhs, const Value &rhs) {
-    auto a = toBigInt(lhs);
-    auto b = toBigInt(rhs);
+    auto a = toArbitraryInt(lhs);
+    auto b = toArbitraryInt(rhs);
     if (a < b)
         return -1;
     if (a > b)
