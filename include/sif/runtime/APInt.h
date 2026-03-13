@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-class ArbitraryInt {
+class APInt {
     static constexpr uint32_t BASE = 1'000'000'000;
     static constexpr int DIGITS_PER_LIMB = 9;
 
@@ -25,7 +25,7 @@ class ArbitraryInt {
 
     bool isZero() const { return _limbs.size() == 1 && _limbs[0] == 0; }
 
-    static int compareMagnitude(const ArbitraryInt &a, const ArbitraryInt &b) {
+    static int compareMagnitude(const APInt &a, const APInt &b) {
         if (a._limbs.size() != b._limbs.size())
             return a._limbs.size() < b._limbs.size() ? -1 : 1;
         for (int i = static_cast<int>(a._limbs.size()) - 1; i >= 0; i--) {
@@ -35,8 +35,8 @@ class ArbitraryInt {
         return 0;
     }
 
-    static ArbitraryInt addMagnitudes(const ArbitraryInt &a, const ArbitraryInt &b) {
-        ArbitraryInt result;
+    static APInt addMagnitudes(const APInt &a, const APInt &b) {
+        APInt result;
         size_t n = std::max(a._limbs.size(), b._limbs.size());
         result._limbs.resize(n);
         uint64_t carry = 0;
@@ -55,8 +55,8 @@ class ArbitraryInt {
     }
 
     // Caller must guarantee |a| >= |b|.
-    static ArbitraryInt subtractMagnitudes(const ArbitraryInt &a, const ArbitraryInt &b) {
-        ArbitraryInt result;
+    static APInt subtractMagnitudes(const APInt &a, const APInt &b) {
+        APInt result;
         result._limbs.resize(a._limbs.size());
         int64_t borrow = 0;
         for (size_t i = 0; i < a._limbs.size(); i++) {
@@ -76,9 +76,9 @@ class ArbitraryInt {
     }
 
     // Single-limb divisor fast path.
-    static std::pair<ArbitraryInt, ArbitraryInt> divmodSmall(const ArbitraryInt &num,
+    static std::pair<APInt, APInt> divmodSmall(const APInt &num,
                                                              uint32_t den) {
-        ArbitraryInt quotient;
+        APInt quotient;
         quotient._limbs.resize(num._limbs.size());
         uint64_t rem = 0;
         for (int i = static_cast<int>(num._limbs.size()) - 1; i >= 0; i--) {
@@ -87,14 +87,14 @@ class ArbitraryInt {
             rem = cur % den;
         }
         quotient.normalize();
-        ArbitraryInt remainder;
+        APInt remainder;
         remainder._limbs = {static_cast<uint32_t>(rem)};
         return {quotient, remainder};
     }
 
     // Multiply magnitude by a single limb (used by division).
-    static ArbitraryInt mulSmall(const ArbitraryInt &a, uint32_t b) {
-        ArbitraryInt result;
+    static APInt mulSmall(const APInt &a, uint32_t b) {
+        APInt result;
         result._limbs.resize(a._limbs.size());
         uint64_t carry = 0;
         for (size_t i = 0; i < a._limbs.size(); i++) {
@@ -109,21 +109,21 @@ class ArbitraryInt {
     }
 
     // Multi-limb long division. Both operands must be positive.
-    static std::pair<ArbitraryInt, ArbitraryInt> divmodLarge(const ArbitraryInt &num,
-                                                             const ArbitraryInt &den) {
+    static std::pair<APInt, APInt> divmodLarge(const APInt &num,
+                                                             const APInt &den) {
         int cmp = compareMagnitude(num, den);
         if (cmp < 0)
-            return {ArbitraryInt(0LL), num};
+            return {APInt(0LL), num};
         if (cmp == 0)
-            return {ArbitraryInt(1LL), ArbitraryInt(0LL)};
+            return {APInt(1LL), APInt(0LL)};
 
         if (den._limbs.size() == 1)
             return divmodSmall(num, den._limbs[0]);
 
         // Knuth Algorithm D: normalize so leading limb of divisor >= BASE/2
         uint32_t d = BASE / (den._limbs.back() + 1);
-        ArbitraryInt u = mulSmall(num, d);
-        ArbitraryInt v = mulSmall(den, d);
+        APInt u = mulSmall(num, d);
+        APInt v = mulSmall(den, d);
 
         size_t n = v._limbs.size();
         size_t m = u._limbs.size() - n;
@@ -132,7 +132,7 @@ class ArbitraryInt {
         while (u._limbs.size() <= m + n)
             u._limbs.push_back(0);
 
-        ArbitraryInt quotient;
+        APInt quotient;
         quotient._limbs.resize(m + 1, 0);
 
         for (int j = static_cast<int>(m); j >= 0; j--) {
@@ -191,9 +191,9 @@ class ArbitraryInt {
     }
 
   public:
-    ArbitraryInt() : _limbs{0}, _negative(false) {}
+    APInt() : _limbs{0}, _negative(false) {}
 
-    ArbitraryInt(long long val) {
+    APInt(long long val) {
         if (val == 0) {
             _limbs = {0};
             _negative = false;
@@ -213,7 +213,7 @@ class ArbitraryInt {
         }
     }
 
-    ArbitraryInt(const std::string &s) {
+    APInt(const std::string &s) {
         if (s.empty())
             throw std::invalid_argument("empty string");
 
@@ -253,40 +253,40 @@ class ArbitraryInt {
         normalize();
     }
 
-    ArbitraryInt operator-() const {
-        ArbitraryInt result = *this;
+    APInt operator-() const {
+        APInt result = *this;
         if (!isZero())
             result._negative = !_negative;
         return result;
     }
 
-    ArbitraryInt operator+(const ArbitraryInt &rhs) const {
+    APInt operator+(const APInt &rhs) const {
         if (_negative == rhs._negative) {
-            ArbitraryInt result = addMagnitudes(*this, rhs);
+            APInt result = addMagnitudes(*this, rhs);
             result._negative = _negative;
             result.normalize();
             return result;
         }
         int cmp = compareMagnitude(*this, rhs);
         if (cmp == 0)
-            return ArbitraryInt(0LL);
+            return APInt(0LL);
         if (cmp > 0) {
-            ArbitraryInt result = subtractMagnitudes(*this, rhs);
+            APInt result = subtractMagnitudes(*this, rhs);
             result._negative = _negative;
             return result;
         }
-        ArbitraryInt result = subtractMagnitudes(rhs, *this);
+        APInt result = subtractMagnitudes(rhs, *this);
         result._negative = rhs._negative;
         return result;
     }
 
-    ArbitraryInt operator-(const ArbitraryInt &rhs) const { return *this + (-rhs); }
+    APInt operator-(const APInt &rhs) const { return *this + (-rhs); }
 
-    ArbitraryInt operator*(const ArbitraryInt &rhs) const {
+    APInt operator*(const APInt &rhs) const {
         if (isZero() || rhs.isZero())
-            return ArbitraryInt(0LL);
+            return APInt(0LL);
 
-        ArbitraryInt result;
+        APInt result;
         size_t n = _limbs.size(), m = rhs._limbs.size();
         result._limbs.resize(n + m, 0);
 
@@ -307,14 +307,14 @@ class ArbitraryInt {
         return result;
     }
 
-    ArbitraryInt operator/(const ArbitraryInt &rhs) const {
+    APInt operator/(const APInt &rhs) const {
         if (rhs.isZero())
             throw std::logic_error("division by zero");
 
         // Work with magnitudes, apply sign after
-        ArbitraryInt absNum = *this;
+        APInt absNum = *this;
         absNum._negative = false;
-        ArbitraryInt absDen = rhs;
+        APInt absDen = rhs;
         absDen._negative = false;
 
         auto [q, r] = divmodLarge(absNum, absDen);
@@ -322,13 +322,13 @@ class ArbitraryInt {
         return q;
     }
 
-    ArbitraryInt operator%(const ArbitraryInt &rhs) const {
+    APInt operator%(const APInt &rhs) const {
         if (rhs.isZero())
             throw std::logic_error("division by zero");
 
-        ArbitraryInt absNum = *this;
+        APInt absNum = *this;
         absNum._negative = false;
-        ArbitraryInt absDen = rhs;
+        APInt absDen = rhs;
         absDen._negative = false;
 
         auto [q, r] = divmodLarge(absNum, absDen);
@@ -336,22 +336,22 @@ class ArbitraryInt {
         return r;
     }
 
-    bool operator==(const ArbitraryInt &rhs) const {
+    bool operator==(const APInt &rhs) const {
         return _negative == rhs._negative && _limbs == rhs._limbs;
     }
 
-    bool operator!=(const ArbitraryInt &rhs) const { return !(*this == rhs); }
+    bool operator!=(const APInt &rhs) const { return !(*this == rhs); }
 
-    bool operator<(const ArbitraryInt &rhs) const {
+    bool operator<(const APInt &rhs) const {
         if (_negative != rhs._negative)
             return _negative;
         int cmp = compareMagnitude(*this, rhs);
         return _negative ? cmp > 0 : cmp < 0;
     }
 
-    bool operator>(const ArbitraryInt &rhs) const { return rhs < *this; }
-    bool operator<=(const ArbitraryInt &rhs) const { return !(rhs < *this); }
-    bool operator>=(const ArbitraryInt &rhs) const { return !(*this < rhs); }
+    bool operator>(const APInt &rhs) const { return rhs < *this; }
+    bool operator<=(const APInt &rhs) const { return !(rhs < *this); }
+    bool operator>=(const APInt &rhs) const { return !(*this < rhs); }
 
     std::string to_string() const {
         std::string result;

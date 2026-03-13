@@ -19,21 +19,21 @@
 
 SIF_NAMESPACE_BEGIN
 
-static ::ArbitraryInt toArbitraryInt(const Value &v) {
+static ::APInt toAPInt(const Value &v) {
     if (v.isInteger())
-        return ::ArbitraryInt(v.asInteger());
+        return ::APInt(v.asInteger());
     auto big = v.as<BigInt>();
     assert(big && "expected integer or BigInt value");
     return big->value();
 }
 
-BigInt::BigInt(const ::ArbitraryInt &value) : _value(value) {}
+BigInt::BigInt(const ::APInt &value) : _value(value) {}
 
 BigInt::BigInt(const std::string &value) : _value(value) {}
 
 BigInt::BigInt(const Value &v) {
     if (v.isInteger()) {
-        _value = ::ArbitraryInt(v.asInteger());
+        _value = ::APInt(v.asInteger());
     } else if (auto big = v.as<BigInt>()) {
         _value = big->_value;
     } else {
@@ -56,20 +56,20 @@ bool BigInt::equals(Strong<Object> object) const {
 
 size_t BigInt::hash() const { return std::hash<std::string>{}(_value.to_string()); }
 
-const ::ArbitraryInt &BigInt::value() const { return _value; }
+const ::APInt &BigInt::value() const { return _value; }
 
-Value BigInt::toValue(const ::ArbitraryInt &result) {
-    static const ::ArbitraryInt maxInt(std::numeric_limits<long long>::max());
-    static const ::ArbitraryInt minInt(std::numeric_limits<long long>::min());
+Value BigInt::toValue(const ::APInt &result) {
+    static const ::APInt maxInt(std::numeric_limits<long long>::max());
+    static const ::APInt minInt(std::numeric_limits<long long>::min());
     if (result >= minInt && result <= maxInt) {
         return Value(static_cast<Integer>(result.to_long_long()));
     }
     return Value(MakeStrong<BigInt>(result));
 }
 
-double BigInt::toDouble(const ::ArbitraryInt &val) {
-    static const ::ArbitraryInt maxLL(std::numeric_limits<long long>::max());
-    static const ::ArbitraryInt minLL(std::numeric_limits<long long>::min());
+double BigInt::toDouble(const ::APInt &val) {
+    static const ::APInt maxLL(std::numeric_limits<long long>::max());
+    static const ::APInt minLL(std::numeric_limits<long long>::min());
     if (val >= minLL && val <= maxLL) {
         return static_cast<double>(val.to_long_long());
     }
@@ -102,8 +102,8 @@ Result<Value, Error> BigInt::castFloat() const {
 }
 
 Result<Value, Error> BigInt::castInteger() const {
-    static const ::ArbitraryInt maxInt(std::numeric_limits<long long>::max());
-    static const ::ArbitraryInt minInt(std::numeric_limits<long long>::min());
+    static const ::APInt maxInt(std::numeric_limits<long long>::max());
+    static const ::APInt minInt(std::numeric_limits<long long>::min());
     if (_value < minInt || _value > maxInt) {
         return Fail(Error("value cannot be represented as an integer"));
     }
@@ -111,30 +111,30 @@ Result<Value, Error> BigInt::castInteger() const {
 }
 
 Value BigInt::add(const Value &lhs, const Value &rhs) {
-    return toValue(toArbitraryInt(lhs) + toArbitraryInt(rhs));
+    return toValue(toAPInt(lhs) + toAPInt(rhs));
 }
 
 Value BigInt::subtract(const Value &lhs, const Value &rhs) {
-    return toValue(toArbitraryInt(lhs) - toArbitraryInt(rhs));
+    return toValue(toAPInt(lhs) - toAPInt(rhs));
 }
 
 Value BigInt::multiply(const Value &lhs, const Value &rhs) {
-    return toValue(toArbitraryInt(lhs) * toArbitraryInt(rhs));
+    return toValue(toAPInt(lhs) * toAPInt(rhs));
 }
 
 Value BigInt::divide(const Value &lhs, const Value &rhs) {
-    return toValue(toArbitraryInt(lhs) / toArbitraryInt(rhs));
+    return toValue(toAPInt(lhs) / toAPInt(rhs));
 }
 
 Value BigInt::modulo(const Value &lhs, const Value &rhs) {
-    return toValue(toArbitraryInt(lhs) % toArbitraryInt(rhs));
+    return toValue(toAPInt(lhs) % toAPInt(rhs));
 }
 
-Value BigInt::negate(const Value &v) { return toValue(-toArbitraryInt(v)); }
+Value BigInt::negate(const Value &v) { return toValue(-toAPInt(v)); }
 
 int BigInt::compare(const Value &lhs, const Value &rhs) {
-    auto a = toArbitraryInt(lhs);
-    auto b = toArbitraryInt(rhs);
+    auto a = toAPInt(lhs);
+    auto b = toAPInt(rhs);
     if (a < b)
         return -1;
     if (a > b)
