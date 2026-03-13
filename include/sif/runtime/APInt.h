@@ -9,6 +9,10 @@
 #include <string>
 #include <vector>
 
+#include <sif/Common.h>
+
+SIF_NAMESPACE_BEGIN
+
 class APInt {
     static constexpr uint32_t BASE = 1'000'000'000;
     static constexpr int DIGITS_PER_LIMB = 9;
@@ -76,8 +80,7 @@ class APInt {
     }
 
     // Single-limb divisor fast path.
-    static std::pair<APInt, APInt> divmodSmall(const APInt &num,
-                                                             uint32_t den) {
+    static std::pair<APInt, APInt> divmodSmall(const APInt &num, uint32_t den) {
         APInt quotient;
         quotient._limbs.resize(num._limbs.size());
         uint64_t rem = 0;
@@ -109,8 +112,7 @@ class APInt {
     }
 
     // Multi-limb long division. Both operands must be positive.
-    static std::pair<APInt, APInt> divmodLarge(const APInt &num,
-                                                             const APInt &den) {
+    static std::pair<APInt, APInt> divmodLarge(const APInt &num, const APInt &den) {
         int cmp = compareMagnitude(num, den);
         if (cmp < 0)
             return {APInt(0LL), num};
@@ -372,3 +374,5 @@ class APInt {
 
     long long to_long_long() const { return std::stoll(to_string()); }
 };
+
+SIF_NAMESPACE_END
