@@ -44,7 +44,6 @@ class BigInt : public Object, public NumberCastable {
     const APInt &value() const;
 
     static Value toValue(const APInt &result);
-    static double toDouble(const APInt &value);
     static Float toFloat(const Value &v);
 
     static Value add(const Value &lhs, const Value &rhs);

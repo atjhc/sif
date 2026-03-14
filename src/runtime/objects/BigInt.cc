@@ -67,7 +67,7 @@ Value BigInt::toValue(const APInt &result) {
     return Value(MakeStrong<BigInt>(result));
 }
 
-double BigInt::toDouble(const APInt &val) {
+static double toDouble(const APInt &val) {
     static const APInt maxLL(std::numeric_limits<long long>::max());
     static const APInt minLL(std::numeric_limits<long long>::min());
     if (val >= minLL && val <= maxLL) {
