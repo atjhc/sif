@@ -209,15 +209,15 @@ static inline std::string NormalizeIdentifier(const std::string &identifier) {
     }
 
     // Slow path: Unicode normalization
-    const utf8proc_uint8_t *str = reinterpret_cast<const utf8proc_uint8_t*>(identifier.c_str());
+    const utf8proc_uint8_t *str = reinterpret_cast<const utf8proc_uint8_t *>(identifier.c_str());
     utf8proc_ssize_t len = identifier.length();
 
     // Apply NFC normalization and case folding
     utf8proc_uint8_t *normalized = nullptr;
-    utf8proc_ssize_t result = utf8proc_map(
-        str, len, &normalized,
-        static_cast<utf8proc_option_t>(UTF8PROC_NULLTERM | UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_CASEFOLD)
-    );
+    utf8proc_ssize_t result =
+        utf8proc_map(str, len, &normalized,
+                     static_cast<utf8proc_option_t>(UTF8PROC_NULLTERM | UTF8PROC_STABLE |
+                                                    UTF8PROC_COMPOSE | UTF8PROC_CASEFOLD));
 
     if (result < 0) {
         // Normalization failed: return original to avoid crashes
@@ -225,7 +225,7 @@ static inline std::string NormalizeIdentifier(const std::string &identifier) {
         return identifier;
     }
 
-    std::string normalizedStr(reinterpret_cast<char*>(normalized));
+    std::string normalizedStr(reinterpret_cast<char *>(normalized));
     free(normalized);
 
     cache[identifier] = normalizedStr;

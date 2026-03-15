@@ -269,9 +269,6 @@ Bytecode::Iterator Bytecode::disassemble(std::ostream &out, Iterator position) c
     case Opcode::Enumerate:
         out << "Enumerate";
         return position + 1;
-    case Opcode::Increment:
-        out << "Increment";
-        return position + 1;
     case Opcode::Add:
         out << "Add";
         return position + 1;
@@ -378,8 +375,8 @@ struct BytecodePrinter {
                 if (!previousLocation.has_value() || previousLocation.value() != location) {
                     // Format as: "   1:1     " with : always in column 4
                     out << " " << std::setfill(' ') << std::setw(LINE_NUMBER_WIDTH) << std::right
-                        << (location.lineNumber + 1) << ":" << std::setw(COLUMN_NUMBER_WIDTH) << std::left
-                        << (location.position + 1) << " ";
+                        << (location.lineNumber + 1) << ":" << std::setw(COLUMN_NUMBER_WIDTH)
+                        << std::left << (location.position + 1) << " ";
                 } else {
                     // | lines up with the : character
                     std::string padding(1 + LINE_NUMBER_WIDTH + 1 + COLUMN_NUMBER_WIDTH + 1, ' ');

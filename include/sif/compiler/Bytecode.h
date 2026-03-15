@@ -39,7 +39,6 @@ enum class Opcode : uint8_t {
     Short,
     Negate,
     Not,
-    Increment,
     Add,
     Subtract,
     Multiply,

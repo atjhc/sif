@@ -32,7 +32,8 @@ inline constexpr std::string_view BoundsMismatch =
     "lower bound must be less than or equal to the upper bound";
 inline constexpr std::string_view CantOpenFile = "can't open file {}";
 inline constexpr std::string_view CircularModuleImport = "circular module import";
-inline constexpr std::string_view CantRepresentAsInteger = "value cannot be represented as an integer";
+inline constexpr std::string_view CantRepresentAsInteger =
+    "value cannot be represented as an integer";
 inline constexpr std::string_view DivideByZero = "divide by zero";
 inline constexpr std::string_view DuplicateArgumentNames =
     "duplicate argument names in function declaration";

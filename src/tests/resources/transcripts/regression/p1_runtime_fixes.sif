@@ -1,0 +1,51 @@
+-- Division uses double precision, not float
+-- 16777217 is 2^24+1: exact as double, rounds to 16777216 as float
+set result to 16777217 / 16777217.0
+print result is 1.0
+(-- expect
+yes
+--)
+
+-- List range assignment inserts at the correct position
+set list to [1, 2, 3, 4, 5]
+set list[2...3] to [90, 91]
+print list
+(-- expect
+1 2 90 91 5
+--)
+
+set list2 to [1, 2, 3, 4, 5]
+set list2[0...1] to [90, 91]
+print list2
+(-- expect
+90 91 3 4 5
+--)
+
+-- Range opcode errors propagate instead of corrupting the stack
+try
+    set r to "a"..."z"
+end try
+print the error is not empty
+(-- expect
+yes
+--)
+
+try
+    set r to 5...1
+end try
+print the error is not empty
+(-- expect
+yes
+--)
+
+-- Out-of-bounds range subscripts clamp gracefully
+set small to [10, 20, 30]
+print small[0...2]
+(-- expect
+10 20 30
+--)
+
+print small[1...100]
+(-- expect
+20 30
+--)

@@ -651,6 +651,9 @@ static auto _T_as_an_integer(const NativeCallContext &context) -> Result<Value, 
         }
         return Value(context.arguments[0].castInteger());
     }
+    if (context.arguments[0].isBigInt()) {
+        return context.arguments[0];
+    }
     if (auto castable = context.arguments[0].as<NumberCastable>()) {
         return castable->castInteger();
     }
@@ -672,11 +675,11 @@ static auto _T_as_a_string(const NativeCallContext &context) -> Result<Value, Er
 }
 
 static auto _T_is_a_integer(const NativeCallContext &context) -> Result<Value, Error> {
-    return context.arguments[0].isInteger();
+    return context.arguments[0].isInteger() || context.arguments[0].isBigInt();
 }
 
 static auto _T_is_a_number(const NativeCallContext &context) -> Result<Value, Error> {
-    return context.arguments[0].isNumber();
+    return context.arguments[0].isNumeric();
 }
 
 static auto _T_is_a_string(const NativeCallContext &context) -> Result<Value, Error> {

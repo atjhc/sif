@@ -23,6 +23,7 @@
 #include <sif/runtime/objects/List.h>
 #include <sif/runtime/ModuleLoader.h>
 #include <sif/runtime/objects/Native.h>
+#include <sif/runtime/objects/String.h>
 #include <sif/compiler/Signature.h>
 #include "tests/TestSuite.h"
 #include "tests/TrackingObject.h"
@@ -99,6 +100,7 @@ TEST_CASE(TranscriptTests, All) {
         parser.declare(Signature::Make("tracking object").value());
         parser.declare(Signature::Make("track count").value());
         parser.declare(Signature::Make("collect garbage").value());
+        parser.declare(Signature::Make("(the) native type (of) {value}").value());
         auto statement = parser.statement();
 
         if (!parser.failed()) {
@@ -127,6 +129,17 @@ TEST_CASE(TranscriptTests, All) {
                 vm.addGlobal("collect garbage", MakeStrong<Native>([](const NativeCallContext &context) -> Result<Value, Error> {
                     context.vm.serviceGarbageCollection();
                     return Value();
+                }));
+
+                vm.addGlobal(Signature::Make("(the) native type (of) {value}").value().name(), MakeStrong<Native>([](const NativeCallContext &context) -> Result<Value, Error> {
+                    auto value = context.arguments[0];
+                    if (value.isInteger()) return Value(MakeStrong<String>("int64"));
+                    if (value.isBigInt()) return Value(MakeStrong<String>("bigint"));
+                    if (value.isFloat()) return Value(MakeStrong<String>("float"));
+                    if (value.isBool()) return Value(MakeStrong<String>("bool"));
+                    if (value.isString()) return Value(MakeStrong<String>("string"));
+                    if (value.isEmpty()) return Value(MakeStrong<String>("empty"));
+                    return Value(MakeStrong<String>("object"));
                 }));
 
                 TrackingObject::count = 0;

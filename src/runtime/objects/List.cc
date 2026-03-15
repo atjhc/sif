@@ -11,8 +11,8 @@
 //  limitations under the License.
 //
 
-#include "sif/Error.h"
 #include "sif/runtime/objects/List.h"
+#include "sif/Error.h"
 #include "sif/runtime/VirtualMachine.h"
 
 #include "utilities/hasher.h"
@@ -135,17 +135,10 @@ Value List::enumerator(Value self) const { return MakeStrong<ListEnumerator>(sel
 Result<Value, Error> List::subscript(VirtualMachine &vm, SourceLocation location,
                                      const Value &value) const {
     if (auto range = value.as<Range>()) {
-        auto start = _values.begin() + range->start();
-        auto end = _values.begin() + range->end() + (range->closed() ? 1 : 0);
-        if (start < _values.begin())
-            start = _values.begin();
-        if (start > _values.end())
-            start = _values.end() - 1;
-        if (end < _values.begin())
-            end = _values.begin();
-        if (end > _values.end())
-            end = _values.end();
-        return vm.make<List>(std::vector(start, end));
+        auto size = static_cast<Integer>(_values.size());
+        auto s = std::clamp(range->start(), Integer(0), size);
+        auto e = std::clamp(range->end() + (range->closed() ? 1 : 0), Integer(0), size);
+        return vm.make<List>(std::vector(_values.begin() + s, _values.begin() + e));
     }
     if (value.isInteger()) {
         auto index = value.asInteger();
@@ -161,12 +154,14 @@ Result<Value, Error> List::subscript(VirtualMachine &vm, SourceLocation location
 Result<Value, Error> List::setSubscript(VirtualMachine &vm, SourceLocation location,
                                         const Value &key, Value value) {
     if (auto range = key.as<Range>()) {
-        _values.erase(_values.begin() + range->start(),
-                      _values.begin() + range->end() + (range->closed() ? 1 : 0));
+        auto size = static_cast<Integer>(_values.size());
+        auto s = std::clamp(range->start(), Integer(0), size);
+        auto e = std::clamp(range->end() + (range->closed() ? 1 : 0), Integer(0), size);
+        _values.erase(_values.begin() + s, _values.begin() + e);
         if (auto list = value.as<List>()) {
-            _values.insert(_values.begin(), list->values().begin(), list->values().end());
+            _values.insert(_values.begin() + s, list->values().begin(), list->values().end());
         } else {
-            _values.insert(_values.begin() + range->start(), value);
+            _values.insert(_values.begin() + s, value);
         }
     }
     if (key.isInteger()) {
@@ -210,8 +205,6 @@ std::string ListEnumerator::typeName() const { return "ListEnumerator"; }
 
 std::string ListEnumerator::description() const { return Concat("E(", ptr()->description(), ")"); }
 
-void ListEnumerator::trace(const std::function<void(Strong<Object> &)> &visitor) {
-    visitor(_list);
-}
+void ListEnumerator::trace(const std::function<void(Strong<Object> &)> &visitor) { visitor(_list); }
 
 SIF_NAMESPACE_END

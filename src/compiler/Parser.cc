@@ -1560,7 +1560,7 @@ Strong<Expression> Parser::parseUnary() {
             return unaryExpression;
         }
         unaryExpression->expression = unary;
-        unaryExpression->range.start = unary->range.end;
+        unaryExpression->range.end = unary->range.end;
         return unaryExpression;
     }
     return parseSubscript();
