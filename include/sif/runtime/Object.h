@@ -36,7 +36,13 @@ class Object {
     virtual std::string debugDescription() const;
 
     virtual void trace(const std::function<void(Strong<Object> &)> &visitor) {}
-    bool visited = false;
+
+    // GC mark stamp, compared against VirtualMachine::_gcMarkEpoch. A mark
+    // walk can reach any Object type — Function captures, nested closures,
+    // and so on — not only the List/Dictionary entries the collector
+    // enumerates directly, so the pass epoch is what marks this unreached
+    // rather than an explicit reset.
+    size_t markEpoch = 0;
 };
 
 std::ostream &operator<<(std::ostream &out, const Strong<Object> &object);

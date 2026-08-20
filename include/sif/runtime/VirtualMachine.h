@@ -149,6 +149,7 @@ class VirtualMachine {
     size_t _nextGcThreshold = 0;
     size_t _liveContainerBytes = 0;
     size_t _garbageCollectionCount = 0;
+    size_t _gcMarkEpoch = 0;
     bool _gcInProgress = false;
     bool _gcPending = false;
     bool _inNativeCall = false;

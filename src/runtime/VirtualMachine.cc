@@ -1014,7 +1014,6 @@ void VirtualMachine::runPendingGarbageCollection() {
             expired.push_back(entry.first);
             continue;
         }
-        locked->visited = false;
         strongRefs.push_back(std::move(locked));
     }
 
@@ -1023,19 +1022,27 @@ void VirtualMachine::runPendingGarbageCollection() {
     }
 
     if (!strongRefs.empty()) {
+        // Every object's markEpoch is compared against this pass's value, so
+        // advancing it here is what makes every object unmarked for this
+        // pass, including ones outside strongRefs (a Function's captures, a
+        // nested closure, ...) that the mark walk still reaches through
+        // trace().
+        _gcMarkEpoch++;
+        auto epoch = _gcMarkEpoch;
+
         // Depth-first mark over the object graph starting from the root set.
-        static const auto markReachable = [](Object *root) {
+        static const auto markReachable = [](Object *root, size_t epoch) {
             std::stack<Object *> stack;
             stack.push(root);
             while (!stack.empty()) {
                 auto *current = stack.top();
                 stack.pop();
-                if (current->visited) {
+                if (current->markEpoch == epoch) {
                     continue;
                 }
-                current->visited = true;
-                current->trace([&stack](Strong<Object> &child) {
-                    if (child && !child->visited) {
+                current->markEpoch = epoch;
+                current->trace([&stack, epoch](Strong<Object> &child) {
+                    if (child && child->markEpoch != epoch) {
                         stack.push(child.get());
                     }
                 });
@@ -1044,13 +1051,13 @@ void VirtualMachine::runPendingGarbageCollection() {
 
         for (auto &root : roots) {
             if (root) {
-                markReachable(root.get());
+                markReachable(root.get(), epoch);
             }
         }
 
         // Sweep: drop edges from any container that was not marked reachable.
         for (auto &obj : strongRefs) {
-            if (!obj->visited) {
+            if (obj->markEpoch != epoch) {
                 obj->trace([](Strong<Object> &child) { child.reset(); });
             }
         }
@@ -1059,7 +1066,7 @@ void VirtualMachine::runPendingGarbageCollection() {
 
         // Refresh size accounting for survivors so thresholds stay accurate.
         for (auto &obj : strongRefs) {
-            if (obj && obj->visited) {
+            if (obj && obj->markEpoch == epoch) {
                 accountForContainer(obj.get(), estimateContainerSize(obj.get()), false);
             }
         }
