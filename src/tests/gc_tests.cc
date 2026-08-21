@@ -17,6 +17,7 @@
 #include "tests/TestSuite.h"
 #include "tests/TrackingObject.h"
 
+#include <sif/compiler/Bytecode.h>
 #include <sif/compiler/Compiler.h>
 #include <sif/compiler/Parser.h>
 #include <sif/compiler/Reader.h>
@@ -28,6 +29,7 @@
 #include <sif/runtime/modules/Core.h>
 #include <sif/runtime/modules/System.h>
 #include <sif/runtime/objects/Dictionary.h>
+#include <sif/runtime/objects/Function.h>
 #include <sif/runtime/objects/List.h>
 #include <sif/runtime/objects/Native.h>
 
@@ -109,6 +111,40 @@ TEST_CASE(GarbageCollector, MutationNotificationsIncreaseDebt) {
     vm.serviceGarbageCollection();
 
     ASSERT_GT(vm.garbageCollectionCount(), gcBefore);
+}
+
+TEST_CASE(GarbageCollector, RetracesLiveClosuresOnEveryPass) {
+    // A closure's own captured environment lives on the VM stack and is
+    // scanned as an ordinary root, but constants baked into its bytecode
+    // (e.g. a list literal it returns) are only reachable by tracing the
+    // Function object itself. If the collector fails to re-trace a Function
+    // that stayed reachable across two collections, a List reachable only
+    // through it looks unreached on the second pass and has its children
+    // cleared out from under the still-live closure.
+    VirtualMachine vm;
+
+    TrackingObject::count = 0;
+
+    auto bytecode = MakeStrong<Bytecode>();
+    auto list = vm.make<List>();
+    list->values().push_back(Value(vm.make<TrackingObject>()));
+    vm.notifyContainerMutation(list.get());
+    bytecode->addConstant(Value(list));
+
+    auto signature = Signature::Make("closure");
+    ASSERT_TRUE(signature.has_value());
+    auto function = MakeStrong<Function>(signature.value(), bytecode);
+    vm.addGlobal("closure", Value(function));
+
+    // First pass: the function is reached from globals and its trace() walks
+    // into the embedded list constant, marking it live.
+    vm.serviceGarbageCollection();
+    ASSERT_EQ(TrackingObject::count, 1);
+
+    // Second pass: the closure is still rooted and nothing about the graph
+    // changed, so the list should still be reachable through it.
+    vm.serviceGarbageCollection();
+    ASSERT_EQ(TrackingObject::count, 1);
 }
 
 static void PopulateCoreSystem(Parser &parser, Core &core, System &system) {
